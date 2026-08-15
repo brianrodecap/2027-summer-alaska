@@ -1,0 +1,221 @@
+:root {
+  --bg: #f7f5f0;
+  --panel: #ffffff;
+  --ink: #1e2a24;
+  --muted: #5b6a62;
+  --accent: #2f6f4f;
+  --accent-dark: #1f4d36;
+  --border: #e1ddd0;
+  --chip: #eef2ea;
+  max-width: 100%;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  line-height: 1.5;
+}
+
+.hero {
+  background: linear-gradient(160deg, var(--accent-dark), var(--accent));
+  color: #f4f8f4;
+  padding: 3rem 1.5rem 2.5rem;
+  text-align: center;
+}
+
+.hero h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.6rem, 4vw, 2.4rem);
+}
+
+.hero .route {
+  max-width: 60rem;
+  margin: 0 auto;
+  font-size: 1rem;
+  opacity: 0.92;
+}
+
+.hero .dates {
+  display: inline-block;
+  margin-top: 1rem;
+  padding: 0.35rem 0.9rem;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  font-size: 0.9rem;
+  letter-spacing: 0.02em;
+}
+
+nav.tabs {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.6rem 1rem;
+  overflow-x: auto;
+  justify-content: center;
+}
+
+nav.tabs a {
+  color: var(--accent-dark);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+nav.tabs a:hover { background: var(--chip); }
+
+main {
+  max-width: 68rem;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+section { margin-bottom: 3rem; }
+
+section > h2 {
+  font-size: 1.5rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 2px solid var(--accent);
+  display: inline-block;
+  padding-bottom: 0.25rem;
+}
+
+section > p.lead {
+  color: var(--muted);
+  margin-top: 0.6rem;
+  max-width: 42rem;
+}
+
+.table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel);
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  min-width: 46rem;
+  font-size: 0.92rem;
+}
+
+thead th {
+  background: var(--chip);
+  text-align: left;
+  padding: 0.7rem 0.8rem;
+  position: sticky;
+  top: 0;
+}
+
+tbody td {
+  padding: 0.7rem 0.8rem;
+  border-top: 1px solid var(--border);
+  vertical-align: top;
+}
+
+tbody tr:hover { background: #fbfaf6; }
+
+td.date, th.date { white-space: nowrap; font-weight: 600; color: var(--accent-dark); }
+td.location { white-space: nowrap; }
+
+sup a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.day-card {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 1.5rem 1.5rem 1.25rem;
+  margin-bottom: 1.5rem;
+  scroll-margin-top: 4rem;
+}
+
+.day-card h3 {
+  margin-top: 0;
+  color: var(--accent-dark);
+}
+
+.variant {
+  margin-top: 1rem;
+}
+
+.variant h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 6px;
+}
+
+.variant.ideal h4 { background: #e4f2e8; color: var(--accent-dark); }
+.variant.alternate h4 { background: #f5ece0; color: #7a5323; }
+
+.variant ul {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.variant li { margin-bottom: 0.4rem; }
+
+.variant li .time {
+  font-weight: 700;
+  color: var(--accent-dark);
+}
+
+.day-card .note {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  background: #fbf6ea;
+  border-left: 3px solid #d8a94a;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #4a3f2a;
+}
+
+.day-card .roadnote {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #eef4f1;
+  border-left: 3px solid var(--accent);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+
+ol.footnotes {
+  padding-left: 1.4rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+ol.footnotes li { margin-bottom: 0.7rem; }
+ol.footnotes a { color: var(--accent); }
+
+footer {
+  text-align: center;
+  padding: 2rem 1rem 3rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+@media (max-width: 600px) {
+  .hero { padding: 2.25rem 1rem 2rem; }
+  main { padding: 1.75rem 1rem 3rem; }
+  .day-card { padding: 1.1rem 1.1rem 1rem; }
+}
