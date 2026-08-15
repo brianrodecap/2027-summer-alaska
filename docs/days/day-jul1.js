@@ -17,11 +17,11 @@ export default {
       label: 'If June 30’s flight went (relaxed drive-back day)',
       icon: 'flight_takeoff',
       items: [
-        { time: '8:00–8:45am', text: 'Breakfast buffet at Coldfoot Camp Cafe' },
+        { time: '8:00–8:45am', text: 'Breakfast buffet at Coldfoot Camp Cafe', place: { id: 'ChIJifpoSNzAKFERJLZv8umH-cw', label: 'Coldfoot Camp Cafe' } },
         { time: '9:00am', text: 'Depart Coldfoot, drive to Fairbanks (~5.5–6 hrs)' },
         { time: '2:30–3:00pm', text: 'Arrive Fairbanks, check into Westmark Fairbanks' },
-        { time: '3:30–6:00pm', text: 'University of Alaska Museum of the North (open 9am–7pm, admission until 6:30pm)' },
-        { time: '6:30pm', text: 'Dinner at The Pump House Restaurant (opens 4pm)' },
+        { time: '3:30–6:00pm', text: 'University of Alaska Museum of the North (admission until 6:30pm)', place: { id: 'ChIJAca7fEtbMlERWW6yR4ANuKU', label: 'University of Alaska Museum of the North' } },
+        { time: '6:30pm', text: 'Dinner at The Pump House Restaurant', place: { id: 'ChIJbf5SBnJbMlEReyVKG1_ISbU', label: 'The Pump House Restaurant' } },
       ],
     },
     {
@@ -29,12 +29,12 @@ export default {
       label: 'If June 30’s flight was weathered out (last-chance backup day)',
       icon: 'cloud',
       items: [
-        { time: '7:00am', text: 'Check with Coyote Air first thing — if conditions look workable, plan to fly this morning' },
+        { time: '7:00am', text: 'Check with Coyote Air first thing — if conditions look workable, plan to fly this morning', place: { id: 'ChIJ_0I_bsnBKFERI4b1NuS8eVM', label: 'Coyote Air' } },
         { time: '7:30–9:30am (if flying)', text: 'Gates of the Arctic Tour flight, weather permitting' },
         { time: '10:00am', text: 'Depart Coldfoot regardless of outcome, drive to Fairbanks (~5.5–6 hrs)' },
         { time: '~3:30–4:00pm (if flew) or ~1:00pm (if grounded)', text: 'Arrive Fairbanks, check into Westmark Fairbanks' },
-        { time: 'Remaining afternoon', text: 'Museum of the North if there’s time before the 6:30pm admission cutoff; otherwise just rest' },
-        { time: '6:30pm', text: 'Dinner at The Pump House Restaurant' },
+        { time: 'Remaining afternoon', text: 'Museum of the North if there’s time before the 6:30pm admission cutoff; otherwise just rest', place: { id: 'ChIJAca7fEtbMlERWW6yR4ANuKU', label: 'University of Alaska Museum of the North' } },
+        { time: '6:30pm', text: 'Dinner at The Pump House Restaurant', place: { id: 'ChIJbf5SBnJbMlEReyVKG1_ISbU', label: 'The Pump House Restaurant' } },
       ],
       footer:
         '<p>If Gates of the Arctic still doesn’t happen after both attempts, there’s no ground alternative to fall back on — unlike Denali or Wrangell–St. Elias, this park is fly-in only, so missing it means missing the park entirely.</p>',

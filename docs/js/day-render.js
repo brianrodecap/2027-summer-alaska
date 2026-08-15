@@ -112,13 +112,78 @@ export function renderDetailBody(day) {
 // The innermost drill-down level: a single activity, opened from the day
 // dialog into the side sheet. Only draws on fields the data model already has
 // (time/text + which day and variant it's under) — no speculative fields like
-// cost/address/booking-link until the itinerary data actually carries them.
+// cost/booking-link until the itinerary data actually carries them.
+//
+// When an item names a real-world place (item.place = { id, label }, a
+// Google Place ID pinned once — see docs/js/places.js — rather than a
+// free-text query re-searched on every visit), a loading placeholder is left
+// in the markup; app.js hands it to places.js after the side sheet opens,
+// which fetches live hours/website/map link and fills it in (or falls back
+// gracefully) — kept async and out of this function so rendering the
+// activity body itself stays synchronous and pure.
 export function renderActivityDetailBody(day, variant, item) {
   const context = variant.label ? `${day.dateLabel} · ${day.location} · ${variant.label}` : `${day.dateLabel} · ${day.location}`;
+
+  const placePanel = item.place
+    ? `<div class="place-panel"><md-circular-progress indeterminate></md-circular-progress></div>`
+    : '';
 
   return toFragment(`
     <p class="activity-context md-typescale-label-large">${context}</p>
     <h3 class="md-typescale-headline-small">${item.time}</h3>
     <p class="md-typescale-body-large">${item.text}</p>
+    ${placePanel}
+  `);
+}
+
+// Fields fetched are deliberately limited to Enterprise-tier (hours/website/map
+// link) — see places.js for why photos/rating/reviews are left out for now.
+export function renderPlaceDetails(place) {
+  const hours = place.regularOpeningHours;
+  const hoursHtml = hours
+    ? `
+      <div class="place-row">
+        <md-icon>schedule</md-icon>
+        <div>
+          <p class="md-typescale-body-medium">${hours.openNow ? 'Open now' : 'Closed now'}</p>
+          <ul class="place-hours">
+            ${hours.weekdayDescriptions.map((line) => `<li class="md-typescale-body-small">${line}</li>`).join('')}
+          </ul>
+        </div>
+      </div>`
+    : '';
+
+  const addressHtml = place.formattedAddress
+    ? `
+      <div class="place-row">
+        <md-icon>place</md-icon>
+        <p class="md-typescale-body-medium">${place.formattedAddress}</p>
+      </div>`
+    : '';
+
+  return toFragment(`
+    ${addressHtml}
+    ${hoursHtml}
+    <div class="place-links">
+      ${place.websiteUri ? `<a class="place-link md-typescale-label-large" href="${place.websiteUri}" target="_blank" rel="noopener">Website</a>` : ''}
+      ${place.googleMapsUri ? `<a class="place-link md-typescale-label-large" href="${place.googleMapsUri}" target="_blank" rel="noopener">View on Google Maps</a>` : ''}
+    </div>
+  `);
+}
+
+// Fallback shown when the API key isn't configured yet or a lookup fails —
+// still gives a working outbound link so the feature degrades rather than
+// dies. Uses query_place_id when we have the pinned id (an exact deep link
+// to the right business), falling back to a plain text search otherwise.
+export function renderPlaceUnavailable(place, message = 'Live details unavailable right now.') {
+  const mapsUrl = place.id
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.label)}&query_place_id=${place.id}`
+    : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.label)}`;
+
+  return toFragment(`
+    <p class="place-error md-typescale-body-medium">${message}</p>
+    <div class="place-links">
+      <a class="place-link md-typescale-label-large" href="${mapsUrl}" target="_blank" rel="noopener">Search Google Maps</a>
+    </div>
   `);
 }

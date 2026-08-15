@@ -3,6 +3,7 @@ import { styles as typescaleStyles } from '@material/web/typography/md-typescale
 import './side-sheet.js';
 import { days } from '../days/index.js';
 import { renderListItem, renderSurfaceItem, renderDetailBody, renderActivityDetailBody } from './day-render.js';
+import { hydratePlaceDetails } from './places.js';
 
 document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
 
@@ -29,6 +30,9 @@ function openActivity(variant, item) {
   dayDialog.close();
   const title = variant.label ? `${item.time} — ${variant.label}` : item.time;
   sideSheet.open(title, renderActivityDetailBody(day, variant, item));
+  if (item.place) {
+    hydratePlaceDetails(sideSheet.querySelector('.place-panel'), item.place);
+  }
 }
 
 dayDialogBody.addEventListener('click', (event) => {

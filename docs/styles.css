@@ -324,6 +324,63 @@ detail-side-sheet.open .panel {
   color: var(--md-sys-color-on-surface-variant);
 }
 
+/* ---------- live place details (fetched via Places API, see docs/js/places.js) ---------- */
+
+.place-panel {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.place-panel md-circular-progress {
+  align-self: center;
+  --md-circular-progress-size: 2rem;
+  margin: 0.5rem 0;
+}
+
+.place-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.place-row p {
+  margin: 0;
+  color: var(--md-sys-color-on-surface);
+}
+
+.place-hours {
+  list-style: none;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.place-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.place-link {
+  color: var(--md-sys-color-primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.place-link:hover {
+  text-decoration: underline;
+}
+
+.place-error {
+  color: var(--md-sys-color-on-surface-variant);
+  margin: 0;
+}
+
 /* ---------- footnotes ---------- */
 
 #footnotes md-divider {

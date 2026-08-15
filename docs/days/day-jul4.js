@@ -16,11 +16,11 @@ export default {
     {
       tone: 'ideal',
       items: [
-        { time: '8:00am', text: 'Breakfast at Kennicott Glacier Lodge' },
-        { time: '9:00am–1:30pm', text: 'Root Glacier guided half-day hike (St. Elias Alpine Guides — crampons provided, ~4.5 hrs)' },
+        { time: '8:00am', text: 'Breakfast at Kennicott Glacier Lodge', place: { id: 'ChIJ2_1lpi2Cs1YRTk9_q-YuUM4', label: 'Kennicott Glacier Lodge' } },
+        { time: '9:00am–1:30pm', text: 'Root Glacier guided half-day hike (St. Elias Alpine Guides — crampons provided, ~4.5 hrs)', place: { id: 'ChIJU-XcLiODs1YRBCWN4GuXAs4', label: 'St. Elias Alpine Guides' } },
         { time: '1:30–2:30pm', text: 'Lunch (packed lunch or quick bite at the lodge)' },
-        { time: '3:00–5:00pm', text: 'Kennecott Mill Town Tour (St. Elias Alpine Guides, fixed 2-hr guided tour — the only way inside the 14-story concentration mill; check in 10 min early at their office, second building on the left entering town)' },
-        { time: '6:30pm', text: 'Dinner at Kennicott Glacier Lodge, or walk into McCarthy for a change of scenery at McCarthy Lodge' },
+        { time: '3:00–5:00pm', text: 'Kennecott Mill Town Tour (St. Elias Alpine Guides, fixed 2-hr guided tour — the only way inside the 14-story concentration mill; check in 10 min early at their office, second building on the left entering town)', place: { id: 'ChIJU-XcLiODs1YRBCWN4GuXAs4', label: 'St. Elias Alpine Guides' } },
+        { time: '6:30pm', text: 'Dinner at Kennicott Glacier Lodge, or walk into McCarthy for a change of scenery at McCarthy Lodge', place: { id: 'ChIJ2_1lpi2Cs1YRTk9_q-YuUM4', label: 'Kennicott Glacier Lodge' } },
       ],
     },
   ],
