@@ -1,0 +1,43 @@
+export default {
+  id: 'jun27',
+  dateLabel: 'Sun Jun 27',
+  location: 'Talkeetna',
+  hotel: 'Talkeetna Alaskan Lodge',
+  restaurant: 'Denali Brewing Co.',
+  summary: '<strong>Denali flightseeing</strong> day, weather permitting<sup><a href="#fn2">2</a></sup>.',
+  notes: [],
+  variants: [
+    {
+      tone: 'ideal',
+      label: 'Ideal — flight goes',
+      icon: 'flight_takeoff',
+      items: [
+        { time: '8:00am', text: 'Breakfast at Flying Squirrel Bakery Café (Sunday hours 8am–4pm)' },
+        { time: '9:00am', text: 'Check in with your flightseeing operator, safety briefing' },
+        { time: '9:30–11:30am', text: 'Denali flightseeing with glacier landing (~1.5–2 hrs; exact slot depends on the operator’s schedule that day)' },
+        { time: '12:00pm', text: 'Lunch at West Rib Pub & Grill' },
+        { time: '1:00–2:00pm', text: 'Talkeetna Historical Society Museum (open 9am–5pm daily in summer)' },
+        { time: '2:00–3:30pm', text: 'Walk Main Street, Nagley’s Store, the river confluence viewpoint (Susitna/Talkeetna/Chulitna)' },
+        { time: '3:30–5:00pm', text: 'Downtime at Talkeetna Alaskan Lodge’s mountain-view deck — afternoon often has the clearest Denali views' },
+        { time: '6:30pm', text: 'Dinner at Denali Brewing Co. (open until 10pm)' },
+        { time: 'Evening', text: 'Casual stroll; it barely gets dark this close to solstice' },
+      ],
+      footer: '<p>Operators: K2 Aviation, Talkeetna Air Taxi, or Sheldon Air Service, all out of Talkeetna Airport (TKA).</p>',
+    },
+    {
+      tone: 'alternate',
+      label: 'Alternate — flight weathered out',
+      icon: 'cloud',
+      items: [
+        { time: '8:00am', text: 'Breakfast at Flying Squirrel Bakery Café' },
+        { time: '9:30–11:30am', text: 'Mahay’s Jet Boat Adventures, Wilderness Jet Boat Tour on the Susitna River (a historic homestead stop en route); confirm exact departure time with the operator when booking' },
+        { time: '12:00–2:00pm', text: 'Talkeetna Sled Dog Kennel Tour — van pickup downtown, musher demo, wheeled-cart ride through the woods with the dogs' },
+        { time: '2:00–3:00pm', text: 'Lunch at Talkeetna Roadhouse (open 8am–8pm daily)' },
+        { time: '3:00–4:00pm', text: 'Talkeetna Historical Society Museum (closes 5pm — moved earlier in the day to fit)' },
+        { time: '4:00–6:00pm', text: 'Self-paced choice: canoe/kayak at Talkeetna Lakes Park, or a scenic drive along the Talkeetna Spur Road pullouts for Alaska Range views if skies are partly clearing. (Denali Zipline Tours is a ~3-hr guided tour — if you’d rather do that, swap it in for the jet boat or kennel slot earlier in the day rather than squeezing it in here; confirm departure times when booking.)' },
+        { time: '6:30pm', text: 'Dinner at Mountain High Pizza Pie (open until 9pm Sundays)' },
+        { time: 'Evening', text: 'Worth calling your flightseeing operator back — daylight lasts into the late evening this close to solstice, and conditions sometimes clear enough for a late flight; ask to be put on standby' },
+      ],
+    },
+  ],
+};

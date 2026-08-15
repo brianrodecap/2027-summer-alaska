@@ -1,12 +1,42 @@
 :root {
-  --bg: #f7f5f0;
-  --panel: #ffffff;
-  --ink: #1e2a24;
-  --muted: #5b6a62;
-  --accent: #2f6f4f;
-  --accent-dark: #1f4d36;
-  --border: #e1ddd0;
-  --chip: #eef2ea;
+  /* Material Design 3 — official --md-sys-color-* / --md-sys-shape-corner-* tokens.
+     Named this way (not made up) so @material/web components pick up this theme
+     automatically, since components read these exact custom properties. */
+  --md-sys-color-primary: #6750a4;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #eaddff;
+  --md-sys-color-on-primary-container: #21005d;
+
+  --md-sys-color-secondary: #625b71;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #e8def8;
+  --md-sys-color-on-secondary-container: #1d192b;
+
+  --md-sys-color-error: #b3261e;
+  --md-sys-color-on-error: #ffffff;
+  --md-sys-color-error-container: #f9dedc;
+  --md-sys-color-on-error-container: #410e0b;
+
+  --md-sys-color-surface: #fffbfe;
+  --md-sys-color-on-surface: #1c1b1f;
+  --md-sys-color-on-surface-variant: #49454f;
+  --md-sys-color-outline: #79747e;
+  --md-sys-color-outline-variant: #cac4d0;
+  --md-sys-color-shadow: #000000;
+
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-surface-container-low: #f7f2fa;
+  --md-sys-color-surface-container: #f3edf7;
+  --md-sys-color-surface-container-high: #ece6f0;
+  --md-sys-color-surface-container-highest: #e6e0e9;
+
+  --md-sys-shape-corner-extra-small: 4px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-medium: 12px;
+  --md-sys-shape-corner-large: 16px;
+  --md-sys-shape-corner-full: 999px;
+
+  --nav-h: 3.5rem;
   max-width: 100%;
 }
 
@@ -14,67 +44,79 @@
 
 html { scroll-behavior: smooth; }
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  background: var(--bg);
-  color: var(--ink);
-  line-height: 1.5;
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
 }
 
+body {
+  margin: 0;
+  background: var(--md-sys-color-surface);
+  color: var(--md-sys-color-on-surface);
+}
+
+/* ---------- hero: M3 flat colored surface ---------- */
+
 .hero {
-  background: linear-gradient(160deg, var(--accent-dark), var(--accent));
-  color: #f4f8f4;
-  padding: 3rem 1.5rem 2.5rem;
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+  padding: 3rem 1.5rem;
+}
+
+.hero-frame {
+  max-width: 58rem;
+  margin: 0 auto;
   text-align: center;
 }
 
+.eyebrow {
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+}
+
 .hero h1 {
-  margin: 0 0 0.5rem;
-  font-size: clamp(1.6rem, 4vw, 2.4rem);
+  margin: 0 0 1rem;
 }
 
-.hero .route {
-  max-width: 60rem;
-  margin: 0 auto;
-  font-size: 1rem;
-  opacity: 0.92;
+.hero md-chip-set {
+  display: flex;
+  justify-content: center;
 }
 
-.hero .dates {
-  display: inline-block;
-  margin-top: 1rem;
-  padding: 0.35rem 0.9rem;
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 999px;
-  font-size: 0.9rem;
-  letter-spacing: 0.02em;
+.route {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  list-style: none;
+  margin: 0 auto 1.25rem;
+  padding: 0;
+  max-width: 46rem;
+  font-size: 0.875rem;
+  opacity: 0.9;
 }
+
+.route li { white-space: nowrap; }
+
+.route li:not(:last-child)::after {
+  content: "→";
+  margin: 0 0.5em;
+  opacity: 0.6;
+}
+
+/* ---------- nav: real md-tabs, sticky wrapper + md-elevation for the shadow ---------- */
 
 nav.tabs {
   position: sticky;
   top: 0;
   z-index: 10;
-  background: var(--panel);
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  gap: 0.25rem;
-  padding: 0.6rem 1rem;
-  overflow-x: auto;
-  justify-content: center;
+  background: var(--md-sys-color-surface-container-low);
+  --md-elevation-level: 1;
 }
 
-nav.tabs a {
-  color: var(--accent-dark);
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 600;
-  padding: 0.4rem 0.8rem;
-  border-radius: 999px;
-  white-space: nowrap;
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid var(--md-sys-color-primary);
+  outline-offset: 2px;
 }
-
-nav.tabs a:hover { background: var(--chip); }
 
 main {
   max-width: 68rem;
@@ -85,137 +127,227 @@ main {
 section { margin-bottom: 3rem; }
 
 section > h2 {
-  font-size: 1.5rem;
-  margin-bottom: 0.25rem;
-  border-bottom: 2px solid var(--accent);
-  display: inline-block;
-  padding-bottom: 0.25rem;
+  margin: 0 0 0.5rem;
+  color: var(--md-sys-color-on-surface);
 }
 
 section > p.lead {
-  color: var(--muted);
-  margin-top: 0.6rem;
+  color: var(--md-sys-color-on-surface-variant);
+  margin-top: 0.5rem;
   max-width: 42rem;
 }
 
-.table-wrap {
-  overflow-x: auto;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: var(--panel);
-}
-
-table {
-  border-collapse: collapse;
-  width: 100%;
-  min-width: 46rem;
-  font-size: 0.92rem;
-}
-
-thead th {
-  background: var(--chip);
-  text-align: left;
-  padding: 0.7rem 0.8rem;
-  position: sticky;
-  top: 0;
-}
-
-tbody td {
-  padding: 0.7rem 0.8rem;
-  border-top: 1px solid var(--border);
-  vertical-align: top;
-}
-
-tbody tr:hover { background: #fbfaf6; }
-
-td.date, th.date { white-space: nowrap; font-weight: 600; color: var(--accent-dark); }
-td.location { white-space: nowrap; }
-
 sup a {
-  color: var(--accent);
+  color: var(--md-sys-color-primary);
   text-decoration: none;
-  font-weight: 700;
+  font-weight: 500;
 }
 
-.day-card {
-  background: var(--panel);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1.5rem 1.5rem 1.25rem;
-  margin-bottom: 1.5rem;
-  scroll-margin-top: 4rem;
+/* ---------- date jump menu (Overview) ---------- */
+
+.date-jump {
+  position: relative;
+  margin-top: 1.25rem;
 }
 
-.day-card h3 {
-  margin-top: 0;
-  color: var(--accent-dark);
+/* ---------- list view: real md-list, wrapped only for the elevated surface ---------- */
+
+.list-wrap {
+  position: relative;
+  border-radius: var(--md-sys-shape-corner-medium);
+  background: var(--md-sys-color-surface-container-low);
+  --md-elevation-level: 1;
+  overflow: hidden;
 }
 
-.variant {
-  margin-top: 1rem;
+/* ---------- carousel + cards: no md-carousel/md-card in @material/web, so these
+   share one "day-surface" item (md-elevation + shape tokens, same pattern the
+   design system already uses for elevated cards) laid out via plain flex/grid ---------- */
+
+.carousel-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
-.variant h4 {
-  margin: 0 0 0.5rem;
-  font-size: 0.95rem;
-  display: inline-block;
-  padding: 0.15rem 0.6rem;
-  border-radius: 6px;
+.carousel-track {
+  display: flex;
+  gap: 1rem;
+  padding: 0.25rem;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  flex: 1;
 }
 
-.variant.ideal h4 { background: #e4f2e8; color: var(--accent-dark); }
-.variant.alternate h4 { background: #f5ece0; color: #7a5323; }
+.carousel-track .day-surface {
+  flex: 0 0 17rem;
+  scroll-snap-align: start;
+}
 
-.variant ul {
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 1rem;
+}
+
+.day-surface {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  border: none;
+  cursor: pointer;
+  background: var(--md-sys-color-surface-container-low);
+  border-radius: var(--md-sys-shape-corner-medium);
+  --md-elevation-level: 1;
+  padding: 1.25rem;
+}
+
+.day-surface-date {
+  color: var(--md-sys-color-primary);
+}
+
+.day-surface-title {
   margin: 0;
-  padding-left: 1.2rem;
+  color: var(--md-sys-color-on-surface);
 }
 
-.variant li { margin-bottom: 0.4rem; }
+/* ---------- day dialog: real md-dialog, the first drill-down step (trip → day) ---------- */
 
-.variant li .time {
-  font-weight: 700;
-  color: var(--accent-dark);
+#day-dialog {
+  --md-dialog-container-max-width: 30rem;
 }
 
-.day-card .note {
-  margin-top: 1rem;
-  padding: 0.75rem 1rem;
-  background: #fbf6ea;
-  border-left: 3px solid #d8a94a;
-  border-radius: 6px;
-  font-size: 0.9rem;
-  color: #4a3f2a;
+.dialog-headline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
-.day-card .roadnote {
-  margin-top: 0.75rem;
-  padding: 0.75rem 1rem;
-  background: #eef4f1;
-  border-left: 3px solid var(--accent);
-  border-radius: 6px;
-  font-size: 0.9rem;
-  color: var(--ink);
+/* ---------- activity detail (second drill-down step, shown in the side sheet) ---------- */
+
+.activity-context {
+  margin: 0 0 0.25rem;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ---------- side sheet: no md-side-sheet in @material/web — anchored per the
+   M3 side-sheet spec (m3.material.io/components/side-sheets) using md-elevation
+   + md-icon-button + md-divider + md-list for content, with the minimum
+   structural CSS needed to position/animate the panel and scrim ---------- */
+
+detail-side-sheet {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  pointer-events: none;
+}
+
+detail-side-sheet .scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+detail-side-sheet .panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 100%;
+  width: min(24rem, 100vw);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background: var(--md-sys-color-surface-container-low);
+  --md-elevation-level: 1;
+  border-radius: var(--md-sys-shape-corner-large) 0 0 var(--md-sys-shape-corner-large);
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+}
+
+detail-side-sheet.open {
+  pointer-events: auto;
+}
+
+detail-side-sheet.open .scrim {
+  opacity: 1;
+}
+
+detail-side-sheet.open .panel {
+  transform: translateX(0);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0.75rem 1rem 1.25rem;
+}
+
+.panel-body {
+  padding: 0 1.25rem 1.5rem;
+}
+
+.panel-body md-list {
+  margin-bottom: 0.5rem;
+}
+
+/* flight-status chips — real md-assist-chip, themed by role (primary = go, error = no-go) */
+
+.variant-chip {
+  margin: 1rem 0 0.5rem;
+}
+
+.tone-ideal {
+  --md-assist-chip-outline-color: var(--md-sys-color-primary);
+  --md-assist-chip-label-text-color: var(--md-sys-color-primary);
+  --md-assist-chip-icon-color: var(--md-sys-color-primary);
+}
+
+.tone-alternate {
+  --md-assist-chip-outline-color: var(--md-sys-color-error);
+  --md-assist-chip-label-text-color: var(--md-sys-color-error);
+  --md-assist-chip-icon-color: var(--md-sys-color-error);
+}
+
+.detail-note {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ---------- footnotes ---------- */
+
+#footnotes md-divider {
+  margin: 0.5rem 0 1rem;
 }
 
 ol.footnotes {
-  padding-left: 1.4rem;
-  font-size: 0.9rem;
-  color: var(--muted);
+  padding-left: 1.25rem;
+  color: var(--md-sys-color-on-surface-variant);
 }
 
-ol.footnotes li { margin-bottom: 0.7rem; }
-ol.footnotes a { color: var(--accent); }
+ol.footnotes li { margin-bottom: 0.6rem; }
+ol.footnotes a { color: var(--md-sys-color-primary); }
 
 footer {
   text-align: center;
   padding: 2rem 1rem 3rem;
-  color: var(--muted);
-  font-size: 0.85rem;
+  color: var(--md-sys-color-on-surface-variant);
 }
 
 @media (max-width: 600px) {
-  .hero { padding: 2.25rem 1rem 2rem; }
+  .hero { padding: 2.25rem 1rem; }
   main { padding: 1.75rem 1rem 3rem; }
-  .day-card { padding: 1.1rem 1.1rem 1rem; }
+  .day-surface { padding: 1.1rem; }
+  detail-side-sheet .panel { width: 100vw; border-radius: 0; }
+  .route { font-size: 0.8rem; }
 }
