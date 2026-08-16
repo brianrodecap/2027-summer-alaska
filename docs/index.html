@@ -34,14 +34,18 @@
 
 <div id="trip-page" hidden>
 
-<header class="hero">
+<header class="hero" id="trip-hero">
+  <div class="hero-image" id="trip-hero-image" hidden></div>
   <div class="hero-frame">
     <md-icon-button id="back-to-trips" aria-label="All trips">
       <md-icon>arrow_back</md-icon>
     </md-icon-button>
     <p class="eyebrow md-typescale-label-large">Field Itinerary</p>
     <h1 class="md-typescale-display-small" id="trip-title"></h1>
-    <ol class="route" aria-label="Route"></ol>
+    <details class="route-details">
+      <summary class="route-summary md-typescale-label-large">Route<span id="route-stop-count"></span></summary>
+      <ol class="route" aria-label="Route"></ol>
+    </details>
     <md-chip-set id="travelers-row"></md-chip-set>
     <md-chip-set>
       <md-suggestion-chip id="trip-date-chip">

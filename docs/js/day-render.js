@@ -17,6 +17,20 @@ function toFragment(html) {
   return template.content;
 }
 
+// ---------- images: every entity carries images: Image[] — { uri, credit,
+// caption } (see docs/data/data-model.html) — a list rather than one field so
+// a hand-sourced reference photo and later personal trip photos can coexist.
+// Rendering only ever draws the first entry; nothing here picks among many yet.
+
+export function firstImage(entity) {
+  return entity?.images?.[0] ?? null;
+}
+
+function renderImg(image, className) {
+  if (!image) return '';
+  return `<img class="${className}" src="${image.uri}" alt="${image.caption ?? ''}" title="${image.credit ?? ''}" loading="lazy">`;
+}
+
 // ---------- Leg card (Overview) + Leg dialog ----------
 
 export function renderLegCard(summary) {
@@ -25,9 +39,12 @@ export function renderLegCard(summary) {
   return toNode(`
     <button type="button" class="day-surface leg-surface" data-leg-id="${leg._id}">
       <md-elevation></md-elevation>
-      <span class="day-surface-date md-typescale-label-medium">${range} · ${days.length} days</span>
-      <h3 class="day-surface-title md-typescale-title-medium">${leg.name}</h3>
-      ${leg.booking ? renderBookingChip(leg.booking) : `<p class="md-typescale-body-medium">Booked piece by piece — no single reservation.</p>`}
+      ${renderImg(firstImage(leg), 'leg-surface-image')}
+      <div class="leg-surface-body">
+        <span class="day-surface-date md-typescale-label-medium">${range} · ${days.length} days</span>
+        <h3 class="day-surface-title md-typescale-title-medium">${leg.name}</h3>
+        ${leg.booking ? renderBookingChip(leg.booking) : `<p class="md-typescale-body-medium">Booked piece by piece — no single reservation.</p>`}
+      </div>
     </button>
   `);
 }
@@ -114,6 +131,7 @@ export function renderLegDialogBody(summary) {
     : `<p class="md-typescale-body-medium">No single reservation for this leg — booked piece by piece as its Stays/Transits/Activities.</p>`;
 
   return toFragment(`
+    ${renderImg(firstImage(leg), 'leg-dialog-image')}
     <p class="md-typescale-body-medium">${leg.startDate} – ${leg.endDate} · ${days.length} days · <span class="status-label">${leg.status}</span></p>
     ${bookingBlock}
     ${renderNotes(notes)}
@@ -157,13 +175,14 @@ function renderStay(stay, date) {
   return `
     <div class="stay-block">
       <md-icon>hotel</md-icon>
-      <div>
+      <div class="stay-block-content">
         <p class="md-typescale-title-small">${stayRelation(stay, date)} — ${name}</p>
         <p class="md-typescale-body-small">${formatTime(stay.checkInAt)} in · ${formatTime(stay.checkOutAt)} out</p>
         ${detailBits.length ? `<p class="md-typescale-body-small stay-detail">${detailBits.join(' · ')}</p>` : ''}
         ${stay.lodging?.checkInInstructions ? `<p class="md-typescale-body-small stay-detail">${stay.lodging.checkInInstructions}</p>` : ''}
         ${renderBookingChip(stay.booking)}
       </div>
+      ${renderImg(firstImage(stay), 'stay-block-image')}
     </div>`;
 }
 
@@ -171,52 +190,120 @@ function renderTransit(transit) {
   return `
     <div class="stay-block">
       <md-icon>${transit.mode === 'flight' ? 'flight' : 'directions_car'}</md-icon>
-      <div>
+      <div class="stay-block-content">
         <p class="md-typescale-title-small">${transit.from.label} → ${transit.to.label}</p>
         <p class="md-typescale-body-small">${formatTime(transit.departsAt)} – ${formatTime(transit.arrivesAt)}</p>
         ${renderBookingChip(transit.booking)}
       </div>
+      ${renderImg(firstImage(transit), 'stay-block-image')}
     </div>`;
 }
 
-function renderActivityRow(activity) {
+function renderActivityRow(activity, day) {
+  if (activity.options?.length) return renderMealRow(activity, day);
+  const image = firstImage(activity) ?? firstImage(activity.place);
   return `
     <md-list-item type="button" data-activity-id="${activity._id}">
+      ${image ? `<img slot="start" class="activity-row-image" src="${image.uri}" alt="" loading="lazy">` : ''}
       <div slot="overline">${activityTimeLabel(activity)}</div>
       <div slot="headline">${activity.text}</div>
       <md-icon slot="end">chevron_right</md-icon>
     </md-list-item>`;
 }
 
-function renderSection(section) {
-  const chip = section.scenario
-    ? `
-      <md-chip-set class="variant-chip">
-        <md-assist-chip class="tone-${section.scenario.tone}" label="${section.scenario.label}">
-          <md-icon slot="icon">${section.scenario.icon}</md-icon>
-        </md-assist-chip>
-      </md-chip-set>`
-    : '';
-  const items = section.activities.map(renderActivityRow).join('');
-  return `<md-divider></md-divider>${chip}<md-list>${items}</md-list>${renderNotes(section.notes)}`;
+function renderSection(section, day) {
+  const items = section.activities.map((activity) => renderActivityRow(activity, day)).join('');
+  return `<md-divider></md-divider><md-list>${items}</md-list>`;
 }
 
-function renderSequenceItem(item, date) {
-  if (item.type === 'stay') return renderStay(item.stay, date);
+function renderSequenceItem(item, day) {
+  if (item.type === 'stay') return renderStay(item.stay, day.date);
   if (item.type === 'transit') return renderTransit(item.transit);
-  return renderSection(item);
+  return renderSection(item, day);
+}
+
+// A branching day's scenarios each become one md-primary-tab; the tab bar
+// picks which branch's own timeline shows below by toggling that scenario's
+// panel — the tabs *are* the "which branch" indicator MD3's chip-per-section
+// used to be, so a track's own panel carries no chip of its own. Each
+// scenario's notes (Note.concerns entity:scenario — see trip-model.js) render
+// once at the top of that scenario's panel, not repeated per activity.
+function renderScenarioTabs(day) {
+  const tracks = day.scenarioTracks;
+  if (!tracks.length) return '';
+  const tabs = tracks
+    .map(
+      (track, i) => `
+      <md-primary-tab class="tone-${track.scenario.tone}" inline-icon${i === 0 ? ' active' : ''}>
+        <md-icon slot="icon">${track.scenario.icon}</md-icon>
+        ${track.scenario.label}
+      </md-primary-tab>`
+    )
+    .join('');
+  const panels = tracks
+    .map(
+      (track, i) => `
+      <div class="scenario-panel"${i === 0 ? '' : ' hidden'}>
+        ${renderNotes(track.notes)}
+        ${track.sequence.map((item) => renderSequenceItem(item, day)).join('')}
+      </div>`
+    )
+    .join('');
+  return `<md-tabs class="scenario-tabs">${tabs}</md-tabs><div class="scenario-panels">${panels}</div>`;
+}
+
+// Clicking a tab only needs to show its own panel and hide the rest — no
+// re-render, since every branch's/option's content is already in the DOM.
+// Shared by the scenario tabs above and the meal-option tabs below.
+function wireTabs(root, tabsSelector, panelSelector) {
+  const tabsEl = root.querySelector(tabsSelector);
+  if (!tabsEl) return;
+  const panels = root.querySelectorAll(panelSelector);
+  tabsEl.addEventListener('change', () => {
+    panels.forEach((panel, i) => { panel.hidden = i !== tabsEl.activeTabIndex; });
+  });
+}
+
+// A Stay's check-in/check-out events are keyed to their own clock time (see
+// trip-model.js's stayEventKey) so they sort into day.sequence wherever that
+// falls — but a branching day's own activities render separately, as the tab
+// group below, regardless of their times. Rather than let an 11am formal
+// checkout land after a 6:30am departure, or a mid-afternoon check-in land
+// ahead of an 8am breakfast, checkout is always shown first and check-in
+// always last: each reads as "leaving here"/"staying here tonight" context
+// for the day rather than a scheduled event competing with the timeline
+// between them.
+function splitOutStayBoundaries(sequence) {
+  const checkOuts = sequence.filter((item) => item.type === 'stay' && item.relation === 'Check out');
+  const checkIns = sequence.filter((item) => item.type === 'stay' && item.relation === 'Check in');
+  const rest = sequence.filter((item) => !checkOuts.includes(item) && !checkIns.includes(item));
+  return { checkOuts, rest, checkIns };
 }
 
 // day.sequence (built in trip-model.js) is already the real chronological
-// order — Stay check-in/check-out events, Transits, and Activities merged by
-// their own timestamp — so rendering it is just a straight map, no bucketing.
+// order for everything that doesn't branch — Stay check-in/check-out events,
+// plus any non-branching Transit/Activity — merged by their own timestamp,
+// but today's checkout/check-in events are pulled out to the front/back of
+// the rendered order — see splitOutStayBoundaries above. Branching material
+// (day.scenarioTracks) renders after the rest, as the tab group.
 export function renderDayDetailBody(day) {
-  const itemsHtml = day.sequence.map((item) => renderSequenceItem(item, day.date)).join('') || `<p class="md-typescale-body-medium">Nothing scheduled yet.</p>`;
+  const { checkOuts, rest, checkIns } = splitOutStayBoundaries(day.sequence);
+  const checkOutHtml = checkOuts.map((item) => renderSequenceItem(item, day)).join('');
+  const itemsHtml = rest.map((item) => renderSequenceItem(item, day)).join('');
+  const tabsHtml = renderScenarioTabs(day);
+  const checkInHtml = checkIns.map((item) => renderSequenceItem(item, day)).join('');
+  const emptyHtml = checkOutHtml || itemsHtml || tabsHtml || checkInHtml ? '' : `<p class="md-typescale-body-medium">Nothing scheduled yet.</p>`;
 
-  return toFragment(`
+  const body = toFragment(`
     ${renderNotes(day.notes)}
+    ${checkOutHtml}
     ${itemsHtml}
+    ${tabsHtml}
+    ${checkInHtml}
+    ${emptyHtml}
   `);
+  wireTabs(body, '.scenario-tabs', '.scenario-panel');
+  return body;
 }
 
 // ---------- day list (main Trip page) ----------
@@ -244,6 +331,46 @@ export function renderDayBlock(day) {
 
 // ---------- Activity side sheet ----------
 
+// Maps a live Place's primaryType (Places API (New) — see places.js's FIELD_MASK)
+// to a Material Symbol for the side-sheet header icon. Meal options skip this
+// entirely and use DINING_FORMAT_ICON instead (known synchronously, and "how
+// you're eating" reads better there than the venue's raw category) — this map
+// only covers non-meal, place-bearing activities, whose icon isn't known until
+// hydratePlaceDetails resolves (see app.js's openActivity).
+const PLACE_TYPE_ICON = {
+  museum: 'museum',
+  art_gallery: 'palette',
+  tourist_attraction: 'attractions',
+  visitor_center: 'info',
+  park: 'park',
+  national_park: 'park',
+  hiking_area: 'hiking',
+  campground: 'cabin',
+  rv_park: 'rv_hookup',
+  lodging: 'hotel',
+  hotel: 'hotel',
+  restaurant: 'restaurant',
+  cafe: 'local_cafe',
+  bakery: 'bakery_dining',
+  bar: 'local_bar',
+  brewery: 'sports_bar',
+  grocery_store: 'local_grocery_store',
+  supermarket: 'local_grocery_store',
+  gas_station: 'local_gas_station',
+  airport: 'flight',
+  zoo: 'pets',
+  aquarium: 'water',
+  natural_feature: 'terrain',
+  store: 'storefront',
+};
+const DEFAULT_PLACE_ICON = 'place';
+
+// The icon to show before a live type is known (activityDetailTitle, below)
+// and what places.js's hydration callback swaps it for once resolved.
+export function placeTypeIcon(details) {
+  return PLACE_TYPE_ICON[details?.primaryType] ?? DEFAULT_PLACE_ICON;
+}
+
 const DINING_FORMAT_ICON = {
   included: 'redeem',
   'sit-down': 'restaurant',
@@ -260,50 +387,157 @@ const DINING_FORMAT_LABEL = {
   'self-catered': 'Self-catered',
 };
 
+// Short forms of DINING_FORMAT_LABEL for the compact meal-option tabs — "Included
+// with the stay" fits a side-sheet line but not a tab label.
+const DINING_FORMAT_PILL_LABEL = {
+  included: 'Included',
+  'sit-down': 'Sit-down',
+  'grab-and-go': 'Grab-and-go',
+  drivethru: 'Drive-thru',
+  'self-catered': 'Self-catered',
+};
+
+// An 'included' candidate only actually reads as "included" once its stay is
+// underway — this same day, before check-in has happened, there's no room to
+// have gotten breakfast bundled into yet (see the Stay entity's checkInAt/
+// checkOutAt and trip-model.js's stayRelation). Any other diningFormat has no
+// such precondition.
+function isIncludedOptionActive(day, option) {
+  if (option.diningFormat !== 'included') return true;
+  const stay = day.stays.find((s) => s._id === option.includedIn?.id);
+  return !!stay && stayRelation(stay, day.date) !== 'Check in';
+}
+
 // activity.options (MealOption[]) is only ever set while a meal is genuinely
 // undecided among named candidates — see data-model.html's Activity entity.
-function renderMealOption(option) {
-  const headline = option.place ? option.place.label : DINING_FORMAT_LABEL[option.diningFormat];
-  const secondary = option.place ? DINING_FORMAT_LABEL[option.diningFormat] : null;
+// Exported so app.js can find the same still-open candidates the row's own
+// tabs were built from, to know which one is currently selected.
+export function activeMealOptions(activity, day) {
+  return activity.options.filter((option) => isIncludedOptionActive(day, option));
+}
+
+function mealOptionLabel(option) {
+  return option.place ? option.place.label : DINING_FORMAT_LABEL[option.diningFormat];
+}
+
+function renderMealRowImage(option) {
+  if (!option) return '';
+  const image = firstImage(option.place);
+  return image
+    ? `<img class="activity-row-image" src="${image.uri}" alt="" loading="lazy">`
+    : `<md-icon>${DINING_FORMAT_ICON[option.diningFormat]}</md-icon>`;
+}
+
+// A meal Activity with several still-open MealOption candidates renders as
+// its own row, shaped like every other activity row (image left, time +
+// title right) but with the "title" being whichever candidate is currently
+// selected, plus an md-tabs bar underneath for switching candidates — the
+// same tabbed pattern as the day's own ideal/alternate scenario tabs, just
+// for "which breakfast" instead of "which weather". The header (image + time
+// + selected line) is its own <button data-activity-id>, a sibling of the
+// tabs rather than a wrapper around them, so a tab click can't bubble into
+// the row's "open the side sheet" handler (see app.js's dayListEl listener) —
+// switching candidates is a separate action from opening the activity.
+function renderMealRow(activity, day) {
+  const options = activeMealOptions(activity, day);
+  const selected = options[0] ?? null;
+  const tabsHtml = options.length > 1
+    ? `
+      <md-tabs class="meal-row-tabs">
+        ${options
+          .map(
+            (option, i) => `
+            <md-primary-tab inline-icon${i === 0 ? ' active' : ''}>
+              <md-icon slot="icon">${DINING_FORMAT_ICON[option.diningFormat]}</md-icon>
+              ${DINING_FORMAT_PILL_LABEL[option.diningFormat]}
+            </md-primary-tab>`
+          )
+          .join('')}
+      </md-tabs>`
+    : '';
   return `
-    <div class="place-row">
-      <md-icon>${DINING_FORMAT_ICON[option.diningFormat]}</md-icon>
-      <div>
-        <p class="md-typescale-body-medium">${headline}</p>
-        ${secondary ? `<p class="md-typescale-body-small">${secondary}</p>` : ''}
-        ${option.note ? `<p class="md-typescale-body-small">${option.note}</p>` : ''}
+    <div class="meal-row">
+      <div class="meal-row-image-slot">${renderMealRowImage(selected)}</div>
+      <div class="meal-row-body">
+        <button type="button" class="meal-row-header" data-activity-id="${activity._id}">
+          <span class="meal-row-header-text">
+            <span class="meal-row-time md-typescale-label-medium">${activityTimeLabel(activity)}</span>
+            <span class="meal-row-selected md-typescale-body-large">${selected ? mealOptionLabel(selected) : activity.text}</span>
+          </span>
+          <md-icon>chevron_right</md-icon>
+        </button>
+        ${tabsHtml}
       </div>
     </div>`;
 }
 
-function renderMealOptions(options) {
-  if (!options || !options.length) return '';
-  const rows = options.map(renderMealOption).join('');
-  return `
-    <div class="place-panel">
-      <p class="md-typescale-label-large">Still deciding</p>
-      ${rows}
-    </div>`;
+// Called from app.js's delegated 'change' listener on dayListEl whenever a
+// .meal-row-tabs' active tab changes — swaps that row's own image and
+// selected-candidate line to match, entirely separate from the side sheet
+// (which a meal row only opens via its header button, same as any other
+// activity row).
+export function syncMealRow(activity, day, tabsEl) {
+  const options = activeMealOptions(activity, day);
+  const option = options[tabsEl.activeTabIndex];
+  if (!option) return;
+  const row = tabsEl.closest('.meal-row');
+  row.querySelector('.meal-row-image-slot').innerHTML = renderMealRowImage(option);
+  row.querySelector('.meal-row-selected').textContent = mealOptionLabel(option);
 }
 
-// Only draws on fields the data model already has. When an activity names a
-// real-world place (activity.place = { id, label }, a pinned Google Place ID
-// — see docs/js/places.js), a loading placeholder is left in the markup;
-// app.js hands it to places.js after the side sheet opens, which fetches live
-// hours/website/map link and fills it in (or falls back gracefully).
-export function renderActivityDetailBody(day, scenario, activity) {
-  const context = scenario ? `${day.dateLabel} · ${day.location} · ${scenario.label}` : `${day.dateLabel} · ${day.location}`;
-  const placePanel = activity.place ? `<div class="place-panel"><md-circular-progress indeterminate></md-circular-progress></div>` : '';
+// A meal Activity's own place is never on activity.place (only options are —
+// see data-model.html) — the side sheet needs whichever candidate is
+// currently selected in the row instead, passed in as selectedOption (see
+// app.js's openActivity, which reads it off the row's own tab state right
+// before opening).
+function renderSelectedMealOption(option) {
+  if (!option) return '';
+  // option.place's own label is already shown as the side-sheet's header
+  // title (see app.js's openActivity) — only repeat it here when there's no
+  // place, i.e. the label being shown is the dining format itself.
+  const nameLine = option.place ? '' : `<p class="md-typescale-title-medium">${mealOptionLabel(option)}</p>`;
+  const secondary = option.place ? DINING_FORMAT_LABEL[option.diningFormat] : null;
+  return `
+    ${nameLine}
+    ${secondary ? `<p class="md-typescale-body-medium">${secondary}</p>` : ''}
+    ${option.note ? `<p class="md-typescale-body-medium">${option.note}</p>` : ''}
+  `;
+}
 
-  return toFragment(`
-    <p class="activity-context md-typescale-label-large">${context}</p>
-    <h3 class="md-typescale-headline-small">${activityTimeLabel(activity)}</h3>
-    <p class="md-typescale-body-large">${activity.text}</p>
+// The side sheet's own header title (see app.js's openActivity) — just the
+// place's name, preceded by its dining-format icon when it's a meal option
+// (the same icon as that option's row/tab elsewhere in the day list).
+export function activityDetailTitle(activity, selectedOption) {
+  const place = selectedOption ? selectedOption.place : activity.place;
+  if (!place) return '';
+  // A meal option's dining format is known synchronously; any other place's
+  // category icon isn't known until hydratePlaceDetails resolves, so it starts
+  // on the generic default and app.js swaps it via this class once loaded.
+  const icon = selectedOption
+    ? `<md-icon>${DINING_FORMAT_ICON[selectedOption.diningFormat]}</md-icon>`
+    : `<md-icon class="detail-title-icon">${DEFAULT_PLACE_ICON}</md-icon>`;
+  return `${icon}${place.label}`;
+}
+
+// Only draws on fields the data model already has. When an activity (or a
+// meal's selected option) names a real-world place (place = { id, label }, a
+// pinned Google Place ID — see docs/js/places.js), a loading placeholder is
+// left in the markup; app.js hands it to places.js after the side sheet
+// opens, which fetches live hours/website/map link and fills it in (or falls
+// back gracefully).
+export function renderActivityDetailBody(activity, selectedOption) {
+  const place = selectedOption ? selectedOption.place : activity.place;
+  const placePanel = place ? `<div class="place-panel"><md-circular-progress indeterminate></md-circular-progress></div>` : '';
+  const image = firstImage(activity) ?? firstImage(place);
+
+  const body = toFragment(`
+    ${renderImg(image, 'activity-detail-image')}
+    ${selectedOption ? renderSelectedMealOption(selectedOption) : `<p class="md-typescale-body-large">${activity.text}</p>`}
     ${renderBookingChip(activity.booking)}
     ${renderNotes(activity.notes)}
-    ${renderMealOptions(activity.options)}
     ${placePanel}
   `);
+  return body;
 }
 
 // Fields fetched are deliberately limited to Enterprise-tier (hours/website/map

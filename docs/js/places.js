@@ -15,7 +15,7 @@ import { renderPlaceDetails, renderPlaceUnavailable } from './day-render.js';
 
 // No "places." prefix here (unlike Text Search) — Place Details returns a
 // single Place object, not a list.
-const FIELD_MASK = ['formattedAddress', 'regularOpeningHours', 'websiteUri', 'googleMapsUri'].join(',');
+const FIELD_MASK = ['formattedAddress', 'regularOpeningHours', 'websiteUri', 'googleMapsUri', 'primaryType'].join(',');
 
 // Keyed by place id, caching the in-flight/resolved promise so the same place
 // is never fetched twice in one page session (activities can repeat across
@@ -42,15 +42,20 @@ function getPlace(id) {
 // fetched place details, or a degraded-but-still-useful fallback if the key isn't
 // configured yet or the request fails — the activity's own text/time still render
 // fine without this, so a network/config problem here shouldn't break the side sheet.
+// Returns the fetched details (undefined on failure/unconfigured) so a caller can
+// also react to fields beyond what renderPlaceDetails itself draws on — e.g. the
+// side sheet's header icon, which needs primaryType (see app.js's openActivity).
 export async function hydratePlaceDetails(container, place) {
   if (!PLACES_API_KEY || PLACES_API_KEY.startsWith('REPLACE_')) {
     container.replaceChildren(renderPlaceUnavailable(place, 'Add a Places API key in docs/js/places-config.js to enable live details.'));
-    return;
+    return undefined;
   }
   try {
     const details = await getPlace(place.id);
     container.replaceChildren(renderPlaceDetails(details));
+    return details;
   } catch {
     container.replaceChildren(renderPlaceUnavailable(place));
+    return undefined;
   }
 }

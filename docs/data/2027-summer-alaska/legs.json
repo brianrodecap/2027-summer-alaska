@@ -9,7 +9,7 @@
     "status": "planning",
     "skeletonAuthority": "self",
     "booking": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Every_Road-_Denali_(7945497984).jpg", "credit": "Photo by Tim Rains / NPS, public domain", "caption": "Denali National Park tundra landscape" } ]
   },
   {
     "_id": "leg_cruise",
@@ -33,6 +33,6 @@
         { "name": "Redding Rodecap", "fare": { "amount": 1349.00, "currency": "USD" } }
       ]
     },
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/2023_04_29b_Discovery_Princess_16_(52935882014).jpg", "credit": "Photo by Blake Handley / CC BY 2.0", "caption": "Discovery Princess docked at Ogden Point, Victoria BC" } ]
   }
 ]

@@ -47,16 +47,20 @@
         "place": {
           "id": "ChIJS63CqrW_zlYRNQYObIK7Szk",
           "label": "Flying Squirrel Bakery Cafe",
-          "images": []
+          "images": [ { "uri": "https://le-cdn.website-editor.net/s/8702a098f6b94c62a426a67f31a19d32/dms3rep/multi/opt/175423ce-e09a-4c5a-8fb5-3e34c424807f-1920w.jpg?Expires=1789344480&Signature=cnK-82r-gY5LLL~g~AF6Fb30WFemF7rvgv4eABg-YpjjZ2iaw6qS7wTbTSdjN8Uq0sbFp~6e409-OnqiRLhpLF6lcDImZVojFQWrCmFSG9jgyyUib8fx7TWCaHpAqft8lHHL3aekbjJbzpvwnzi6xJ~puWQ1sneECEG0BperdmuubRixZNJsWuPDGQnMqBB4utpjTfEXSeyP84zkAyfXJ4s3BENeoMU4LMKKcqbO1~tuDmiv4U0djOI64PLsCikc6-E3tBwUAq2AWbW~~60bwMcHMYy40oBsTg2~XOYqADevWWXypoSBefce2z33bXO11y0fqe4-OtYF1iiP1uC4Nw__&Key-Pair-Id=K2NXBXLF010TJW" }]
         },
         "includedIn": null,
         "note": null
       },
       {
         "diningFormat": "grab-and-go",
-        "place": null,
+        "place": {
+          "id": "ChIJI6KxxIyVzlYRGhaQQYdhhss",
+          "label": "Conscious Coffee",
+          "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Conscious_Coffee_%2841544107660%29.jpg", "credit": "Photo by C Watts / CC BY 2.0", "caption": "Conscious Coffee, Talkeetna, Alaska" } ]
+        },
         "includedIn": null,
-        "note": "Coffee and a pastry from Nagley’s General Store, if we want to get moving faster."
+        "note": "Coffee and a pastry to go, if we want to get moving faster."
       }
     ],
     "images": []
@@ -77,7 +81,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_and_Range_from_Air_with_Plane_Wing_%287065283015%29.jpg", "credit": "Photo by Jacob W. Frank / NPS, CC BY 2.0", "caption": "Flightseeing plane wing over Denali and the Alaska Range" } ]
   },
   {
     "_id": "act_jun27_ideal_3",
@@ -99,7 +103,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_and_Range_from_Air_with_Plane_Wing_%287065283015%29.jpg", "credit": "Photo by Jacob W. Frank / NPS, CC BY 2.0", "caption": "Flightseeing plane wing over Denali and the Alaska Range" } ]
   },
   {
     "_id": "act_jun27_ideal_4",
@@ -114,7 +118,7 @@
     "place": {
       "id": "ChIJvQtPqJKVzlYRS5vJhR_du4M",
       "label": "West Rib Pub & Grill",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Nagley%27s_Main_Street_Deli_and_West_Rib.jpg", "credit": "Photo by Laura Alier / CC BY 4.0", "caption": "Nagley's Store and West Rib Pub & Grill signage, downtown Talkeetna" } ]
     },
     "booking": null,
     "mealType": "lunch",
@@ -136,7 +140,7 @@
     "place": {
       "id": "ChIJj6m5aoTAzlYRyQI-9AWEsFc",
       "label": "Talkeetna Historical Society",
-      "images": []
+      "images": [ { "uri": "https://www.talkeetnamuseum.org/wp-content/uploads/2021/01/The-Little-Red-School-House-THS-1974-copy.jpg", "credit": "Courtesy of Talkeetna Historical Society", "caption": "Talkeetna Historical Society Museum, the 1936 schoolhouse" } ]
     },
     "booking": null,
     "mealType": null,
@@ -161,7 +165,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Talkeetna_Roadhouse_Alaska_AK_inn_bakery_and_restaurant.jpg", "credit": "Photo by Swampyank / CC BY-SA 4.0", "caption": "Historic Talkeetna Roadhouse inn, bakery, and restaurant" } ]
   },
   {
     "_id": "act_jun27_ideal_7",
@@ -194,7 +198,7 @@
     "place": {
       "id": "ChIJbfrXM-nGzlYRzMhMFWUTFzI",
       "label": "Denali Brewing Company",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_Brewing_Company,_Talkeetna,_Alaska.jpg", "credit": "Photo by Laura Alier / CC BY 4.0", "caption": "Denali Brewing Company building exterior in Talkeetna" } ]
     },
     "booking": null,
     "mealType": "dinner",
@@ -278,7 +282,7 @@
     "place": {
       "id": "ChIJ33nUJ42VzlYReEG24JfykiY",
       "label": "Mahay’s Jet Boat Adventures",
-      "images": []
+      "images": [ { "uri": "https://mahaysriverboat.com/wp-content/uploads/2021/06/Queen-with-mountain-1024x576.jpg", "credit": "Courtesy of Mahay's Jet Boat Adventures", "caption": "Mahay's jet boat cruising the river with mountain views" } ]
     },
     "booking": {
       "status": "planning",
@@ -326,7 +330,7 @@
     "place": {
       "id": "ChIJeXwBuZKVzlYRC7c634C1pyk",
       "label": "Talkeetna Roadhouse",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Talkeetna_Roadhouse_Alaska_AK_inn_bakery_and_restaurant.jpg", "credit": "Photo by Swampyank / CC BY-SA 4.0", "caption": "Historic Talkeetna Roadhouse inn, bakery, and restaurant" } ]
     },
     "booking": null,
     "mealType": "lunch",
@@ -348,7 +352,7 @@
     "place": {
       "id": "ChIJj6m5aoTAzlYRyQI-9AWEsFc",
       "label": "Talkeetna Historical Society",
-      "images": []
+      "images": [ { "uri": "https://www.talkeetnamuseum.org/wp-content/uploads/2021/01/The-Little-Red-School-House-THS-1974-copy.jpg", "credit": "Courtesy of Talkeetna Historical Society", "caption": "Talkeetna Historical Society Museum, the 1936 schoolhouse" } ]
     },
     "booking": null,
     "mealType": null,
@@ -388,7 +392,7 @@
     "place": {
       "id": "ChIJdRyxt5KVzlYRLXPYT1E0p8Q",
       "label": "Mountain High Pizza Pie",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Mountain_High_Pizza_Pie_(41038961325).jpg", "credit": "Photo by Jon Konrath / CC BY 2.0", "caption": "Mountain High Pizza Pie storefront in Talkeetna, Alaska" } ]
     },
     "booking": null,
     "mealType": "dinner",
@@ -413,7 +417,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_in_the_clouds._NPS-Jason_Bennett_%2818062718644%29.jpg", "credit": "Photo by Jason Bennett / NPS, CC BY 2.0", "caption": "Denali's summit wrapped in thick cloud cover" } ]
   },
   {
     "_id": "act_jun28_1",
@@ -446,7 +450,7 @@
     "place": {
       "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
       "label": "Denali Bus Depot",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_Wilderness_Access_Center.jpg", "credit": "Photo by Pat W. Sanders / CC BY 2.0", "caption": "Denali Wilderness Access Center, Denali National Park" } ]
     },
     "booking": null,
     "mealType": null,
@@ -475,7 +479,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Every_Road-_Denali_(7945497984).jpg", "credit": "Photo by Tim Rains / NPS, public domain", "caption": "Denali National Park tundra landscape" } ]
   },
   {
     "_id": "act_jun28_4",
@@ -493,7 +497,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_Wilderness_Access_Center.jpg", "credit": "Photo by Pat W. Sanders / CC BY 2.0", "caption": "Denali Wilderness Access Center, Denali National Park" } ]
   },
   {
     "_id": "act_jun28_5",
@@ -508,7 +512,7 @@
     "place": {
       "id": "ChIJm08IkFHfzFYRR1motg0wk64",
       "label": "Morino Grill",
-      "images": []
+      "images": [ { "uri": "https://www.reservedenali.com/media/826454/morino-grill-exterior-denali-national-park-2000x.jpg", "credit": "Courtesy of ReserveDenali.com", "caption": "Morino Grill exterior at the Denali Visitor Center" } ]
     },
     "booking": null,
     "mealType": "lunch",
@@ -530,7 +534,7 @@
     "place": {
       "id": "ChIJY28Rjp4gzVYRQFLw8NqoU-E",
       "label": "Denali Sled Dog Kennels",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Working_Kennels_(7106548949).jpg", "credit": "NPS, Denali National Park and Preserve, public domain", "caption": "Working sled dog kennels at Denali National Park" } ]
     },
     "booking": null,
     "mealType": null,
@@ -573,7 +577,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "http://img1.wsimg.com/isteam/ip/4a011874-e82f-4945-b561-9350f89109a8/IMG_0252.jpeg", "credit": "Courtesy of Westmark Fairbanks Hotel", "caption": "Westmark Fairbanks Hotel" } ]
   },
   {
     "_id": "act_jun28_9",
@@ -588,7 +592,7 @@
     "place": {
       "id": "ChIJfZzvXUhFMlERAg8qhKjtnQY",
       "label": "Lavelle’s Bistro",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Lavelle%27s_Bistro_(25660884382).jpg", "credit": "Photo by neverbutterfly (Flickr) / CC BY 2.0", "caption": "Lavelle's Bistro restaurant in downtown Fairbanks" } ]
     },
     "booking": null,
     "mealType": "dinner",
@@ -646,7 +650,7 @@
     "place": {
       "id": "ChIJCSqfQ1VLKVER9FZigu88Qtg",
       "label": "Yukon River Camp",
-      "images": []
+      "images": [ { "uri": "https://images.squarespace-cdn.com/content/v1/623a14b4d617ee762a6fbd95/3740ab7b-5ce2-4169-ad3e-bc5b1437087e/riverbridge.JPG", "credit": "Courtesy of Yukon River Camp", "caption": "Yukon River bridge beside Yukon River Camp, Dalton Highway" } ]
     },
     "booking": null,
     "mealType": "snack",
@@ -725,7 +729,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://images.squarespace-cdn.com/content/v1/53c02418e4b0b3bb7d14b47f/41555e6c-d79d-48eb-85e9-f35682cdfc82/Coldfoot+Camp+Sign+s.jpg", "credit": "Courtesy of Coldfoot Camp", "caption": "The Coldfoot Camp sign on the Dalton Highway" } ]
   },
   {
     "_id": "act_jun29_8",
@@ -740,7 +744,7 @@
     "place": {
       "id": "ChIJmYs44d3AKFERJq-Pgp3qfhY",
       "label": "Arctic Interagency Visitor Center",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Arctic_Interagency_Visitor_Center_in_Coldfoot,_Alaska_(29589814902).jpg", "credit": "Craig McCaa / BLM Alaska, public domain", "caption": "Arctic Interagency Visitor Center in Coldfoot, Alaska" } ]
     },
     "booking": null,
     "mealType": null,
@@ -762,7 +766,7 @@
     "place": {
       "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
       "label": "Coldfoot Camp Cafe",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/World%27s_Northernmost_Truck_Stop,_Coldfoot,_AK.jpg", "credit": "Photo by Scott McMurren / CC BY 2.0", "caption": "Coldfoot Camp, the world's northernmost truck stop" } ]
     },
     "booking": null,
     "mealType": "dinner",
@@ -787,7 +791,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Arctic_Interagency_Visitor_Center_in_Coldfoot,_Alaska_(29589814902).jpg", "credit": "Craig McCaa / BLM Alaska, public domain", "caption": "Arctic Interagency Visitor Center in Coldfoot, Alaska" } ]
   },
   {
     "_id": "act_jun30_ideal_1",
@@ -802,7 +806,7 @@
     "place": {
       "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
       "label": "Coldfoot Camp Cafe",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/World%27s_Northernmost_Truck_Stop,_Coldfoot,_AK.jpg", "credit": "Photo by Scott McMurren / CC BY 2.0", "caption": "Coldfoot Camp, the world's northernmost truck stop" } ]
     },
     "booking": null,
     "mealType": "breakfast",
@@ -824,7 +828,7 @@
     "place": {
       "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
       "label": "Coyote Air",
-      "images": []
+      "images": [ { "uri": "https://flycoyote.com/wp-content/uploads/2021/03/coyote-air-22022557-1024x569.jpg", "credit": "Courtesy of Coyote Air", "caption": "Coyote Air bush flying operation, Coldfoot Airport" } ]
     },
     "booking": null,
     "mealType": null,
@@ -853,7 +857,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg", "credit": "U.S. Fish and Wildlife Service, public domain", "caption": "Aerial view of the Brooks Range, Gates of the Arctic" } ]
   },
   {
     "_id": "act_jun30_ideal_4",
@@ -868,7 +872,7 @@
     "place": {
       "id": "ChIJmYs44d3AKFERJq-Pgp3qfhY",
       "label": "Arctic Interagency Visitor Center",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Arctic_Interagency_Visitor_Center_in_Coldfoot,_Alaska_(29589814902).jpg", "credit": "Craig McCaa / BLM Alaska, public domain", "caption": "Arctic Interagency Visitor Center in Coldfoot, Alaska" } ]
     },
     "booking": null,
     "mealType": null,
@@ -890,7 +894,7 @@
     "place": {
       "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
       "label": "Coldfoot Camp Cafe",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/World%27s_Northernmost_Truck_Stop,_Coldfoot,_AK.jpg", "credit": "Photo by Scott McMurren / CC BY 2.0", "caption": "Coldfoot Camp, the world's northernmost truck stop" } ]
     },
     "booking": null,
     "mealType": "dinner",
@@ -915,7 +919,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Arctic_Interagency_Visitor_Center_in_Coldfoot,_Alaska_(29589814902).jpg", "credit": "Craig McCaa / BLM Alaska, public domain", "caption": "Arctic Interagency Visitor Center in Coldfoot, Alaska" } ]
   },
   {
     "_id": "act_jun30_alt_1",
@@ -930,7 +934,7 @@
     "place": {
       "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
       "label": "Coldfoot Camp Cafe",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/World%27s_Northernmost_Truck_Stop,_Coldfoot,_AK.jpg", "credit": "Photo by Scott McMurren / CC BY 2.0", "caption": "Coldfoot Camp, the world's northernmost truck stop" } ]
     },
     "booking": null,
     "mealType": "breakfast",
@@ -952,7 +956,7 @@
     "place": {
       "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
       "label": "Coyote Air",
-      "images": []
+      "images": [ { "uri": "https://flycoyote.com/wp-content/uploads/2021/03/coyote-air-22022557-1024x569.jpg", "credit": "Courtesy of Coyote Air", "caption": "Coyote Air bush flying operation, Coldfoot Airport" } ]
     },
     "booking": null,
     "mealType": null,
@@ -1046,7 +1050,7 @@
     "place": {
       "id": "ChIJmYs44d3AKFERJq-Pgp3qfhY",
       "label": "Arctic Interagency Visitor Center",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Arctic_Interagency_Visitor_Center_in_Coldfoot,_Alaska_(29589814902).jpg", "credit": "Craig McCaa / BLM Alaska, public domain", "caption": "Arctic Interagency Visitor Center in Coldfoot, Alaska" } ]
     },
     "booking": null,
     "mealType": null,
@@ -1068,7 +1072,7 @@
     "place": {
       "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
       "label": "Coldfoot Camp Cafe",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/World%27s_Northernmost_Truck_Stop,_Coldfoot,_AK.jpg", "credit": "Photo by Scott McMurren / CC BY 2.0", "caption": "Coldfoot Camp, the world's northernmost truck stop" } ]
     },
     "booking": null,
     "mealType": "dinner",
@@ -1093,7 +1097,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://flycoyote.com/wp-content/uploads/2021/03/coyote-air-22022557-1024x569.jpg", "credit": "Courtesy of Coyote Air", "caption": "Coyote Air bush flying operation, Coldfoot Airport" } ]
   },
   {
     "_id": "act_jul1_ideal_1",
@@ -1108,7 +1112,7 @@
     "place": {
       "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
       "label": "Coldfoot Camp Cafe",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/World%27s_Northernmost_Truck_Stop,_Coldfoot,_AK.jpg", "credit": "Photo by Scott McMurren / CC BY 2.0", "caption": "Coldfoot Camp, the world's northernmost truck stop" } ]
     },
     "booking": null,
     "mealType": "breakfast",
@@ -1133,7 +1137,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "http://img1.wsimg.com/isteam/ip/4a011874-e82f-4945-b561-9350f89109a8/IMG_0252.jpeg", "credit": "Courtesy of Westmark Fairbanks Hotel", "caption": "Westmark Fairbanks Hotel" } ]
   },
   {
     "_id": "act_jul1_ideal_4",
@@ -1148,7 +1152,7 @@
     "place": {
       "id": "ChIJAca7fEtbMlERWW6yR4ANuKU",
       "label": "University of Alaska Museum of the North",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/University_of_Alaska_Museum_of_the_North.jpg", "credit": "Photo by RadioKAOS / CC BY-SA 3.0", "caption": "University of Alaska Museum of the North, Fairbanks" } ]
     },
     "booking": null,
     "mealType": null,
@@ -1170,7 +1174,7 @@
     "place": {
       "id": "ChIJbf5SBnJbMlEReyVKG1_ISbU",
       "label": "The Pump House Restaurant",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Chena_Pump_House_NRHP_Fairbanks,_AK.JPG", "credit": "Photo by Durkeeco / CC BY-SA 3.0", "caption": "The historic Chena Pump House, now the Pump House Restaurant" } ]
     },
     "booking": null,
     "mealType": "dinner",
@@ -1192,7 +1196,7 @@
     "place": {
       "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
       "label": "Coyote Air",
-      "images": []
+      "images": [ { "uri": "https://flycoyote.com/wp-content/uploads/2021/03/coyote-air-22022557-1024x569.jpg", "credit": "Courtesy of Coyote Air", "caption": "Coyote Air bush flying operation, Coldfoot Airport" } ]
     },
     "booking": null,
     "mealType": null,
@@ -1221,7 +1225,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg", "credit": "U.S. Fish and Wildlife Service, public domain", "caption": "Aerial view of the Brooks Range, Gates of the Arctic" } ]
   },
   {
     "_id": "act_jul1_alt_4",
@@ -1239,7 +1243,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "http://img1.wsimg.com/isteam/ip/4a011874-e82f-4945-b561-9350f89109a8/IMG_0252.jpeg", "credit": "Courtesy of Westmark Fairbanks Hotel", "caption": "Westmark Fairbanks Hotel" } ]
   },
   {
     "_id": "act_jul1_alt_5",
@@ -1254,7 +1258,7 @@
     "place": {
       "id": "ChIJAca7fEtbMlERWW6yR4ANuKU",
       "label": "University of Alaska Museum of the North",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/University_of_Alaska_Museum_of_the_North.jpg", "credit": "Photo by RadioKAOS / CC BY-SA 3.0", "caption": "University of Alaska Museum of the North, Fairbanks" } ]
     },
     "booking": null,
     "mealType": null,
@@ -1276,7 +1280,7 @@
     "place": {
       "id": "ChIJbf5SBnJbMlEReyVKG1_ISbU",
       "label": "The Pump House Restaurant",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Chena_Pump_House_NRHP_Fairbanks,_AK.JPG", "credit": "Photo by Durkeeco / CC BY-SA 3.0", "caption": "The historic Chena Pump House, now the Pump House Restaurant" } ]
     },
     "booking": null,
     "mealType": "dinner",
@@ -1337,7 +1341,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://www.princesslodges.com/wp-content/uploads/2023/08/cpl-1.jpg", "credit": "Courtesy of Copper River Princess Wilderness Lodge", "caption": "Copper River Princess Wilderness Lodge" } ]
   },
   {
     "_id": "act_jul2_4",
@@ -1352,7 +1356,7 @@
     "place": {
       "id": "ChIJRabRJduQtVYRO5fDE4treEU",
       "label": "Wrangell-St. Elias Visitor Center",
-      "images": []
+      "images": [ { "uri": "https://www.nps.gov/wrst/planyourvisit/images/Copper-Center-Visitor-Center-HQVC.JPG?maxwidth=1300&autorotate=false", "credit": "NPS / Mike Townsend, public domain", "caption": "Wrangell-St. Elias Visitor Center, Copper Center" } ]
     },
     "booking": null,
     "mealType": null,
@@ -1396,7 +1400,7 @@
     "place": {
       "id": "ChIJW2f02GyXtVYRU5Mj6e3eLic",
       "label": "Two Rivers Restaurant",
-      "images": []
+      "images": [ { "uri": "https://www.princesslodges.com/wp-content/uploads/2016/03/copper-river-patio-dining-360x230.jpg", "credit": "Courtesy of Copper River Princess Wilderness Lodge", "caption": "Patio dining at Copper River Princess Wilderness Lodge" } ]
     },
     "booking": null,
     "mealType": "dinner",
@@ -1418,7 +1422,7 @@
     "place": {
       "id": "ChIJmb_m9FyFtVYRza-EUEqwdfU",
       "label": "Copper River Princess Wilderness Lodge",
-      "images": []
+      "images": [ { "uri": "https://www.princesslodges.com/wp-content/uploads/2023/08/cpl-1.jpg", "credit": "Courtesy of Copper River Princess Wilderness Lodge", "caption": "Copper River Princess Wilderness Lodge" } ]
     },
     "booking": null,
     "mealType": "breakfast",
@@ -1479,7 +1483,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Kennecott_Copper_Mill.jpg", "credit": "Photo by Michael F. Wacht / CC BY-SA 4.0", "caption": "The historic Kennecott copper concentration mill" } ]
   },
   {
     "_id": "act_jul3_5",
@@ -1497,7 +1501,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://www.kennicottlodge.com/wp-content/uploads/2018/08/explore.jpg", "credit": "Courtesy of Kennicott Glacier Lodge", "caption": "Kennicott Glacier Lodge near the historic copper mill" } ]
   },
   {
     "_id": "act_jul3_6",
@@ -1515,7 +1519,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Kennecott_Copper_Mill.jpg", "credit": "Photo by Michael F. Wacht / CC BY-SA 4.0", "caption": "The historic Kennecott copper concentration mill" } ]
   },
   {
     "_id": "act_jul3_7",
@@ -1530,7 +1534,7 @@
     "place": {
       "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
       "label": "Kennicott Glacier Lodge",
-      "images": []
+      "images": [ { "uri": "https://www.kennicottlodge.com/wp-content/uploads/2018/08/explore.jpg", "credit": "Courtesy of Kennicott Glacier Lodge", "caption": "Kennicott Glacier Lodge near the historic copper mill" } ]
     },
     "booking": null,
     "mealType": "dinner",
@@ -1552,7 +1556,7 @@
     "place": {
       "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
       "label": "Kennicott Glacier Lodge",
-      "images": []
+      "images": [ { "uri": "https://www.kennicottlodge.com/wp-content/uploads/2018/08/explore.jpg", "credit": "Courtesy of Kennicott Glacier Lodge", "caption": "Kennicott Glacier Lodge near the historic copper mill" } ]
     },
     "booking": null,
     "mealType": "breakfast",
@@ -1574,7 +1578,7 @@
     "place": {
       "id": "ChIJU-XcLiODs1YRBCWN4GuXAs4",
       "label": "St. Elias Alpine Guides",
-      "images": []
+      "images": [ { "uri": "https://www.travelalaska.com/sites/default/files/styles/listing_slideshow/public/listing_images/profile/424/1-0ad50e1de49a22a3473346ed2c408dce_hikingontheglacier.jpg", "credit": "Courtesy of St. Elias Alpine Guides", "caption": "Glacier hiking with St. Elias Alpine Guides, Kennecott" } ]
     },
     "booking": {
       "status": "planning",
@@ -1603,7 +1607,7 @@
     "diningFormat": "self-catered",
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://www.kennicottlodge.com/wp-content/uploads/2018/08/explore.jpg", "credit": "Courtesy of Kennicott Glacier Lodge", "caption": "Kennicott Glacier Lodge near the historic copper mill" } ]
   },
   {
     "_id": "act_jul4_4",
@@ -1618,7 +1622,7 @@
     "place": {
       "id": "ChIJU-XcLiODs1YRBCWN4GuXAs4",
       "label": "St. Elias Alpine Guides",
-      "images": []
+      "images": [ { "uri": "https://www.travelalaska.com/sites/default/files/styles/listing_slideshow/public/listing_images/profile/424/1-0ad50e1de49a22a3473346ed2c408dce_hikingontheglacier.jpg", "credit": "Courtesy of St. Elias Alpine Guides", "caption": "Glacier hiking with St. Elias Alpine Guides, Kennecott" } ]
     },
     "booking": {
       "status": "planning",
@@ -1644,7 +1648,7 @@
     "place": {
       "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
       "label": "Kennicott Glacier Lodge",
-      "images": []
+      "images": [ { "uri": "https://www.kennicottlodge.com/wp-content/uploads/2018/08/explore.jpg", "credit": "Courtesy of Kennicott Glacier Lodge", "caption": "Kennicott Glacier Lodge near the historic copper mill" } ]
     },
     "booking": null,
     "mealType": "dinner",
@@ -1666,7 +1670,7 @@
     "place": {
       "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
       "label": "Kennicott Glacier Lodge",
-      "images": []
+      "images": [ { "uri": "https://www.kennicottlodge.com/wp-content/uploads/2018/08/explore.jpg", "credit": "Courtesy of Kennicott Glacier Lodge", "caption": "Kennicott Glacier Lodge near the historic copper mill" } ]
     },
     "booking": null,
     "mealType": "breakfast",
@@ -1724,7 +1728,7 @@
     "place": {
       "id": "ChIJ69kB6Dl1yVYRrWn-KL13EpE",
       "label": "Sheep Mountain Lodge",
-      "images": []
+      "images": [ { "uri": "https://sheepmountain.com/wp-content/uploads/2016/01/DSC_0696.jpg", "credit": "Courtesy of Sheep Mountain Lodge", "caption": "Premier cabins at Sheep Mountain Lodge, Glenn Highway" } ]
     },
     "booking": null,
     "mealType": "lunch",
@@ -1746,7 +1750,7 @@
     "place": {
       "id": "ChIJS37BSCqNyVYRmTFsCdbhoYA",
       "label": "Sheep Mountain Air",
-      "images": []
+      "images": [ { "uri": "https://sheepmountain.com/wp-content/uploads/2022/07/Sheep-Mountain-Air-Breakfast-on-the-Matanuska-Glacier.jpg", "credit": "Courtesy of Sheep Mountain Air", "caption": "Sheep Mountain Air breakfast stop on the Matanuska Glacier" } ]
     },
     "booking": {
       "status": "planning",
@@ -1811,7 +1815,7 @@
     "place": {
       "id": "ChIJ7bXHMYe9yFYRdVPg648EZGY",
       "label": "Glacier BrewHouse",
-      "images": []
+      "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Glacier_Brewhouse.jpg", "credit": "Photo by Justin Morgan / CC BY-SA 2.0", "caption": "Glacier BrewHouse brewpub and restaurant in Anchorage" } ]
     },
     "booking": null,
     "mealType": "dinner",
@@ -1869,7 +1873,7 @@
     "place": {
       "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
       "label": "Golden Eagle Outfitters",
-      "images": []
+      "images": [ { "uri": "https://goldeneagleoutfitters.com/wp-content/uploads/2025/04/18f9d327-7c55-4ab6-bcde-eadad7128883.jpg", "credit": "Courtesy of Golden Eagle Outfitters", "caption": "Golden Eagle Outfitters flightseeing tour, Kotzebue" } ]
     },
     "booking": null,
     "mealType": null,
@@ -1898,7 +1902,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg", "credit": "Photo by LCGS Russ / CC BY-SA 3.0", "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park" } ]
   },
   {
     "_id": "act_jul6_5",
@@ -1913,7 +1917,7 @@
     "place": {
       "id": "ChIJg65tX1cXzVAR9z2Gr7xJSN4",
       "label": "Northwest Arctic Heritage Center",
-      "images": []
+      "images": [ { "uri": "https://www.nps.gov/kova/planyourvisit/images/nahc_1.jpg?maxwidth=1300&maxheight=1300&autorotate=false&format=webp", "credit": "NPS Photo / Charles Olin, public domain", "caption": "Northwest Arctic Heritage Center, Kotzebue visitor center" } ]
     },
     "booking": null,
     "mealType": null,
@@ -1938,7 +1942,7 @@
     "diningFormat": "sit-down",
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Kotzebue%2C_Alaska.jpg", "credit": "U.S. Fish and Wildlife Service, public domain", "caption": "Aerial view of Kotzebue on the Chukchi Sea coast" } ]
   },
   {
     "_id": "act_jul7_1",
@@ -1953,7 +1957,7 @@
     "place": {
       "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
       "label": "Golden Eagle Outfitters",
-      "images": []
+      "images": [ { "uri": "https://goldeneagleoutfitters.com/wp-content/uploads/2025/04/18f9d327-7c55-4ab6-bcde-eadad7128883.jpg", "credit": "Courtesy of Golden Eagle Outfitters", "caption": "Golden Eagle Outfitters flightseeing tour, Kotzebue" } ]
     },
     "booking": {
       "status": "planning",
@@ -1982,7 +1986,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg", "credit": "Photo by LCGS Russ / CC BY-SA 3.0", "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park" } ]
   },
   {
     "_id": "act_jul9_1",
@@ -2000,7 +2004,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Kotzebue%2C_Alaska.jpg", "credit": "U.S. Fish and Wildlife Service, public domain", "caption": "Aerial view of Kotzebue on the Chukchi Sea coast" } ]
   },
   {
     "_id": "act_jul10_1",
@@ -2018,7 +2022,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Exit_Glacier,_Harding_Icefield,_Kenai_Fjords_National_Park,_Alaska.jpg", "credit": "Photo by OKJaguar / CC BY 4.0", "caption": "Exit Glacier and the Harding Icefield, Kenai Fjords National Park" } ]
   },
   {
     "_id": "act_jul11_1",
@@ -2036,7 +2040,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Exit_Glacier,_Harding_Icefield,_Kenai_Fjords_National_Park,_Alaska.jpg", "credit": "Photo by OKJaguar / CC BY 4.0", "caption": "Exit Glacier and the Harding Icefield, Kenai Fjords National Park" } ]
   },
   {
     "_id": "act_jul17_1",
@@ -2072,7 +2076,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Hubbard_Glacier_pano_01.jpg", "credit": "Photo by Joe Mabel / CC BY-SA 4.0", "caption": "Panoramic view of Hubbard Glacier and Haenke Island" } ]
   },
   {
     "_id": "act_jul19_1",
@@ -2090,7 +2094,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Grand_Pacific_Glacier%2C_Glacier_Bay_National_Park_and_Preserve%2C_Alaska_%2853838132349%29.jpg", "credit": "Photo by Ken Lund / CC BY-SA 2.0", "caption": "Grand Pacific tidewater glacier in Glacier Bay" } ]
   },
   {
     "_id": "act_jul20_1",
@@ -2108,7 +2112,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Icy_Strait_Point%2C_Alaska.jpg", "credit": "Photo by Moira Dunworth / CC BY 2.0", "caption": "Icy Strait Point, the small-boat harbor near Hoonah" } ]
   },
   {
     "_id": "act_jul21_1",
@@ -2126,7 +2130,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Mendenhall_Glacier_in_Tongass_National_Forest.jpg", "credit": "Photo by Richard Martin / CC BY 2.0", "caption": "Mendenhall Glacier near Juneau, Tongass National Forest" } ]
   },
   {
     "_id": "act_jul22_1",
@@ -2144,7 +2148,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Misty_Fjords_National_Monument_ENBLA12.jpg", "credit": "Photo by Enrico Blasutto / CC BY-SA 4.0", "caption": "Steep cliffs and water in Misty Fjords National Monument" } ]
   },
   {
     "_id": "act_jul23_1",
@@ -2162,7 +2166,7 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Coastal_Mountains_and_Fjord_Inside_Passage_Alaska.jpg", "credit": "Photo by Allen Lubitz, public domain", "caption": "Coastal mountains and fjord along the Inside Passage" } ]
   },
   {
     "_id": "act_jul24_1",
@@ -2180,6 +2184,6 @@
     "diningFormat": null,
     "includedIn": null,
     "options": null,
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Canada_Place_-_Vancouver_052.jpg", "credit": "Photo by ericnvntr / CC BY 2.0", "caption": "Canada Place cruise terminal in downtown Vancouver" } ]
   }
 ]

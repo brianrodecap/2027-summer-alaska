@@ -1,8 +1,8 @@
 import '@material/web/all.js';
 import { styles as typescaleStyles } from '@material/web/typography/md-typescale-styles.js';
 import './side-sheet.js';
-import { loadTripsIndex, loadTripData, buildTripView, deriveRouteStops, formatTripDateChip, tripDayCount, activityTimeLabel } from './trip-model.js';
-import { renderLegCard, renderDayBlock, renderLegDialogBody, renderActivityDetailBody } from './day-render.js';
+import { loadTripsIndex, loadTripData, buildTripView, deriveRouteStops, formatTripDateChip, tripDayCount } from './trip-model.js';
+import { renderLegCard, renderDayBlock, renderLegDialogBody, renderActivityDetailBody, activityDetailTitle, placeTypeIcon, syncMealRow, activeMealOptions, firstImage } from './day-render.js';
 import { hydratePlaceDetails } from './places.js';
 import { renderDatePicker } from './date-picker.js';
 
@@ -55,19 +55,49 @@ function openLegDialog(legId) {
   legDialog.show();
 }
 
-function openActivity(activity) {
-  const day = view.days.find((d) => d.date === activity.date);
-  const scenario = activity.scenarioId ? view.scenariosById.get(activity.scenarioId) : null;
-  const time = activityTimeLabel(activity);
-  const title = scenario ? `${time} — ${scenario.label}` : time;
-  sideSheet.open(title, renderActivityDetailBody(day, scenario, activity));
-  if (activity.place) hydratePlaceDetails(sideSheet.querySelector('.place-panel'), activity.place);
+// A meal row's header can only open whichever candidate its own tabs
+// currently have selected (see day-render.js's renderMealRow/syncMealRow) —
+// read that same selection back off the row's DOM rather than always
+// defaulting to the first option.
+function selectedMealOption(activity, day, rowEl) {
+  const options = activeMealOptions(activity, day);
+  const tabsEl = rowEl.querySelector('.meal-row-tabs');
+  return options[tabsEl ? tabsEl.activeTabIndex : 0] ?? null;
+}
+
+async function openActivity(activity, selectedOption = null) {
+  const place = selectedOption ? selectedOption.place : activity.place;
+  sideSheet.open(activityDetailTitle(activity, selectedOption), renderActivityDetailBody(activity, selectedOption));
+  if (!place) return;
+  const details = await hydratePlaceDetails(sideSheet.querySelector('.place-panel'), place);
+  // Meal options already show their dining-format icon (known synchronously,
+  // and more meaningful than the venue's raw category) — only a plain place
+  // starts on the generic default icon that needs swapping in once hydrated.
+  if (details && !selectedOption) {
+    const iconEl = sideSheet.querySelector('.detail-title-icon');
+    if (iconEl) iconEl.textContent = placeTypeIcon(details);
+  }
 }
 
 dayListEl.addEventListener('click', (event) => {
   const el = event.target.closest('[data-activity-id]');
   if (!el) return;
-  openActivity(view.activitiesById.get(el.dataset.activityId));
+  const activity = view.activitiesById.get(el.dataset.activityId);
+  const mealRow = el.closest('.meal-row');
+  const selectedOption = mealRow ? selectedMealOption(activity, view.days.find((d) => d.date === activity.date), mealRow) : null;
+  openActivity(activity, selectedOption);
+});
+
+// A meal row's own md-tabs (see day-render.js's renderMealRow) switches which
+// MealOption candidate that row displays — a separate concern from the click
+// listener above, which only opens the side sheet via the row's header button.
+dayListEl.addEventListener('change', (event) => {
+  const tabsEl = event.target.closest('.meal-row-tabs');
+  if (!tabsEl) return;
+  const activityId = tabsEl.closest('.meal-row').querySelector('[data-activity-id]').dataset.activityId;
+  const activity = view.activitiesById.get(activityId);
+  const day = view.days.find((d) => d.date === activity.date);
+  syncMealRow(activity, day, tabsEl);
 });
 
 legDialogBody.addEventListener('click', (event) => {
@@ -137,13 +167,22 @@ async function openTrip(slug) {
   document.querySelector('#trip-summary').textContent = view.trip.summary ?? '';
   document.querySelector('#trip-date-chip').label = formatTripDateChip(view.trip, view.days.length);
 
+  const heroImage = firstImage(view.trip);
+  const heroImageEl = document.querySelector('#trip-hero-image');
+  heroImageEl.hidden = !heroImage;
+  heroImageEl.style.backgroundImage = heroImage ? `url("${heroImage.uri}")` : '';
+  heroImageEl.title = heroImage?.credit ?? '';
+  document.querySelector('#trip-hero').classList.toggle('has-hero-image', !!heroImage);
+
+  const routeStops = deriveRouteStops(view.days);
   document.querySelector('.route').replaceChildren(
-    ...deriveRouteStops(view.days).map((stop) => {
+    ...routeStops.map((stop) => {
       const li = document.createElement('li');
       li.textContent = stop;
       return li;
     })
   );
+  document.querySelector('#route-stop-count').textContent = ` · ${routeStops.length} stops`;
 
   document.querySelector('#travelers-row').innerHTML = view.trip.travelers
     .map((t) => `<md-suggestion-chip label="${t.name}${t.age ? ` · ${t.age}` : ''}"></md-suggestion-chip>`)

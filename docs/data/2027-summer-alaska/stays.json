@@ -2,7 +2,7 @@
   {
     "_id": "stay_talkeetna",
     "legId": "leg_parks",
-    "checkInAt": "2027-06-26T15:00",
+    "checkInAt": "2027-06-27T15:00",
     "checkOutAt": "2027-06-28T11:00",
     "status": "planning",
     "lodging": { "placeId": null, "name": "Talkeetna Alaskan Lodge", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
@@ -17,7 +17,7 @@
     "status": "planning",
     "lodging": { "placeId": null, "name": "Westmark Fairbanks", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
-    "images": []
+    "images": [ { "uri": "http://img1.wsimg.com/isteam/ip/4a011874-e82f-4945-b561-9350f89109a8/IMG_0252.jpeg", "credit": "Courtesy of Westmark Fairbanks Hotel", "caption": "Westmark Fairbanks Hotel" } ]
   },
   {
     "_id": "stay_coldfoot",
@@ -27,7 +27,7 @@
     "status": "planning",
     "lodging": { "placeId": null, "name": "Slate Creek Inn (Coldfoot Camp)", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
-    "images": []
+    "images": [ { "uri": "https://images.squarespace-cdn.com/content/v1/53c02418e4b0b3bb7d14b47f/41555e6c-d79d-48eb-85e9-f35682cdfc82/Coldfoot+Camp+Sign+s.jpg", "credit": "Courtesy of Coldfoot Camp", "caption": "The Coldfoot Camp sign on the Dalton Highway" } ]
   },
   {
     "_id": "stay_westmark_fbx_2",
@@ -37,7 +37,7 @@
     "status": "planning",
     "lodging": { "placeId": null, "name": "Westmark Fairbanks", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
-    "images": []
+    "images": [ { "uri": "http://img1.wsimg.com/isteam/ip/4a011874-e82f-4945-b561-9350f89109a8/IMG_0252.jpeg", "credit": "Courtesy of Westmark Fairbanks Hotel", "caption": "Westmark Fairbanks Hotel" } ]
   },
   {
     "_id": "stay_copper_river",
@@ -47,7 +47,7 @@
     "status": "planning",
     "lodging": { "placeId": null, "name": "Copper River Princess Wilderness Lodge", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
-    "images": []
+    "images": [ { "uri": "https://www.princesslodges.com/wp-content/uploads/2023/08/cpl-1.jpg", "credit": "Courtesy of Copper River Princess Wilderness Lodge", "caption": "Copper River Princess Wilderness Lodge" } ]
   },
   {
     "_id": "stay_kennicott",
@@ -57,7 +57,7 @@
     "status": "planning",
     "lodging": { "placeId": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4", "name": "Kennicott Glacier Lodge", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": "2-night minimum; on-site dining is limited (dining room, Meatza Wagon food truck, or a trip into McCarthy) — a meal package is worth booking." },
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
-    "images": []
+    "images": [ { "uri": "https://www.kennicottlodge.com/wp-content/uploads/2018/08/explore.jpg", "credit": "Courtesy of Kennicott Glacier Lodge", "caption": "Kennicott Glacier Lodge near the historic copper mill" } ]
   },
   {
     "_id": "stay_anchorage_1",
@@ -97,7 +97,7 @@
     "status": "planning",
     "lodging": null,
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Brooks_Falls_Katmai_National_Park.jpg", "credit": "Photo by Richard A. Weaver / CC BY-SA 4.0", "caption": "Brown bear fishing for salmon at Brooks Falls" } ]
   },
   {
     "_id": "stay_cruise",
@@ -117,6 +117,6 @@
       "shipZone": "Mid-Forward"
     },
     "booking": { "status": "booked", "cost": { "amount": 9336.00, "currency": "USD" }, "confirmationNumber": "MWVV6Q" },
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/2023_04_29b_Discovery_Princess_16_(52935882014).jpg", "credit": "Photo by Blake Handley / CC BY 2.0", "caption": "Discovery Princess docked at Ogden Point, Victoria BC" } ]
   }
 ]

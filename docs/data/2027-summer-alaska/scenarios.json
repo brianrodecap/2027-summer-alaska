@@ -5,7 +5,7 @@
     "tone": "ideal",
     "label": "Ideal — flight goes",
     "icon": "flight_takeoff",
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_and_Range_from_Air_with_Plane_Wing_%287065283015%29.jpg", "credit": "Photo by Jacob W. Frank / NPS, CC BY 2.0", "caption": "Flightseeing plane wing over Denali and the Alaska Range" } ]
   },
   {
     "_id": "scenario_jun27_alt",
@@ -13,7 +13,7 @@
     "tone": "alternate",
     "label": "Alternate — flight weathered out",
     "icon": "cloud",
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_in_the_clouds._NPS-Jason_Bennett_%2818062718644%29.jpg", "credit": "Photo by Jason Bennett / NPS, CC BY 2.0", "caption": "Denali's summit wrapped in thick cloud cover" } ]
   },
   {
     "_id": "scenario_jun30_ideal",
@@ -21,7 +21,7 @@
     "tone": "ideal",
     "label": "Ideal — flight goes",
     "icon": "flight_takeoff",
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg", "credit": "U.S. Fish and Wildlife Service, public domain", "caption": "Aerial view of the Brooks Range, Gates of the Arctic" } ]
   },
   {
     "_id": "scenario_jun30_alt",
@@ -29,7 +29,7 @@
     "tone": "alternate",
     "label": "Alternate — flight weathered out",
     "icon": "cloud",
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg", "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0", "caption": "Drizzly, low-cloud day in the Central Brooks Range" } ]
   },
   {
     "_id": "scenario_jul1_ideal",
@@ -45,6 +45,6 @@
     "tone": "alternate",
     "label": "If June 30's flight was weathered out (last-chance backup day)",
     "icon": "cloud",
-    "images": []
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg", "credit": "U.S. Fish and Wildlife Service, public domain", "caption": "Aerial view of the Brooks Range, Gates of the Arctic" } ]
   }
 ]

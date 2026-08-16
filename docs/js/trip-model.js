@@ -113,9 +113,10 @@ function resolveActivityDate(activity, tripYear) {
 // ---------- Note.concerns matching — see docs/data/data-model.html's Ref type.
 // Notes are bucketed to exactly one drill-down level by which kind of ref they
 // carry: entity:leg -> the Leg dialog, date/dateRange/entity:stay/entity:transit
-// -> the Day dialog, entity:scenario -> that day's scenario section,
-// entity:activity -> that activity's side sheet. A note with several refs
-// (e.g. one leg ref plus a dateRange) naturally surfaces at more than one level. ----------
+// -> the Day dialog, entity:scenario -> once at the top of that scenario's own
+// tab panel, entity:activity -> that activity's side sheet. A note with
+// several refs (e.g. one leg ref plus a dateRange) naturally surfaces at more
+// than one level. ----------
 
 function refMatchesDate(ref, date) {
   if (ref.date) return ref.date === date;
@@ -138,7 +139,6 @@ function notesForDay(notes, date, stayIds, transitIds) {
 }
 
 function notesForScenario(notes, scenarioId) {
-  if (!scenarioId) return [];
   return notes.filter((n) => n.concerns.some((r) => refMatchesEntity(r, 'scenario', [scenarioId])));
 }
 
@@ -147,30 +147,6 @@ function notesForActivity(notes, activityId) {
 }
 
 // ---------- building the computed Day view ----------
-
-// Activities within a date are grouped by scenarioId, preserving the JSON
-// files' own array order (already narrative/chronological — see the day
-// files' authoring order) rather than re-sorting by startAt/order. In the
-// current data no day mixes a scenario-less activity with a scenario-grouped
-// one, so this always yields either one plain section or a small run of
-// ideal/alternate sections.
-function groupSections(dayActivities, scenariosById, notes) {
-  const order = [];
-  const byKey = new Map();
-  for (const activity of dayActivities) {
-    const key = activity.scenarioId ?? '';
-    if (!byKey.has(key)) {
-      byKey.set(key, []);
-      order.push(key);
-    }
-    byKey.get(key).push(activity);
-  }
-  return order.map((key) => ({
-    scenario: key ? scenariosById.get(key) : null,
-    activities: byKey.get(key),
-    notes: notesForScenario(notes, key || null),
-  }));
-}
 
 function stayOverlapsDay(stay, dayStart, dayEnd) {
   return stay.checkInAt < dayEnd && stay.checkOutAt > dayStart;
@@ -192,17 +168,27 @@ export function stayRelation(stay, date) {
   return 'Staying';
 }
 
-// ---------- day.sequence: a single, genuinely time-ordered list ----------
+// ---------- day.sequence (the common backbone) + day.scenarioTracks (one
+// parallel timeline per branch) ----------
 //
 // A changeover day can have activities before checkout, an early check-in
 // followed by an evening activity, or a transit sandwiched between the two —
 // there's no single "stays first, everything else second, stays last" bucket
 // order that holds in general. Per Guiding principle 03 ("sort order comes
-// from a timestamp when one exists" — see docs/data/data-model.html),
-// day.sequence instead merge-sorts every Stay check-in/check-out event,
-// Transit, and Activity by its own real timestamp, then re-collapses
-// consecutive same-scenario activities back into one chip-headed section so
-// the ideal/alternate grouping still renders exactly as it does today.
+// from a timestamp when one exists" — see docs/data/data-model.html), both
+// day.sequence and each scenario track merge-sort their Stay check-in/
+// check-out events, Transits, and Activities by real timestamp, then
+// re-collapse consecutive Activities into one <md-list>-worthy section.
+//
+// Only Activity and Transit carry scenarioId (Stay never branches — see
+// data-model.html's Transit entity for why scenarioId was added there too).
+// day.sequence is built from everything *without* a scenarioId — Stay events
+// plus any non-branching Activity/Transit — so it's the material that's true
+// regardless of which branch happens; day.scenarioTracks holds one entry per
+// distinct scenario present today (in scenarios.json's own declared order),
+// each with just that branch's own Transits/Activities. In the current data
+// no day mixes a scenario-less Activity with a scenario-tagged one, so a
+// branching day's backbone reduces to Stay events only.
 //
 // A Stay with no check-in/check-out event today (already occupied, or
 // occupied for the rest of the day) has no instant to sort by — it's
@@ -221,35 +207,29 @@ function stayEventKey(stay, relation, dayStart) {
   return stay.checkInAt; // 'Check in' or 'Overnight' both anchor on arrival
 }
 
-function buildSequence(dayStays, dayTransits, dayActivities, scenariosById, notes, date, dayStart) {
-  const items = [
-    ...dayStays.map((stay) => {
-      const relation = stayRelation(stay, date);
-      return { type: 'stay', stay, relation, key: stayEventKey(stay, relation, dayStart) };
-    }),
-    ...dayTransits.map((transit) => ({
-      type: 'transit',
-      transit,
-      key: transit.departsAt < dayStart ? dayStart : transit.departsAt,
-    })),
-    ...dayActivities.map((activity) => ({ type: 'activity', activity, key: activitySortKey(activity) })),
-  ];
+function transitSortKey(transit, dayStart) {
+  return transit.departsAt < dayStart ? dayStart : transit.departsAt;
+}
 
+// Merge-sorts already-keyed items (key: an ISO timestamp, or null for an
+// untimed item) into real chronological order, untimed items trailing in
+// their own already-authored order.
+function mergeByTime(items) {
   const timed = items.filter((i) => i.key !== null);
   const untimed = items.filter((i) => i.key === null);
   timed.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
-  const ordered = [...timed, ...untimed];
+  return [...timed, ...untimed];
+}
 
+// Collapses consecutive { type: 'activity' } items into one
+// { type: 'section', activities } block — a Stay/Transit event in between
+// breaks the run — so the renderer can group them under one <md-list>
+// without re-deriving that grouping itself.
+function collapseActivityRuns(ordered) {
   const sequence = [];
   let run = null;
   const flushRun = () => {
-    if (!run) return;
-    sequence.push({
-      type: 'section',
-      scenario: run.scenarioKey ? scenariosById.get(run.scenarioKey) : null,
-      activities: run.activities,
-      notes: notesForScenario(notes, run.scenarioKey || null),
-    });
+    if (run) sequence.push({ type: 'section', activities: run });
     run = null;
   };
   for (const item of ordered) {
@@ -258,22 +238,65 @@ function buildSequence(dayStays, dayTransits, dayActivities, scenariosById, note
       sequence.push(item);
       continue;
     }
-    const scenarioKey = item.activity.scenarioId ?? '';
-    if (run && run.scenarioKey === scenarioKey) run.activities.push(item.activity);
-    else {
-      flushRun();
-      run = { scenarioKey, activities: [item.activity] };
-    }
+    run = run ? [...run, item.activity] : [item.activity];
   }
   flushRun();
-
   return sequence;
 }
 
+function buildSequence(dayStays, dayTransits, dayActivities, date, dayStart) {
+  const items = [
+    ...dayStays.map((stay) => {
+      const relation = stayRelation(stay, date);
+      return { type: 'stay', stay, relation, key: stayEventKey(stay, relation, dayStart) };
+    }),
+    ...dayTransits
+      .filter((t) => !t.scenarioId)
+      .map((transit) => ({ type: 'transit', transit, key: transitSortKey(transit, dayStart) })),
+    ...dayActivities
+      .filter((a) => !a.scenarioId)
+      .map((activity) => ({ type: 'activity', activity, key: activitySortKey(activity) })),
+  ];
+  return collapseActivityRuns(mergeByTime(items));
+}
+
+function buildScenarioTracks(dayTransits, dayActivities, scenariosById, notes, dayStart) {
+  const present = new Set([
+    ...dayTransits.map((t) => t.scenarioId).filter(Boolean),
+    ...dayActivities.map((a) => a.scenarioId).filter(Boolean),
+  ]);
+  const tracks = [];
+  for (const [scenarioId, scenario] of scenariosById) {
+    if (!present.has(scenarioId)) continue;
+    const items = [
+      ...dayTransits
+        .filter((t) => t.scenarioId === scenarioId)
+        .map((transit) => ({ type: 'transit', transit, key: transitSortKey(transit, dayStart) })),
+      ...dayActivities
+        .filter((a) => a.scenarioId === scenarioId)
+        .map((activity) => ({ type: 'activity', activity, key: activitySortKey(activity) })),
+    ];
+    tracks.push({
+      scenario,
+      notes: notesForScenario(notes, scenarioId),
+      sequence: collapseActivityRuns(mergeByTime(items)),
+    });
+  }
+  return tracks;
+}
+
+function truncateSummary(text) {
+  return text.length > 140 ? `${text.slice(0, 137)}…` : text;
+}
+
+function firstActivityIn(sequence) {
+  return sequence.find((i) => i.type === 'section')?.activities[0] ?? null;
+}
+
 function deriveSummary(day) {
-  const primary = day.sections.find((s) => !s.scenario || s.scenario.tone === 'ideal') ?? day.sections[0];
-  const first = primary?.activities[0];
-  if (first) return first.text.length > 140 ? `${first.text.slice(0, 137)}…` : first.text;
+  const idealTrack = day.scenarioTracks.find((t) => t.scenario.tone === 'ideal') ?? day.scenarioTracks[0];
+  const first = firstActivityIn(day.sequence) ?? (idealTrack && firstActivityIn(idealTrack.sequence));
+  if (first) return truncateSummary(first.text);
   if (day.stays[0]) return `Staying at ${day.stays[0].lodging?.name ?? day.location}`;
   return day.location;
 }
@@ -296,7 +319,6 @@ function buildDay(date, legs, stays, transits, activitiesByDate, scenariosById, 
   const arrivingTransit = dayTransits.find((t) => dateOnly(t.arrivesAt) === date);
   const location = primaryStay?.lodging?.name ?? arrivingTransit?.to?.label ?? dayTransits[0]?.from?.label ?? leg.name;
 
-  const sections = groupSections(dayActivities, scenariosById, notes);
   const stayIds = dayStays.map((s) => s._id);
   const transitIds = dayTransits.map((t) => t._id);
 
@@ -307,8 +329,8 @@ function buildDay(date, legs, stays, transits, activitiesByDate, scenariosById, 
     location,
     stays: dayStays,
     transits: dayTransits,
-    sections,
-    sequence: buildSequence(dayStays, dayTransits, dayActivities, scenariosById, notes, date, dayStart),
+    sequence: buildSequence(dayStays, dayTransits, dayActivities, date, dayStart),
+    scenarioTracks: buildScenarioTracks(dayTransits, dayActivities, scenariosById, notes, dayStart),
     notes: notesForDay(notes, date, stayIds, transitIds),
   };
   day.summary = deriveSummary(day);
