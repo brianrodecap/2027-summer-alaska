@@ -1,0 +1,38 @@
+[
+  {
+    "_id": "leg_parks",
+    "tripId": "trip_alaska_2027",
+    "name": "National parks (road & fly)",
+    "order": 1,
+    "startDate": "2027-06-26",
+    "endDate": "2027-07-16",
+    "status": "planning",
+    "skeletonAuthority": "self",
+    "booking": null,
+    "images": []
+  },
+  {
+    "_id": "leg_cruise",
+    "tripId": "trip_alaska_2027",
+    "name": "7-night cruise (Discovery Princess, Whittier to Vancouver)",
+    "order": 2,
+    "startDate": "2027-07-17",
+    "endDate": "2027-07-24",
+    "status": "planning",
+    "skeletonAuthority": "operator",
+    "booking": {
+      "status": "booked",
+      "cost": { "amount": 9336.00, "currency": "USD" },
+      "confirmationNumber": "MWVV6Q",
+      "depositPaidAt": "2026-08-06",
+      "finalPaymentDueAt": "2027-04-18",
+      "passengers": [
+        { "name": "Brian Rodecap", "fare": { "amount": 3319.00, "currency": "USD" } },
+        { "name": "Stacy Rodecap", "fare": { "amount": 3319.00, "currency": "USD" } },
+        { "name": "Lorelei Rodecap", "fare": { "amount": 1349.00, "currency": "USD" } },
+        { "name": "Redding Rodecap", "fare": { "amount": 1349.00, "currency": "USD" } }
+      ]
+    },
+    "images": []
+  }
+]

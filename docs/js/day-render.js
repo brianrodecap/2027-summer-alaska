@@ -1,6 +1,9 @@
-// Shared rendering for a single day's data (see docs/days/*.js) into the three
-// Material-only presentations (list item, carousel/card surface, side-sheet body).
-// Nothing here is day-specific — the content lives in docs/days/*.js.
+// Renders the computed Day/Leg/Activity views (docs/js/trip-model.js) into
+// Material-only DOM: the sticky day list, Leg card/dialog, and the activity
+// side-sheet body. Nothing here is content — the itinerary lives entirely in
+// docs/data/2027-summer-alaska/*.json.
+
+import { formatTime, formatMoney, activityTimeLabel, stayRelation } from './trip-model.js';
 
 function toNode(html) {
   const template = document.createElement('template');
@@ -14,124 +17,291 @@ function toFragment(html) {
   return template.content;
 }
 
-// Footnote markers (<sup><a>) are only meaningful in the full side-sheet body —
-// stripped from the list/card blurbs so a link never ends up nested inside the
-// button-type md-list-item / <button> that carries the row's own click handler.
-function stripFootnotes(html) {
-  return html.replace(/<sup>.*?<\/sup>/gs, '');
-}
+// ---------- Leg card (Overview) + Leg dialog ----------
 
-export function renderListItem(day) {
+export function renderLegCard(summary) {
+  const { leg, days } = summary;
+  const range = days.length ? `${days[0].dateLabel} – ${days[days.length - 1].dateLabel}` : '';
   return toNode(`
-    <md-list-item type="button" data-day-id="${day.id}">
-      <div slot="overline">${day.dateLabel}</div>
-      <div slot="headline">${day.location}</div>
-      <div slot="supporting-text">${stripFootnotes(day.summary)}</div>
-      <md-icon slot="end">chevron_right</md-icon>
-    </md-list-item>
-  `);
-}
-
-// Used for both the carousel and the cards views — same surface, different
-// container layout (scroll-snap row vs. grid) applied in styles.css.
-export function renderSurfaceItem(day) {
-  return toNode(`
-    <button type="button" class="day-surface" data-day-id="${day.id}">
+    <button type="button" class="day-surface leg-surface" data-leg-id="${leg._id}">
       <md-elevation></md-elevation>
-      <span class="day-surface-date md-typescale-label-medium">${day.dateLabel}</span>
-      <h3 class="day-surface-title md-typescale-title-medium">${day.location}</h3>
-      <p class="md-typescale-body-medium">${stripFootnotes(day.summary)}</p>
+      <span class="day-surface-date md-typescale-label-medium">${range} · ${days.length} days</span>
+      <h3 class="day-surface-title md-typescale-title-medium">${leg.name}</h3>
+      ${leg.booking ? renderBookingChip(leg.booking) : `<p class="md-typescale-body-medium">Booked piece by piece — no single reservation.</p>`}
     </button>
   `);
 }
 
-// Activity rows are clickable (type="button", data-activity + indices) so app.js
-// can identify which day/variant/item was tapped and drill into the activity
-// side sheet, via event delegation on the day dialog's content.
-function renderVariant(variant, variantIndex) {
-  const items = variant.items
-    .map(
-      (item, itemIndex) => `
-        <md-list-item type="button" data-activity data-variant-index="${variantIndex}" data-item-index="${itemIndex}">
-          <div slot="overline">${item.time}</div>
-          <div slot="headline">${item.text}</div>
-          <md-icon slot="end">chevron_right</md-icon>
-        </md-list-item>`
-    )
-    .join('');
-
-  const chip = variant.label
-    ? `
-      <md-chip-set class="variant-chip">
-        <md-assist-chip class="tone-${variant.tone}" label="${variant.label}">
-          <md-icon slot="icon">${variant.icon}</md-icon>
-        </md-assist-chip>
-      </md-chip-set>`
-    : '';
-
-  return `
-    <md-divider></md-divider>
-    ${chip}
-    <md-list>${items}</md-list>
-    ${variant.footer ?? ''}
-  `;
+function renderLegBooking(booking) {
+  const rows = [renderBookingChip(booking)];
+  if (booking.depositPaidAt) rows.push(`<p class="md-typescale-body-small">Deposit paid ${booking.depositPaidAt}</p>`);
+  if (booking.finalPaymentDueAt) rows.push(`<p class="md-typescale-body-small">Final payment due ${booking.finalPaymentDueAt}</p>`);
+  if (booking.passengers?.length) {
+    rows.push(
+      `<ul class="passenger-list md-typescale-body-small">${booking.passengers
+        .map((p) => `<li>${p.name}: ${formatMoney(p.fare)}</li>`)
+        .join('')}</ul>`
+    );
+  }
+  return `<div class="leg-booking">${rows.join('')}</div>`;
 }
 
-export function renderDetailBody(day) {
-  const notes = (day.notes ?? [])
-    .map(
-      (note) => `
-        <p class="detail-note md-typescale-body-medium">
-          <md-icon>${note.icon}</md-icon> ${note.html}
-        </p>`
-    )
-    .join('');
+// Days are grouped by contiguous same-location runs so a multi-day Stay
+// (e.g. all 7 cruise days sharing one lodging name) collapses into one
+// disclosure instead of repeating that name as every row's headline — the
+// row headline uses the day's own summary (first activity, or "Staying at
+// X") so days within a run still read as distinct from one another.
+function groupDaysByLocation(days) {
+  const groups = [];
+  for (const day of days) {
+    const last = groups[groups.length - 1];
+    if (last && last.location === day.location) last.days.push(day);
+    else groups.push({ location: day.location, days: [day] });
+  }
+  return groups;
+}
 
-  const body = day.variants.length
-    ? day.variants.map((variant, i) => renderVariant(variant, i)).join('')
-    : `<p class="md-typescale-body-large">${day.summary}</p>`;
+function renderDayRow(d) {
+  return `
+    <md-list-item type="button" data-day-id="${d.date}">
+      <div slot="overline">${d.dateLabel}</div>
+      <div slot="headline">${d.summary}</div>
+      <md-icon slot="end">chevron_right</md-icon>
+    </md-list-item>`;
+}
+
+function renderDayGroup(group) {
+  const range = `${group.days[0].dateLabel} – ${group.days[group.days.length - 1].dateLabel}`;
+  const rows = group.days.map(renderDayRow).join('');
+  return `
+    <details class="day-group">
+      <summary class="day-group-summary">
+        <div>
+          <p class="md-typescale-title-small">${group.location}</p>
+          <p class="day-group-meta md-typescale-label-medium">${range} · ${group.days.length} days</p>
+        </div>
+        <md-icon class="day-group-chevron">expand_more</md-icon>
+      </summary>
+      <md-list>${rows}</md-list>
+    </details>`;
+}
+
+// Consecutive single-day groups share one plain md-list; a run of 2+ days at
+// the same location becomes its own collapsible <details> block.
+function renderLegDayList(days) {
+  const blocks = [];
+  let pendingRows = [];
+  const flushPending = () => {
+    if (pendingRows.length) blocks.push(`<md-list>${pendingRows.join('')}</md-list>`);
+    pendingRows = [];
+  };
+  for (const group of groupDaysByLocation(days)) {
+    if (group.days.length === 1) {
+      pendingRows.push(renderDayRow(group.days[0]));
+    } else {
+      flushPending();
+      blocks.push(renderDayGroup(group));
+    }
+  }
+  flushPending();
+  return blocks.join('');
+}
+
+export function renderLegDialogBody(summary) {
+  const { leg, days, notes } = summary;
+  const bookingBlock = leg.booking
+    ? renderLegBooking(leg.booking)
+    : `<p class="md-typescale-body-medium">No single reservation for this leg — booked piece by piece as its Stays/Transits/Activities.</p>`;
 
   return toFragment(`
-    <md-list>
-      <md-list-item>
-        <md-icon slot="start">hotel</md-icon>
-        <div slot="headline">Hotel</div>
-        <div slot="supporting-text">${day.hotel}</div>
-      </md-list-item>
-      <md-list-item>
-        <md-icon slot="start">restaurant</md-icon>
-        <div slot="headline">Restaurant</div>
-        <div slot="supporting-text">${day.restaurant}</div>
-      </md-list-item>
-    </md-list>
-    ${notes}
-    ${body}
+    <p class="md-typescale-body-medium">${leg.startDate} – ${leg.endDate} · ${days.length} days · <span class="status-label">${leg.status}</span></p>
+    ${bookingBlock}
+    ${renderNotes(notes)}
+    <md-divider></md-divider>
+    ${renderLegDayList(days)}
   `);
 }
 
-// The innermost drill-down level: a single activity, opened from the day
-// dialog into the side sheet. Only draws on fields the data model already has
-// (time/text + which day and variant it's under) — no speculative fields like
-// cost/booking-link until the itinerary data actually carries them.
-//
-// When an item names a real-world place (item.place = { id, label }, a
-// Google Place ID pinned once — see docs/js/places.js — rather than a
-// free-text query re-searched on every visit), a loading placeholder is left
-// in the markup; app.js hands it to places.js after the side sheet opens,
-// which fetches live hours/website/map link and fills it in (or falls back
-// gracefully) — kept async and out of this function so rendering the
-// activity body itself stays synchronous and pure.
-export function renderActivityDetailBody(day, variant, item) {
-  const context = variant.label ? `${day.dateLabel} · ${day.location} · ${variant.label}` : `${day.dateLabel} · ${day.location}`;
+// ---------- Day dialog ----------
 
-  const placePanel = item.place
-    ? `<div class="place-panel"><md-circular-progress indeterminate></md-circular-progress></div>`
+const NOTE_ICON = { warning: 'warning', info: 'info', footnote: 'notes' };
+
+function renderNote(note) {
+  return `
+    <p class="detail-note note-${note.kind} md-typescale-body-medium">
+      <md-icon>${NOTE_ICON[note.kind] ?? 'info'}</md-icon> <span>${note.text}</span>
+    </p>`;
+}
+
+function renderNotes(notes) {
+  return (notes ?? []).map(renderNote).join('');
+}
+
+// Booking is optional on Leg/Stay/Transit/Activity — present only when an
+// actual reservation applies (see docs/data/data-model.html, principle 4).
+function renderBookingChip(booking) {
+  if (!booking) return '';
+  const bits = [];
+  if (booking.cost) bits.push(formatMoney(booking.cost));
+  if (booking.confirmationNumber) bits.push(`Conf# ${booking.confirmationNumber}`);
+  return `
+    <div class="booking-row booking-${booking.status} md-typescale-label-medium">
+      <md-icon>confirmation_number</md-icon>
+      <span>${booking.status[0].toUpperCase()}${booking.status.slice(1)}${bits.length ? ` · ${bits.join(' · ')}` : ''}</span>
+    </div>`;
+}
+
+function renderStay(stay, date) {
+  const name = stay.lodging?.name ?? 'Lodging still open';
+  const detailBits = [stay.lodging?.roomType, stay.lodging?.roomNumber && `Room/cabin ${stay.lodging.roomNumber}`, stay.lodging?.campsite, stay.lodging?.bedConfiguration].filter(Boolean);
+  return `
+    <div class="stay-block">
+      <md-icon>hotel</md-icon>
+      <div>
+        <p class="md-typescale-title-small">${stayRelation(stay, date)} — ${name}</p>
+        <p class="md-typescale-body-small">${formatTime(stay.checkInAt)} in · ${formatTime(stay.checkOutAt)} out</p>
+        ${detailBits.length ? `<p class="md-typescale-body-small stay-detail">${detailBits.join(' · ')}</p>` : ''}
+        ${stay.lodging?.checkInInstructions ? `<p class="md-typescale-body-small stay-detail">${stay.lodging.checkInInstructions}</p>` : ''}
+        ${renderBookingChip(stay.booking)}
+      </div>
+    </div>`;
+}
+
+function renderTransit(transit) {
+  return `
+    <div class="stay-block">
+      <md-icon>${transit.mode === 'flight' ? 'flight' : 'directions_car'}</md-icon>
+      <div>
+        <p class="md-typescale-title-small">${transit.from.label} → ${transit.to.label}</p>
+        <p class="md-typescale-body-small">${formatTime(transit.departsAt)} – ${formatTime(transit.arrivesAt)}</p>
+        ${renderBookingChip(transit.booking)}
+      </div>
+    </div>`;
+}
+
+function renderActivityRow(activity) {
+  return `
+    <md-list-item type="button" data-activity-id="${activity._id}">
+      <div slot="overline">${activityTimeLabel(activity)}</div>
+      <div slot="headline">${activity.text}</div>
+      <md-icon slot="end">chevron_right</md-icon>
+    </md-list-item>`;
+}
+
+function renderSection(section) {
+  const chip = section.scenario
+    ? `
+      <md-chip-set class="variant-chip">
+        <md-assist-chip class="tone-${section.scenario.tone}" label="${section.scenario.label}">
+          <md-icon slot="icon">${section.scenario.icon}</md-icon>
+        </md-assist-chip>
+      </md-chip-set>`
     : '';
+  const items = section.activities.map(renderActivityRow).join('');
+  return `<md-divider></md-divider>${chip}<md-list>${items}</md-list>${renderNotes(section.notes)}`;
+}
+
+function renderSequenceItem(item, date) {
+  if (item.type === 'stay') return renderStay(item.stay, date);
+  if (item.type === 'transit') return renderTransit(item.transit);
+  return renderSection(item);
+}
+
+// day.sequence (built in trip-model.js) is already the real chronological
+// order — Stay check-in/check-out events, Transits, and Activities merged by
+// their own timestamp — so rendering it is just a straight map, no bucketing.
+export function renderDayDetailBody(day) {
+  const itemsHtml = day.sequence.map((item) => renderSequenceItem(item, day.date)).join('') || `<p class="md-typescale-body-medium">Nothing scheduled yet.</p>`;
+
+  return toFragment(`
+    ${renderNotes(day.notes)}
+    ${itemsHtml}
+  `);
+}
+
+// ---------- day list (main Trip page) ----------
+//
+// One <section> per Day with a sticky header (date + location) and its full
+// detail — the same Stay/Transit/Activity content that used to live only
+// behind the Day dialog — rendered inline underneath. Because each header is
+// position: sticky within its own day-block, it stays pinned to the top of
+// the viewport while that day's content scrolls past, then hands off to the
+// next day's header the moment this one's block scrolls out of view — no JS
+// scroll tracking required, just the CSS sticky-per-group pattern.
+export function renderDayBlock(day) {
+  const section = toNode(`
+    <section class="day-block" id="day-${day.date}">
+      <div class="day-block-header">
+        <span class="day-block-date md-typescale-label-large">${day.dateLabel}</span>
+        <h3 class="day-block-title md-typescale-title-medium">${day.location}</h3>
+      </div>
+      <div class="day-block-body"></div>
+    </section>
+  `);
+  section.querySelector('.day-block-body').append(renderDayDetailBody(day));
+  return section;
+}
+
+// ---------- Activity side sheet ----------
+
+const DINING_FORMAT_ICON = {
+  included: 'redeem',
+  'sit-down': 'restaurant',
+  'grab-and-go': 'takeout_dining',
+  drivethru: 'directions_car',
+  'self-catered': 'kitchen',
+};
+
+const DINING_FORMAT_LABEL = {
+  included: 'Included with the stay',
+  'sit-down': 'Sit-down',
+  'grab-and-go': 'Grab-and-go',
+  drivethru: 'Drive-thru',
+  'self-catered': 'Self-catered',
+};
+
+// activity.options (MealOption[]) is only ever set while a meal is genuinely
+// undecided among named candidates — see data-model.html's Activity entity.
+function renderMealOption(option) {
+  const headline = option.place ? option.place.label : DINING_FORMAT_LABEL[option.diningFormat];
+  const secondary = option.place ? DINING_FORMAT_LABEL[option.diningFormat] : null;
+  return `
+    <div class="place-row">
+      <md-icon>${DINING_FORMAT_ICON[option.diningFormat]}</md-icon>
+      <div>
+        <p class="md-typescale-body-medium">${headline}</p>
+        ${secondary ? `<p class="md-typescale-body-small">${secondary}</p>` : ''}
+        ${option.note ? `<p class="md-typescale-body-small">${option.note}</p>` : ''}
+      </div>
+    </div>`;
+}
+
+function renderMealOptions(options) {
+  if (!options || !options.length) return '';
+  const rows = options.map(renderMealOption).join('');
+  return `
+    <div class="place-panel">
+      <p class="md-typescale-label-large">Still deciding</p>
+      ${rows}
+    </div>`;
+}
+
+// Only draws on fields the data model already has. When an activity names a
+// real-world place (activity.place = { id, label }, a pinned Google Place ID
+// — see docs/js/places.js), a loading placeholder is left in the markup;
+// app.js hands it to places.js after the side sheet opens, which fetches live
+// hours/website/map link and fills it in (or falls back gracefully).
+export function renderActivityDetailBody(day, scenario, activity) {
+  const context = scenario ? `${day.dateLabel} · ${day.location} · ${scenario.label}` : `${day.dateLabel} · ${day.location}`;
+  const placePanel = activity.place ? `<div class="place-panel"><md-circular-progress indeterminate></md-circular-progress></div>` : '';
 
   return toFragment(`
     <p class="activity-context md-typescale-label-large">${context}</p>
-    <h3 class="md-typescale-headline-small">${item.time}</h3>
-    <p class="md-typescale-body-large">${item.text}</p>
+    <h3 class="md-typescale-headline-small">${activityTimeLabel(activity)}</h3>
+    <p class="md-typescale-body-large">${activity.text}</p>
+    ${renderBookingChip(activity.booking)}
+    ${renderNotes(activity.notes)}
+    ${renderMealOptions(activity.options)}
     ${placePanel}
   `);
 }

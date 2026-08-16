@@ -1,0 +1,50 @@
+[
+  {
+    "_id": "scenario_jun27_ideal",
+    "legId": "leg_parks",
+    "tone": "ideal",
+    "label": "Ideal — flight goes",
+    "icon": "flight_takeoff",
+    "images": []
+  },
+  {
+    "_id": "scenario_jun27_alt",
+    "legId": "leg_parks",
+    "tone": "alternate",
+    "label": "Alternate — flight weathered out",
+    "icon": "cloud",
+    "images": []
+  },
+  {
+    "_id": "scenario_jun30_ideal",
+    "legId": "leg_parks",
+    "tone": "ideal",
+    "label": "Ideal — flight goes",
+    "icon": "flight_takeoff",
+    "images": []
+  },
+  {
+    "_id": "scenario_jun30_alt",
+    "legId": "leg_parks",
+    "tone": "alternate",
+    "label": "Alternate — flight weathered out",
+    "icon": "cloud",
+    "images": []
+  },
+  {
+    "_id": "scenario_jul1_ideal",
+    "legId": "leg_parks",
+    "tone": "ideal",
+    "label": "If June 30's flight went (relaxed drive-back day)",
+    "icon": "flight_takeoff",
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
+  },
+  {
+    "_id": "scenario_jul1_alt",
+    "legId": "leg_parks",
+    "tone": "alternate",
+    "label": "If June 30's flight was weathered out (last-chance backup day)",
+    "icon": "cloud",
+    "images": []
+  }
+]

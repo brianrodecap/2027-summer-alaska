@@ -1,0 +1,933 @@
+<title>Alaska Trip Data Model</title>
+<style>
+  :root {
+    --bg: #EDF2F1;
+    --surface: #FFFFFF;
+    --surface-2: #F5F8F7;
+    --ink: #16232A;
+    --ink-muted: #55676D;
+    --border: #D7E0DE;
+    --accent: #0E7490;
+    --accent-2: #A6650B;
+    --accent-3: #6B6478;
+    --code-bg: #F2F6F5;
+    --shadow: 0 1px 2px rgba(15,35,40,.06), 0 6px 20px rgba(15,35,40,.05);
+
+    --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1A1E;
+      --surface: #16262B;
+      --surface-2: #1B2C31;
+      --ink: #E7EEEC;
+      --ink-muted: #93A9A8;
+      --border: #2A3C40;
+      --accent: #4FD1DB;
+      --accent-2: #E0A339;
+      --accent-3: #A79EB8;
+      --code-bg: #10201F;
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0F1A1E;
+    --surface: #16262B;
+    --surface-2: #1B2C31;
+    --ink: #E7EEEC;
+    --ink-muted: #93A9A8;
+    --border: #2A3C40;
+    --accent: #4FD1DB;
+    --accent-2: #E0A339;
+    --accent-3: #A79EB8;
+    --code-bg: #10201F;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  a { color: var(--accent); }
+  a:focus-visible, button:focus-visible, .index a:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  .page { max-width: 1180px; margin: 0 auto; padding: 0 clamp(1.25rem, 4vw, 3rem) 6rem; }
+
+  /* ---------- hero ---------- */
+  .hero {
+    padding: clamp(3rem, 8vw, 5rem) 0 3rem;
+    background:
+      radial-gradient(60% 55% at 12% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
+      radial-gradient(50% 60% at 92% 10%, color-mix(in srgb, var(--accent-2) 8%, transparent), transparent 70%);
+    border-bottom: 1px solid var(--border);
+    margin: 0 calc(-1 * clamp(1.25rem, 4vw, 3rem));
+    padding-left: clamp(1.25rem, 4vw, 3rem);
+    padding-right: clamp(1.25rem, 4vw, 3rem);
+  }
+  .eyebrow {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 1rem;
+  }
+  h1 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(2.1rem, 4.5vw, 3.1rem);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    margin: 0 0 1rem;
+  }
+  .dek {
+    max-width: 62ch;
+    font-size: 1.05rem;
+    color: var(--ink-muted);
+    margin: 0 0 1.75rem;
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 1.25rem; }
+  .legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--ink-muted); }
+  .dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; flex: none; }
+  .dot.owned { background: var(--accent); }
+  .dot.reference { background: var(--accent-2); }
+  .dot.computed { border: 1.5px dashed var(--accent-3); background: transparent; }
+
+  /* ---------- layout ---------- */
+  .layout { display: grid; grid-template-columns: 220px minmax(0,1fr); gap: clamp(2rem, 5vw, 4rem); padding-top: 3rem; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+  .index { position: sticky; top: 1.5rem; align-self: start; }
+  @media (max-width: 860px) { .index { position: static; } }
+  .index h3 {
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-muted);
+    margin: 1.4rem 0 0.5rem;
+  }
+  .index h3:first-child { margin-top: 0; }
+  .index ul { list-style: none; margin: 0 0 0.25rem; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+  .index a {
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 0.9rem;
+    display: flex;
+    gap: 0.55rem;
+    padding: 0.15rem 0;
+    border-radius: 4px;
+  }
+  .index a:hover { color: var(--accent); }
+  .index .n { font-family: var(--font-mono); color: var(--ink-muted); font-variant-numeric: tabular-nums; font-size: 0.8rem; }
+
+  main.content { min-width: 0; display: flex; flex-direction: column; gap: 3.25rem; }
+
+  section h2.section-title {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    margin: 0 0 1rem;
+  }
+
+  /* ---------- principles ---------- */
+  .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; }
+  .principle {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.1rem 1.2rem;
+    box-shadow: var(--shadow);
+  }
+  .principle .p-num {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--accent);
+    letter-spacing: 0.06em;
+  }
+  .principle h4 { margin: 0.35rem 0 0.4rem; font-size: 1rem; }
+  .principle p { margin: 0; color: var(--ink-muted); font-size: 0.92rem; }
+
+  /* ---------- ladder ---------- */
+  .ladder-block { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; box-shadow: var(--shadow); }
+  .ladder-row { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
+  .ladder-row:last-child { margin-bottom: 0; }
+  .ladder-label { font-size: 0.82rem; color: var(--ink-muted); }
+  .ladder-label strong { color: var(--ink); }
+  .pills { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; font-family: var(--font-mono); font-size: 0.82rem; }
+  .pill {
+    padding: 0.28rem 0.65rem;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    white-space: nowrap;
+  }
+  .pill.active { border-color: var(--accent); color: var(--accent); }
+  .arrow { color: var(--ink-muted); }
+  .pill.branch { border-style: dashed; color: var(--ink-muted); }
+
+  /* ---------- entity cards ---------- */
+  .entity {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    box-shadow: var(--shadow);
+    scroll-margin-top: 1.25rem;
+  }
+  .entity-head { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.1rem; }
+  .entity-num {
+    font-family: var(--font-mono);
+    font-size: 0.95rem;
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+    padding-top: 0.2rem;
+  }
+  .badge {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    margin-bottom: 0.5rem;
+  }
+  .badge-owned { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+  .badge-reference { background: color-mix(in srgb, var(--accent-2) 16%, transparent); color: var(--accent-2); }
+  .badge-computed { background: transparent; color: var(--accent-3); border: 1px dashed var(--accent-3); }
+  .entity h2 { font-family: var(--font-display); font-size: 1.35rem; margin: 0 0 0.3rem; }
+  .entity-purpose { margin: 0; color: var(--ink-muted); font-size: 0.95rem; max-width: 60ch; }
+
+  pre.schema {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: 8px;
+    padding: 1rem 1.1rem;
+    overflow-x: auto;
+    margin: 0 0 1rem;
+  }
+  .entity[data-kind="reference"] pre.schema { border-left-color: var(--accent-2); }
+  .entity[data-kind="computed"] pre.schema { border-left-color: var(--accent-3); }
+  pre.schema code {
+    font-family: var(--font-mono);
+    font-size: 0.83rem;
+    line-height: 1.6;
+    color: var(--ink);
+    white-space: pre;
+  }
+  .schema-label { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-muted); margin: 0 0 0.4rem; letter-spacing: 0.04em; }
+
+  ul.rationale { margin: 0; padding-left: 1.15rem; display: flex; flex-direction: column; gap: 0.4rem; }
+  ul.rationale li { font-size: 0.92rem; color: var(--ink-muted); }
+  ul.rationale li strong { color: var(--ink); }
+  ul.rationale li em.call { font-style: normal; color: var(--accent); font-size: 0.82rem; }
+
+  /* ---------- open threads ---------- */
+  .threads { display: flex; flex-direction: column; gap: 0.75rem; }
+  .thread {
+    display: flex;
+    gap: 0.85rem;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+  }
+  .thread .mark { color: var(--accent-3); font-family: var(--font-mono); font-size: 0.85rem; }
+  .thread p { margin: 0; font-size: 0.93rem; }
+  .thread p strong { display: block; margin-bottom: 0.15rem; color: var(--ink); }
+  .thread p span { color: var(--ink-muted); }
+
+  footer.doc-footer {
+    margin-top: 4rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border);
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+  }
+</style>
+
+<title>Alaska Trip Data Model</title>
+
+<div class="page">
+  <header class="hero">
+    <span class="eyebrow">Document-database reference · Alaska 2027</span>
+    <h1>Alaska Trip Data Model</h1>
+    <p class="dek">Nine entities and one deliberately unstored view, worked out from the itinerary site's real content — what belongs to the trip, what's borrowed from elsewhere, and what's never persisted at all.</p>
+    <div class="legend">
+      <span class="legend-item"><span class="dot owned"></span> Trip-owned — exists only because this trip exists</span>
+      <span class="legend-item"><span class="dot reference"></span> Reference data — reusable, trip merely points at it</span>
+      <span class="legend-item"><span class="dot computed"></span> Computed view — never stored, assembled on read</span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <nav class="index" aria-label="Entity index">
+      <h3>Orientation</h3>
+      <ul>
+        <li><a href="#principles"><span class="n">·</span> Guiding principles</a></li>
+        <li><a href="#ladder"><span class="n">·</span> Status ladders</a></li>
+      </ul>
+      <h3>Trip-owned</h3>
+      <ul>
+        <li><a href="#trip"><span class="n">01</span> Trip</a></li>
+        <li><a href="#leg"><span class="n">02</span> Leg</a></li>
+        <li><a href="#stay"><span class="n">03</span> Stay</a></li>
+        <li><a href="#transit"><span class="n">04</span> Transit</a></li>
+        <li><a href="#activity"><span class="n">07</span> Activity</a></li>
+        <li><a href="#scenario"><span class="n">08</span> Scenario</a></li>
+        <li><a href="#note"><span class="n">09</span> Note</a></li>
+      </ul>
+      <h3>Reference data</h3>
+      <ul>
+        <li><a href="#route"><span class="n">05</span> Route</a></li>
+        <li><a href="#place"><span class="n">06</span> Place</a></li>
+      </ul>
+      <h3>Computed</h3>
+      <ul>
+        <li><a href="#day"><span class="n">·</span> Day</a></li>
+      </ul>
+      <h3>Closing</h3>
+      <ul>
+        <li><a href="#open-threads"><span class="n">·</span> Open threads</a></li>
+      </ul>
+    </nav>
+
+    <main class="content">
+      <section id="principles">
+        <h2 class="section-title">Guiding principles</h2>
+        <div class="principles">
+          <div class="principle">
+            <span class="p-num">01</span>
+            <h4>Owned vs. referenced</h4>
+            <p>Most entities exist only because this trip exists. Two don't — <strong>Place</strong> and <strong>Route</strong> are reusable knowledge a trip merely points at.</p>
+          </div>
+          <div class="principle">
+            <span class="p-num">02</span>
+            <h4>Declare your own bounds</h4>
+            <p>Every trip-owned entity states its own date or time range and points <em>up</em> to its parent by id. Nothing stores a list of its children, and nothing stores a back-reference either.</p>
+          </div>
+          <div class="principle">
+            <span class="p-num">03</span>
+            <h4>Derive, don't store</h4>
+            <p>Anything computable from stored facts stays uncomputed until read: a day's contents are a query, a layover is a gap between two Transits, sort order comes from a timestamp when one exists.</p>
+          </div>
+          <div class="principle">
+            <span class="p-num">04</span>
+            <h4>Plan status and booking status are independent</h4>
+            <p>Every trip-owned entity tracks whether it's happening at all (planning/active/completed/cancelled) regardless of money. A separate, optional <code>booking</code> tracks only the reservation itself — present solely when a purchase applies.</p>
+          </div>
+          <div class="principle">
+            <span class="p-num">05</span>
+            <h4>Ref generalizes annotation</h4>
+            <p>Notes attach to whatever they concern through a small polymorphic <code>Ref</code> — an entity, a date, or a range — instead of living inside the thing they annotate.</p>
+          </div>
+          <div class="principle">
+            <span class="p-num">06</span>
+            <h4>Every entity carries its own images list</h4>
+            <p>A flat <code>images: Image[]</code> on every entity — including <code>Place</code>, since the live Google Places lookup this site uses deliberately excludes photos. A list, not a single field, so hand-sourced reference photos and personal photos taken on the trip itself can coexist later without a schema change. Deliberately <em>not</em> derived through a Place reference: an Activity or Stay can carry photos different from its Place's, and entities with no Place at all (Trip, Leg, Scenario, Note) still get a home for their own.</p>
+          </div>
+        </div>
+        <p class="schema-label" style="margin-top: 1rem;">The Image shape, used by every entity's <code>images</code> list</p>
+        <pre class="schema"><code>type Image = {
+  uri: string,             // Wikimedia Commons Special:FilePath link, an official
+                            // site's own photo, or (later) a personal upload
+  credit: string | null,   // attribution text — required by the license on most
+                            // Commons photos; null for public-domain (NPS/USGS) or
+                            // once-added personal photos
+  caption: string | null,  // optional, shown under the photo if present
+}</code></pre>
+      </section>
+
+      <section id="ladder">
+        <h2 class="section-title">Status ladders</h2>
+        <div class="ladder-block">
+          <div class="ladder-row">
+            <div class="ladder-label"><strong>Plan status</strong> — <code>status</code> on every trip-owned entity (Trip, Leg, Stay, Transit, Activity). Is this part of the plan happening at all — independent of whether anything was purchased.</div>
+            <div class="pills">
+              <span class="pill active">planning</span><span class="arrow">→</span>
+              <span class="pill active">active</span><span class="arrow">→</span>
+              <span class="pill active">completed</span>
+              <span class="arrow">/</span><span class="pill branch">cancelled</span>
+            </div>
+          </div>
+          <div class="ladder-row">
+            <div class="ladder-label"><strong>Booking status</strong> — inside an optional <code>booking</code> on Leg, Stay, Transit, and Activity, present only when a reservation actually applies. Independent of plan status: a cancelled <em>booking</em> doesn't mean the stay itself is cancelled — you might rebook it elsewhere.</div>
+            <div class="pills">
+              <span class="pill active">planning</span><span class="arrow">→</span>
+              <span class="pill active">booked</span>
+              <span class="arrow">/</span><span class="pill branch">cancelled</span>
+            </div>
+          </div>
+          <p style="margin: 1rem 0 0; font-size: 0.88rem; color: var(--ink-muted);">Example: a free, unreserved campsite you decide to skip is <code>status: 'cancelled'</code> with no <code>booking</code> at all. A hotel room the hotel cancels on you — while you're still figuring out where else to stay — is <code>booking.status: 'cancelled'</code> while the <code>Stay</code> itself stays <code>status: 'planning'</code>. Collapsing these into one field loses that distinction.</p>
+        </div>
+      </section>
+
+      <!-- 01 TRIP -->
+      <article class="entity" id="trip" data-kind="owned">
+        <div class="entity-head">
+          <span class="entity-num">01</span>
+          <div>
+            <span class="badge badge-owned">Trip-owned</span>
+            <h2>Trip</h2>
+            <p class="entity-purpose">The whole vacation. Root of everything else; nothing points up from here.</p>
+          </div>
+        </div>
+        <pre class="schema"><code>{
+  _id: 'trip_alaska_2027',
+  name: 'Alaska National Parks Vacation + Cruise',
+  summary: 'A road-and-fly trip through interior and Arctic Alaska — Denali, …',
+  startDate: '2027-06-26',
+  endDate:   '2027-07-24',
+  status: 'planning',        // planning | active | completed | cancelled
+  travelers: [ { name: 'Brian Rodecap', age: 51 } ],
+  images: [],             // hero image, per Guiding principle 06
+}</code></pre>
+        <ul class="rationale">
+          <li><strong>startDate/endDate are declared independently</strong> of its Legs — an unbooked gap, like the open Lake Clark/Katmai block, shouldn't shrink the trip's apparent length just because nothing inside it is finalized yet.</li>
+          <li><strong>No booking.</strong> A trip isn't itself a purchase — it's booked through what's inside it. Same reason its status ladder skips "booked" entirely.</li>
+          <li><strong>travelers gained <code>age</code></strong> once the cruise line's own booking confirmation supplied it per passenger — still just a lightweight embedded list, not the fuller per-traveler identity floated in Open threads.</li>
+          <li><strong><code>name</code> is the display title</strong> shown as both the trip's hero headline and its card headline on the multi-trip landing screen — not a short internal slug. The folder name under <code>docs/data/</code> (e.g. <code>2027-summer-alaska</code>) is the actual stable identifier every URL and cross-trip reference uses; <code>name</code> is free to read well instead.</li>
+          <li><strong><code>summary</code> is optional</strong>, one paragraph, rendered as-is on the trip's Overview tab — added once a second trip made it clear this couldn't stay hardcoded page copy.</li>
+        </ul>
+      </article>
+
+      <!-- 02 LEG -->
+      <article class="entity" id="leg" data-kind="owned">
+        <div class="entity-head">
+          <span class="entity-num">02</span>
+          <div>
+            <span class="badge badge-owned">Trip-owned</span>
+            <h2>Leg</h2>
+            <p class="entity-purpose">One contiguous, differently-shaped chunk of the trip — the road/fly parks portion vs. the cruise.</p>
+          </div>
+        </div>
+        <pre class="schema"><code>{
+  _id: 'leg_cruise',
+  tripId: 'trip_alaska_2027',
+  name: '7-night cruise',
+  order: 2,
+  startDate: '2027-07-17',
+  endDate:   '2027-07-24',
+  status: 'active',                // planning | active | completed | cancelled
+  skeletonAuthority: 'operator',   // self | operator
+  booking: {                       // optional — only when the whole leg is one bundle
+    status: 'booked',
+    cost: { amount: 9336.00, currency: 'USD' },
+    confirmationNumber: 'MWVV6Q',
+    depositPaidAt: '2026-08-06',    // added: the operator's own confirmation gave a
+    finalPaymentDueAt: '2027-04-18', // deposit/final-payment split cost alone couldn't show
+    passengers: [                   // added: per-passenger fare breakdown, only
+      { name: 'Brian Rodecap', fare: { amount: 3319.00, currency: 'USD' } },
+    ],
+  },
+  images: [],
+}</code></pre>
+        <ul class="rationale">
+          <li><strong>skeletonAuthority</strong> describes only the leg's date↔location skeleton — who decided "Jul 19 = Juneau." It says nothing about how flexible the excursions and meals inside that day are; that's ordinary Activity territory regardless of which leg it's in.</li>
+          <li><strong>status and booking are independent</strong>, same as on every other trip-owned entity: <code>status</code> tracks whether this leg of the plan is happening at all; <code>booking</code> exists only because the cruise happens to be bought as one bundled fare. The parks leg has no single purchase, so it carries only its lifecycle status.</li>
+          <li><strong>depositPaidAt/finalPaymentDueAt/passengers extend the shared booking shape</strong> — added once the cruise line's actual booking confirmation supplied dates and a per-passenger fare split that a single <code>cost</code> number couldn't hold. Populated only where the source data has them (here, and mirrored on <code>stay_cruise.booking</code> for cost/confirmationNumber); every other booking on this page still uses the plain three-field shape. Ties into the "Booking as a formal type" open thread below.</li>
+        </ul>
+      </article>
+
+      <!-- 03 STAY -->
+      <article class="entity" id="stay" data-kind="owned">
+        <div class="entity-head">
+          <span class="entity-num">03</span>
+          <div>
+            <span class="badge badge-owned">Trip-owned</span>
+            <h2>Stay</h2>
+            <p class="entity-purpose">One lodging reservation — a contiguous span with real check-in and check-out times.</p>
+          </div>
+        </div>
+        <p class="schema-label">Booked</p>
+        <pre class="schema"><code>{
+  _id: 'stay_talkeetna',
+  legId: 'leg_parks',
+  checkInAt:  '2027-06-26T15:00',
+  checkOutAt: '2027-06-28T11:00',
+  status: 'active',           // planning | active | completed | cancelled
+  lodging: {
+    placeId: 'ChIJ...', name: 'Talkeetna Alaskan Lodge',
+    roomType: null, roomNumber: null, campsite: null,
+    checkInInstructions: null,
+  },
+  booking: { status: 'booked', cost: null, confirmationNumber: null },
+  images: [],
+}</code></pre>
+        <p class="schema-label">Booked — cruise cabin (roomType/roomNumber stretched to fit a berth, not a room)</p>
+        <pre class="schema"><code>{
+  _id: 'stay_cruise',
+  legId: 'leg_cruise',
+  checkInAt:  '2027-07-17T15:00',
+  checkOutAt: '2027-07-24T07:30',
+  status: 'planning',
+  lodging: {
+    placeId: null, name: 'Discovery Princess (cabin)',
+    roomType: 'Balcony (Cat. BC)', roomNumber: 'L232', campsite: null,
+    checkInInstructions: null,
+    bedConfiguration: 'Convertible twins',   // added: cruise-specific,
+    deckGroup: 'Upper', shipZone: 'Mid-Forward', // no hotel Stay needs these
+  },
+  booking: { status: 'booked', cost: { amount: 9336.00, currency: 'USD' }, confirmationNumber: 'MWVV6Q' },
+  images: [],
+}</code></pre>
+        <p class="schema-label">Still open — nowhere chosen yet</p>
+        <pre class="schema"><code>{
+  _id: 'stay_lc_katmai',
+  legId: 'leg_parks',
+  checkInAt: '2027-07-12T00:00', checkOutAt: '2027-07-17T00:00',
+  status: 'planning',
+  lodging: null,
+  booking: { status: 'planning', cost: null, confirmationNumber: null },
+  images: [],
+}</code></pre>
+        <p class="schema-label">Free, unreserved campsite</p>
+        <pre class="schema"><code>{
+  _id: 'stay_pullout_camp',
+  legId: 'leg_parks',
+  checkInAt: '2027-07-06T21:00', checkOutAt: '2027-07-07T07:00',
+  status: 'planning',
+  lodging: { placeId: null, name: 'Roadside pullout, Denali Highway' },
+  booking: null,               // first-come, first-served — nothing to reserve
+  images: [],
+}</code></pre>
+        <p class="schema-label">Booked — reserved campsite (a real, paid reservation — tested against a different trip's actual Recreation.gov booking, not migrated into this repo's data; see Open threads)</p>
+        <pre class="schema"><code>{
+  _id: 'stay_example_scorpion',
+  legId: 'leg_example',
+  checkInAt:  '2026-06-22T12:00',
+  checkOutAt: '2026-06-23T11:00',
+  status: 'planning',
+  lodging: {
+    placeId: null, name: 'Santa Cruz Scorpion Campground',
+    roomType: null, roomNumber: null, campsite: '022, Lower Loop',
+    checkInInstructions: null,
+    partySize: 4, equipment: 'Tent', vehicleCount: 0,  // added: booking-time
+  },                                                     // constraints a paid
+  booking: { status: 'booked', cost: { amount: 15.00, currency: 'USD' }, confirmationNumber: '0878703196-1' },
+  images: [],
+}</code></pre>
+        <p class="schema-label">Booked — through a third-party travel agent (a real hotel reservation — tested against a different trip's actual Capital One Travel booking, not migrated into this repo's data; see Open threads)</p>
+        <pre class="schema"><code>{
+  _id: 'stay_example_pacific',
+  legId: 'leg_example',
+  checkInAt:  '2026-06-17T16:00',
+  checkOutAt: '2026-06-19T11:00',
+  status: 'planning',
+  lodging: {
+    placeId: null, name: 'Hotel Pacific, Monterey CA',
+    roomType: 'Junior, 2 Double', roomNumber: null, campsite: null,
+    checkInInstructions: 'No check-in after 1:00am without advance notice; 18+ to check in.',
+  },
+  booking: {
+    status: 'booked',
+    cost: { amount: 531.70, currency: 'USD' },  // amount actually charged —
+                                                   // not the room/tax/credit line items
+    confirmationNumber: null,                    // no separate hotel-native code
+                                                   // was ever given for this booking
+    bookedThrough: {                              // added: booked via a third-party
+      name: 'Capital One Travel',                 // agent — this booking only ever
+      confirmationNumber: 'H-MR3H7GQVN49P',        // had the agent's own code
+    },
+  },
+  images: [],
+}</code></pre>
+        <ul class="rationale">
+          <li><strong>checkInAt/checkOutAt are real timestamps</strong>, not dates — check-in is 3pm, checkout is 11am, rarely midnight.</li>
+          <li><strong>lodging mirrors the Place reference pattern</strong> (external id + label) plus type-specific detail a Google Place can't carry — room type, campsite, check-in instructions are facts about the reservation, not the physical property.</li>
+          <li><strong>status and booking are independent</strong>, not one field. Most stays have both moving together, but not always — a free roadside camp never gets a <code>booking</code> at all, and a hotel that cancels your reservation doesn't retroactively cancel the <em>stay</em> if you plan to rebook elsewhere.</li>
+          <li><strong>bedConfiguration/deckGroup/shipZone extend <code>lodging</code></strong> for the cruise cabin — the same "type-specific detail a Google Place can't carry" reasoning that already justifies <code>roomType</code>/<code>roomNumber</code>/<code>campsite</code>, just for a berth instead of a hotel room. Populated only on <code>stay_cruise</code>; no hotel or campsite Stay needs them.</li>
+          <li><strong>partySize/equipment/vehicleCount extend <code>lodging</code></strong> the same way, surfaced by testing against a real paid campsite reservation: federal campgrounds book against occupancy, equipment type, and vehicle count as hard constraints on the reservation itself, not incidental detail. Populated only where a campsite is actually reserved — a hotel <code>Stay</code> has no use for them.</li>
+          <li><strong>What that test confirmed rather than changed</strong>: the reservation's cancel-by-date/refund-amount schedule ($5 refund through Jun 20, $0 after) maps cleanly onto a <code>Note</code> concerning the <code>Stay</code>, exactly like the cruise's cancellation schedule — no new field needed. And the order-level id (<code>0878703196</code>) versus this specific reservation's id (the <code>-1</code> suffix) is the same bundle-booking-vs-item-booking split <code>leg_cruise</code>/<code>stay_cruise</code> already use, one level down.</li>
+          <li><strong>bookedThrough extends <code>booking</code></strong>, surfaced by testing against a real Capital One Travel hotel reservation whose only confirmation number belongs to the booking agent, not the hotel itself. Originally added as a flat name string with <code>confirmationNumber</code> left ambiguous ("whichever code manages the reservation") — promoted to <code>{ name, confirmationNumber }</code> once the flight test (see Transit) proved a booking can carry <em>two</em> live codes at once, a vendor one and an agent one, that a single field can't hold. <code>confirmationNumber</code> now consistently means the vendor's own code, <code>null</code> when none was ever given, as here.</li>
+          <li><strong>cost stays the flat amount actually charged</strong>, not a line-item breakdown — that same reservation's room/taxes/travel-credit split collapses to one number the same way a cruise fare or a campsite fee already does. No shape change; "derive, don't store" holds.</li>
+          <li><strong>Payment method (masked card number, expiry) was deliberately left out</strong>, same reasoning as the Princess Captain's Circle numbers and on-file phone in the cruise test: an account identifier with no itinerary value, not worth the exposure in a public repo.</li>
+        </ul>
+      </article>
+
+      <!-- 04 TRANSIT -->
+      <article class="entity" id="transit" data-kind="owned">
+        <div class="entity-head">
+          <span class="entity-num">04</span>
+          <div>
+            <span class="badge badge-owned">Trip-owned</span>
+            <h2>Transit</h2>
+            <p class="entity-purpose">One atomic, single-mode movement between two points.</p>
+          </div>
+        </div>
+        <pre class="schema"><code>{
+  _id: 'transit_drive_scenic',
+  legId: 'leg_parks',
+  journeyId: null,        // set when chained with other Transits into one movement
+  scenarioId: null,        // set when this movement's own timing depends on which
+                            // Scenario played out — e.g. a backup-flight day where
+                            // the drive-back departure time differs by branch
+  status: 'planning',      // planning | active | completed | cancelled
+  mode: 'drive',
+  from: { placeId: null, label: 'Anchorage' },  // null — a whole city, no one
+  to:   { placeId: null, label: 'Whittier' },    // correct point to pin
+  departsAt: '2027-07-05T09:00',
+  arrivesAt: '2027-07-05T12:30',
+  routeId: 'route_anc_to_whittier',
+  routeVariant: 'scenic',
+  booking: null,           // own car, no reservation — status still tracks the plan
+  images: [],
+}</code></pre>
+        <p class="schema-label">Booked — ferry, one of two one-way sailings under a shared order (tested against a real Catalina Express reservation for a different trip — not migrated into this repo's data; the return sailing is a second, identically-shaped Transit)</p>
+        <pre class="schema"><code>{
+  _id: 'transit_example_catalina_out',
+  legId: 'leg_example',
+  journeyId: null,
+  scenarioId: null,
+  status: 'planning',
+  mode: 'ferry',
+  from: { placeId: 'ChIJ...', label: 'Long Beach Landing' },  // added: real,
+  to:   { placeId: 'ChIJ...', label: 'Avalon Landing' },       // resolvable terminals
+  departsAt: '2026-06-24T08:15',
+  arrivesAt: '2026-06-24T09:15',
+  routeId: null, routeVariant: null,
+  booking: {
+    status: 'booked',
+    cost: { amount: 198.00, currency: 'USD' },  // this sailing's own total
+                                                   // (4 fares + its share of tax)
+    confirmationNumber: '345607334',             // this sailing's own code — the
+                                                   // order-level code (FPLZAS) is
+    passengers: [                                 // never stored, same as the
+      { name: 'Brian Rodecap',   fare: { amount: 44.50, currency: 'USD' } },  // campsite's
+      { name: 'Stacy Rodecap',   fare: { amount: 44.50, currency: 'USD' } },  // order-vs-item
+      { name: 'Redding Rodecap', fare: { amount: 44.50, currency: 'USD' } },  // split
+      { name: 'Lorelei Rodecap', fare: { amount: 44.50, currency: 'USD' } },
+    ],
+  },
+  images: [],
+}</code></pre>
+        <p class="schema-label">Booked — flight, through a travel agent with two live confirmation codes at once (tested against a real Delta/Capital One Travel booking for a different trip — not migrated into this repo's data)</p>
+        <pre class="schema"><code>{
+  _id: 'transit_example_bos_lax',
+  legId: 'leg_example',
+  journeyId: null,
+  scenarioId: null,
+  status: 'planning',
+  mode: 'flight',
+  carrier: 'Delta',              // added: mode-specific, present only when
+  flightNumber: 'DL479',          // mode is 'flight' — a route/date has many flights
+  from: { placeId: 'ChIJ...', label: 'Boston Logan Intl (BOS)' },
+  to:   { placeId: 'ChIJ...', label: 'Los Angeles Intl (LAX)' },
+  departsAt: '2026-06-06T07:00',
+  arrivesAt: '2026-06-06T10:20',
+  routeId: null, routeVariant: null,
+  booking: {
+    status: 'booked',
+    cost: { amount: 693.60, currency: 'USD' },  // total for all 4 passengers
+    confirmationNumber: 'F7AJLC',                // Delta's own PNR
+    bookedThrough: {
+      name: 'Capital One Travel',
+      confirmationNumber: 'H-IPMCIF',             // the agent's own, separate code
+    },
+    passengers: [                                  // added: ticketNumber/seat —
+      { name: 'Brian Rodecap',   fare: { amount: 173.40, currency: 'USD' },
+        ticketNumber: '0067434904187', seat: '32F' },  // per-passenger facts fare
+      { name: 'Stacy Rodecap',   fare: { amount: 173.40, currency: 'USD' },     // alone couldn't
+        ticketNumber: '0067434904188', seat: '32C' },  // carry
+      { name: 'Redding Rodecap', fare: { amount: 173.40, currency: 'USD' },
+        ticketNumber: '0067434904189', seat: '32B' },
+      { name: 'Lorelei Rodecap', fare: { amount: 173.40, currency: 'USD' },
+        ticketNumber: '0067434904190', seat: '32A' },
+    ],
+  },
+  images: [],
+}</code></pre>
+        <ul class="rationale">
+          <li><strong>Deliberately atomic.</strong> A multi-hop journey — walk to a bus stop, bus to the ferry — is several Transits sharing one <code>journeyId</code>, not one Transit with internal segments.</li>
+          <li><strong>Layovers are never stored.</strong> They're the gap between one Transit's <code>arrivesAt</code> and the next one's <code>departsAt</code> within the same <code>journeyId</code>.</li>
+          <li><strong>routeId/routeVariant</strong> record which reusable Route this specific movement followed, and which of that route's named alternatives was actually chosen.</li>
+          <li><strong>booking stays null for a drive in your own car</strong> — there's nothing to reserve, ever — while <code>status</code> still tracks whether this leg of movement is planned, underway, done, or scrapped.</li>
+          <li><strong>scenarioId closes a gap the first migration pass surfaced</strong>: a drive-back whose departure time itself depends on which weather branch happened (e.g. a backup-flight day) couldn't be recorded at all without it — <code>Activity</code> could reference a <code>Scenario</code>, but <code>Transit</code> had no way to. It's the same reference used on <code>Activity</code>, reused here rather than inventing a second mechanism.</li>
+          <li><strong>from/to gained placeId</strong>, matching Route's shape exactly — surfaced by testing against a real ferry reservation whose two terminals are genuinely resolvable points, unlike the regional labels ('Anchorage', 'Whittier') the original example used. Null for any endpoint that's really a whole city or a highway junction rather than one place; populated wherever a Transit's endpoint actually is one. The flight test confirms it unchanged — an airport is exactly the kind of single resolvable point the field was built for.</li>
+          <li><strong>passengers[] needed no new field at all</strong> to cover the ferry. Transit shares Leg's <code>booking</code> shape by convention, and the per-passenger fare split already added there for the cruise covers a multi-traveler sailing exactly as designed — the first confirmation that extension isn't cruise-specific.</li>
+          <li><strong>mode: 'ferry'/'flight' are just values</strong>, not a schema change — <code>mode</code> was always a free string, not a closed enum; drive, flight, and ferry all read the same way.</li>
+          <li><strong>The cancellation terms (ferry's tiered per-ticket fees; the flight's "cancel by 11:59pm ET the next business day or it's non-refundable" and per-passenger, airline-set change fees) map onto a <code>Note</code> concerning the Transit</strong> — the first populated test of <code>transit</code> in <code>Ref</code>'s entity union, which existed in the type already but had no real example until the ferry.</li>
+          <li><strong>Order FPLZAS vs. each sailing's own booking number</strong> is the same bundle-vs-item split already confirmed on the campsite reservation — only the per-sailing <code>confirmationNumber</code> is stored; the order-level code is discussed here in prose, never a field.</li>
+          <li><strong>carrier/flightNumber are new, mode-specific fields on Transit itself</strong> — not <code>booking</code>, since which specific flight actually moved you is a fact about the movement, independent of whether or how it was booked (you could know a flight number without ever reserving through this record). Same "detail the shared shape can't carry" reasoning that already justifies Stay's <code>bedConfiguration</code>/<code>campsite</code>, just on Transit and gated by <code>mode</code> instead of a lodging type.</li>
+          <li><strong>passengers[].ticketNumber/seat extend the per-passenger entry</strong> — a flight, unlike the ferry, hands each passenger their own e-ticket number and (when selected) a seat assignment. Both optional, populated only when actually known.</li>
+          <li><strong>bookedThrough's promotion to an object (see Stay) gets its first real payoff here</strong>: Delta's own PNR lands in <code>confirmationNumber</code>, Capital One's separate order code lands in <code>bookedThrough.confirmationNumber</code> — exactly the two-live-codes case that forced the shape change in the first place.</li>
+        </ul>
+      </article>
+
+      <!-- 05 ROUTE -->
+      <article class="entity" id="route" data-kind="reference">
+        <div class="entity-head">
+          <span class="entity-num">05</span>
+          <div>
+            <span class="badge badge-reference">Reference data</span>
+            <h2>Route</h2>
+            <p class="entity-purpose">Reusable geography — a way of getting from A to B, independent of any one trip's dates.</p>
+          </div>
+        </div>
+        <pre class="schema"><code>{
+  _id: 'route_anc_to_whittier',
+  from: { placeId: '...', label: 'Anchorage' },
+  to:   { placeId: '...', label: 'Whittier' },
+  variants: [
+    {
+      tone: 'scenic',
+      label: 'Scenic — via the Seward Highway',
+      via: [ { label: 'Seward Highway' },
+             { place: { id: '...', label: 'Girdwood' } } ],
+      waypoints: [
+        { place: { id: '...', label: 'Portage Glacier overlook' }, note: 'photo stop' },
+      ],
+    },
+    { tone: 'direct', label: 'Direct — via the Glenn Highway',
+      via: [ { label: 'Glenn Highway' } ] },
+  ],
+  images: [],
+}</code></pre>
+        <ul class="rationale">
+          <li><strong>No tripId, no dates, no booking.</strong> The same trip, or a different trip entirely, can reference this route again.</li>
+          <li><strong>variants[].tone has its own vocabulary</strong> — <code>scenic</code>/<code>direct</code>, deliberately not reusing Scenario's <code>ideal</code>/<code>alternate</code>. A route choice isn't a go/no-go safety branch.</li>
+          <li><strong>via is loosely typed</strong> — sometimes a named highway with no resolvable place, sometimes an actual town with a placeId — rather than forcing every via-point into one shape.</li>
+        </ul>
+      </article>
+
+      <!-- 06 PLACE -->
+      <article class="entity" id="place" data-kind="reference">
+        <div class="entity-head">
+          <span class="entity-num">06</span>
+          <div>
+            <span class="badge badge-reference">Reference data</span>
+            <h2>Place</h2>
+            <p class="entity-purpose">A real-world point, resolved live rather than duplicated. Pre-existing in the current site — the pattern everything else in this model was built to match.</p>
+          </div>
+        </div>
+        <pre class="schema"><code>{ id: 'ChIJS63CqrW_zlYRNQYObIK7Szk', label: 'Flying Squirrel Bakery Cafe', images: [] }</code></pre>
+        <ul class="rationale">
+          <li><strong>id is a pinned Google Place ID</strong> — hours, address, and website are fetched live, never stored redundantly.</li>
+          <li><strong>Reused everywhere a real point is needed</strong>: Activity's <code>place</code>, Stay's <code>lodging</code>, Route's <code>from</code>/<code>to</code>/<code>waypoints</code>, and (as of the ferry test) Transit's <code>from</code>/<code>to</code> all share this exact shape.</li>
+          <li><strong>images is the one field the live lookup can't fill in</strong> — the Places API call this site makes deliberately skips the Enterprise+Atmosphere fields (photos, rating, reviews) to avoid that pricing tier, so a stored, hand-picked photo is the only way a Place gets one at all. It's independent of whatever <code>images</code> an Activity or Stay that references this Place carries on itself — a restaurant's storefront photo and a specific dish photo for a meal there are different pictures.</li>
+        </ul>
+      </article>
+
+      <!-- DAY -->
+      <article class="entity" id="day" data-kind="computed">
+        <div class="entity-head">
+          <span class="entity-num">·</span>
+          <div>
+            <span class="badge badge-computed">Computed view — not stored</span>
+            <h2>Day</h2>
+            <p class="entity-purpose">No collection, no <code>_id</code>. What's happening on a given date is assembled at read time, not authored.</p>
+          </div>
+        </div>
+        <p class="schema-label">Assembled by, for a given date</p>
+        <pre class="schema"><code>find Stay  where checkInAt &lt;= date &lt; checkOutAt, on this Leg
+find Transit where [departsAt, arrivesAt) overlaps date's 24h window
+find Activity where startAt falls within that window, on this Leg
+find Note  where concerns overlaps the date, the Leg, or any of the above
+location := active Stay's lodging, or the relevant Transit's from/to</code></pre>
+        <ul class="rationale">
+          <li><strong>Nothing here has its own identity.</strong> Nobody books "July 5th" — every other entity on this page is a real thing in the world with a confirmation number, a ticket, or a geography. A day is a lens for grouping things that already have their own.</li>
+          <li><strong>Overlap beats a stored link.</strong> An overnight sail or drive spans two calendar dates at once — a stored <code>dayId</code> foreign key could only ever point at one of them; a timestamp range overlaps both, for free.</li>
+          <li><strong>Still essential to the presentation tier</strong> — and to how a human or an AI planning agent addresses the plan ("plan flightseeing on June 30") — just never as stored schema. The date is the handle; this query is what turns it into the structured entities that actually get touched.</li>
+        </ul>
+      </article>
+
+      <!-- 07 ACTIVITY -->
+      <article class="entity" id="activity" data-kind="owned">
+        <div class="entity-head">
+          <span class="entity-num">07</span>
+          <div>
+            <span class="badge badge-owned">Trip-owned</span>
+            <h2>Activity</h2>
+            <p class="entity-purpose">One thing that happens — a meal, a tour, a stroll, a reservation.</p>
+          </div>
+        </div>
+        <pre class="schema"><code>{
+  _id: 'act_flightseeing',
+  legId: 'leg_parks',
+  scenarioId: 'scenario_denali_ideal',
+  status: 'planning',   // planning | active | completed | cancelled
+  startAt: '2027-06-27T09:30',
+  endAt:   '2027-06-27T11:30',
+  timeLabel: null,   // fallback for fuzzy timing, e.g. "Evening"
+  order: null,        // tiebreaker only when startAt is absent
+  text: 'Denali flightseeing with glacier landing',
+  place: null,
+  booking: { status: 'booked', cost: null, confirmationNumber: null },
+  mealType: null,          // 'breakfast' | 'lunch' | 'dinner' | 'snack' | null — null
+                            // for the vast majority of activities that aren't food at all
+  diningFormat: null,      // 'included' | 'sit-down' | 'grab-and-go' | 'drivethru' |
+                            // 'self-catered' | null — only set when mealType is
+  includedIn: null,        // Ref | null — only set when diningFormat is 'included'
+  options: null,           // MealOption[] | null — only set while undecided among
+                            // several candidates; see below
+  images: [],
+}</code></pre>
+        <p class="schema-label">A meal, bundled into a Stay's rate</p>
+        <pre class="schema"><code>{
+  _id: 'act_jun27_ideal_1',
+  legId: 'leg_parks',
+  scenarioId: null,
+  status: 'planning',
+  startAt: '2027-06-27T08:00',
+  endAt: null,
+  timeLabel: null,
+  order: null,
+  text: 'Breakfast, included with the room',
+  place: null,
+  booking: null,
+  mealType: 'breakfast',
+  diningFormat: 'included',
+  includedIn: { entity: 'stay', id: 'stay_talkeetna' },
+  options: null,
+  images: [],
+}</code></pre>
+        <p class="schema-label">A meal, undecided among several named candidates</p>
+        <pre class="schema"><code>{
+  _id: 'act_jun27_ideal_1',
+  legId: 'leg_parks',
+  scenarioId: 'scenario_jun27_ideal',
+  status: 'planning',
+  startAt: '2027-06-27T08:00',
+  endAt: null,
+  timeLabel: null,
+  order: null,
+  text: 'Breakfast — choosing where',
+  place: null,          // stays null — nothing chosen yet, same as Stay.lodging: null
+  booking: null,
+  mealType: 'breakfast',
+  diningFormat: null,   // stays null while options is set — nothing committed
+  includedIn: null,
+  options: [             // MealOption[] — only set while genuinely undecided
+    { diningFormat: 'included', place: null,
+      includedIn: { entity: 'stay', id: 'stay_talkeetna' },
+      note: 'If breakfast turns out to be included in the room rate — worth confirming at booking.' },
+    { diningFormat: 'sit-down',
+      place: { id: 'ChIJS63CqrW_zlYRNQYObIK7Szk', label: 'Flying Squirrel Bakery Cafe', images: [] },
+      includedIn: null, note: null },
+    { diningFormat: 'grab-and-go', place: null, includedIn: null,
+      note: 'Coffee and a pastry from Nagley’s General Store, if we want to get moving faster.' },
+  ],
+  images: [],
+}</code></pre>
+        <p class="schema-label">The MealOption shape, used only by Activity.options</p>
+        <pre class="schema"><code>type MealOption = {
+  diningFormat: 'included' | 'sit-down' | 'grab-and-go' | 'drivethru' | 'self-catered',
+  place: Place | null,      // same Place shape as Activity.place; null when there's no
+                              // resolvable venue (included, self-catered, or not yet named)
+  includedIn: Ref | null,   // set only when diningFormat is 'included' — same rule as
+                              // Activity.includedIn, just scoped to this one candidate
+  note: string | null,      // why this option's on the table, e.g. a timing or cost trade-off
+}</code></pre>
+        <ul class="rationale">
+          <li><strong>startAt/endAt are set only when actually known.</strong> timeLabel and order exist specifically for the honestly-vague cases — "Remaining afternoon" — instead of inventing false precision.</li>
+          <li><strong>booking is absent for most activities</strong> — a casual stroll never needs one — while <code>status</code> is always present, tracking the activity's own plan independent of whether it's reserved.</li>
+          <li><strong>mealType/diningFormat/includedIn are two independent axes plus a pointer, not one field</strong> — which meal slot (or snack) this is, versus how the food actually happens, versus what's paying for it. Collapsing them (e.g. a single <code>mealType: 'included-breakfast'</code>) would combinatorially explode the same way the model already avoids elsewhere (see Transit's <code>mode</code> rationale). A meal running late and becoming a drivethru instead needs no special structure to support — it's just editing <code>diningFormat</code>/<code>place</code> on an ordinary <code>status: 'planning'</code> Activity, the same flexibility every other field on this page already has.</li>
+          <li><strong>An activity can be a meal without ever setting <code>place</code>.</strong> "Packed lunch" or "snacks from the cooler" is <code>mealType: 'snack'</code>/<code>'lunch'</code>, <code>diningFormat: 'self-catered'</code>, and no resolvable Place at all — same reasoning as Transit's <code>from</code>/<code>to</code> staying null for a whole city rather than forcing a point that doesn't exist.</li>
+          <li><strong>includedIn reuses Note's <code>Ref</code> type</strong> rather than inventing a second polymorphic pointer — a bundled meal points at whichever Stay, Leg, or Activity's booking actually covers it, so cost and confirmation number stay owned by that one booking instead of being duplicated onto the meal itself. Only set when <code>diningFormat</code> is <code>'included'</code>; every other format leaves it <code>null</code>.</li>
+          <li><strong>options is the one genuinely new mechanism here</strong>, added once "which of these three places for breakfast" turned out not to fit the single-value fields at all — the three candidates can each have a <em>different</em> <code>diningFormat</code> (included / sit-down / grab-and-go), so the choice has to live per-candidate, not on the Activity itself. It mirrors <code>Stay.lodging: null</code>'s "nothing chosen yet" — just extended to hold the actual named candidates instead of only recording that a decision is pending. <code>diningFormat</code>/<code>place</code>/<code>includedIn</code> stay <code>null</code> on the Activity the whole time <code>options</code> is set; deciding means picking one candidate, copying its three fields up onto the Activity itself, and clearing <code>options</code> back to <code>null</code> — the array never holds the decided state, only the open one.</li>
+        </ul>
+      </article>
+
+      <!-- 08 SCENARIO -->
+      <article class="entity" id="scenario" data-kind="owned">
+        <div class="entity-head">
+          <span class="entity-num">08</span>
+          <div>
+            <span class="badge badge-owned">Trip-owned</span>
+            <h2>Scenario</h2>
+            <p class="entity-purpose">Names one branch of a weather-dependent contingency plan — replaces the old per-day "variants" array.</p>
+          </div>
+        </div>
+        <pre class="schema"><code>{ _id: 'scenario_denali_ideal', legId: 'leg_parks',
+  tone: 'ideal', label: 'Ideal — flight goes', icon: 'flight_takeoff', images: [] }
+
+{ _id: 'scenario_denali_alt', legId: 'leg_parks',
+  tone: 'alternate', label: 'Alternate — flight weathered out', icon: 'cloud', images: [] }</code></pre>
+        <ul class="rationale">
+          <li><strong>Declared once, referenced by many.</strong> Every Activity or Transit that belongs to it points back via <code>scenarioId</code>, instead of repeating label/icon/tone on each item the way the old <code>Day.variants[].items</code> did.</li>
+          <li><strong>No scenarioId, no branch.</strong> An Activity with nothing set is just a fixed-plan item — the same behavior as a single-variant day skipping its chip today.</li>
+        </ul>
+      </article>
+
+      <!-- 09 NOTE -->
+      <article class="entity" id="note" data-kind="owned">
+        <div class="entity-head">
+          <span class="entity-num">09</span>
+          <div>
+            <span class="badge badge-owned">Trip-owned</span>
+            <h2>Note</h2>
+            <p class="entity-purpose">Unifies the current site's two separate systems — inline warning callouts and hand-numbered footnotes — into one entity.</p>
+          </div>
+        </div>
+        <pre class="schema"><code>{ _id: 'note_gates_buffer', kind: 'warning',
+  text: 'Gates of the Arctic gets exactly two attempts before you\'re committed to driving south...',
+  concerns: [ { entity: 'leg', id: 'leg_parks' },
+              { dateRange: ['2027-06-30', '2027-07-01'] } ],
+  images: [] }
+
+{ _id: 'note_kennicott_access', kind: 'footnote',
+  text: 'Kennicott Glacier Lodge is accessible only via the McCarthy Road...',
+  concerns: [ { entity: 'stay', id: 'stay_kennicott' } ],
+  images: [] }</code></pre>
+        <p class="schema-label">The Ref shape, reusable beyond Note</p>
+        <pre class="schema"><code>type Ref =
+  | { entity: 'trip'|'leg'|'stay'|'transit'|'route'|'activity'|'scenario', id }
+  | { date }
+  | { dateRange: [start, end] }</code></pre>
+        <ul class="rationale">
+          <li><strong>kind replaces the old stored icon.</strong> The presentation tier maps <code>kind</code> ('warning' | 'footnote' | 'info') to icon and prominence itself.</li>
+          <li><strong>Footnote numbers are never stored.</strong> They're assigned at render time, in the order notes are encountered on a given page — removing the exact hand-sync burden the current site's footnote system requires today.</li>
+          <li><strong>concerns is reserved for annotation, not structure.</strong> Note today, a future Journal/actual-experience entry later, would reuse it — the strongly-typed foreign keys elsewhere (<code>Stay.legId</code>, <code>Transit.routeId</code>) stay exactly as they are, since those are structural, not annotative.</li>
+        </ul>
+      </article>
+
+      <section id="open-threads">
+        <h2 class="section-title">Open threads</h2>
+        <div class="threads">
+          <div class="thread">
+            <span class="mark">→</span>
+            <p><strong>Planned vs. actual</strong><span>Status ladders are settled, but the mechanism for recording what really happened — a skipped activity, a rebooked flight — hasn't been designed. Ref/concerns is the likely vehicle: a future Journal entry pointing at whatever it's about, the same way Note does now.</span></p>
+          </div>
+          <div class="thread">
+            <span class="mark">→</span>
+            <p><strong>Trip.travelers</strong><span>Still just a list of names. Undesigned: whether travelers need their own identity (for a multi-user "real app"), or stay a lightweight embedded list.</span></p>
+          </div>
+          <div class="thread">
+            <span class="mark">→</span>
+            <p><strong>Booking as a formal type</strong><span>Treated here as a shape repeated by convention across Leg, Stay, Transit, and Activity. In a real schema language this would likely become one named, shared type rather than four copies of the same core fields — increasingly true now that per-entity tests keep adding their own optional extensions to it (<code>depositPaidAt</code>/<code>passengers</code> on Leg, <code>bookedThrough</code> on Stay), the ferry test showed <code>passengers</code> itself is already reusable as-is on Transit, and the flight test forced <code>bookedThrough</code> from a flat string into its own <code>{ name, confirmationNumber }</code> shape once a real booking needed two live confirmation codes at once.</span></p>
+          </div>
+          <div class="thread">
+            <span class="mark">→</span>
+            <p><strong>Place beyond Google</strong><span>Tested against a real Recreation.gov campsite reservation for a different trip (Channel Islands National Park — parsed to pressure-test this schema, deliberately not migrated in as that trip's data). <code>Place.id</code> currently assumes a Google Place ID, but a federal campground has its own resolvable id (<code>recreation.gov/camping/campsites/4924</code>) with no Google equivalent worth resolving against instead. Undesigned: whether <code>Place</code> gains a <code>source</code> discriminator so every embed site (Activity's <code>place</code>, Stay's <code>lodging</code>, Route's <code>from</code>/<code>to</code>/<code>waypoints</code>) can say which system an id belongs to, or a non-Google point stays out of <code>Place</code> entirely and lives as inline text the way <code>Route</code>'s <code>via</code> already allows for a named-but-unresolved point.</span></p>
+          </div>
+        </div>
+      </section>
+
+      <footer class="doc-footer">
+        Consolidated reference — Alaska 2027 itinerary data model, document-database design pass.
+      </footer>
+    </main>
+  </div>
+</div>

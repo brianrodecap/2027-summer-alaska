@@ -12,8 +12,11 @@ class DetailSideSheet extends HTMLElement {
       <aside class="panel" role="dialog" aria-modal="true" aria-labelledby="side-sheet-title" tabindex="-1">
         <md-elevation></md-elevation>
         <div class="panel-header">
+          <md-icon-button class="back-button" aria-label="Back" hidden>
+            <md-icon>arrow_back</md-icon>
+          </md-icon-button>
           <span id="side-sheet-title" class="md-typescale-title-large"></span>
-          <md-icon-button aria-label="Close">
+          <md-icon-button class="close-button" aria-label="Close">
             <md-icon>close</md-icon>
           </md-icon-button>
         </div>
@@ -26,18 +29,27 @@ class DetailSideSheet extends HTMLElement {
     this.panelEl = this.querySelector('.panel');
     this.titleEl = this.querySelector('#side-sheet-title');
     this.bodyEl = this.querySelector('.panel-body');
+    this.backButtonEl = this.querySelector('.back-button');
     this.isOpen = false;
+    this.onBack = null;
 
-    this.querySelector('md-icon-button').addEventListener('click', () => this.close());
+    this.backButtonEl.addEventListener('click', () => this.onBack?.());
+    this.querySelector('.close-button').addEventListener('click', () => this.close());
     this.scrimEl.addEventListener('click', () => this.close());
     document.addEventListener('keydown', (event) => {
       if (event.key === 'Escape' && this.isOpen) this.close();
     });
   }
 
-  open(title, bodyFragment) {
+  // onBack, when passed, shows a back button that returns to whatever opened
+  // this sheet (e.g. the Day dialog an activity was drilled into from) —
+  // without it, closing the sheet is the only way back and that context is
+  // lost rather than navigated to.
+  open(title, bodyFragment, onBack = null) {
     this.titleEl.textContent = title;
     this.bodyEl.replaceChildren(bodyFragment);
+    this.onBack = onBack;
+    this.backButtonEl.hidden = !onBack;
     this.classList.add('open');
     this.isOpen = true;
     this.panelEl.focus();

@@ -1,0 +1,210 @@
+[
+  {
+    "_id": "transit_talkeetna_denali",
+    "legId": "leg_parks",
+    "journeyId": "journey_jun28_to_fairbanks",
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "drive",
+    "from": {
+      "label": "Talkeetna Alaskan Lodge"
+    },
+    "to": {
+      "label": "Denali National Park entrance"
+    },
+    "departsAt": "2027-06-28T06:30",
+    "arrivesAt": "2027-06-28T08:30",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": null,
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_Driving_along_George_Parks_Highway_-_NARA_-_7722405.jpg", "credit": "Alaska DOT&PF / Federal Highway Administration, public domain", "caption": "Driving the George Parks Highway toward Denali" } ]
+  },
+  {
+    "_id": "transit_denali_fairbanks",
+    "legId": "leg_parks",
+    "journeyId": "journey_jun28_to_fairbanks",
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "drive",
+    "from": {
+      "label": "Denali National Park"
+    },
+    "to": {
+      "label": "Fairbanks"
+    },
+    "departsAt": "2027-06-28T15:00",
+    "arrivesAt": "2027-06-28T17:45",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": null,
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_River_View_from_Nenana_River_Wayside_-_NARA_-_7722402.jpg", "credit": "Alaska DOT&PF / Federal Highway Administration, public domain", "caption": "Nenana River Wayside along the Parks Highway" } ]
+  },
+  {
+    "_id": "transit_fairbanks_coldfoot",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "drive",
+    "from": {
+      "label": "Fairbanks"
+    },
+    "to": {
+      "label": "Coldfoot"
+    },
+    "departsAt": "2027-06-29T07:00",
+    "arrivesAt": "2027-06-29T13:00",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": null,
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
+  },
+  {
+    "_id": "transit_fairbanks_coppercenter",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "drive",
+    "from": {
+      "label": "Fairbanks"
+    },
+    "to": {
+      "label": "Copper Center"
+    },
+    "departsAt": "2027-07-02T09:00",
+    "arrivesAt": "2027-07-02T14:30",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": null,
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Richardson_Highway_ENBLA01.jpg", "credit": "Photo by Enrico Blasutto / CC BY-SA 4.0", "caption": "Richardson Highway between Thompson Pass and Copper Center" } ]
+  },
+  {
+    "_id": "transit_coppercenter_mccarthy",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "drive",
+    "from": {
+      "label": "Copper Center"
+    },
+    "to": {
+      "label": "McCarthy Road footbridge"
+    },
+    "departsAt": "2027-07-03T09:00",
+    "arrivesAt": "2027-07-03T13:30",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": null,
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_Kuskulana_Bridge.jpg", "credit": "Photo by Henry Chen / CC BY-SA 2.0", "caption": "Kuskulana Bridge on the McCarthy Road" } ]
+  },
+  {
+    "_id": "transit_kennecott_anchorage",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "drive",
+    "from": {
+      "label": "Kennecott/McCarthy"
+    },
+    "to": {
+      "label": "Anchorage"
+    },
+    "departsAt": "2027-07-05T08:00",
+    "arrivesAt": "2027-07-05T16:45",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": null,
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Matanushka_glacier.jpg", "credit": "Photo by Tifoultoute / CC BY-SA", "caption": "Matanuska Glacier viewed from the Glenn Highway" } ]
+  },
+  {
+    "_id": "transit_flight_anc_otz",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "flight",
+    "from": {
+      "label": "Ted Stevens Anchorage International (ANC)"
+    },
+    "to": {
+      "label": "Kotzebue (OTZ)"
+    },
+    "departsAt": "2027-07-06T08:40",
+    "arrivesAt": "2027-07-06T10:30",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Floatplane_Kodiak_archipelago.JPG", "credit": "NancyHeise, public domain", "caption": "Floatplane on the water in the Kodiak Archipelago" } ]
+  },
+  {
+    "_id": "transit_flight_otz_anc",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "flight",
+    "from": {
+      "label": "Kotzebue (OTZ)"
+    },
+    "to": {
+      "label": "Ted Stevens Anchorage International (ANC)"
+    },
+    "departsAt": "2027-07-09T17:00",
+    "arrivesAt": "2027-07-09T18:40",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Floatplane_Kodiak_archipelago.JPG", "credit": "NancyHeise, public domain", "caption": "Floatplane on the water in the Kodiak Archipelago" } ]
+  },
+  {
+    "_id": "transit_coldfoot_fairbanks_ideal",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": "scenario_jul1_ideal",
+    "status": "planning",
+    "mode": "drive",
+    "from": {
+      "label": "Coldfoot"
+    },
+    "to": {
+      "label": "Fairbanks"
+    },
+    "departsAt": "2027-07-01T09:00",
+    "arrivesAt": "2027-07-01T14:30",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": null,
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
+  },
+  {
+    "_id": "transit_coldfoot_fairbanks_alt",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": "scenario_jul1_alt",
+    "status": "planning",
+    "mode": "drive",
+    "from": {
+      "label": "Coldfoot"
+    },
+    "to": {
+      "label": "Fairbanks"
+    },
+    "departsAt": "2027-07-01T10:00",
+    "arrivesAt": "2027-07-01T15:45",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": null,
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
+  }
+]

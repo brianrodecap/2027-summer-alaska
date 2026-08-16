@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alaska National Parks Vacation + Cruise — 2027</title>
-<meta name="description" content="Day-by-day itinerary for a 2027 Alaska national parks road trip and 7-night Discovery Princess cruise.">
+<title>Trip Planner</title>
+<meta name="description" content="Day-by-day itineraries for upcoming trips.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
@@ -17,108 +17,79 @@
 </head>
 <body class="md-typescale-body-medium">
 
+<section id="trips-home">
+  <header class="hero">
+    <div class="hero-frame">
+      <p class="eyebrow md-typescale-label-large">Trip Planner</p>
+      <h1 class="md-typescale-display-small">Your Trips</h1>
+    </div>
+  </header>
+  <main>
+    <div class="list-wrap">
+      <md-elevation></md-elevation>
+      <md-list id="trips-list"></md-list>
+    </div>
+  </main>
+</section>
+
+<div id="trip-page" hidden>
+
 <header class="hero">
   <div class="hero-frame">
-    <p class="eyebrow md-typescale-label-large">Field Itinerary — Interior &amp; Arctic Alaska</p>
-    <h1 class="md-typescale-display-small">Alaska National Parks Vacation + Cruise</h1>
-    <ol class="route" aria-label="Route">
-      <li>Talkeetna</li>
-      <li>Fairbanks</li>
-      <li>Coldfoot</li>
-      <li>Copper Center</li>
-      <li>Kennecott</li>
-      <li>Kotzebue</li>
-      <li>Anchorage/Seward</li>
-      <li>Lake Clark/Katmai (TBD)</li>
-      <li>7-night Discovery Princess, Whittier to Vancouver</li>
-    </ol>
+    <md-icon-button id="back-to-trips" aria-label="All trips">
+      <md-icon>arrow_back</md-icon>
+    </md-icon-button>
+    <p class="eyebrow md-typescale-label-large">Field Itinerary</p>
+    <h1 class="md-typescale-display-small" id="trip-title"></h1>
+    <ol class="route" aria-label="Route"></ol>
+    <md-chip-set id="travelers-row"></md-chip-set>
     <md-chip-set>
-      <md-suggestion-chip label="June 26 – July 24, 2027 · 29 days">
+      <md-suggestion-chip id="trip-date-chip">
         <md-icon slot="icon">calendar_month</md-icon>
       </md-suggestion-chip>
     </md-chip-set>
   </div>
 </header>
 
-<nav class="tabs">
-  <md-elevation></md-elevation>
-  <md-tabs>
-    <md-primary-tab>Overview</md-primary-tab>
-    <md-primary-tab>List</md-primary-tab>
-    <md-primary-tab>Carousel</md-primary-tab>
-    <md-primary-tab>Cards</md-primary-tab>
-    <md-primary-tab>Footnotes</md-primary-tab>
-  </md-tabs>
-</nav>
-
 <main>
 
 <section id="overview">
-  <h2 class="md-typescale-headline-small">Overview</h2>
-  <p class="lead md-typescale-body-large">A road-and-fly trip through interior and Arctic Alaska — Denali, Gates of the Arctic, Wrangell–St. Elias, and Kobuk Valley — followed by a week cruising Hubbard Glacier, Glacier Bay, and the Inside Passage. Five days in the middle are still open for Lake Clark and Katmai.</p>
+  <p class="lead md-typescale-body-large" id="trip-summary"></p>
+
+  <div class="legs-grid" id="legs-grid"></div>
 
   <div class="date-jump">
-    <md-filled-tonal-button id="date-menu-anchor">
+    <md-filled-tonal-button id="date-picker-open">
       Jump to a day
       <md-icon slot="icon">calendar_month</md-icon>
     </md-filled-tonal-button>
-    <md-menu id="date-menu" anchor="date-menu-anchor"></md-menu>
   </div>
 </section>
 
-<section id="view-list">
-  <h2 class="md-typescale-headline-small">List</h2>
-  <div class="list-wrap">
-    <md-elevation></md-elevation>
-    <md-list></md-list>
-  </div>
-</section>
-
-<section id="view-carousel">
-  <h2 class="md-typescale-headline-small">Carousel</h2>
-  <div class="carousel-wrap">
-    <md-icon-button id="carousel-prev" aria-label="Previous day">
-      <md-icon>chevron_left</md-icon>
-    </md-icon-button>
-    <div class="carousel-track"></div>
-    <md-icon-button id="carousel-next" aria-label="Next day">
-      <md-icon>chevron_right</md-icon>
-    </md-icon-button>
-  </div>
-</section>
-
-<section id="view-cards">
-  <h2 class="md-typescale-headline-small">Cards</h2>
-  <div class="cards-grid"></div>
-</section>
-
-<section id="footnotes">
-  <h2 class="md-typescale-headline-small">Footnotes</h2>
-  <md-divider></md-divider>
-  <ol class="footnotes md-typescale-body-small">
-    <li id="fn1">Flights to Anchorage from Florida: <a href="https://www.google.com/search?q=mia+to+anc" target="_blank" rel="noopener">MIA</a> · <a href="https://www.google.com/search?q=fll+to+anc" target="_blank" rel="noopener">FLL</a> · <a href="https://www.google.com/search?q=tpa+to+anc" target="_blank" rel="noopener">TPA</a> · <a href="https://www.google.com/search?q=mco+to+anc" target="_blank" rel="noopener">MCO</a> · <a href="https://www.google.com/search?q=rsw+to+anc" target="_blank" rel="noopener">RSW</a></li>
-    <li id="fn2">No dedicated weather buffer day for this flight — per the note that missing one flightseeing tour among many isn't a big loss.</li>
-    <li id="fn3">Jul 1 is a dual-purpose day: if Jun 30's flight was weathered out, this is the backup attempt (still flying during the day and driving back to Fairbanks that same night); otherwise it's just the drive-back day.</li>
-    <li id="fn4">Copper Valley Air Service (Gulkana Airport, Glennallen, ~15 min from Copper Center): "Three Peak Tour" (~60 min, ~$400/person, fly-over of Mt. Sanford, Mt. Drum, Mt. Wrangell, no landing) or "Flight of Majesty" (~120 min, adds mud volcanoes and wildlife spotting). Weather-dependent, but optional and slotted into a non-dedicated day, so no schedule impact if skipped.</li>
-    <li id="fn5">Kennicott Glacier Lodge has a 2-night minimum and very limited dining alternatives on-site (their dining room, the Meatza Wagon food truck, or a trip into McCarthy) — a meal package is worth booking.</li>
-    <li id="fn6">Kotzebue has no direct flights from Fairbanks — all routes connect through Anchorage. The Kennecott → Anchorage drive happens July 5 (with the Matanuska Glacier stop), and the Jul 6 outbound flight is the early one (~8:40–9am, landing ~10:30am) rather than an afternoon flight — this opens a same-day bonus attempt at Kobuk Valley on top of Jul 7 and Jul 8, giving three possible flying days instead of two. Jul 9 remains a flex morning + late flight back. Flight links: <a href="https://www.google.com/search?q=anc+to+otz" target="_blank" rel="noopener">ANC→OTZ</a> · <a href="https://www.google.com/search?q=otz+to+anc" target="_blank" rel="noopener">OTZ→ANC</a></li>
-    <li id="fn7">Lake Clark/Katmai structure (Port Alsworth stay vs. Anchorage day trips) is still open — once decided, activities/hotel/restaurant will be filled in the same way as the rest of the trip.</li>
-    <li id="fn8">The Whittier tunnel (Anton Anderson Memorial Tunnel) runs one-lane alternating traffic on a schedule, not free-flow — worth checking timing before the drive down so you're not stuck waiting right before boarding.</li>
-    <li id="fn9">Cruise Itinerary — port order, arrival/departure times may vary by sailing date; confirm final schedule closer to departure. The two dedicated glacier-viewing days (Hubbard + Glacier Bay) give natural redundancy if weather affects one of them.</li>
-    <li id="fn10">Kennecott was compressed from 3 nights to 2 (Root Glacier hike + Mill Tour fit into one full day), which originally freed up July 5 — now used for the Matanuska Glacier helicopter tour en route to Anchorage. The dedicated Wrangell–St. Elias flightseeing day is still the one dropped in this compression; still worth reconsidering during the buffer re-evaluation pass if you'd rather not have skipped it.</li>
-  </ol>
-</section>
+<section id="day-list"></section>
 
 </main>
 
-<md-dialog id="day-dialog">
+</div>
+
+<md-dialog id="leg-dialog">
   <div slot="headline" class="dialog-headline">
-    <span id="day-dialog-title"></span>
-    <md-icon-button id="day-dialog-close" aria-label="Close">
+    <span id="leg-dialog-title"></span>
+    <md-icon-button id="leg-dialog-close" aria-label="Close">
       <md-icon>close</md-icon>
     </md-icon-button>
   </div>
-  <div slot="content" id="day-dialog-body"></div>
+  <div slot="content" id="leg-dialog-body"></div>
+</md-dialog>
+
+<md-dialog id="date-picker-dialog">
+  <div slot="headline" class="dialog-headline">
+    <span>Jump to a day</span>
+    <md-icon-button id="date-picker-close" aria-label="Close">
+      <md-icon>close</md-icon>
+    </md-icon-button>
+  </div>
+  <div slot="content" id="date-picker-body" class="date-picker"></div>
 </md-dialog>
 
 <detail-side-sheet></detail-side-sheet>

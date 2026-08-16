@@ -1,0 +1,154 @@
+[
+  {
+    "_id": "note_denali_road_status",
+    "kind": "warning",
+    "text": "The Denali Park Road has been closed at Mile 43 (East Fork Bridge) since 2021 due to the Pretty Rocks Landslide. NPS has targeted full bus service to Eielson/Wonder Lake/Kantishna to resume in 2027, but hasn't confirmed a date — the plan is built around the Mile 43 turnaround as the safe assumption. Worth reconfirming on the NPS Denali \"current conditions\" page closer to your travel date; if the full road has reopened by then, a longer bus ride becomes possible but likely wouldn't fit in the same day as the drive to Fairbanks.",
+    "concerns": [ { "date": "2027-06-28" } ],
+    "images": []
+  },
+  {
+    "_id": "note_coldfoot_meal_timing",
+    "kind": "info",
+    "text": "Coldfoot Camp Cafe runs buffet-only service in summer — breakfast buffet 5–9am, dinner buffet 5–9pm. Between those windows, only truckers can order off the menu, so the plan eats lunch on the road rather than at Coldfoot.",
+    "concerns": [ { "entity": "stay", "id": "stay_coldfoot" } ],
+    "images": []
+  },
+  {
+    "_id": "note_gates_buffer_risk",
+    "kind": "warning",
+    "text": "As currently built, Gates of the Arctic gets exactly two attempts before you're committed to driving south. Two consecutive bad-weather days at Coldfoot would mean missing the park outright, with no later point in the trip to circle back. Worth deciding whether to add a third buffer day at Coldfoot (pulled from the Lake Clark/Katmai reserve, currently at 5 days).",
+    "concerns": [ { "entity": "leg", "id": "leg_parks" }, { "dateRange": ["2027-06-30", "2027-07-01"] } ],
+    "images": []
+  },
+  {
+    "_id": "note_kennecott_compression",
+    "kind": "info",
+    "text": "This fits both Kennecott essentials into 2 days and satisfies the lodge's 2-night minimum. It does mean skipping the dedicated Wrangell–St. Elias flightseeing day — worth reconsidering during the buffer pass, either as an early-morning add-on before the Root Glacier hike on July 4, or reinstated as a third day if you'd rather not compress further.",
+    "concerns": [ { "entity": "stay", "id": "stay_kennicott" } ],
+    "images": []
+  },
+  {
+    "_id": "note_kotzebue_bonus_buffer",
+    "kind": "info",
+    "text": "Taking the early flight turns this from a pure travel day into a bonus buffer day for Kobuk Valley — you land with the afternoon still open instead of arriving in the evening.",
+    "concerns": [ { "entity": "transit", "id": "transit_flight_anc_otz" } ],
+    "images": []
+  },
+  {
+    "_id": "note_denali_flight_operators",
+    "kind": "footnote",
+    "text": "Operators: K2 Aviation, Talkeetna Air Taxi, or Sheldon Air Service, all out of Talkeetna Airport (TKA).",
+    "concerns": [ { "entity": "scenario", "id": "scenario_jun27_ideal" } ],
+    "images": []
+  },
+  {
+    "_id": "note_wrangell_flightseeing_optional",
+    "kind": "footnote",
+    "text": "Optional, book ahead: Mount Wrangell flightseeing with Copper Valley Air Service — no walk-in hours; \"Three Peak Tour\" (~60 min, ~$400/person, Mt. Sanford/Mt. Drum/Mt. Wrangell) or \"Flight of Majesty\" (~120 min, adds mud volcanoes and wildlife) — would replace one of the day's other stops given the long drive.",
+    "concerns": [ { "entity": "leg", "id": "leg_parks" }, { "date": "2027-07-02" } ],
+    "images": []
+  },
+  {
+    "_id": "note_gates_no_ground_alternative",
+    "kind": "footnote",
+    "text": "If Gates of the Arctic still doesn't happen after both attempts, there's no ground alternative to fall back on — unlike Denali or Wrangell–St. Elias, this park is fly-in only, so missing it means missing the park entirely.",
+    "concerns": [ { "entity": "scenario", "id": "scenario_jul1_alt" } ],
+    "images": []
+  },
+  {
+    "_id": "note_florida_flight_options",
+    "kind": "footnote",
+    "text": "Flights to Anchorage from Florida: MIA, FLL, TPA, MCO, RSW.",
+    "concerns": [ { "entity": "activity", "id": "act_jun26_1" } ],
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Ted_Stevens_Anchorage_International_Airport,_main_lobby_of_South_Terminal.jpg", "credit": "Photo by Wonderlane / CC BY 2.0", "caption": "Main lobby of the South Terminal, Ted Stevens Airport" } ]
+  },
+  {
+    "_id": "note_no_dedicated_buffer",
+    "kind": "footnote",
+    "text": "No dedicated weather buffer day for this flight — per the note that missing one flightseeing tour among many isn't a big loss.",
+    "concerns": [
+      { "entity": "scenario", "id": "scenario_jun27_ideal" },
+      { "entity": "activity", "id": "act_jul7_1" },
+      { "entity": "activity", "id": "act_jul8_1" },
+      { "entity": "activity", "id": "act_jul11_1" }
+    ],
+    "images": []
+  },
+  {
+    "_id": "note_jul1_dual_purpose",
+    "kind": "footnote",
+    "text": "Jul 1 is a dual-purpose day: if Jun 30's flight was weathered out, this is the backup attempt (still flying during the day and driving back to Fairbanks that same night); otherwise it's just the drive-back day.",
+    "concerns": [ { "entity": "leg", "id": "leg_parks" }, { "dateRange": ["2027-06-30", "2027-07-01"] } ],
+    "images": []
+  },
+  {
+    "_id": "note_copper_valley_air_detail",
+    "kind": "footnote",
+    "text": "Copper Valley Air Service (Gulkana Airport, Glennallen, ~15 min from Copper Center): \"Three Peak Tour\" (~60 min, ~$400/person, fly-over of Mt. Sanford, Mt. Drum, Mt. Wrangell, no landing) or \"Flight of Majesty\" (~120 min, adds mud volcanoes and wildlife spotting). Weather-dependent, but optional and slotted into a non-dedicated day, so no schedule impact if skipped.",
+    "concerns": [ { "entity": "leg", "id": "leg_parks" }, { "date": "2027-07-02" } ],
+    "images": []
+  },
+  {
+    "_id": "note_kennicott_lodge_detail",
+    "kind": "footnote",
+    "text": "Kennicott Glacier Lodge has a 2-night minimum and very limited dining alternatives on-site (their dining room, the Meatza Wagon food truck, or a trip into McCarthy) — a meal package is worth booking.",
+    "concerns": [ { "entity": "stay", "id": "stay_kennicott" } ],
+    "images": []
+  },
+  {
+    "_id": "note_kotzebue_connections",
+    "kind": "footnote",
+    "text": "Kotzebue has no direct flights from Fairbanks — all routes connect through Anchorage. The Kennecott → Anchorage drive happens July 5 (with the Matanuska Glacier stop), and the Jul 6 outbound flight is the early one (~8:40–9am, landing ~10:30am) rather than an afternoon flight — this opens a same-day bonus attempt at Kobuk Valley on top of Jul 7 and Jul 8, giving three possible flying days instead of two. Jul 9 remains a flex morning + late flight back.",
+    "concerns": [ { "entity": "transit", "id": "transit_flight_anc_otz" }, { "entity": "transit", "id": "transit_flight_otz_anc" } ],
+    "images": []
+  },
+  {
+    "_id": "note_lc_katmai_open",
+    "kind": "footnote",
+    "text": "Lake Clark/Katmai structure (Port Alsworth stay vs. Anchorage day trips) is still open — once decided, activities/hotel/restaurant will be filled in the same way as the rest of the trip.",
+    "concerns": [ { "entity": "stay", "id": "stay_lc_katmai" } ],
+    "images": []
+  },
+  {
+    "_id": "note_whittier_tunnel",
+    "kind": "warning",
+    "text": "The Whittier tunnel (Anton Anderson Memorial Tunnel) runs one-lane alternating traffic on a schedule, not free-flow — worth checking timing before the drive down so you're not stuck waiting right before boarding.",
+    "concerns": [ { "entity": "activity", "id": "act_jul17_1" } ],
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/AntonAndersonTunnel.jpg", "credit": "Photo by Gabor Eszes / CC BY-SA 3.0", "caption": "West portal of the Anton Anderson Memorial Tunnel" } ]
+  },
+  {
+    "_id": "note_cruise_schedule_caveat",
+    "kind": "footnote",
+    "text": "Cruise Itinerary — port order, arrival/departure times may vary by sailing date; confirm final schedule closer to departure. The two dedicated glacier-viewing days (Hubbard + Glacier Bay) give natural redundancy if weather affects one of them.",
+    "concerns": [ { "entity": "leg", "id": "leg_cruise" } ],
+    "images": []
+  },
+  {
+    "_id": "note_kennecott_compression_tradeoff",
+    "kind": "info",
+    "text": "Kennecott was compressed from 3 nights to 2 (Root Glacier hike + Mill Tour fit into one full day), which originally freed up July 5 — now used for the Matanuska Glacier helicopter tour en route to Anchorage. The dedicated Wrangell–St. Elias flightseeing day is still the one dropped in this compression; still worth reconsidering during the buffer re-evaluation pass if you'd rather not have skipped it.",
+    "concerns": [ { "entity": "stay", "id": "stay_kennicott" }, { "entity": "transit", "id": "transit_kennecott_anchorage" } ],
+    "images": []
+  },
+  {
+    "_id": "note_cruise_payment_schedule",
+    "kind": "info",
+    "text": "Deposit of $198.00 paid Aug 6, 2026 (100% non-refundable, per Princess's deposit terms). Remaining balance of $9,138.00 (total fare $9,336.00 for all four passengers, less the deposit) is due by Apr 18, 2027.",
+    "concerns": [ { "entity": "leg", "id": "leg_cruise" } ],
+    "images": []
+  },
+  {
+    "_id": "note_cruise_cancellation_schedule",
+    "kind": "warning",
+    "text": "Cancellation fees escalate fast after final payment: 25% of total charges from Apr 19, 2027, 50% from May 4, 75% from May 18, and 100% (no refund) from Jun 17, 2027 through sailing — worth locking in the parks-leg plan well before mid-April, since backing out of the cruise gets expensive quickly after that.",
+    "concerns": [ { "entity": "leg", "id": "leg_cruise" } ],
+    "images": []
+  },
+  {
+    "_id": "note_cruise_premier_package",
+    "kind": "footnote",
+    "text": "Fare includes the Princess Premier package: beverage package (Zero-Alcohol Package automatically substituted for guests under 21), MedallionNet Max WiFi (unlimited, up to 4 devices), pre-paid crew appreciation (gratuities), unlimited casual and specialty dining, a premier photo package, reserved theater seating for production shows, and a one-time $100 shore excursion credit (the 6–9 day voyage tier).",
+    "concerns": [ { "entity": "leg", "id": "leg_cruise" } ],
+    "images": []
+  }
+]

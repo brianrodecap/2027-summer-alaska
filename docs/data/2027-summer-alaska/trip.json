@@ -1,0 +1,15 @@
+{
+  "_id": "trip_alaska_2027",
+  "name": "Alaska National Parks Vacation + Cruise",
+  "summary": "A road-and-fly trip through interior and Arctic Alaska — Denali, Gates of the Arctic, Wrangell–St. Elias, and Kobuk Valley — followed by a week cruising Hubbard Glacier, Glacier Bay, and the Inside Passage. Five days in the middle are still open for Lake Clark and Katmai.",
+  "startDate": "2027-06-26",
+  "endDate": "2027-07-24",
+  "status": "planning",
+  "travelers": [
+    { "name": "Brian Rodecap", "age": 51 },
+    { "name": "Stacy Rodecap", "age": 46 },
+    { "name": "Lorelei Rodecap", "age": 13 },
+    { "name": "Redding Rodecap", "age": 17 }
+  ],
+  "images": []
+}

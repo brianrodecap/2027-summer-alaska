@@ -36,7 +36,6 @@
   --md-sys-shape-corner-large: 16px;
   --md-sys-shape-corner-full: 999px;
 
-  --nav-h: 3.5rem;
   max-width: 100%;
 }
 
@@ -57,9 +56,17 @@ body {
 /* ---------- hero: M3 flat colored surface ---------- */
 
 .hero {
+  position: relative;
   background: var(--md-sys-color-primary-container);
   color: var(--md-sys-color-on-primary-container);
   padding: 3rem 1.5rem;
+}
+
+#back-to-trips {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  --md-icon-button-icon-color: var(--md-sys-color-on-primary-container);
 }
 
 .hero-frame {
@@ -102,14 +109,8 @@ body {
   opacity: 0.6;
 }
 
-/* ---------- nav: real md-tabs, sticky wrapper + md-elevation for the shadow ---------- */
-
-nav.tabs {
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: var(--md-sys-color-surface-container-low);
-  --md-elevation-level: 1;
+.hero md-chip-set#travelers-row {
+  margin-bottom: 0.75rem;
 }
 
 a:focus-visible,
@@ -145,12 +146,26 @@ sup a {
 
 /* ---------- date jump menu (Overview) ---------- */
 
+/* ---------- Leg cards (Overview) — an elevated "day-surface" pattern,
+   since Leg is just another entity the trip drills down into ---------- */
+
+.legs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0;
+}
+
+.leg-surface {
+  min-height: 8rem;
+}
+
 .date-jump {
   position: relative;
   margin-top: 1.25rem;
 }
 
-/* ---------- list view: real md-list, wrapped only for the elevated surface ---------- */
+/* ---------- trips-home list: real md-list, wrapped only for the elevated surface ---------- */
 
 .list-wrap {
   position: relative;
@@ -160,35 +175,9 @@ sup a {
   overflow: hidden;
 }
 
-/* ---------- carousel + cards: no md-carousel/md-card in @material/web, so these
-   share one "day-surface" item (md-elevation + shape tokens, same pattern the
-   design system already uses for elevated cards) laid out via plain flex/grid ---------- */
-
-.carousel-wrap {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.carousel-track {
-  display: flex;
-  gap: 1rem;
-  padding: 0.25rem;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  flex: 1;
-}
-
-.carousel-track .day-surface {
-  flex: 0 0 17rem;
-  scroll-snap-align: start;
-}
-
-.cards-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
-  gap: 1rem;
-}
+/* ---------- Leg card surface: no md-card in @material/web, so this is
+   md-elevation + shape tokens, the same pattern the design system already
+   uses for elevated cards ---------- */
 
 .day-surface {
   position: relative;
@@ -215,10 +204,142 @@ sup a {
   color: var(--md-sys-color-on-surface);
 }
 
-/* ---------- day dialog: real md-dialog, the first drill-down step (trip → day) ---------- */
+/* ---------- leg dialog: real md-dialog, the one remaining drill-down step
+   (trip → leg); a day's own detail now renders inline in the day list
+   instead of behind a second dialog ---------- */
 
-#day-dialog {
+#leg-dialog {
   --md-dialog-container-max-width: 30rem;
+  --md-dialog-container-max-height: 80vh;
+}
+
+/* Belt-and-suspenders: force the content slot itself to scroll internally.
+   Without this, long content (e.g. the cruise leg's notes + day list) just
+   grows the dialog past the viewport with no scrollable region of its own —
+   a wheel scroll over it then falls through to the page behind, since
+   nothing in the dialog's box actually has overflow. */
+#leg-dialog-body {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+/* ---------- day list (main Trip page): one <section class="day-block"> per
+   Day, each with a sticky header. Because .day-block-header is position:
+   sticky *within its own .day-block*, it stays pinned to the top of the
+   viewport for exactly as long as that day's content is scrolling past —
+   the instant the block's bottom edge reaches the top of the viewport, the
+   header stops being able to stick (it's constrained to its parent's box)
+   and the next day's header — already positioned right where this block
+   ends, since day-block has no margin — takes over the same top:0 slot.
+   No scroll-tracking JS needed, just this CSS group-header pattern. ---------- */
+
+#day-list {
+  margin-top: 2.5rem;
+}
+
+.day-block {
+  margin-bottom: 0;
+}
+
+.day-block + .day-block {
+  border-top: 1px solid var(--md-sys-color-outline-variant);
+}
+
+.day-block-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  padding: 0.85rem 1.25rem;
+  background: var(--md-sys-color-surface-container-low);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.day-block-date {
+  color: var(--md-sys-color-primary);
+  white-space: nowrap;
+}
+
+.day-block-title {
+  margin: 0;
+  color: var(--md-sys-color-on-surface);
+}
+
+.day-block-body {
+  padding: 0.25rem 1.25rem 2rem;
+  background: var(--md-sys-color-surface-container-lowest);
+}
+
+/* ---------- date picker dialog (Overview's "Jump to a day") — no
+   md-date-picker in @material/web either (verified against the library's
+   file listing: only labs/{badge,card,item,navigationbar,navigationdrawer,
+   navigationtab,segmentedbutton*} exist), so this is a docked calendar grid
+   built from md-icon-button (month nav) plus plain <button> day cells —
+   see docs/js/date-picker.js for the range-highlight class logic ---------- */
+
+#date-picker-dialog {
+  --md-dialog-container-max-width: 22rem;
+}
+
+.date-picker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.25rem;
+}
+
+.date-picker-weekdays,
+.date-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+}
+
+.date-picker-weekdays span {
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--md-sys-color-on-surface-variant);
+  padding: 0.35rem 0;
+}
+
+.date-picker-cell {
+  position: relative;
+  z-index: 0;
+  aspect-ratio: 1;
+  border: none;
+  background: none;
+  font: inherit;
+  color: var(--md-sys-color-on-surface);
+  cursor: pointer;
+}
+
+.date-picker-cell.in-range::before {
+  content: "";
+  position: absolute;
+  inset: 0.15rem 0;
+  z-index: -1;
+  background: var(--md-sys-color-secondary-container);
+}
+
+.date-picker-cell.range-start::before { border-radius: var(--md-sys-shape-corner-full) 0 0 var(--md-sys-shape-corner-full); }
+.date-picker-cell.range-end::before { border-radius: 0 var(--md-sys-shape-corner-full) var(--md-sys-shape-corner-full) 0; }
+.date-picker-cell.range-start.range-end::before { border-radius: var(--md-sys-shape-corner-full); }
+
+.date-picker-cell.outside-month,
+.date-picker-cell:disabled {
+  color: var(--md-sys-color-outline);
+  cursor: default;
+}
+
+.date-picker-cell:not(:disabled):hover::after {
+  content: "";
+  position: absolute;
+  inset: 0.1rem;
+  z-index: -1;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-on-surface);
+  opacity: 0.08;
 }
 
 .dialog-headline {
@@ -226,6 +347,55 @@ sup a {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
+}
+
+.dialog-headline span {
+  flex: 1;
+}
+
+/* ---------- Leg dialog day groups — no md-accordion/expansion-panel in
+   @material/web either, so a contiguous same-location run of days (e.g. all
+   7 cruise days sharing one lodging name) collapses into a native <details>
+   disclosure rather than repeating that name as every row's headline ---------- */
+
+.day-group {
+  margin: 0.5rem 0;
+}
+
+.day-group-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.25rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.day-group-summary::-webkit-details-marker {
+  display: none;
+}
+
+.day-group-summary p {
+  margin: 0;
+}
+
+.day-group-meta {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.day-group-chevron {
+  color: var(--md-sys-color-on-surface-variant);
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.day-group[open] .day-group-chevron {
+  transform: rotate(180deg);
+}
+
+.day-group md-list {
+  padding-left: 0.5rem;
 }
 
 /* ---------- activity detail (second drill-down step, shown in the side sheet) ---------- */
@@ -291,6 +461,10 @@ detail-side-sheet.open .panel {
   padding: 1rem 0.75rem 1rem 1.25rem;
 }
 
+.panel-header span {
+  flex: 1;
+}
+
 .panel-body {
   padding: 0 1.25rem 1.5rem;
 }
@@ -322,6 +496,93 @@ detail-side-sheet.open .panel {
   gap: 0.5rem;
   align-items: flex-start;
   color: var(--md-sys-color-on-surface-variant);
+  margin: 0.75rem 0;
+}
+
+/* Note.kind maps to icon + prominence at render time — warnings get the
+   error-container treatment, info/footnote stay neutral (footnote quieter). */
+.detail-note.note-warning {
+  color: var(--md-sys-color-on-error-container);
+  background: var(--md-sys-color-error-container);
+  border-radius: var(--md-sys-shape-corner-small);
+  padding: 0.6rem 0.75rem;
+}
+
+.detail-note.note-warning md-icon {
+  color: var(--md-sys-color-error);
+}
+
+.detail-note.note-footnote {
+  opacity: 0.85;
+  font-size: 0.85em;
+}
+
+/* ---------- Stay / Transit blocks (Day dialog) ---------- */
+
+.stay-block {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 0.75rem 0;
+}
+
+.stay-block md-icon {
+  color: var(--md-sys-color-primary);
+  margin-top: 0.15rem;
+}
+
+.stay-block p {
+  margin: 0 0 0.2rem;
+}
+
+.stay-detail {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ---------- Booking chip — Booking is optional on Leg/Stay/Transit/Activity,
+   present only when an actual reservation applies ---------- */
+
+.booking-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--md-sys-shape-corner-full);
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+
+.booking-row md-icon {
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+}
+
+.booking-row.booking-planning {
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ---------- Leg dialog booking block ---------- */
+
+.leg-booking {
+  margin: 0.75rem 0;
+}
+
+.passenger-list {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.passenger-list li {
+  margin-bottom: 0.2rem;
+}
+
+.status-label {
+  text-transform: capitalize;
 }
 
 /* ---------- live place details (fetched via Places API, see docs/js/places.js) ---------- */
@@ -381,20 +642,6 @@ detail-side-sheet.open .panel {
   margin: 0;
 }
 
-/* ---------- footnotes ---------- */
-
-#footnotes md-divider {
-  margin: 0.5rem 0 1rem;
-}
-
-ol.footnotes {
-  padding-left: 1.25rem;
-  color: var(--md-sys-color-on-surface-variant);
-}
-
-ol.footnotes li { margin-bottom: 0.6rem; }
-ol.footnotes a { color: var(--md-sys-color-primary); }
-
 footer {
   text-align: center;
   padding: 2rem 1rem 3rem;
@@ -405,6 +652,8 @@ footer {
   .hero { padding: 2.25rem 1rem; }
   main { padding: 1.75rem 1rem 3rem; }
   .day-surface { padding: 1.1rem; }
+  .day-block-header { padding: 0.7rem 1rem; }
+  .day-block-body { padding: 0.25rem 1rem 1.5rem; }
   detail-side-sheet .panel { width: 100vw; border-radius: 0; }
   .route { font-size: 0.8rem; }
 }

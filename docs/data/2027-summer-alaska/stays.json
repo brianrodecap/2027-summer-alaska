@@ -1,0 +1,122 @@
+[
+  {
+    "_id": "stay_talkeetna",
+    "legId": "leg_parks",
+    "checkInAt": "2027-06-26T15:00",
+    "checkOutAt": "2027-06-28T11:00",
+    "status": "planning",
+    "lodging": { "placeId": null, "name": "Talkeetna Alaskan Lodge", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "images": []
+  },
+  {
+    "_id": "stay_westmark_fbx_1",
+    "legId": "leg_parks",
+    "checkInAt": "2027-06-28T15:00",
+    "checkOutAt": "2027-06-29T11:00",
+    "status": "planning",
+    "lodging": { "placeId": null, "name": "Westmark Fairbanks", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "images": []
+  },
+  {
+    "_id": "stay_coldfoot",
+    "legId": "leg_parks",
+    "checkInAt": "2027-06-29T15:00",
+    "checkOutAt": "2027-07-01T11:00",
+    "status": "planning",
+    "lodging": { "placeId": null, "name": "Slate Creek Inn (Coldfoot Camp)", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "images": []
+  },
+  {
+    "_id": "stay_westmark_fbx_2",
+    "legId": "leg_parks",
+    "checkInAt": "2027-07-01T15:00",
+    "checkOutAt": "2027-07-02T11:00",
+    "status": "planning",
+    "lodging": { "placeId": null, "name": "Westmark Fairbanks", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "images": []
+  },
+  {
+    "_id": "stay_copper_river",
+    "legId": "leg_parks",
+    "checkInAt": "2027-07-02T15:00",
+    "checkOutAt": "2027-07-03T11:00",
+    "status": "planning",
+    "lodging": { "placeId": null, "name": "Copper River Princess Wilderness Lodge", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "images": []
+  },
+  {
+    "_id": "stay_kennicott",
+    "legId": "leg_parks",
+    "checkInAt": "2027-07-03T15:00",
+    "checkOutAt": "2027-07-05T11:00",
+    "status": "planning",
+    "lodging": { "placeId": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4", "name": "Kennicott Glacier Lodge", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": "2-night minimum; on-site dining is limited (dining room, Meatza Wagon food truck, or a trip into McCarthy) — a meal package is worth booking." },
+    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "images": []
+  },
+  {
+    "_id": "stay_anchorage_1",
+    "legId": "leg_parks",
+    "checkInAt": "2027-07-05T15:00",
+    "checkOutAt": "2027-07-06T11:00",
+    "status": "planning",
+    "lodging": { "placeId": null, "name": "Hotel Captain Cook", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "images": []
+  },
+  {
+    "_id": "stay_kotzebue",
+    "legId": "leg_parks",
+    "checkInAt": "2027-07-06T11:00",
+    "checkOutAt": "2027-07-09T11:00",
+    "status": "planning",
+    "lodging": { "placeId": null, "name": "Nullaqvik Hotel", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "images": []
+  },
+  {
+    "_id": "stay_anchorage_2",
+    "legId": "leg_parks",
+    "checkInAt": "2027-07-09T15:00",
+    "checkOutAt": "2027-07-12T11:00",
+    "status": "planning",
+    "lodging": { "placeId": null, "name": "Hotel Captain Cook", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "images": []
+  },
+  {
+    "_id": "stay_lc_katmai",
+    "legId": "leg_parks",
+    "checkInAt": "2027-07-12T15:00",
+    "checkOutAt": "2027-07-17T11:00",
+    "status": "planning",
+    "lodging": null,
+    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "images": []
+  },
+  {
+    "_id": "stay_cruise",
+    "legId": "leg_cruise",
+    "checkInAt": "2027-07-17T15:00",
+    "checkOutAt": "2027-07-24T07:30",
+    "status": "planning",
+    "lodging": {
+      "placeId": null,
+      "name": "Discovery Princess (cabin)",
+      "roomType": "Balcony (Cat. BC)",
+      "roomNumber": "L232",
+      "campsite": null,
+      "checkInInstructions": null,
+      "bedConfiguration": "Convertible twins",
+      "deckGroup": "Upper",
+      "shipZone": "Mid-Forward"
+    },
+    "booking": { "status": "booked", "cost": { "amount": 9336.00, "currency": "USD" }, "confirmationNumber": "MWVV6Q" },
+    "images": []
+  }
+]

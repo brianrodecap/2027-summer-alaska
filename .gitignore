@@ -1,1 +1,5 @@
 .DS_Store
+# Real booking documents (names, confirmation numbers) — kept locally only,
+# never committed to this public repo. The trip data model these were
+# hydrated from lives in docs/data/<trip>/*.json instead.
+/attachments/
