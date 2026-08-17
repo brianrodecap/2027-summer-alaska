@@ -285,6 +285,69 @@
     "images": [ { "uri": "https://www.kennicottlodge.com/wp-content/uploads/2018/08/explore.jpg", "credit": "Courtesy of Kennicott Glacier Lodge", "caption": "Kennicott Glacier Lodge near the historic copper mill" } ]
   },
   {
+    "_id": "note_jul2_last_fuel",
+    "kind": "info",
+    "text": "Fairbanks is the last full-service fuel and supply stop before Copper Center.",
+    "concerns": [ { "entity": "transit", "id": "transit_fairbanks_coppercenter" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul2_visitor_center",
+    "kind": "footnote",
+    "text": "Exhibits, a relief model of the park, and a ranger talk if one's scheduled.",
+    "concerns": [ { "entity": "activity", "id": "act_jul2_4" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul2_ashby_museum",
+    "kind": "footnote",
+    "text": "Historic log cabins with early mining and Russian artifacts; hours found inconsistent across sources, worth a quick call ahead.",
+    "concerns": [ { "entity": "activity", "id": "act_jul2_5" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul3_mccarthy_road",
+    "kind": "info",
+    "text": "The final ~60 miles to the footbridge are unpaved gravel (McCarthy Road) — plan for a slower pace than highway driving.",
+    "concerns": [ { "entity": "transit", "id": "transit_coppercenter_mccarthy" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul3_shuttle_operators",
+    "kind": "footnote",
+    "text": "Copper Town Shuttle and Blackburn Heritage Shuttle both run roughly hourly between the footbridge/McCarthy and Kennecott (~20 min ride) — either works.",
+    "concerns": [ { "entity": "activity", "id": "act_jul3_4" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul3_townsite_free",
+    "kind": "footnote",
+    "text": "Most historic buildings are visible from outside without the paid St. Elias Alpine Guides tour.",
+    "concerns": [ { "entity": "activity", "id": "act_jul3_6" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul4_root_glacier_details",
+    "kind": "footnote",
+    "text": "St. Elias Alpine Guides; crampons provided; about 4.5 hours.",
+    "concerns": [ { "entity": "activity", "id": "act_jul4_2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul4_mill_tour_details",
+    "kind": "footnote",
+    "text": "St. Elias Alpine Guides; fixed 2-hour guided tour, the only way inside the 14-story concentration mill; check in 10 minutes early at their office, second building on the left entering town.",
+    "concerns": [ { "entity": "activity", "id": "act_jul4_4" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul5_heli_tour_options",
+    "kind": "footnote",
+    "text": "Blue Pool Glacier Landing Tour (45 min: 20 min in air, 25 min on the ice, ~$299/person) is the default; the 2-Landing Tour (90 min, ~$399/person) is available if you'd rather make this the day's centerpiece.",
+    "concerns": [ { "entity": "activity", "id": "act_jul5_5" } ],
+    "images": []
+  },
+  {
     "_id": "note_kotzebue_connections",
     "kind": "footnote",
     "text": "Kotzebue has no direct flights from Fairbanks — all routes connect through Anchorage. The Kennecott → Anchorage drive happens July 5 (with the Matanuska Glacier stop), and the Jul 6 outbound flight is the early one (~8:40–9am, landing ~10:30am) rather than an afternoon flight — this opens a same-day bonus attempt at Kobuk Valley on top of Jul 7 and Jul 8, giving three possible flying days instead of two. Jul 9 remains a flex morning + late flight back.",

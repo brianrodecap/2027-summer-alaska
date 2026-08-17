@@ -1448,44 +1448,6 @@
     "images": []
   },
   {
-    "_id": "act_jul2_1",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-02T09:00",
-    "endAt": null,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Depart Westmark Fairbanks, final fuel stop in Fairbanks",
-    "place": null,
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Richardson_Highway_ENBLA01.jpg", "credit": "Photo by Enrico Blasutto / CC BY-SA 4.0", "caption": "Richardson Highway between Thompson Pass and Copper Center" } ]
-  },
-  {
-    "_id": "act_jul2_2",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-02T09:00",
-    "endAt": "2027-07-02T14:30",
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Drive Fairbanks → Copper Center via Richardson Hwy (~5.5 hrs, ~250 miles)",
-    "place": null,
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Richardson_Highway_ENBLA01.jpg", "credit": "Photo by Enrico Blasutto / CC BY-SA 4.0", "caption": "Richardson Highway between Thompson Pass and Copper Center" } ]
-  },
-  {
     "_id": "act_jul2_3",
     "legId": "leg_parks",
     "scenarioId": null,
@@ -1496,7 +1458,11 @@
     "order": null,
     "priority": null,
     "text": "Arrive Copper Center, check into Copper River Princess Wilderness Lodge",
-    "place": null,
+    "place": {
+      "id": "ChIJmb_m9FyFtVYRza-EUEqwdfU",
+      "label": "Copper River Princess Wilderness Lodge",
+      "images": []
+    },
     "booking": null,
     "mealType": null,
     "diningFormat": null,
@@ -1514,7 +1480,7 @@
     "timeLabel": null,
     "order": null,
     "priority": null,
-    "text": "Wrangell–St. Elias National Park Visitor Center — exhibits, relief model of the park, ranger talk if one’s scheduled",
+    "text": "Wrangell–St. Elias National Park Visitor Center",
     "place": {
       "id": "ChIJRabRJduQtVYRO5fDE4treEU",
       "label": "Wrangell-St. Elias Visitor Center",
@@ -1537,7 +1503,7 @@
     "timeLabel": null,
     "order": null,
     "priority": null,
-    "text": "George I. Ashby Memorial Museum (hours found were inconsistent across sources — worth a quick call ahead; historic log cabins with early mining and Russian artifacts)",
+    "text": "George I. Ashby Memorial Museum",
     "place": {
       "id": "ChIJD_gXFWOWtVYRvSRwYiqDR2M",
       "label": "George I. Ashby Memorial Museum",
@@ -1560,17 +1526,30 @@
     "timeLabel": null,
     "order": null,
     "priority": null,
-    "text": "Dinner at Two Rivers Restaurant (or the more casual Whistle Stop Bar & Grill), both at the lodge",
-    "place": {
-      "id": "ChIJW2f02GyXtVYRU5Mj6e3eLic",
-      "label": "Two Rivers Restaurant",
-      "images": [ { "uri": "https://www.princesslodges.com/wp-content/uploads/2016/03/copper-river-patio-dining-360x230.jpg", "credit": "Courtesy of Copper River Princess Wilderness Lodge", "caption": "Patio dining at Copper River Princess Wilderness Lodge" } ]
-    },
+    "text": "Dinner — choosing where",
+    "place": null,
     "booking": null,
     "mealType": "dinner",
-    "diningFormat": "sit-down",
+    "diningFormat": null,
     "includedIn": null,
-    "options": null,
+    "options": [
+      {
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJW2f02GyXtVYRU5Mj6e3eLic",
+          "label": "Two Rivers Restaurant",
+          "images": [ { "uri": "https://www.princesslodges.com/wp-content/uploads/2016/03/copper-river-patio-dining-360x230.jpg", "credit": "Courtesy of Copper River Princess Wilderness Lodge", "caption": "Patio dining at Copper River Princess Wilderness Lodge" } ]
+        },
+        "includedIn": null,
+        "note": "The lodge's main dining room."
+      },
+      {
+        "diningFormat": "sit-down",
+        "place": null,
+        "includedIn": null,
+        "note": "More casual, also at the lodge."
+      }
+    ],
     "images": []
   },
   {
@@ -1597,25 +1576,6 @@
     "images": []
   },
   {
-    "_id": "act_jul3_2",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-03T09:00",
-    "endAt": null,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Depart Copper Center, drive to the McCarthy Road footbridge trailhead (~4–5 hrs, incl. ~60 miles of gravel)",
-    "place": null,
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_Kuskulana_Bridge.jpg", "credit": "Photo by Henry Chen / CC BY-SA 2.0", "caption": "Kuskulana Bridge on the McCarthy Road" } ]
-  },
-  {
     "_id": "act_jul3_3",
     "legId": "leg_parks",
     "scenarioId": null,
@@ -1626,7 +1586,11 @@
     "order": null,
     "priority": null,
     "text": "Arrive footbridge, park, cross on foot into McCarthy",
-    "place": null,
+    "place": {
+      "id": "ChIJFdOBjRuFs1YRYVu1TmFM1VY",
+      "label": "McCarthy Bridge",
+      "images": []
+    },
     "booking": null,
     "mealType": null,
     "diningFormat": null,
@@ -1644,8 +1608,12 @@
     "timeLabel": null,
     "order": null,
     "priority": null,
-    "text": "Catch the Copper Town Shuttle or Blackburn Heritage Shuttle (both run hourly from the footbridge/McCarthy) up to Kennecott (~20 min ride)",
-    "place": null,
+    "text": "Shuttle up to Kennecott",
+    "place": {
+      "id": "ChIJFdOBjRuFs1YRYVu1TmFM1VY",
+      "label": "McCarthy Bridge",
+      "images": []
+    },
     "booking": null,
     "mealType": null,
     "diningFormat": null,
@@ -1664,7 +1632,11 @@
     "order": null,
     "priority": null,
     "text": "Arrive Kennecott, check into Kennicott Glacier Lodge",
-    "place": null,
+    "place": {
+      "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
+      "label": "Kennicott Glacier Lodge",
+      "images": []
+    },
     "booking": null,
     "mealType": null,
     "diningFormat": null,
@@ -1682,8 +1654,12 @@
     "timeLabel": null,
     "order": null,
     "priority": null,
-    "text": "Self-guided walk through the Kennecott townsite — most historic buildings are visible from outside without the paid tour",
-    "place": null,
+    "text": "Self-guided walk through the Kennecott townsite",
+    "place": {
+      "id": "ChIJR97PyS2Cs1YRyQEw4Y-6jOY",
+      "label": "Kennecott Mines National Historic Landmark",
+      "images": []
+    },
     "booking": null,
     "mealType": null,
     "diningFormat": null,
@@ -1747,7 +1723,7 @@
     "timeLabel": null,
     "order": null,
     "priority": null,
-    "text": "Root Glacier guided half-day hike (St. Elias Alpine Guides — crampons provided, ~4.5 hrs)",
+    "text": "Root Glacier guided half-day hike",
     "place": {
       "id": "ChIJU-XcLiODs1YRBCWN4GuXAs4",
       "label": "St. Elias Alpine Guides",
@@ -1793,7 +1769,7 @@
     "timeLabel": null,
     "order": null,
     "priority": null,
-    "text": "Kennecott Mill Town Tour (St. Elias Alpine Guides, fixed 2-hr guided tour — the only way inside the 14-story concentration mill; check in 10 min early at their office, second building on the left entering town)",
+    "text": "Kennecott Mill Town Tour",
     "place": {
       "id": "ChIJU-XcLiODs1YRBCWN4GuXAs4",
       "label": "St. Elias Alpine Guides",
@@ -1820,17 +1796,34 @@
     "timeLabel": null,
     "order": null,
     "priority": null,
-    "text": "Dinner at Kennicott Glacier Lodge, or walk into McCarthy for a change of scenery at McCarthy Lodge",
-    "place": {
-      "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
-      "label": "Kennicott Glacier Lodge",
-      "images": [ { "uri": "https://www.kennicottlodge.com/wp-content/uploads/2018/08/explore.jpg", "credit": "Courtesy of Kennicott Glacier Lodge", "caption": "Kennicott Glacier Lodge near the historic copper mill" } ]
-    },
+    "text": "Dinner — choosing where",
+    "place": null,
     "booking": null,
     "mealType": "dinner",
-    "diningFormat": "sit-down",
+    "diningFormat": null,
     "includedIn": null,
-    "options": null,
+    "options": [
+      {
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
+          "label": "Kennicott Glacier Lodge",
+          "images": [ { "uri": "https://www.kennicottlodge.com/wp-content/uploads/2018/08/explore.jpg", "credit": "Courtesy of Kennicott Glacier Lodge", "caption": "Kennicott Glacier Lodge near the historic copper mill" } ]
+        },
+        "includedIn": null,
+        "note": "At the lodge."
+      },
+      {
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJFY-zlXGFs1YRhZ9_0rBMPTI",
+          "label": "McCarthy Lodge Resort",
+          "images": []
+        },
+        "includedIn": null,
+        "note": "A walk into McCarthy for a change of scenery."
+      }
+    ],
     "images": []
   },
   {
@@ -1867,32 +1860,17 @@
     "order": null,
     "priority": null,
     "text": "Shuttle to the footbridge, cross, retrieve the car",
-    "place": null,
+    "place": {
+      "id": "ChIJFdOBjRuFs1YRYVu1TmFM1VY",
+      "label": "McCarthy Bridge",
+      "images": []
+    },
     "booking": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
     "options": null,
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_Kuskulana_Bridge.jpg", "credit": "Photo by Henry Chen / CC BY-SA 2.0", "caption": "Kuskulana Bridge on the McCarthy Road" } ]
-  },
-  {
-    "_id": "act_jul5_3",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-05T08:00",
-    "endAt": "2027-07-05T12:30",
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Drive McCarthy Road → Richardson Hwy → Glenn Hwy to Sheep Mountain Lodge (~4.5 hrs)",
-    "place": null,
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Matanushka_glacier.jpg", "credit": "Photo by Tifoultoute / CC BY-SA", "caption": "Matanuska Glacier viewed from the Glenn Highway" } ]
   },
   {
     "_id": "act_jul5_4",
@@ -1927,7 +1905,7 @@
     "timeLabel": null,
     "order": null,
     "priority": null,
-    "text": "Matanuska Glacier helicopter tour with Sheep Mountain Air — Blue Pool Glacier Landing Tour (45 min: 20 min in air, 25 min on the ice, ~$299/person) is a solid default; the 2-Landing Tour (90 min, ~$399/person) is there if you’d rather make this the day’s centerpiece",
+    "text": "Matanuska Glacier helicopter tour with Sheep Mountain Air",
     "place": {
       "id": "ChIJS37BSCqNyVYRmTFsCdbhoYA",
       "label": "Sheep Mountain Air",
@@ -1948,25 +1926,6 @@
     "images": []
   },
   {
-    "_id": "act_jul5_6",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-05T14:00",
-    "endAt": "2027-07-05T16:30",
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Continue drive to Anchorage (~2–2.5 hrs)",
-    "place": null,
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Matanushka_glacier.jpg", "credit": "Photo by Tifoultoute / CC BY-SA", "caption": "Matanuska Glacier viewed from the Glenn Highway" } ]
-  },
-  {
     "_id": "act_jul5_7",
     "legId": "leg_parks",
     "scenarioId": null,
@@ -1977,7 +1936,11 @@
     "order": null,
     "priority": null,
     "text": "Arrive Anchorage, check into Hotel Captain Cook",
-    "place": null,
+    "place": {
+      "id": "ChIJoUUNNIG9yFYRT1rea_yflgI",
+      "label": "Hotel Captain Cook",
+      "images": []
+    },
     "booking": null,
     "mealType": null,
     "diningFormat": null,

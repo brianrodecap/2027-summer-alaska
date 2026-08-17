@@ -45,7 +45,7 @@
     "checkInAt": "2027-07-02T15:00",
     "checkOutAt": "2027-07-03T11:00",
     "status": "planning",
-    "lodging": { "placeId": null, "name": "Copper River Princess Wilderness Lodge", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "lodging": { "placeId": "ChIJmb_m9FyFtVYRza-EUEqwdfU", "name": "Copper River Princess Wilderness Lodge", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
     "images": [ { "uri": "https://www.princesslodges.com/wp-content/uploads/2023/08/cpl-1.jpg", "credit": "Courtesy of Copper River Princess Wilderness Lodge", "caption": "Copper River Princess Wilderness Lodge" } ]
   },
@@ -65,7 +65,7 @@
     "checkInAt": "2027-07-05T15:00",
     "checkOutAt": "2027-07-06T11:00",
     "status": "planning",
-    "lodging": { "placeId": null, "name": "Hotel Captain Cook", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "lodging": { "placeId": "ChIJoUUNNIG9yFYRT1rea_yflgI", "name": "Hotel Captain Cook", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
     "images": []
   },
