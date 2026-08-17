@@ -152,8 +152,13 @@ function stayOverlapsDay(stay, dayStart, dayEnd) {
   return stay.checkInAt < dayEnd && stay.checkOutAt > dayStart;
 }
 
-function transitOverlapsDay(transit, dayStart, dayEnd) {
-  return transit.departsAt < dayEnd && transit.arrivesAt > dayStart;
+// A Transit renders only on the day it departs — even one that spans
+// midnight (e.g. an 11:15pm departure arriving 1:45am the next day) — rather
+// than on every calendar date its [departsAt, arrivesAt) span touches. It's
+// one trip event with one clock-time to sort by; showing it a second time on
+// the arrival day would duplicate it in the timeline for no new information.
+function transitDepartsOnDay(transit, date) {
+  return dateOnly(transit.departsAt) === date;
 }
 
 // Which of today's two boundary events (if either) this Stay is part of.
@@ -289,16 +294,56 @@ function truncateSummary(text) {
   return text.length > 140 ? `${text.slice(0, 137)}…` : text;
 }
 
+// A branching day's headline event (e.g. flightseeing) only exists on one
+// scenario track — the "planned" one, same convention used throughout: ideal
+// if present, otherwise whichever track is there.
+function idealOrFirstTrack(day) {
+  return day.scenarioTracks.find((t) => t.scenario.tone === 'ideal') ?? day.scenarioTracks[0] ?? null;
+}
+
 function firstActivityIn(sequence) {
   return sequence.find((i) => i.type === 'section')?.activities[0] ?? null;
 }
 
 function deriveSummary(day) {
-  const idealTrack = day.scenarioTracks.find((t) => t.scenario.tone === 'ideal') ?? day.scenarioTracks[0];
+  const idealTrack = idealOrFirstTrack(day);
   const first = firstActivityIn(day.sequence) ?? (idealTrack && firstActivityIn(idealTrack.sequence));
   if (first) return truncateSummary(first.text);
   if (day.stays[0]) return `Staying at ${day.stays[0].lodging?.name ?? day.location}`;
   return day.location;
+}
+
+// ---------- Day title — the header text shown above each day-block. Falls
+// back to `location` (usually the Stay's name) unless one or more Activities
+// that day carry a `priority`, in which case the title becomes those
+// activities' own text instead — a flightseeing day is titled "Denali
+// Flightseeing," not "Staying at Denali Lodge." Ties (same top priority,
+// several activities) join with " & " in sequence order rather than picking
+// one arbitrarily. ----------
+
+const PRIORITY_RANK = { high: 3, medium: 2, low: 1 };
+
+function sectionActivities(sequence) {
+  return sequence.filter((i) => i.type === 'section').flatMap((i) => i.activities);
+}
+
+// Pulled from day.sequence (the fixed backbone) plus the planned scenario
+// track only — never both branches of a weather split at once, so a
+// flightseeing day's title doesn't also drag in its own weathered-out backup.
+function titleCandidates(day) {
+  const idealTrack = idealOrFirstTrack(day);
+  const branching = idealTrack ? sectionActivities(idealTrack.sequence) : [];
+  return [...sectionActivities(day.sequence), ...branching].filter((a) => a.priority);
+}
+
+function deriveTitle(day) {
+  const candidates = titleCandidates(day);
+  if (!candidates.length) return day.location;
+  const topRank = Math.max(...candidates.map((a) => PRIORITY_RANK[a.priority]));
+  return candidates
+    .filter((a) => PRIORITY_RANK[a.priority] === topRank)
+    .map((a) => a.text)
+    .join(' & ');
 }
 
 function buildDay(date, legs, stays, transits, activitiesByDate, scenariosById, notes) {
@@ -309,14 +354,19 @@ function buildDay(date, legs, stays, transits, activitiesByDate, scenariosById, 
   const dayEnd = `${addDaysStr(date, 1)}T00:00`;
 
   const dayStays = stays.filter((s) => s.legId === leg._id && stayOverlapsDay(s, dayStart, dayEnd));
-  const dayTransits = transits.filter((t) => t.legId === leg._id && transitOverlapsDay(t, dayStart, dayEnd));
+  const legTransits = transits.filter((t) => t.legId === leg._id);
+  const dayTransits = legTransits.filter((t) => transitDepartsOnDay(t, date));
   const dayActivities = (activitiesByDate.get(date) ?? []).filter((a) => a.legId === leg._id);
 
   // The stay whose checkout is today but check-in wasn't (i.e. only touching
   // this day on the way out) is skipped in favor of wherever the day actually
   // ends up — the incoming stay, or the one already in progress.
   const primaryStay = dayStays.find((s) => !(dateOnly(s.checkOutAt) === date && dateOnly(s.checkInAt) !== date)) ?? dayStays[0] ?? null;
-  const arrivingTransit = dayTransits.find((t) => dateOnly(t.arrivesAt) === date);
+  // Looked up against every one of the leg's Transits, not just dayTransits —
+  // an overnight Transit no longer renders on the day it lands (see
+  // transitDepartsOnDay), but a day with nothing else to name itself after
+  // still needs to know one arrived here.
+  const arrivingTransit = legTransits.find((t) => dateOnly(t.arrivesAt) === date);
   const location = primaryStay?.lodging?.name ?? arrivingTransit?.to?.label ?? dayTransits[0]?.from?.label ?? leg.name;
 
   const stayIds = dayStays.map((s) => s._id);
@@ -334,6 +384,7 @@ function buildDay(date, legs, stays, transits, activitiesByDate, scenariosById, 
     notes: notesForDay(notes, date, stayIds, transitIds),
   };
   day.summary = deriveSummary(day);
+  day.title = deriveTitle(day);
   return day;
 }
 

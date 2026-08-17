@@ -742,13 +742,13 @@
         </div>
         <p class="schema-label">Assembled by, for a given date</p>
         <pre class="schema"><code>find Stay  where checkInAt &lt;= date &lt; checkOutAt, on this Leg
-find Transit where [departsAt, arrivesAt) overlaps date's 24h window
+find Transit where departsAt falls on this date, on this Leg
 find Activity where startAt falls within that window, on this Leg
 find Note  where concerns overlaps the date, the Leg, or any of the above
 location := active Stay's lodging, or the relevant Transit's from/to</code></pre>
         <ul class="rationale">
           <li><strong>Nothing here has its own identity.</strong> Nobody books "July 5th" — every other entity on this page is a real thing in the world with a confirmation number, a ticket, or a geography. A day is a lens for grouping things that already have their own.</li>
-          <li><strong>Overlap beats a stored link.</strong> An overnight sail or drive spans two calendar dates at once — a stored <code>dayId</code> foreign key could only ever point at one of them; a timestamp range overlaps both, for free.</li>
+          <li><strong>A Transit belongs to the day it departs, not every day it touches.</strong> An overnight sail or drive spans two calendar dates — but it's one trip event with one clock-time to sort by, and showing it a second time on the arrival day duplicated it in the timeline for no new information. <code>location</code> still falls back to an arriving Transit's destination on a day named after it (see <code>arrivingTransit</code> in <code>trip-model.js</code>'s <code>buildDay</code>), even though the Transit itself only renders on the day it left.</li>
           <li><strong>Still essential to the presentation tier</strong> — and to how a human or an AI planning agent addresses the plan ("plan flightseeing on June 30") — just never as stored schema. The date is the handle; this query is what turns it into the structured entities that actually get touched.</li>
         </ul>
       </article>
@@ -772,6 +772,10 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   endAt:   '2027-06-27T11:30',
   timeLabel: null,   // fallback for fuzzy timing, e.g. "Evening"
   order: null,        // tiebreaker only when startAt is absent
+  priority: 'high',   // 'high' | 'medium' | 'low' | null — null for the vast
+                       // majority of activities; drives the computed Day's
+                       // title (see below) and any future "what matters most
+                       // today" view
   text: 'Denali flightseeing with glacier landing',
   place: null,
   booking: { status: 'booked', cost: null, confirmationNumber: null },
@@ -794,6 +798,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   endAt: null,
   timeLabel: null,
   order: null,
+  priority: null,
   text: 'Breakfast, included with the room',
   place: null,
   booking: null,
@@ -813,6 +818,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   endAt: null,
   timeLabel: null,
   order: null,
+  priority: null,
   text: 'Breakfast — choosing where',
   place: null,          // stays null — nothing chosen yet, same as Stay.lodging: null
   booking: null,
@@ -847,6 +853,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
           <li><strong>An activity can be a meal without ever setting <code>place</code>.</strong> "Packed lunch" or "snacks from the cooler" is <code>mealType: 'snack'</code>/<code>'lunch'</code>, <code>diningFormat: 'self-catered'</code>, and no resolvable Place at all — same reasoning as Transit's <code>from</code>/<code>to</code> staying null for a whole city rather than forcing a point that doesn't exist.</li>
           <li><strong>includedIn reuses Note's <code>Ref</code> type</strong> rather than inventing a second polymorphic pointer — a bundled meal points at whichever Stay, Leg, or Activity's booking actually covers it, so cost and confirmation number stay owned by that one booking instead of being duplicated onto the meal itself. Only set when <code>diningFormat</code> is <code>'included'</code>; every other format leaves it <code>null</code>.</li>
           <li><strong>options is the one genuinely new mechanism here</strong>, added once "which of these three places for breakfast" turned out not to fit the single-value fields at all — the three candidates can each have a <em>different</em> <code>diningFormat</code> (included / sit-down / grab-and-go), so the choice has to live per-candidate, not on the Activity itself. It mirrors <code>Stay.lodging: null</code>'s "nothing chosen yet" — just extended to hold the actual named candidates instead of only recording that a decision is pending. <code>diningFormat</code>/<code>place</code>/<code>includedIn</code> stay <code>null</code> on the Activity the whole time <code>options</code> is set; deciding means picking one candidate, copying its three fields up onto the Activity itself, and clearing <code>options</code> back to <code>null</code> — the array never holds the decided state, only the open one.</li>
+          <li><strong>priority is an enumerated rank, not a boolean</strong> — matching every other significance-style field on this page (<code>status</code>, <code>mealType</code>, <code>diningFormat</code>) rather than a loose <code>highlight: true/false</code>. Null for nearly everything; set only on the handful of activities worth calling out. It's what the computed Day's title reads to decide whether to name a day after its headline activity — "Denali Flightseeing" — instead of falling back to wherever that night's Stay is. When a day has several activities tied at the same top priority, the title joins their <code>text</code> with " &amp; ", in sequence order. Deliberately generic rather than single-purpose: any future "what matters today" or trip-highlights view can read the same field without a new one being invented.</li>
         </ul>
       </article>
 

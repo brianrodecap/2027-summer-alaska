@@ -1,5 +1,12 @@
 [
   {
+    "_id": "note_jun26_no_stay_overnight_drive",
+    "kind": "footnote",
+    "text": "No lodging is booked for the night of the 26th — we're driving straight through to Talkeetna instead of sleeping, arriving in the very early morning ahead of the Talkeetna Alaskan Lodge's 3pm check-in on the 27th.",
+    "concerns": [ { "entity": "transit", "id": "transit_anc_to_talkeetna_overnight" } ],
+    "images": []
+  },
+  {
     "_id": "note_denali_road_status",
     "kind": "warning",
     "text": "The Denali Park Road has been closed at Mile 43 (East Fork Bridge) since 2021 due to the Pretty Rocks Landslide. NPS has targeted full bus service to Eielson/Wonder Lake/Kantishna to resume in 2027, but hasn't confirmed a date — the plan is built around the Mile 43 turnaround as the safe assumption. Worth reconfirming on the NPS Denali \"current conditions\" page closer to your travel date; if the full road has reopened by then, a longer bus ride becomes possible but likely wouldn't fit in the same day as the drive to Fairbanks.",
@@ -12,6 +19,132 @@
     "text": "Coldfoot Camp Cafe runs buffet-only service in summer — breakfast buffet 5–9am, dinner buffet 5–9pm. Between those windows, only truckers can order off the menu, so the plan eats lunch on the road rather than at Coldfoot.",
     "concerns": [ { "entity": "stay", "id": "stay_coldfoot" } ],
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/World%27s_Northernmost_Truck_Stop,_Coldfoot,_AK.jpg", "credit": "Photo by Scott McMurren / CC BY 2.0", "caption": "Coldfoot Camp, the world's northernmost truck stop" } ]
+  },
+  {
+    "_id": "note_jun28_bus_checkin",
+    "kind": "footnote",
+    "text": "Book ahead at reservedenali.com; arrive 20 minutes early.",
+    "concerns": [ { "entity": "activity", "id": "act_jun28_2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun28_bus_details",
+    "kind": "footnote",
+    "text": "Exact departure time is assigned when you book, not fixed at 9am. Hop-off privileges anywhere beyond Savage River for wildlife viewing and photos; reboard any later green bus. Round trip is about 4.5 hours to the current Mile 43 turnaround.",
+    "concerns": [ { "entity": "activity", "id": "act_jun28_3" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun28_kennel_details",
+    "kind": "footnote",
+    "text": "Free shuttle from the Denali Visitor Center; 2:00pm show.",
+    "concerns": [ { "entity": "activity", "id": "act_jun28_6" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun29_last_fuel",
+    "kind": "info",
+    "text": "Fairbanks is the last reliable gas and supply stop before Coldfoot, about 240 miles north.",
+    "concerns": [ { "entity": "transit", "id": "transit_fairbanks_coldfoot" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun29_yukon_camp",
+    "kind": "footnote",
+    "text": "Restrooms, coffee and snacks, and photo views of the Yukon River and Trans-Alaska Pipeline.",
+    "concerns": [ { "entity": "activity", "id": "act_jun29_3" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun29_early_checkin",
+    "kind": "footnote",
+    "text": "Early check-in isn’t guaranteed, but bags can usually be left.",
+    "concerns": [ { "entity": "activity", "id": "act_jun29_7" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun29_visitor_center",
+    "kind": "footnote",
+    "text": "Exhibits, bookstore, and a short nature trail to the Trans-Alaska Pipeline viewpoint.",
+    "concerns": [ { "entity": "activity", "id": "act_jun29_8" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun29_evening_program",
+    "kind": "footnote",
+    "text": "Only happens if a ranger program is scheduled that night.",
+    "concerns": [ { "entity": "activity", "id": "act_jun29_10" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun30_coyote_timing",
+    "kind": "footnote",
+    "text": "No fixed departure time — Coyote Air calls when conditions and the day’s flight queue allow.",
+    "concerns": [ { "entity": "activity", "id": "act_jun30_ideal_2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun30_flight_timing",
+    "kind": "footnote",
+    "text": "About 2 hours total, weather permitting.",
+    "concerns": [ { "entity": "activity", "id": "act_jun30_ideal_3" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun30_ideal_free_time",
+    "kind": "footnote",
+    "text": "Coldfoot itself is tiny — options are the nature trail to the Trans-Alaska Pipeline viewpoint, or just relaxing.",
+    "concerns": [ { "entity": "activity", "id": "act_jun30_ideal_4" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun30_alt_coyote_expectation",
+    "kind": "footnote",
+    "text": "Expect to be asked to check back later rather than a firm no — keep the day loose.",
+    "concerns": [ { "entity": "activity", "id": "act_jun30_alt_2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun30_alt_wiseman",
+    "kind": "footnote",
+    "text": "Historic 1907 gold-rush village, home to about a dozen year-round residents — the Wiseman Historical Museum (mining photos and equipment) and a handful of original cabins.",
+    "concerns": [ { "entity": "activity", "id": "act_jun30_alt_3" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun30_alt_sukakpak",
+    "kind": "footnote",
+    "text": "A striking marble peak thrust up during the Brooks Range’s formation, at Mile 204 — good photo stop.",
+    "concerns": [ { "entity": "activity", "id": "act_jun30_alt_4" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun30_alt_periodic_check",
+    "kind": "footnote",
+    "text": "Check back with Coyote Air periodically in case conditions improve.",
+    "concerns": [ { "entity": "activity", "id": "act_jun30_alt_7" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun30_alt_last_check",
+    "kind": "footnote",
+    "text": "Daylight lasts well past 10pm this close to solstice, so it’s worth one more check before writing the day off — if it’s a firm no, July 1 morning is the last shot before driving south.",
+    "concerns": [ { "entity": "activity", "id": "act_jun30_alt_9" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul1_museum_hours",
+    "kind": "footnote",
+    "text": "Open until 6:30pm.",
+    "concerns": [ { "entity": "activity", "id": "act_jul1_ideal_4" }, { "entity": "activity", "id": "act_jul1_alt_5" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul1_alt_coyote_check",
+    "kind": "footnote",
+    "text": "If conditions look workable, plan to fly this morning.",
+    "concerns": [ { "entity": "activity", "id": "act_jul1_alt_1" } ],
+    "images": []
   },
   {
     "_id": "note_gates_buffer_risk",
@@ -40,6 +173,62 @@
     "text": "Operators: K2 Aviation, Talkeetna Air Taxi, or Sheldon Air Service, all out of Talkeetna Airport (TKA).",
     "concerns": [ { "entity": "scenario", "id": "scenario_jun27_ideal" } ],
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_and_Range_from_Air_with_Plane_Wing_%287065283015%29.jpg", "credit": "Photo by Jacob W. Frank / NPS, CC BY 2.0", "caption": "Flightseeing plane wing over Denali and the Alaska Range" } ]
+  },
+  {
+    "_id": "note_jun27_flight_timing",
+    "kind": "footnote",
+    "text": "About 1.5–2 hrs; exact slot depends on the operator’s schedule that day.",
+    "concerns": [ { "entity": "activity", "id": "act_jun27_ideal_3" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun27_deck_views",
+    "kind": "footnote",
+    "text": "Afternoon often has the clearest Denali views.",
+    "concerns": [ { "entity": "activity", "id": "act_jun27_ideal_9" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun27_solstice_stroll",
+    "kind": "footnote",
+    "text": "It barely gets dark this close to solstice.",
+    "concerns": [ { "entity": "activity", "id": "act_jun27_ideal_11" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun27_jetboat_details",
+    "kind": "footnote",
+    "text": "On the Susitna River, with a historic homestead stop en route; confirm the exact departure time with the operator when booking.",
+    "concerns": [ { "entity": "activity", "id": "act_jun27_alt_2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun27_kennel_details",
+    "kind": "footnote",
+    "text": "Van pickup downtown, a musher demo, and a wheeled-cart ride through the woods with the dogs.",
+    "concerns": [ { "entity": "activity", "id": "act_jun27_alt_3" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun27_museum_hours_alt",
+    "kind": "footnote",
+    "text": "Closes 5pm — moved earlier in the day than the ideal-scenario visit to fit.",
+    "concerns": [ { "entity": "activity", "id": "act_jun27_alt_5" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun27_afternoon_choice",
+    "kind": "footnote",
+    "text": "Alternative: a scenic drive along the Talkeetna Spur Road pullouts for Alaska Range views, if skies are partly clearing. Denali Zipline Tours (~3 hrs, guided) is also an option — if you’d rather do that, swap it in for the jet boat or kennel slot earlier in the day rather than here; confirm departure times when booking.",
+    "concerns": [ { "entity": "activity", "id": "act_jun27_alt_6" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jun27_standby_call",
+    "kind": "footnote",
+    "text": "Daylight lasts into the late evening this close to solstice, and conditions sometimes clear enough for a late flight — worth asking to be put on standby.",
+    "concerns": [ { "entity": "activity", "id": "act_jun27_alt_8" } ],
+    "images": []
   },
   {
     "_id": "note_wrangell_flightseeing_optional",

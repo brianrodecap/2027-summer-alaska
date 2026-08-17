@@ -169,12 +169,24 @@ function renderBookingChip(booking) {
     </div>`;
 }
 
+// Leading slot shared by Stay and Transit blocks — a photo when the entity
+// has one, else its type icon — always in the same .row-icon-slot column
+// activity rows and meal rows use, so every row in the day list lines its
+// headline text up at the same x regardless of which kind of row it is.
+function renderRowIconSlot(entity, fallbackIcon) {
+  const image = firstImage(entity);
+  const content = image
+    ? `<img class="activity-row-image" src="${image.uri}" alt="" loading="lazy">`
+    : `<md-icon>${fallbackIcon}</md-icon>`;
+  return `<div class="row-icon-slot">${content}</div>`;
+}
+
 function renderStay(stay, date) {
   const name = stay.lodging?.name ?? 'Lodging still open';
   const detailBits = [stay.lodging?.roomType, stay.lodging?.roomNumber && `Room/cabin ${stay.lodging.roomNumber}`, stay.lodging?.campsite, stay.lodging?.bedConfiguration].filter(Boolean);
   return `
     <div class="stay-block">
-      <md-icon>hotel</md-icon>
+      ${renderRowIconSlot(stay, 'hotel')}
       <div class="stay-block-content">
         <p class="md-typescale-title-small">${stayRelation(stay, date)} — ${name}</p>
         <p class="md-typescale-body-small">${formatTime(stay.checkInAt)} in · ${formatTime(stay.checkOutAt)} out</p>
@@ -182,29 +194,45 @@ function renderStay(stay, date) {
         ${stay.lodging?.checkInInstructions ? `<p class="md-typescale-body-small stay-detail">${stay.lodging.checkInInstructions}</p>` : ''}
         ${renderBookingChip(stay.booking)}
       </div>
-      ${renderImg(firstImage(stay), 'stay-block-image')}
     </div>`;
 }
 
 function renderTransit(transit) {
   return `
     <div class="stay-block">
-      <md-icon>${transit.mode === 'flight' ? 'flight' : 'directions_car'}</md-icon>
+      ${renderRowIconSlot(transit, transit.mode === 'flight' ? 'flight' : 'directions_car')}
       <div class="stay-block-content">
         <p class="md-typescale-title-small">${transit.from.label} → ${transit.to.label}</p>
         <p class="md-typescale-body-small">${formatTime(transit.departsAt)} – ${formatTime(transit.arrivesAt)}</p>
         ${renderBookingChip(transit.booking)}
       </div>
-      ${renderImg(firstImage(transit), 'stay-block-image')}
     </div>`;
+}
+
+// Every activity row needs *something* in the leading slot — a missing one
+// collapses md-list-item's reserved leading column, so rows without a photo
+// render with their headline flush against the edge instead of lined up with
+// the rows that do have one (see DEFAULT_PLACE_ICON/DINING_FORMAT_ICON,
+// defined below — this only ever runs after the module has finished
+// evaluating, so referencing them ahead of their declaration here is fine).
+// Activities don't carry an explicit category field (data-model.html) — a
+// committed meal's diningFormat is the only synchronous signal richer than
+// "does this activity name a place at all."
+function activityRowIcon(activity) {
+  if (activity.diningFormat) return DINING_FORMAT_ICON[activity.diningFormat];
+  if (activity.place) return DEFAULT_PLACE_ICON;
+  return 'event';
 }
 
 function renderActivityRow(activity, day) {
   if (activity.options?.length) return renderMealRow(activity, day);
   const image = firstImage(activity) ?? firstImage(activity.place);
+  const startSlot = image
+    ? `<div slot="start" class="row-icon-slot"><img class="activity-row-image" src="${image.uri}" alt="" loading="lazy"></div>`
+    : `<div slot="start" class="row-icon-slot"><md-icon>${activityRowIcon(activity)}</md-icon></div>`;
   return `
     <md-list-item type="button" data-activity-id="${activity._id}">
-      ${image ? `<img slot="start" class="activity-row-image" src="${image.uri}" alt="" loading="lazy">` : ''}
+      ${startSlot}
       <div slot="overline">${activityTimeLabel(activity)}</div>
       <div slot="headline">${activity.text}</div>
       <md-icon slot="end">chevron_right</md-icon>
@@ -319,7 +347,7 @@ export function renderDayBlock(day) {
     <section class="day-block" id="day-${day.date}">
       <div class="day-block-header">
         <span class="day-block-date md-typescale-label-large">${day.dateLabel}</span>
-        <h3 class="day-block-title md-typescale-title-medium">${day.location}</h3>
+        <h3 class="day-block-title md-typescale-title-medium">${day.title}</h3>
       </div>
       <div class="day-block-body"></div>
     </section>
@@ -456,7 +484,7 @@ function renderMealRow(activity, day) {
     : '';
   return `
     <div class="meal-row">
-      <div class="meal-row-image-slot">${renderMealRowImage(selected)}</div>
+      <div class="row-icon-slot">${renderMealRowImage(selected)}</div>
       <div class="meal-row-body">
         <button type="button" class="meal-row-header" data-activity-id="${activity._id}">
           <span class="meal-row-header-text">
@@ -480,7 +508,7 @@ export function syncMealRow(activity, day, tabsEl) {
   const option = options[tabsEl.activeTabIndex];
   if (!option) return;
   const row = tabsEl.closest('.meal-row');
-  row.querySelector('.meal-row-image-slot').innerHTML = renderMealRowImage(option);
+  row.querySelector('.row-icon-slot').innerHTML = renderMealRowImage(option);
   row.querySelector('.meal-row-selected').textContent = mealOptionLabel(option);
 }
 

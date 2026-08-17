@@ -41,6 +41,11 @@
   --md-sys-shape-corner-large: 16px;
   --md-sys-shape-corner-full: 999px;
 
+  /* @material/web's typescale tokens all derive from these two ref-typeface
+     tokens, so overriding them here swaps the whole site's type in one place. */
+  --md-ref-typeface-brand: 'Roboto Serif';
+  --md-ref-typeface-plain: 'Roboto Serif';
+
   max-width: 100%;
 }
 
@@ -619,14 +624,9 @@ detail-side-sheet.open .panel {
 
 .stay-block {
   display: flex;
-  gap: 0.75rem;
+  gap: 1rem;
   align-items: flex-start;
-  padding: 0.75rem 0;
-}
-
-.stay-block md-icon {
-  color: var(--md-sys-color-primary);
-  margin-top: 0.15rem;
+  padding: 0.75rem 1rem;
 }
 
 .stay-block p {
@@ -636,15 +636,6 @@ detail-side-sheet.open .panel {
 .stay-block-content {
   flex: 1;
   min-width: 0;
-}
-
-.stay-block-image {
-  width: 3.5rem;
-  height: 3.5rem;
-  object-fit: cover;
-  border-radius: var(--md-sys-shape-corner-small);
-  flex-shrink: 0;
-  margin-left: auto;
 }
 
 .stay-detail {
@@ -658,6 +649,21 @@ detail-side-sheet.open .panel {
   height: 2.5rem;
   object-fit: cover;
   border-radius: var(--md-sys-shape-corner-small);
+}
+
+/* The fixed-size leading column shared by every row type that isn't a plain
+   md-list-item (meal rows, Stay/Transit blocks) — centers either an
+   .activity-row-image or a fallback md-icon so headline text lines up at the
+   same x whether a row shows a photo or an icon, and matches the column
+   md-list-item itself reserves for its own slot="start" content. */
+.row-icon-slot {
+  width: 2.5rem;
+  height: 2.5rem;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--md-sys-color-primary);
 }
 
 .place-row-image {
@@ -714,16 +720,6 @@ detail-side-sheet.open .panel {
   align-items: flex-start;
   gap: 1rem;
   padding: 0.5rem 1rem;
-}
-
-.meal-row-image-slot {
-  width: 2.5rem;
-  height: 2.5rem;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--md-sys-color-on-surface-variant);
 }
 
 .meal-row-body {

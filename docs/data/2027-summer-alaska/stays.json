@@ -5,7 +5,7 @@
     "checkInAt": "2027-06-27T15:00",
     "checkOutAt": "2027-06-28T11:00",
     "status": "planning",
-    "lodging": { "placeId": null, "name": "Talkeetna Alaskan Lodge", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "lodging": { "placeId": "ChIJQ4enWi--zlYRFqykGD_hqSY", "name": "Talkeetna Alaskan Lodge", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
     "images": []
   },
@@ -15,7 +15,7 @@
     "checkInAt": "2027-06-28T15:00",
     "checkOutAt": "2027-06-29T11:00",
     "status": "planning",
-    "lodging": { "placeId": null, "name": "Westmark Fairbanks", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "lodging": { "placeId": "ChIJ_aR34k5FMlERqYeOQVWen5I", "name": "Westmark Fairbanks", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
     "images": [ { "uri": "http://img1.wsimg.com/isteam/ip/4a011874-e82f-4945-b561-9350f89109a8/IMG_0252.jpeg", "credit": "Courtesy of Westmark Fairbanks Hotel", "caption": "Westmark Fairbanks Hotel" } ]
   },
@@ -25,7 +25,7 @@
     "checkInAt": "2027-06-29T15:00",
     "checkOutAt": "2027-07-01T11:00",
     "status": "planning",
-    "lodging": { "placeId": null, "name": "Slate Creek Inn (Coldfoot Camp)", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "lodging": { "placeId": "ChIJKXBYEtzAKFERMTb-h_NwAtE", "name": "Slate Creek Inn (Coldfoot Camp)", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
     "images": [ { "uri": "https://images.squarespace-cdn.com/content/v1/53c02418e4b0b3bb7d14b47f/41555e6c-d79d-48eb-85e9-f35682cdfc82/Coldfoot+Camp+Sign+s.jpg", "credit": "Courtesy of Coldfoot Camp", "caption": "The Coldfoot Camp sign on the Dalton Highway" } ]
   },
@@ -35,7 +35,7 @@
     "checkInAt": "2027-07-01T15:00",
     "checkOutAt": "2027-07-02T11:00",
     "status": "planning",
-    "lodging": { "placeId": null, "name": "Westmark Fairbanks", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "lodging": { "placeId": "ChIJ_aR34k5FMlERqYeOQVWen5I", "name": "Westmark Fairbanks", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
     "images": [ { "uri": "http://img1.wsimg.com/isteam/ip/4a011874-e82f-4945-b561-9350f89109a8/IMG_0252.jpeg", "credit": "Courtesy of Westmark Fairbanks Hotel", "caption": "Westmark Fairbanks Hotel" } ]
   },

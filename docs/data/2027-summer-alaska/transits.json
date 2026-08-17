@@ -1,5 +1,25 @@
 [
   {
+    "_id": "transit_anc_to_talkeetna_overnight",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "drive",
+    "from": {
+      "label": "Anchorage"
+    },
+    "to": {
+      "label": "Talkeetna"
+    },
+    "departsAt": "2027-06-26T23:15",
+    "arrivesAt": "2027-06-27T01:45",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": null,
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_Driving_along_George_Parks_Highway_-_NARA_-_7722405.jpg", "credit": "Alaska DOT&PF / Federal Highway Administration, public domain", "caption": "Driving the George Parks Highway toward Denali" } ]
+  },
+  {
     "_id": "transit_talkeetna_denali",
     "legId": "leg_parks",
     "journeyId": "journey_jun28_to_fairbanks",
