@@ -2,7 +2,7 @@ import '@material/web/all.js';
 import { styles as typescaleStyles } from '@material/web/typography/md-typescale-styles.js';
 import './side-sheet.js';
 import { loadTripsIndex, loadTripData, buildTripView, deriveRouteStops, formatTripDateChip, tripDayCount } from './trip-model.js';
-import { renderLegCard, renderDayBlock, renderLegDialogBody, renderActivityDetailBody, activityDetailTitle, placeTypeIcon, syncMealRow, activeMealOptions, firstImage } from './day-render.js';
+import { renderLegCard, renderDayBlock, renderLegDialogBody, renderActivityDetailBody, renderDayMapSheetBody, activityDetailTitle, placeTypeIcon, syncMealRow, activeMealOptions, firstImage, wireScenarioFollowers } from './day-render.js';
 import { hydratePlaceDetails } from './places.js';
 import { renderDatePicker } from './date-picker.js';
 
@@ -86,6 +86,18 @@ dayListEl.addEventListener('click', (event) => {
   const mealRow = el.closest('.meal-row');
   const selectedOption = mealRow ? selectedMealOption(activity, view.days.find((d) => d.date === activity.date), mealRow) : null;
   openActivity(activity, selectedOption);
+});
+
+// The day-block-header's map button (day-render.js's renderDayBlock) opens
+// the same side sheet an activity row does, just with a computed map instead
+// of a place's details — a separate listener since it's a separate concern
+// from the activity click handler above, not a variant of it.
+dayListEl.addEventListener('click', (event) => {
+  const mapButton = event.target.closest('[data-map-date]');
+  if (!mapButton) return;
+  const day = view.days.find((d) => d.date === mapButton.dataset.mapDate);
+  if (!day) return;
+  sideSheet.open(`Map — ${day.dateLabel}`, renderDayMapSheetBody(day));
 });
 
 // A meal row's own md-tabs (see day-render.js's renderMealRow) switches which
@@ -195,6 +207,7 @@ async function openTrip(slug) {
   }));
 
   dayListEl.replaceChildren(...view.days.map(renderDayBlock));
+  wireScenarioFollowers(dayListEl);
 
   tripsHome.hidden = true;
   tripPage.hidden = false;

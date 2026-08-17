@@ -14,8 +14,8 @@
     },
     "departsAt": "2027-06-26T23:15",
     "arrivesAt": "2027-06-27T01:45",
-    "routeId": null,
-    "routeVariant": null,
+    "routeId": "route_anchorage_talkeetna",
+    "routeVariant": "direct",
     "booking": null,
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_Driving_along_George_Parks_Highway_-_NARA_-_7722405.jpg", "credit": "Alaska DOT&PF / Federal Highway Administration, public domain", "caption": "Driving the George Parks Highway toward Denali" } ]
   },
@@ -34,8 +34,8 @@
     },
     "departsAt": "2027-06-28T06:30",
     "arrivesAt": "2027-06-28T08:30",
-    "routeId": null,
-    "routeVariant": null,
+    "routeId": "route_parks_highway",
+    "routeVariant": "direct",
     "booking": null,
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_Driving_along_George_Parks_Highway_-_NARA_-_7722405.jpg", "credit": "Alaska DOT&PF / Federal Highway Administration, public domain", "caption": "Driving the George Parks Highway toward Denali" } ]
   },
@@ -54,8 +54,8 @@
     },
     "departsAt": "2027-06-28T15:00",
     "arrivesAt": "2027-06-28T17:45",
-    "routeId": null,
-    "routeVariant": null,
+    "routeId": "route_parks_highway",
+    "routeVariant": "direct",
     "booking": null,
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_River_View_from_Nenana_River_Wayside_-_NARA_-_7722402.jpg", "credit": "Alaska DOT&PF / Federal Highway Administration, public domain", "caption": "Nenana River Wayside along the Parks Highway" } ]
   },
@@ -74,8 +74,8 @@
     },
     "departsAt": "2027-06-29T07:00",
     "arrivesAt": "2027-06-29T13:00",
-    "routeId": null,
-    "routeVariant": null,
+    "routeId": "route_dalton_highway",
+    "routeVariant": "direct",
     "booking": null,
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
   },
@@ -94,8 +94,8 @@
     },
     "departsAt": "2027-07-02T09:00",
     "arrivesAt": "2027-07-02T14:30",
-    "routeId": null,
-    "routeVariant": null,
+    "routeId": "route_richardson_highway",
+    "routeVariant": "direct",
     "booking": null,
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Richardson_Highway_ENBLA01.jpg", "credit": "Photo by Enrico Blasutto / CC BY-SA 4.0", "caption": "Richardson Highway between Thompson Pass and Copper Center" } ]
   },
@@ -114,8 +114,8 @@
     },
     "departsAt": "2027-07-03T09:00",
     "arrivesAt": "2027-07-03T13:30",
-    "routeId": null,
-    "routeVariant": null,
+    "routeId": "route_mccarthy_road",
+    "routeVariant": "direct",
     "booking": null,
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_Kuskulana_Bridge.jpg", "credit": "Photo by Henry Chen / CC BY-SA 2.0", "caption": "Kuskulana Bridge on the McCarthy Road" } ]
   },
@@ -134,8 +134,8 @@
     },
     "departsAt": "2027-07-05T08:00",
     "arrivesAt": "2027-07-05T16:45",
-    "routeId": null,
-    "routeVariant": null,
+    "routeId": "route_kennecott_anchorage",
+    "routeVariant": "scenic",
     "booking": null,
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Matanushka_glacier.jpg", "credit": "Photo by Tifoultoute / CC BY-SA", "caption": "Matanuska Glacier viewed from the Glenn Highway" } ]
   },
@@ -188,6 +188,46 @@
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Floatplane_Kodiak_archipelago.JPG", "credit": "NancyHeise, public domain", "caption": "Floatplane on the water in the Kodiak Archipelago" } ]
   },
   {
+    "_id": "transit_anchorage_seward",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "drive",
+    "from": {
+      "label": "Anchorage"
+    },
+    "to": {
+      "label": "Seward"
+    },
+    "departsAt": "2027-07-10T07:00",
+    "arrivesAt": "2027-07-10T09:30",
+    "routeId": "route_seward_highway",
+    "routeVariant": "direct",
+    "booking": null,
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Seward_Highway_ENBLA01.jpg", "credit": "Photo by Enrico Blasutto / CC BY-SA 4.0", "caption": "A pullout along the Seward Highway, about 20 km from Seward" } ]
+  },
+  {
+    "_id": "transit_seward_anchorage",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "drive",
+    "from": {
+      "label": "Seward"
+    },
+    "to": {
+      "label": "Anchorage"
+    },
+    "departsAt": "2027-07-10T18:00",
+    "arrivesAt": "2027-07-10T20:30",
+    "routeId": "route_seward_highway",
+    "routeVariant": "direct",
+    "booking": null,
+    "images": []
+  },
+  {
     "_id": "transit_coldfoot_fairbanks_ideal",
     "legId": "leg_parks",
     "journeyId": null,
@@ -202,8 +242,8 @@
     },
     "departsAt": "2027-07-01T09:00",
     "arrivesAt": "2027-07-01T14:30",
-    "routeId": null,
-    "routeVariant": null,
+    "routeId": "route_dalton_highway",
+    "routeVariant": "direct",
     "booking": null,
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
   },
@@ -222,9 +262,77 @@
     },
     "departsAt": "2027-07-01T10:00",
     "arrivesAt": "2027-07-01T15:45",
-    "routeId": null,
-    "routeVariant": null,
+    "routeId": "route_dalton_highway",
+    "routeVariant": "direct",
     "booking": null,
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
+  },
+  {
+    "_id": "transit_anchorage_portalsworth",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "flight",
+    "from": {
+      "label": "Anchorage"
+    },
+    "to": {
+      "label": "Port Alsworth"
+    },
+    "departsAt": "2027-07-12T12:00",
+    "arrivesAt": "2027-07-12T13:30",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
+    "images": []
+  },
+  {
+    "_id": "transit_portalsworth_anchorage",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "flight",
+    "from": {
+      "label": "Port Alsworth"
+    },
+    "to": {
+      "label": "Anchorage"
+    },
+    "departsAt": "2027-07-17T08:00",
+    "arrivesAt": "2027-07-17T09:30",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
+    "images": []
+  },
+  {
+    "_id": "transit_anchorage_whittier",
+    "legId": "leg_cruise",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "drive",
+    "from": {
+      "label": "Anchorage area"
+    },
+    "to": {
+      "label": "Whittier"
+    },
+    "departsAt": "2027-07-17T14:00",
+    "arrivesAt": "2027-07-17T15:00",
+    "routeId": "route_seward_highway",
+    "routeVariant": "direct",
+    "booking": null,
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/AntonAndersonTunnel.jpg", "credit": "Photo by Gabor Eszes / CC BY-SA 3.0", "caption": "West portal of the Anton Anderson Memorial Tunnel" } ]
   }
 ]

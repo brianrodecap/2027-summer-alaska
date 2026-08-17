@@ -35,16 +35,18 @@
     "_id": "scenario_jul1_ideal",
     "legId": "leg_parks",
     "tone": "ideal",
-    "label": "If June 30's flight went (relaxed drive-back day)",
+    "label": "Relaxed drive-back day",
     "icon": "flight_takeoff",
+    "followsScenarioDate": "2027-06-30",
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
   },
   {
     "_id": "scenario_jul1_alt",
     "legId": "leg_parks",
     "tone": "alternate",
-    "label": "If June 30's flight was weathered out (last-chance backup day)",
+    "label": "Last-chance backup day",
     "icon": "cloud",
+    "followsScenarioDate": "2027-06-30",
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg", "credit": "U.S. Fish and Wildlife Service, public domain", "caption": "Aerial view of the Brooks Range, Gates of the Arctic" } ]
   }
 ]

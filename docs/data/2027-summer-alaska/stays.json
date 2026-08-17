@@ -75,7 +75,7 @@
     "checkInAt": "2027-07-06T11:00",
     "checkOutAt": "2027-07-09T11:00",
     "status": "planning",
-    "lodging": { "placeId": null, "name": "Nullaqvik Hotel", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "lodging": { "placeId": "ChIJo6lg1JGXyFYR5CruzmerxY8", "name": "Nullaġvik Hotel", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
     "images": []
   },
@@ -85,17 +85,24 @@
     "checkInAt": "2027-07-09T15:00",
     "checkOutAt": "2027-07-12T11:00",
     "status": "planning",
-    "lodging": { "placeId": null, "name": "Hotel Captain Cook", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
+    "lodging": { "placeId": "ChIJoUUNNIG9yFYRT1rea_yflgI", "name": "Hotel Captain Cook", "roomType": null, "roomNumber": null, "campsite": null, "checkInInstructions": null },
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
     "images": []
   },
   {
     "_id": "stay_lc_katmai",
     "legId": "leg_parks",
-    "checkInAt": "2027-07-12T15:00",
-    "checkOutAt": "2027-07-17T11:00",
+    "checkInAt": "2027-07-12T13:30",
+    "checkOutAt": "2027-07-17T08:00",
     "status": "planning",
-    "lodging": null,
+    "lodging": {
+      "placeId": null,
+      "name": "Lake Clark Resort (The Farm Lodge)",
+      "roomType": null,
+      "roomNumber": null,
+      "campsite": null,
+      "checkInInstructions": "Reached only by floatplane from Anchorage via Lake Clark Pass (~1.5 hrs); the Alsworth family's rate is expected to include home-cooked meals and the Katmai/Chinitna Bay bear-viewing day trips — confirm exact inclusions and cost when booking."
+    },
     "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Brooks_Falls_Katmai_National_Park.jpg", "credit": "Photo by Richard A. Weaver / CC BY-SA 4.0", "caption": "Brown bear fishing for salmon at Brooks Falls" } ]
   },

@@ -3,7 +3,7 @@
 // side-sheet body. Nothing here is content — the itinerary lives entirely in
 // docs/data/2027-summer-alaska/*.json.
 
-import { formatTime, formatMoney, activityTimeLabel, stayRelation } from './trip-model.js';
+import { formatTime, formatMoney, activityTimeLabel, stayRelation, dayMapEmbedUrl, dayFullRouteUrl, splitOutStayBoundaries } from './trip-model.js';
 
 function toNode(html) {
   const template = document.createElement('template');
@@ -197,14 +197,90 @@ function renderStay(stay, date) {
     </div>`;
 }
 
-function renderTransit(transit) {
+// Route.variants[].tone has its own vocabulary (data-model.html) —
+// deliberately not Scenario's ideal/alternate, since a route choice isn't a
+// go/no-go safety branch — so route tabs carry a tone-appropriate icon
+// instead of the ideal/alternate tone-coloring scenario tabs use.
+const ROUTE_TONE_ICON = { direct: 'trending_flat', scenic: 'landscape' };
+
+// A Route with 2+ variants (e.g. the New vs. Old Glenn Highway) is a
+// genuinely undecided choice — but its stages (trip-model.js's
+// routeStageItems) are now scattered through the day's real chronological
+// order rather than sitting together right after Depart (see
+// renderTransitBoundary below), so the picker itself can't live alongside
+// them the way the day's own scenario tabs sit right above their one
+// contiguous panel. It's anchored to the Depart row instead — the one place
+// in the timeline that's unambiguously "the start of this route" — and
+// wireRouteVariantTabs (below) toggles the scattered stage rows by matching
+// data-transit-id/data-route-tone rather than by sibling position.
+function renderRouteVariantTabs(transit) {
+  const info = transit.routeInfo;
+  if (!info || info.variants.length < 2) return '';
+  const tabs = info.variants
+    .map(
+      (v) => `
+      <md-primary-tab inline-icon${v.tone === info.selectedTone ? ' active' : ''} data-tone="${v.tone}">
+        <md-icon slot="icon">${ROUTE_TONE_ICON[v.tone] ?? 'route'}</md-icon>
+        ${v.label}
+      </md-primary-tab>`
+    )
+    .join('');
+  return `<md-tabs class="route-tabs" data-transit-id="${transit._id}">${tabs}</md-tabs>`;
+}
+
+// A Transit renders as separate "Depart"/"Arrive" boundary rows (their own
+// items in day.sequence's real chronological order — trip-model.js's
+// transitSequenceItems), so an Activity reached partway through a long drive
+// (a lunch stop) still sorts into its own real place between them, instead of
+// being hidden inside one opaque Transit block. Each row leads with its time,
+// matching every other timed row in the day list (activity rows' own
+// overline/headline pattern), rather than the title-first layout Stay rows
+// use. A Route's variant picker (renderRouteVariantTabs, above) renders on
+// the Depart row when there's a real choice to make — its own stages render
+// separately, spread between Depart and Arrive (renderTransitStage, below).
+function renderTransitBoundary(item) {
+  const { transit, phase } = item;
+  const isDepart = phase === 'depart';
+  const place = isDepart ? transit.from.label : transit.to.label;
+  const time = isDepart ? transit.departsAt : transit.arrivesAt;
+  const modeIcon = transit.mode === 'flight' ? 'flight' : 'directions_car';
+  // The Transit's own photo (if any) illustrates the journey as a whole, so
+  // it only leads the Depart row — repeating the identical image on Arrive
+  // as well would just be visual noise, not a second, distinct photo.
+  const iconSlot = isDepart ? renderRowIconSlot(transit, modeIcon) : `<div class="row-icon-slot"><md-icon>${modeIcon}</md-icon></div>`;
   return `
     <div class="stay-block">
-      ${renderRowIconSlot(transit, transit.mode === 'flight' ? 'flight' : 'directions_car')}
+      ${iconSlot}
       <div class="stay-block-content">
-        <p class="md-typescale-title-small">${transit.from.label} → ${transit.to.label}</p>
-        <p class="md-typescale-body-small">${formatTime(transit.departsAt)} – ${formatTime(transit.arrivesAt)}</p>
-        ${renderBookingChip(transit.booking)}
+        <p class="md-typescale-label-medium stay-detail">${formatTime(time)}</p>
+        <p class="md-typescale-title-small">${isDepart ? 'Depart' : 'Arrive'} ${place}</p>
+        ${isDepart ? renderBookingChip(transit.booking) : ''}
+        ${isDepart ? renderRouteVariantTabs(transit) : ''}
+      </div>
+    </div>`;
+}
+
+// A stage's optional note (e.g. "this is where a Whittier drive splits off")
+// surfaces as a title tooltip rather than its own line, so a normally-quiet
+// routing detail stays out of the way until someone hovers/long-presses it.
+// Every variant's stages are always in the DOM (trip-model.js's
+// routeStageItems), each tagged with which Transit and which variant tone it
+// belongs to; only the ones matching that Transit's selected/active tone
+// start visible — wireRouteVariantTabs flips that per row, scattered
+// non-adjacent siblings and all, when the Depart row's tabs change. The
+// leading time is stage.key — trip-model.js's stageTimesForVariant walking
+// via[]'s durationMinutes from Depart, nudged later by any real Activity
+// (a lunch stop, say) actually reached along the way. It's a plan-quality
+// estimate, not a live pace/traffic calculation, so treat it the same as any
+// other still-being-planned time on this page.
+function renderTransitStage(item) {
+  const { transit, variant, stage, hidden, key } = item;
+  return `
+    <div class="stay-block transit-stage-row" data-transit-id="${transit._id}" data-route-tone="${variant.tone}"${hidden ? ' hidden' : ''}>
+      <div class="row-icon-slot"><md-icon>signpost</md-icon></div>
+      <div class="stay-block-content">
+        <p class="md-typescale-label-medium stay-detail">${formatTime(key)}</p>
+        <p class="md-typescale-title-small"${stage.note ? ` title="${stage.note}"` : ''}>Via ${stage.label}</p>
       </div>
     </div>`;
 }
@@ -241,12 +317,13 @@ function renderActivityRow(activity, day) {
 
 function renderSection(section, day) {
   const items = section.activities.map((activity) => renderActivityRow(activity, day)).join('');
-  return `<md-divider></md-divider><md-list>${items}</md-list>`;
+  return `<md-list>${items}</md-list>`;
 }
 
 function renderSequenceItem(item, day) {
   if (item.type === 'stay') return renderStay(item.stay, day.date);
-  if (item.type === 'transit') return renderTransit(item.transit);
+  if (item.type === 'transit-boundary') return renderTransitBoundary(item);
+  if (item.type === 'transit-stage') return renderTransitStage(item);
   return renderSection(item, day);
 }
 
@@ -256,9 +333,16 @@ function renderSequenceItem(item, day) {
 // used to be, so a track's own panel carries no chip of its own. Each
 // scenario's notes (Note.concerns entity:scenario — see trip-model.js) render
 // once at the top of that scenario's panel, not repeated per activity.
+//
+// A scenario can declare `followsScenarioDate` (e.g. Jul 1's backup-day
+// scenarios follow Jun 30's go/no-go) — data-scenario-date/data-follows-date
+// on the rendered <md-tabs> are how wireScenarioFollowers (below) finds the
+// pair after both days' blocks are in the DOM, without renderScenarioTabs
+// itself needing to know about any other day.
 function renderScenarioTabs(day) {
   const tracks = day.scenarioTracks;
   if (!tracks.length) return '';
+  const followsDate = tracks[0].scenario.followsScenarioDate ?? null;
   const tabs = tracks
     .map(
       (track, i) => `
@@ -277,35 +361,76 @@ function renderScenarioTabs(day) {
       </div>`
     )
     .join('');
-  return `<md-tabs class="scenario-tabs">${tabs}</md-tabs><div class="scenario-panels">${panels}</div>`;
+  const followsAttr = followsDate ? ` data-follows-date="${followsDate}"` : '';
+  return `<md-tabs class="scenario-tabs" data-scenario-date="${day.date}"${followsAttr}>${tabs}</md-tabs><div class="scenario-panels">${panels}</div>`;
 }
 
 // Clicking a tab only needs to show its own panel and hide the rest — no
 // re-render, since every branch's/option's content is already in the DOM.
-// Shared by the scenario tabs above and the meal-option tabs below.
+// Shared by the scenario tabs above and the meal-option tabs below — both
+// keep their panel(s) as an immediate sibling of the <md-tabs>. A day can
+// hold more than one tab group of the same kind, so every match gets its own
+// listener, each keyed to its own panels via nextElementSibling, not a
+// single root-wide query. (The route-variant tabs below don't fit this
+// pattern — their stage rows are scattered non-adjacent siblings, not one
+// contiguous panel — see wireRouteVariantTabs.)
 function wireTabs(root, tabsSelector, panelSelector) {
-  const tabsEl = root.querySelector(tabsSelector);
-  if (!tabsEl) return;
-  const panels = root.querySelectorAll(panelSelector);
-  tabsEl.addEventListener('change', () => {
-    panels.forEach((panel, i) => { panel.hidden = i !== tabsEl.activeTabIndex; });
+  root.querySelectorAll(tabsSelector).forEach((tabsEl) => {
+    const panels = tabsEl.nextElementSibling.querySelectorAll(panelSelector);
+    tabsEl.addEventListener('change', () => {
+      panels.forEach((panel, i) => { panel.hidden = i !== tabsEl.activeTabIndex; });
+    });
   });
 }
 
-// A Stay's check-in/check-out events are keyed to their own clock time (see
-// trip-model.js's stayEventKey) so they sort into day.sequence wherever that
-// falls — but a branching day's own activities render separately, as the tab
-// group below, regardless of their times. Rather than let an 11am formal
-// checkout land after a 6:30am departure, or a mid-afternoon check-in land
-// ahead of an 8am breakfast, checkout is always shown first and check-in
-// always last: each reads as "leaving here"/"staying here tonight" context
-// for the day rather than a scheduled event competing with the timeline
-// between them.
-function splitOutStayBoundaries(sequence) {
-  const checkOuts = sequence.filter((item) => item.type === 'stay' && item.relation === 'Check out');
-  const checkIns = sequence.filter((item) => item.type === 'stay' && item.relation === 'Check in');
-  const rest = sequence.filter((item) => !checkOuts.includes(item) && !checkIns.includes(item));
-  return { checkOuts, rest, checkIns };
+// A route-variant tab bar (renderRouteVariantTabs) lives on the Depart row,
+// but the stage rows it controls (renderTransitStage) are spread through the
+// rest of the day's timeline by their own interpolated times — not one
+// contiguous panel wireTabs (above) could toggle by sibling position. Each
+// stage row instead carries data-transit-id/data-route-tone, so switching
+// tabs just re-filters every stage row matching this Transit by tone,
+// wherever in the day it landed.
+function wireRouteVariantTabs(root) {
+  root.querySelectorAll('.route-tabs').forEach((tabsEl) => {
+    const stageRows = root.querySelectorAll(`.transit-stage-row[data-transit-id="${tabsEl.dataset.transitId}"]`);
+    const tabEls = [...tabsEl.querySelectorAll('md-primary-tab')];
+    tabsEl.addEventListener('change', () => {
+      const tone = tabEls[tabsEl.activeTabIndex].dataset.tone;
+      stageRows.forEach((row) => { row.hidden = row.dataset.routeTone !== tone; });
+    });
+  });
+}
+
+// A scenario tab whose data-follows-date names another day's own scenario
+// tabs (see renderScenarioTabs) defaults to and stays synced with whichever
+// tone (ideal/alternate) is active over there — e.g. Jul 1's backup-day tabs
+// track Jun 30's go/no-go instead of asking the reader to remember it and
+// pick again. The follower tabs stay independently clickable (exploring the
+// other branch doesn't lose your place), but re-picking the followed day's
+// tab snaps the follower back to match. Called once, after every day block
+// is in the DOM, since a follower's target may be a sibling day-block.
+export function wireScenarioFollowers(root) {
+  root.querySelectorAll('.scenario-tabs[data-follows-date]').forEach((followerTabs) => {
+    const followedTabs = root.querySelector(`.scenario-tabs[data-scenario-date="${followerTabs.dataset.followsDate}"]`);
+    if (!followedTabs) return;
+    const followerTabEls = [...followerTabs.querySelectorAll('md-primary-tab')];
+    const followerPanels = followerTabs.nextElementSibling.querySelectorAll('.scenario-panel');
+    const followedTabEls = [...followedTabs.querySelectorAll('md-primary-tab')];
+    const toneOf = (tabEl) => tabEl.className.match(/tone-(\S+)/)[1];
+    const applyTone = (tone) => {
+      const targetIndex = followerTabEls.findIndex((tab) => toneOf(tab) === tone);
+      if (targetIndex < 0) return;
+      followerTabs.activeTabIndex = targetIndex;
+      followerPanels.forEach((panel, i) => { panel.hidden = i !== targetIndex; });
+    };
+    followedTabs.addEventListener('change', () => applyTone(toneOf(followedTabEls[followedTabs.activeTabIndex])));
+    // md-tabs (a Lit component) hasn't resolved its own activeTabIndex yet at
+    // this point, right after insertion — so the very first sync reads which
+    // tab we ourselves marked `active` in the rendered markup instead of
+    // asking the not-yet-upgraded component.
+    const initialTab = followedTabEls.find((tab) => tab.hasAttribute('active')) ?? followedTabEls[0];
+    applyTone(toneOf(initialTab));
+  });
 }
 
 // day.sequence (built in trip-model.js) is already the real chronological
@@ -331,6 +456,7 @@ export function renderDayDetailBody(day) {
     ${emptyHtml}
   `);
   wireTabs(body, '.scenario-tabs', '.scenario-panel');
+  wireRouteVariantTabs(body);
   return body;
 }
 
@@ -346,14 +472,37 @@ export function renderDayBlock(day) {
   const section = toNode(`
     <section class="day-block" id="day-${day.date}">
       <div class="day-block-header">
-        <span class="day-block-date md-typescale-label-large">${day.dateLabel}</span>
-        <h3 class="day-block-title md-typescale-title-medium">${day.title}</h3>
+        <div class="day-block-header-text">
+          <span class="day-block-date md-typescale-label-large">${day.dateLabel}</span>
+          <h3 class="day-block-title md-typescale-title-medium">${day.title}</h3>
+        </div>
+        <md-icon-button data-map-date="${day.date}" aria-label="Map for ${day.dateLabel}">
+          <md-icon>map</md-icon>
+        </md-icon-button>
       </div>
       <div class="day-block-body"></div>
     </section>
   `);
   section.querySelector('.day-block-body').append(renderDayDetailBody(day));
   return section;
+}
+
+// ---------- day map sheet (opened via the day-block-header's map button) ----------
+
+// dayMapEmbedUrl (trip-model.js) is null when the day has nothing resolvable
+// to map yet (e.g. a still-unplanned day with no places named anywhere) —
+// same "degrade gracefully" convention as renderPlaceUnavailable below.
+export function renderDayMapSheetBody(day) {
+  const url = dayMapEmbedUrl(day);
+  const fullRouteUrl = dayFullRouteUrl(day);
+  const fullRouteLink = fullRouteUrl
+    ? `<div class="place-links"><a class="place-link md-typescale-label-large" href="${fullRouteUrl}" target="_blank" rel="noopener">Open full route in Google Maps</a></div>`
+    : '';
+  if (!url) return toFragment(`<p class="md-typescale-body-medium">Nothing resolvable to map yet for this day.</p>${fullRouteLink}`);
+  return toFragment(`
+    <iframe class="day-map-frame" src="${url}" loading="lazy" referrerpolicy="no-referrer-when-downgrade" title="Map for ${day.dateLabel}"></iframe>
+    ${fullRouteLink}
+  `);
 }
 
 // ---------- Activity side sheet ----------

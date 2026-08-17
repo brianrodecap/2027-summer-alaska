@@ -348,6 +348,69 @@
     "images": []
   },
   {
+    "_id": "note_jul6_flight_queue",
+    "kind": "footnote",
+    "text": "Golden Eagle Outfitters flies passengers in queue order as conditions allow — checking in early gives a real chance of getting today's Kobuk Valley flight instead of waiting until July 7.",
+    "concerns": [ { "entity": "activity", "id": "act_jul6_3" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul6_flight_or_free",
+    "kind": "footnote",
+    "text": "If no slot opens up today, this time is free instead — nothing is guaranteed on arrival day.",
+    "concerns": [ { "entity": "activity", "id": "act_jul6_4" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul6_heritage_walk",
+    "kind": "footnote",
+    "text": "Includes a walk along Shore Avenue by the lagoon.",
+    "concerns": [ { "entity": "activity", "id": "act_jul6_5" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul6_bayside_closed",
+    "kind": "warning",
+    "text": "The long-time Bayside Restaurant near the Nullaġvik Hotel was destroyed by fire in November 2020 and never reopened — Bison Store & Restaurant is the current pick for dinner in town.",
+    "concerns": [ { "entity": "activity", "id": "act_jul6_6" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul8_heritage_walk",
+    "kind": "footnote",
+    "text": "Includes a walk along Shore Avenue by the lagoon, if there's time.",
+    "concerns": [ { "entity": "activity", "id": "act_jul8_2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_exit_glacier_trail_scope",
+    "kind": "footnote",
+    "text": "This stop is the short, easy walk to the glacier viewpoint from the Nature Center — not the full Harding Icefield Trail (8.2 mi round trip, ~3,000 ft gain), which is a full day's hike on its own.",
+    "concerns": [ { "entity": "activity", "id": "act_jul10_1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_seward_boat_tour_options",
+    "kind": "footnote",
+    "text": "Worth comparing operators and booking ahead: Kenai Fjords Tours and Major Marine Tours both run out of the Seward small boat harbor. The 4.5-hr Resurrection Bay Tour (harbor seals, sea otters, whales, birds) fits a day trip alongside Exit Glacier; the longer 6–8 hr tours reach the outer coast's tidewater glaciers but leave no time for anything else that day.",
+    "concerns": [ { "entity": "activity", "id": "act_jul10_3" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul11_seward_fallback",
+    "kind": "footnote",
+    "text": "This is also the trip's last practical slot to repeat the Seward day trip if Jul 10 was weathered out — after this, the schedule moves on to Lake Clark/Katmai. If repeating Seward, this day's Anchorage plan (Heritage Center / Coastal Trail / Wildlife Conservation Center) simply doesn't happen.",
+    "concerns": [ { "entity": "activity", "id": "act_jul11_1" }, { "date": "2027-07-11" } ],
+    "images": []
+  },
+  {
+    "_id": "note_awcc_girdwood_distance",
+    "kind": "footnote",
+    "text": "Actually in Girdwood, ~45 min each way from Anchorage via the Seward Highway — not a short hop from the Heritage Center or Coastal Trail like the day's other two stops. Given a full day of driving to Seward the day before, this is the first thing to cut if the day runs long.",
+    "concerns": [ { "entity": "activity", "id": "act_jul11_3" } ],
+    "images": []
+  },
+  {
     "_id": "note_kotzebue_connections",
     "kind": "footnote",
     "text": "Kotzebue has no direct flights from Fairbanks — all routes connect through Anchorage. The Kennecott → Anchorage drive happens July 5 (with the Matanuska Glacier stop), and the Jul 6 outbound flight is the early one (~8:40–9am, landing ~10:30am) rather than an afternoon flight — this opens a same-day bonus attempt at Kobuk Valley on top of Jul 7 and Jul 8, giving three possible flying days instead of two. Jul 9 remains a flex morning + late flight back.",
@@ -356,16 +419,37 @@
   },
   {
     "_id": "note_lc_katmai_open",
-    "kind": "footnote",
-    "text": "Lake Clark/Katmai structure (Port Alsworth stay vs. Anchorage day trips) is still open — once decided, activities/hotel/restaurant will be filled in the same way as the rest of the trip.",
+    "kind": "info",
+    "text": "Decided: a Port Alsworth lodge stay (Lake Clark Resort / The Farm Lodge), with a dedicated floatplane day trip to Brooks Falls for Katmai bear viewing and a second day trip to Chinitna Bay for Lake Clark's own coastal bears — plus a Lake Clark National Park hiking day and a buffer day that can repeat Katmai if July 13 gets weathered out. Exact package cost/inclusions (meals, which day trips) still need confirming directly with the lodge when booking.",
     "concerns": [ { "entity": "stay", "id": "stay_lc_katmai" } ],
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Brooks_Falls_Katmai_National_Park.jpg", "credit": "Photo by Richard A. Weaver / CC BY-SA 4.0", "caption": "Brown bear fishing for salmon at Brooks Falls" } ]
+  },
+  {
+    "_id": "note_katmai_bear_season",
+    "kind": "info",
+    "text": "Peak brown bear viewing at Brooks Falls runs roughly June 25–July 20, as the sockeye salmon run peaks — this trip's July 13 (and July 16 buffer) date lands right in that window.",
+    "concerns": [ { "entity": "activity", "id": "act_jul13_bears" } ],
+    "images": []
+  },
+  {
+    "_id": "note_katmai_weather_dependent",
+    "kind": "warning",
+    "text": "Both bear-viewing day trips are floatplane-based and weather-dependent, like the Denali, Gates of the Arctic, and Kobuk Valley flights elsewhere in this trip. July 16 is built in as a buffer day specifically to repeat July 13's Katmai trip if it gets weathered out.",
+    "concerns": [ { "entity": "activity", "id": "act_jul13_depart" }, { "entity": "activity", "id": "act_jul15_depart" } ],
+    "images": []
+  },
+  {
+    "_id": "note_kotzebue_restaurant_churn",
+    "kind": "footnote",
+    "text": "Small-town Alaska restaurants open, close, and change hours often (as the Bayside closure above shows) — worth a quick call or web check on Empress Chinese Restaurant and Little Louie's closer to the trip.",
+    "concerns": [ { "entity": "activity", "id": "act_jul6_lunch" }, { "entity": "activity", "id": "act_jul7_dinner" }, { "entity": "activity", "id": "act_jul8_dinner" } ],
+    "images": []
   },
   {
     "_id": "note_whittier_tunnel",
     "kind": "warning",
     "text": "The Whittier tunnel (Anton Anderson Memorial Tunnel) runs one-lane alternating traffic on a schedule, not free-flow — worth checking timing before the drive down so you're not stuck waiting right before boarding.",
-    "concerns": [ { "entity": "activity", "id": "act_jul17_1" } ],
+    "concerns": [ { "entity": "transit", "id": "transit_anchorage_whittier" } ],
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/AntonAndersonTunnel.jpg", "credit": "Photo by Gabor Eszes / CC BY-SA 3.0", "caption": "West portal of the Anton Anderson Memorial Tunnel" } ]
   },
   {
@@ -402,5 +486,68 @@
     "text": "Fare includes the Princess Premier package: beverage package (Zero-Alcohol Package automatically substituted for guests under 21), MedallionNet Max WiFi (unlimited, up to 4 devices), pre-paid crew appreciation (gratuities), unlimited casual and specialty dining, a premier photo package, reserved theater seating for production shows, and a one-time $100 shore excursion credit (the 6–9 day voyage tier).",
     "concerns": [ { "entity": "leg", "id": "leg_cruise" } ],
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/2023_04_29b_Discovery_Princess_16_(52935882014).jpg", "credit": "Photo by Blake Handley / CC BY 2.0", "caption": "Discovery Princess docked at Ogden Point, Victoria BC" } ]
+  },
+  {
+    "_id": "note_jul19_ranger_narration",
+    "kind": "footnote",
+    "text": "NPS rangers board the ship at the park boundary and narrate the scenic cruising onboard for the day.",
+    "concerns": [ { "entity": "activity", "id": "act_jul19_1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul20_whale_watching_details",
+    "kind": "footnote",
+    "text": "Icy Strait Point runs its own whale-watching boats directly from the port itself — no separate transfer needed, and Icy Strait/Chichagof waters are considered some of the most reliable whale-watching in Southeast Alaska.",
+    "concerns": [ { "entity": "activity", "id": "act_jul20_1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul20_cultural_program_place",
+    "kind": "info",
+    "text": "The Tlingit cultural program is held at the Huna Tribal House within the Icy Strait Point complex, which doesn't have its own separate Google Places listing — pinned to Icy Strait Point generally.",
+    "concerns": [ { "entity": "activity", "id": "act_jul20_2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul20_ziprider_details",
+    "kind": "footnote",
+    "text": "Branded the ZipRider — about 5,330 ft long, dropping roughly 1,300 vertical feet at speeds approaching 60 mph; it was the world's longest zipline when it opened in 2007.",
+    "concerns": [ { "entity": "activity", "id": "act_jul20_3" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul21_mendenhall_transfer",
+    "kind": "footnote",
+    "text": "About 13 miles from the cruise dock — city bus (Capital Transit) or a shuttle/tour operator both run out there; not walkable.",
+    "concerns": [ { "entity": "activity", "id": "act_jul21_1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul21_whale_watching_booking",
+    "kind": "footnote",
+    "text": "Harv & Marv's is Juneau's top-rated operator and tends to sell out on peak sailing days — worth booking well ahead.",
+    "concerns": [ { "entity": "activity", "id": "act_jul21_2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul21_tramway_details",
+    "kind": "footnote",
+    "text": "Ticket includes round-trip tram rides, a nature center, and hiking trails at the top; a Tlingit dance performance and raptor center are also on site.",
+    "concerns": [ { "entity": "activity", "id": "act_jul21_3" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul22_saxman_transfer",
+    "kind": "footnote",
+    "text": "About 2.5 miles from the cruise dock — reachable by Ketchikan city bus, cab, or a shore excursion transfer; self-guided admission includes the totem park grounds and carving shed.",
+    "concerns": [ { "entity": "activity", "id": "act_jul22_1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul22_misty_fjords_operators",
+    "kind": "footnote",
+    "text": "Southeast Aviation is another well-regarded Misty Fjords floatplane operator out of Ketchikan, worth comparing against Family Air Tours when booking.",
+    "concerns": [ { "entity": "activity", "id": "act_jul22_2" } ],
+    "images": []
   }
 ]

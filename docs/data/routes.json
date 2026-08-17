@@ -1,1 +1,145 @@
-[]
+[
+  {
+    "_id": "route_anchorage_talkeetna",
+    "from": { "label": "Anchorage" },
+    "to": { "label": "Talkeetna" },
+    "variants": [
+      {
+        "tone": "direct",
+        "label": "Direct — via the (New) Glenn Highway and Parks Highway",
+        "via": [
+          { "place": { "id": "ChIJ5fRlonmTyVYRoUv9eNLny3g", "label": "Glenn Highway" }, "durationMinutes": 45 },
+          { "place": { "id": "ChIJCyuT6-QdyVYRUN2N53uoJr4", "label": "Palmer" }, "durationMinutes": 5 },
+          { "place": { "id": "ChIJhwdv8UZfzFYRM7f7fCsuLC0", "label": "George Parks Highway" }, "durationMinutes": 90 }
+        ]
+      },
+      {
+        "tone": "scenic",
+        "label": "Scenic — via the Old Glenn Highway and Parks Highway",
+        "via": [
+          { "place": { "id": "ChIJ74oLNrLjyFYR49fH3Tczh2I", "label": "Old Glenn Highway" }, "durationMinutes": 25 },
+          { "place": { "id": "ChIJiUspZMCMyFYRp_UYSpwkZoM", "label": "Eagle River" }, "durationMinutes": 5 },
+          { "place": { "id": "ChIJ-8WuMUHpyFYRfPkhqA6gNuE", "label": "Chugiak" }, "durationMinutes": 10 },
+          { "place": { "id": "ChIJCyuT6-QdyVYRUN2N53uoJr4", "label": "Palmer" }, "durationMinutes": 35 },
+          { "place": { "id": "ChIJhwdv8UZfzFYRM7f7fCsuLC0", "label": "George Parks Highway" }, "durationMinutes": 90 }
+        ]
+      }
+    ],
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_Driving_along_George_Parks_Highway_-_NARA_-_7722405.jpg", "credit": "Alaska DOT&PF / Federal Highway Administration, public domain", "caption": "Driving the George Parks Highway toward Denali" } ]
+  },
+  {
+    "_id": "route_kennecott_anchorage",
+    "from": { "label": "Kennecott/McCarthy" },
+    "to": { "label": "Anchorage" },
+    "variants": [
+      {
+        "tone": "direct",
+        "label": "Direct — Richardson Highway to Glennallen, then the (New) Glenn Highway",
+        "via": [
+          { "place": { "id": "ChIJ079lh9Qfy1YRzAFODlB2i1E", "label": "Richardson Highway" }, "durationMinutes": 175 },
+          { "place": { "id": "ChIJgeXeo3yPtVYRiOp0uuoG7bY", "label": "Glennallen" }, "durationMinutes": 5 },
+          { "place": { "id": "ChIJ5fRlonmTyVYRoUv9eNLny3g", "label": "Glenn Highway" }, "durationMinutes": 225 }
+        ]
+      },
+      {
+        "tone": "scenic",
+        "label": "Scenic — Richardson Highway to Glennallen, then the Old Glenn Highway",
+        "via": [
+          { "place": { "id": "ChIJ079lh9Qfy1YRzAFODlB2i1E", "label": "Richardson Highway" }, "durationMinutes": 175 },
+          { "place": { "id": "ChIJgeXeo3yPtVYRiOp0uuoG7bY", "label": "Glennallen" }, "durationMinutes": 5 },
+          { "place": { "id": "ChIJ5fRlonmTyVYRoUv9eNLny3g", "label": "Glenn Highway" }, "durationMinutes": 165 },
+          { "place": { "id": "ChIJCyuT6-QdyVYRUN2N53uoJr4", "label": "Palmer" }, "durationMinutes": 35 },
+          { "place": { "id": "ChIJ74oLNrLjyFYR49fH3Tczh2I", "label": "Old Glenn Highway" }, "durationMinutes": 40 },
+          { "place": { "id": "ChIJiUspZMCMyFYRp_UYSpwkZoM", "label": "Eagle River" }, "durationMinutes": 15 }
+        ]
+      }
+    ],
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Matanushka_glacier.jpg", "credit": "Photo by Tifoultoute / CC BY-SA", "caption": "Matanuska Glacier viewed from the Glenn Highway" } ]
+  },
+  {
+    "_id": "route_seward_highway",
+    "from": { "label": "Anchorage" },
+    "to": { "label": "Seward" },
+    "variants": [
+      {
+        "tone": "direct",
+        "label": "Only practical route — the Seward Highway",
+        "via": [
+          { "place": { "id": "ChIJmR6OA-PEx1YRZT5tC6jtjTo", "label": "Seward Highway" }, "durationMinutes": 40 },
+          { "place": { "id": "ChIJrZNXUGx7yFYRTbgad_F100o", "label": "Girdwood" }, "durationMinutes": 5 },
+          { "place": { "id": "ChIJZyfB370NyFYR9QAqNUYxru4", "label": "Portage Glacier / Whittier junction" }, "note": "Anchorage–Whittier drives split off here onto the Whittier Access Road and tunnel instead of continuing south", "durationMinutes": 15 },
+          { "place": { "id": "ChIJd8zQE4t3yFYR6ON3mmwv0mw", "label": "Turnagain Pass" }, "durationMinutes": 25 }
+        ]
+      }
+    ],
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Seward_Highway_ENBLA01.jpg", "credit": "Photo by Enrico Blasutto / CC BY-SA 4.0", "caption": "A pullout along the Seward Highway, about 20 km from Seward" } ]
+  },
+  {
+    "_id": "route_dalton_highway",
+    "from": { "label": "Fairbanks" },
+    "to": { "label": "Coldfoot" },
+    "variants": [
+      {
+        "tone": "direct",
+        "label": "Only practical route — the Elliott Highway to the Dalton Highway",
+        "via": [
+          { "place": { "id": "ChIJp965PMwNMlERN-lw4hKGdMg", "label": "Elliott Highway" }, "durationMinutes": 80 },
+          { "place": { "id": "ChIJ4waXwW73LVER8yMRgZh3rXQ", "label": "Livengood" }, "durationMinutes": 5 },
+          { "place": { "id": "ChIJU6nK6JQ8JlERaRzvKCtcEdI", "label": "Dalton Highway" }, "durationMinutes": 240 }
+        ]
+      }
+    ],
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
+  },
+  {
+    "_id": "route_parks_highway",
+    "from": { "label": "Talkeetna" },
+    "to": { "label": "Fairbanks" },
+    "variants": [
+      {
+        "tone": "direct",
+        "label": "Only practical route — the George Parks Highway",
+        "via": [
+          { "place": { "id": "ChIJhwdv8UZfzFYRM7f7fCsuLC0", "label": "George Parks Highway" }, "durationMinutes": 120 },
+          { "place": { "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc", "label": "Denali National Park entrance" }, "durationMinutes": 5 },
+          { "place": { "id": "ChIJvxsddoaXMlERUCqo_qABWtk", "label": "Nenana" }, "durationMinutes": 90 }
+        ]
+      }
+    ],
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_River_View_from_Nenana_River_Wayside_-_NARA_-_7722402.jpg", "credit": "Alaska DOT&PF / Federal Highway Administration, public domain", "caption": "Nenana River Wayside along the Parks Highway" } ]
+  },
+  {
+    "_id": "route_richardson_highway",
+    "from": { "label": "Fairbanks" },
+    "to": { "label": "Copper Center" },
+    "variants": [
+      {
+        "tone": "direct",
+        "label": "Only practical route — the Richardson Highway",
+        "via": [
+          { "place": { "id": "ChIJ079lh9Qfy1YRzAFODlB2i1E", "label": "Richardson Highway" }, "durationMinutes": 100 },
+          { "place": { "id": "ChIJIaw7oi-KNFERtQYZ2zBPMZA", "label": "Delta Junction" }, "durationMinutes": 5 },
+          { "place": { "id": "ChIJibeE-E15tVYRXwpMcJNVSMU", "label": "Gakona" }, "durationMinutes": 95 }
+        ]
+      }
+    ],
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Richardson_Highway_ENBLA01.jpg", "credit": "Photo by Enrico Blasutto / CC BY-SA 4.0", "caption": "Richardson Highway between Thompson Pass and Copper Center" } ]
+  },
+  {
+    "_id": "route_mccarthy_road",
+    "from": { "label": "Copper Center" },
+    "to": { "label": "McCarthy Road footbridge" },
+    "variants": [
+      {
+        "tone": "direct",
+        "label": "Only practical route — Richardson Highway to Chitina, then the McCarthy Road",
+        "via": [
+          { "place": { "id": "ChIJ079lh9Qfy1YRzAFODlB2i1E", "label": "Richardson Highway" }, "durationMinutes": 40 },
+          { "place": { "id": "ChIJAfrBn7Y5tFYRPe8_YnPBNj4", "label": "Chitina" }, "durationMinutes": 5 },
+          { "place": { "id": "ChIJ9-tzIfhxtFYRBZUt1JYCoTY", "label": "McCarthy Road" }, "durationMinutes": 115 }
+        ]
+      }
+    ],
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_Kuskulana_Bridge.jpg", "credit": "Photo by Henry Chen / CC BY-SA 2.0", "caption": "Kuskulana Bridge on the McCarthy Road" } ]
+  }
+]

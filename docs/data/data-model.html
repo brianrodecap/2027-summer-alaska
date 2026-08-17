@@ -694,21 +694,23 @@
     {
       tone: 'scenic',
       label: 'Scenic — via the Seward Highway',
-      via: [ { label: 'Seward Highway' },
-             { place: { id: '...', label: 'Girdwood' } } ],
-      waypoints: [
-        { place: { id: '...', label: 'Portage Glacier overlook' }, note: 'photo stop' },
-      ],
+      via: [ { place: { id: 'ChIJ...', label: 'Seward Highway' }, durationMinutes: 40 },
+             { place: { id: 'ChIJ...', label: 'Girdwood' }, durationMinutes: 5,
+               note: 'photo stop' } ],
     },
     { tone: 'direct', label: 'Direct — via the Glenn Highway',
-      via: [ { label: 'Glenn Highway' } ] },
+      // fallback shape — only used when Places genuinely has no entry for the
+      // point; every via in this trip's own data resolved to a real place instead
+      via: [ { label: 'Glenn Highway', coordinates: { lat: 61.7911178, lng: -147.6756775 },
+               durationMinutes: 45 } ] },
   ],
   images: [],
 }</code></pre>
         <ul class="rationale">
           <li><strong>No tripId, no dates, no booking.</strong> The same trip, or a different trip entirely, can reference this route again.</li>
           <li><strong>variants[].tone has its own vocabulary</strong> — <code>scenic</code>/<code>direct</code>, deliberately not reusing Scenario's <code>ideal</code>/<code>alternate</code>. A route choice isn't a go/no-go safety branch.</li>
-          <li><strong>via is loosely typed</strong> — sometimes a named highway with no resolvable place, sometimes an actual town with a placeId — rather than forcing every via-point into one shape.</li>
+          <li><strong>Every via entry resolves to a real geo-point — a rule, not a convenience — and a Place ID is always tried first.</strong> Even a plain stretch of named highway ('Glenn Highway', 'George Parks Highway') turns out to have its own resolvable Google Place (type <code>route</code>), so in this trip's own data every via entry ended up as a real <code>place</code>. <code>coordinates: { lat, lng }</code>, sitting alongside a plain <code>label</code> instead of <code>place</code>, is the fallback for the rarer point Google's Places index genuinely has no entry for — never the default. What a via entry may never do is carry only a bare text <code>label</code> with neither. That used to be allowed ("via is loosely typed") until a computed map (the trip page's day-list map button, docs/js/trip-model.js's <code>dayMapEmbedUrl</code>) fed a bare label like 'Palmer' to Google's geocoder with no state/region qualifier and got a same-named town in a different state back — silently routing an Anchorage–Talkeetna drive through the Lower 48. A resolved Place ID or explicit coordinates can't be ambiguous the way free text can, which is the whole point of requiring one or the other.</li>
+          <li><strong>via[].durationMinutes is the drive time from whichever via point (or Depart) came before it</strong> — geography, same as the rest of Route, so it stays reusable across trips instead of being a discrete clock time that's only ever true for one specific departure. A trip's computed Day (trip-model.js's <code>stageTimesForVariant</code>) turns that into an actual estimated time by walking it forward from a specific Transit's <code>departsAt</code>, nudged later by any real Activity — a lunch stop, say — actually reached along the way. Superseded the earlier <code>waypoints[]</code> idea (a separate list of suggested stops with no timing at all): once every via point already carries a real duration, a stop worth calling out is just an ordinary via entry with a <code>note</code>, not a second parallel array.</li>
         </ul>
       </article>
 
@@ -725,7 +727,7 @@
         <pre class="schema"><code>{ id: 'ChIJS63CqrW_zlYRNQYObIK7Szk', label: 'Flying Squirrel Bakery Cafe', images: [] }</code></pre>
         <ul class="rationale">
           <li><strong>id is a pinned Google Place ID</strong> — hours, address, and website are fetched live, never stored redundantly.</li>
-          <li><strong>Reused everywhere a real point is needed</strong>: Activity's <code>place</code>, Stay's <code>lodging</code>, Route's <code>from</code>/<code>to</code>/<code>waypoints</code>, and (as of the ferry test) Transit's <code>from</code>/<code>to</code> all share this exact shape.</li>
+          <li><strong>Reused everywhere a real point is needed</strong>: Activity's <code>place</code>, Stay's <code>lodging</code>, Route's <code>from</code>/<code>to</code>/<code>via[].place</code>, and (as of the ferry test) Transit's <code>from</code>/<code>to</code> all share this exact shape.</li>
           <li><strong>images is the one field the live lookup can't fill in</strong> — the Places API call this site makes deliberately skips the Enterprise+Atmosphere fields (photos, rating, reviews) to avoid that pricing tier, so a stored, hand-picked photo is the only way a Place gets one at all. It's independent of whatever <code>images</code> an Activity or Stay that references this Place carries on itself — a restaurant's storefront photo and a specific dish photo for a meal there are different pictures.</li>
         </ul>
       </article>
@@ -871,10 +873,19 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   tone: 'ideal', label: 'Ideal — flight goes', icon: 'flight_takeoff', images: [] }
 
 { _id: 'scenario_denali_alt', legId: 'leg_parks',
-  tone: 'alternate', label: 'Alternate — flight weathered out', icon: 'cloud', images: [] }</code></pre>
+  tone: 'alternate', label: 'Alternate — flight weathered out', icon: 'cloud', images: [] }
+
+{ _id: 'scenario_jul1_ideal', legId: 'leg_parks', tone: 'ideal',
+  label: 'Relaxed drive-back day', icon: 'flight_takeoff',
+  followsScenarioDate: '2027-06-30',  // optional — this branch's default tab
+                                       // selection tracks whichever tone is
+                                       // active on the named date, instead of
+                                       // always defaulting to the first branch
+  images: [] }</code></pre>
         <ul class="rationale">
           <li><strong>Declared once, referenced by many.</strong> Every Activity or Transit that belongs to it points back via <code>scenarioId</code>, instead of repeating label/icon/tone on each item the way the old <code>Day.variants[].items</code> did.</li>
           <li><strong>No scenarioId, no branch.</strong> An Activity with nothing set is just a fixed-plan item — the same behavior as a single-variant day skipping its chip today.</li>
+          <li><strong>followsScenarioDate replaces spelling the condition out in the label.</strong> Jul 1's backup-attempt day used to be labeled "If June 30's flight went (relaxed drive-back day)" / "...was weathered out (last-chance backup day)" — accurate but too long to read as a tab. Naming the day it depends on lets the label shrink to just the day's own character ("Relaxed drive-back day"), while the presentation tier (day-render.js's <code>wireScenarioFollowers</code>) does the conditional part: Jul 1's tabs default to, and stay synced with, whichever tone is currently active on Jun 30.</li>
         </ul>
       </article>
 

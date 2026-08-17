@@ -337,11 +337,19 @@ sup a {
   top: 0;
   z-index: 5;
   display: flex;
-  align-items: baseline;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.6rem;
   padding: 0.85rem 1.25rem;
   background: var(--md-sys-color-surface-container-low);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+.day-block-header-text {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  min-width: 0;
 }
 
 .day-block-date {
@@ -563,16 +571,19 @@ detail-side-sheet.open .panel {
    .scenario-panel is ever visible; day-render.js's wireScenarioTabs toggles
    `hidden` on md-tabs' change event rather than re-rendering. ---------- */
 
-.scenario-tabs {
+.scenario-tabs,
+.route-tabs {
   margin-top: 0.5rem;
 }
 
-/* inline-icon (see day-render.js's renderScenarioTabs/renderMealRow) lays
-   icon and label out horizontally instead of MD3's default icon-over-label
-   stack — shared by every md-tabs group in the site (scenario tabs and meal
-   tabs alike), so a smaller icon here saves vertical space everywhere. */
+/* inline-icon (see day-render.js's renderScenarioTabs/renderMealRow/
+   renderRouteVariantTabs) lays icon and label out horizontally instead of
+   MD3's default icon-over-label stack — shared by every md-tabs group in the
+   site (scenario, meal, and route-variant tabs alike), so a smaller icon
+   here saves vertical space everywhere. */
 .scenario-tabs md-icon,
-.meal-row-tabs md-icon {
+.meal-row-tabs md-icon,
+.route-tabs md-icon {
   font-size: 1.125rem;
   width: 1.125rem;
   height: 1.125rem;
@@ -640,6 +651,30 @@ detail-side-sheet.open .panel {
 
 .stay-detail {
   color: var(--md-sys-color-on-surface-variant);
+}
+
+/* A Route stage row (trip-model.js's transitSequenceItems) sits between a
+   Transit's Depart/Arrive rows — visually a quieter, passed-through waypoint
+   rather than a real stop. It keeps the same row-icon-slot column width AND
+   color as every other row (so headline text still lines up at the same x,
+   and the leading icon stays on the themed primary color every other row's
+   icon uses — see row-icon-slot's own rationale above) — only set apart by
+   tighter vertical padding, not by breaking either of those shared rules. */
+.transit-stage-row {
+  padding-top: 0.4rem;
+  padding-bottom: 0.4rem;
+}
+
+/* wireRouteVariantTabs (day-render.js) toggles a stage row's `hidden`
+   attribute directly, but .stay-block's own `display: flex` (above) is an
+   author rule of equal specificity to the browser's default `[hidden] {
+   display: none }` — and author rules always win that tie, so without this,
+   a "hidden" stage row would still render. Every other hidden/shown toggle
+   in this codebase (.scenario-panel, meal options) hides a plain wrapper div
+   with no competing display rule of its own, so this is the one place that
+   needs it spelled out. */
+.transit-stage-row[hidden] {
+  display: none;
 }
 
 /* ---------- activity row / meal-option / activity-detail images ---------- */
@@ -820,6 +855,18 @@ detail-side-sheet.open .panel {
   margin: 0.25rem 0 0;
   padding: 0;
   color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ---------- day map (docs/js/trip-model.js's dayMapEmbedUrl, opened from the
+   day-block-header's map button) — a plain iframe filling the side sheet's
+   own content width, no structural component needed beyond sizing it ---------- */
+
+.day-map-frame {
+  width: 100%;
+  height: 60vh;
+  min-height: 20rem;
+  border: 0;
+  border-radius: var(--md-sys-shape-corner-medium);
 }
 
 .place-links {
