@@ -113,10 +113,10 @@ function resolveActivityDate(activity, tripYear) {
 // ---------- Note.concerns matching — see docs/data/data-model.html's Ref type.
 // Notes are bucketed to exactly one drill-down level by which kind of ref they
 // carry: entity:leg -> the Leg dialog, date/dateRange/entity:stay/entity:transit
-// -> the Day dialog, entity:scenario -> once at the top of that scenario's own
-// tab panel, entity:activity -> that activity's side sheet. A note with
-// several refs (e.g. one leg ref plus a dateRange) naturally surfaces at more
-// than one level. ----------
+// -> that day's inline notes, entity:scenario -> once at the top of that
+// scenario's own tab panel, entity:activity -> that activity's side sheet. A
+// note with several refs (e.g. one leg ref plus a dateRange) naturally
+// surfaces at more than one level. ----------
 
 function refMatchesDate(ref, date) {
   if (ref.date) return ref.date === date;

@@ -140,7 +140,7 @@ export function renderLegDialogBody(summary) {
   `);
 }
 
-// ---------- Day dialog ----------
+// ---------- Day detail (rendered inline into each day-block) ----------
 
 const NOTE_ICON = { warning: 'warning', info: 'info', footnote: 'notes' };
 
@@ -309,8 +309,7 @@ export function renderDayDetailBody(day) {
 // ---------- day list (main Trip page) ----------
 //
 // One <section> per Day with a sticky header (date + location) and its full
-// detail — the same Stay/Transit/Activity content that used to live only
-// behind the Day dialog — rendered inline underneath. Because each header is
+// Stay/Transit/Activity detail rendered inline underneath. Because each header is
 // position: sticky within its own day-block, it stays pinned to the top of
 // the viewport while that day's content scrolls past, then hands off to the
 // next day's header the moment this one's block scrolls out of view — no JS

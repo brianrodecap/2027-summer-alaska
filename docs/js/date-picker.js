@@ -1,9 +1,9 @@
-// Docked date picker for Overview's "Jump to a day" control. @material/web has
-// no date-picker component — a fourth gap alongside Card/Carousel/Side Sheet
-// (see CLAUDE.md's "three components @material/web doesn't have") — so this
-// is a calendar-grid month view built from md-icon-button (month nav) plus
-// plain <button> day cells, laid out with the structural CSS in styles.css's
-// .date-picker-* rules. Only dates that fall on an actual trip Day are
+// Docked date picker for the trip page's "Jump to a day" control. @material/web
+// has no date-picker component (see CLAUDE.md's "three components @material/web
+// doesn't have") — so this is a calendar-grid month view built from
+// md-icon-button (month nav) plus plain <button> day cells, laid out with the
+// structural CSS in styles.css's .date-picker-* rules. Only dates that fall on
+// an actual trip Day are
 // selectable; everything else (padding from the adjacent month, or any date
 // outside the trip's own start/end) renders dimmed and disabled.
 

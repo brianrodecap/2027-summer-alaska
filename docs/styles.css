@@ -615,7 +615,7 @@ detail-side-sheet.open .panel {
   font-size: 0.85em;
 }
 
-/* ---------- Stay / Transit blocks (Day dialog) ---------- */
+/* ---------- Stay / Transit blocks (inline day detail) ---------- */
 
 .stay-block {
   display: flex;
