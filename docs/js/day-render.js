@@ -3,7 +3,7 @@
 // side-sheet body. Nothing here is content — the itinerary lives entirely in
 // docs/data/2027-summer-alaska/*.json.
 
-import { formatTime, formatMoney, activityTimeLabel, stayRelation, dayMapEmbedUrl, dayFullRouteUrl, splitOutStayBoundaries } from './trip-model.js';
+import { formatTime, formatMoney, activityTimeLabel, stayRelation, dayMapEmbedUrl, dayFullRouteUrl, splitOutStayBoundaries, filterTagsFor } from './trip-model.js';
 
 function toNode(html) {
   const template = document.createElement('template');
@@ -140,6 +140,138 @@ export function renderLegDialogBody(summary) {
   `);
 }
 
+// ---------- Budget — the Overview stat strip (a teaser, links to the
+// dedicated Budget page) plus that page's own summary and By Leg/By Day/By
+// Traveler breakdown tabs (see trip-model.js's buildBudgetView for the
+// bucket definitions: spent/pending/estimated/unplanned). ----------
+
+const BUDGET_BUCKET_LABEL = { spent: 'Spent', pending: 'Pending', estimated: 'Estimated', unplanned: 'Unplanned' };
+const BUDGET_BUCKET_ICON = { spent: 'paid', pending: 'schedule', estimated: 'request_quote', unplanned: 'help_outline' };
+
+// 'unplanned' has no dollar amount at all (that's the point of the bucket —
+// see bookingBucket) so it renders as a count instead of formatMoney.
+function formatBudgetBucketAmount(totals, bucket) {
+  if (bucket === 'unplanned') return totals.unplannedCount ? `${totals.unplannedCount} not yet costed` : null;
+  if (!totals[bucket]) return null;
+  return formatMoney({ amount: totals[bucket], currency: totals.currency ?? 'USD' });
+}
+
+function renderBudgetTotalsRow(totals) {
+  const chips = Object.keys(BUDGET_BUCKET_LABEL)
+    .map((bucket) => {
+      const value = formatBudgetBucketAmount(totals, bucket);
+      if (!value) return '';
+      return `
+        <span class="budget-chip budget-chip-${bucket}">
+          <md-icon>${BUDGET_BUCKET_ICON[bucket]}</md-icon>${value}
+        </span>`;
+    })
+    .join('');
+  return `<div class="budget-totals-row">${chips}</div>`;
+}
+
+// Shared by the Overview teaser and the Budget page's own summary — same
+// four buckets as renderBudgetTotalsRow, just laid out as wider stat cards
+// instead of compact chips, and always the trip-wide totals rather than one
+// group's.
+function budgetStatsHtml(totals) {
+  return Object.keys(BUDGET_BUCKET_LABEL)
+    .map((bucket) => {
+      const value = formatBudgetBucketAmount(totals, bucket);
+      if (!value) return '';
+      return `
+        <div class="budget-stat budget-stat-${bucket}">
+          <md-icon>${BUDGET_BUCKET_ICON[bucket]}</md-icon>
+          <div>
+            <p class="budget-stat-value md-typescale-title-medium">${value}</p>
+            <p class="budget-stat-label md-typescale-label-medium">${BUDGET_BUCKET_LABEL[bucket]}</p>
+          </div>
+        </div>`;
+    })
+    .join('');
+}
+
+// The Overview section's always-visible teaser — a real <button> (matching
+// the Leg cards' own day-surface pattern) rather than a plain div, since
+// clicking it navigates to the dedicated Budget page (see app.js).
+export function renderBudgetStrip(budget) {
+  return toNode(`
+    <button type="button" class="budget-strip-button" aria-label="View full budget">
+      <div class="budget-strip">${budgetStatsHtml(budget.totals)}</div>
+    </button>`);
+}
+
+function renderBudgetRow(row) {
+  const amount = row.bucket === 'unplanned' ? 'Not yet costed' : formatMoney(row.booking.cost);
+  return `
+    <md-list-item>
+      <md-icon slot="start">${BUDGET_BUCKET_ICON[row.bucket]}</md-icon>
+      <div slot="headline">${row.label}</div>
+      <div slot="supporting-text">${BUDGET_BUCKET_LABEL[row.bucket]}</div>
+      <div slot="trailing-supporting-text">${amount}</div>
+    </md-list-item>`;
+}
+
+function renderBudgetGroup(headline, meta, totals, rows) {
+  return `
+    <div class="budget-group">
+      <div class="budget-group-header">
+        <p class="md-typescale-title-small">${headline}</p>
+        ${meta ? `<p class="budget-group-meta md-typescale-label-medium">${meta}</p>` : ''}
+      </div>
+      ${renderBudgetTotalsRow(totals)}
+      ${rows.length ? `<md-list>${rows.map(renderBudgetRow).join('')}</md-list>` : ''}
+    </div>`;
+}
+
+function renderBudgetByLeg(byLeg) {
+  if (!byLeg.length) return `<p class="md-typescale-body-medium">Nothing booked or estimated yet.</p>`;
+  return byLeg.map((g) => renderBudgetGroup(g.leg.name, null, g.totals, g.rows)).join('');
+}
+
+function renderBudgetByDay(byDay) {
+  if (!byDay.length) return `<p class="md-typescale-body-medium">Nothing dated has a cost yet.</p>`;
+  const note = `<p class="md-typescale-body-small budget-note">Leg-level bundles (like the cruise fare) aren't tied to one day — see the By Leg tab.</p>`;
+  return note + byDay.map((g) => renderBudgetGroup(g.day.dateLabel, g.day.title, g.totals, g.rows)).join('');
+}
+
+function renderBudgetByTraveler(byTraveler) {
+  const note = `<p class="md-typescale-body-small budget-note">A cost with no per-passenger fare split is divided evenly across every traveler — an inferred share, not an authored one.</p>`;
+  return note + byTraveler.map((g) => renderBudgetGroup(g.name, null, g.totals, [])).join('');
+}
+
+// The Budget page's own top section — the same big stat cards the Overview
+// teaser links from, plus the one-time explainer of what each bucket means
+// (not worth repeating per breakdown group, so it lives here instead of on
+// renderBudgetTotalsRow's compact chips).
+export function renderBudgetSummary(budget) {
+  return toFragment(`
+    <p class="md-typescale-body-large">
+      Spent and pending are what's actually booked; estimated and unplanned are still just the plan.
+      ${budget.today ? `Pending balances are whatever's still due as of ${budget.today}.` : ''}
+    </p>
+    <div class="budget-strip">${budgetStatsHtml(budget.totals)}</div>
+  `);
+}
+
+// The Budget page's By Leg/By Day/By Traveler tabs — a separate section from
+// renderBudgetSummary above so app.js can mount "summary on top, breakdowns
+// below" as two independent page sections rather than one combined blob.
+export function renderBudgetBreakdowns(budget) {
+  return toFragment(`
+    <md-tabs class="budget-tabs">
+      <md-primary-tab inline-icon active><md-icon slot="icon">route</md-icon>By Leg</md-primary-tab>
+      <md-primary-tab inline-icon><md-icon slot="icon">calendar_month</md-icon>By Day</md-primary-tab>
+      <md-primary-tab inline-icon><md-icon slot="icon">group</md-icon>By Traveler</md-primary-tab>
+    </md-tabs>
+    <div class="budget-panels">
+      <div class="budget-panel">${renderBudgetByLeg(budget.byLeg)}</div>
+      <div class="budget-panel" hidden>${renderBudgetByDay(budget.byDay)}</div>
+      <div class="budget-panel" hidden>${renderBudgetByTraveler(budget.byTraveler)}</div>
+    </div>
+  `);
+}
+
 // ---------- Day detail (rendered inline into each day-block) ----------
 
 const NOTE_ICON = { warning: 'warning', info: 'info', footnote: 'notes' };
@@ -181,11 +313,11 @@ function renderRowIconSlot(entity, fallbackIcon) {
   return `<div class="row-icon-slot">${content}</div>`;
 }
 
-function renderStay(stay, date) {
+function renderStay(stay, date, leg) {
   const name = stay.lodging?.name ?? 'Lodging still open';
   const detailBits = [stay.lodging?.roomType, stay.lodging?.roomNumber && `Room/cabin ${stay.lodging.roomNumber}`, stay.lodging?.campsite, stay.lodging?.bedConfiguration].filter(Boolean);
   return `
-    <div class="stay-block">
+    <div class="stay-block" data-filter-tags="${filterTagsFor(stay, leg).join(' ')}">
       ${renderRowIconSlot(stay, 'hotel')}
       <div class="stay-block-content">
         <p class="md-typescale-title-small">${stayRelation(stay, date)} — ${name}</p>
@@ -238,7 +370,7 @@ function renderRouteVariantTabs(transit) {
 // use. A Route's variant picker (renderRouteVariantTabs, above) renders on
 // the Depart row when there's a real choice to make — its own stages render
 // separately, spread between Depart and Arrive (renderTransitStage, below).
-function renderTransitBoundary(item) {
+function renderTransitBoundary(item, leg) {
   const { transit, phase } = item;
   const isDepart = phase === 'depart';
   const place = isDepart ? transit.from.label : transit.to.label;
@@ -249,7 +381,7 @@ function renderTransitBoundary(item) {
   // as well would just be visual noise, not a second, distinct photo.
   const iconSlot = isDepart ? renderRowIconSlot(transit, modeIcon) : `<div class="row-icon-slot"><md-icon>${modeIcon}</md-icon></div>`;
   return `
-    <div class="stay-block">
+    <div class="stay-block" data-filter-tags="${filterTagsFor(transit, leg).join(' ')}">
       ${iconSlot}
       <div class="stay-block-content">
         <p class="md-typescale-label-medium stay-detail">${formatTime(time)}</p>
@@ -273,10 +405,10 @@ function renderTransitBoundary(item) {
 // (a lunch stop, say) actually reached along the way. It's a plan-quality
 // estimate, not a live pace/traffic calculation, so treat it the same as any
 // other still-being-planned time on this page.
-function renderTransitStage(item) {
+function renderTransitStage(item, leg) {
   const { transit, variant, stage, hidden, key } = item;
   return `
-    <div class="stay-block transit-stage-row" data-transit-id="${transit._id}" data-route-tone="${variant.tone}"${hidden ? ' hidden' : ''}>
+    <div class="stay-block transit-stage-row" data-transit-id="${transit._id}" data-route-tone="${variant.tone}" data-filter-tags="${filterTagsFor(transit, leg).join(' ')}"${hidden ? ' hidden' : ''}>
       <div class="row-icon-slot"><md-icon>signpost</md-icon></div>
       <div class="stay-block-content">
         <p class="md-typescale-label-medium stay-detail">${formatTime(key)}</p>
@@ -307,7 +439,7 @@ function renderActivityRow(activity, day) {
     ? `<div slot="start" class="row-icon-slot"><img class="activity-row-image" src="${image.uri}" alt="" loading="lazy"></div>`
     : `<div slot="start" class="row-icon-slot"><md-icon>${activityRowIcon(activity)}</md-icon></div>`;
   return `
-    <md-list-item type="button" data-activity-id="${activity._id}">
+    <md-list-item type="button" data-activity-id="${activity._id}" data-filter-tags="${filterTagsFor(activity, day.leg).join(' ')}">
       ${startSlot}
       <div slot="overline">${activityTimeLabel(activity)}</div>
       <div slot="headline">${activity.text}</div>
@@ -321,9 +453,10 @@ function renderSection(section, day) {
 }
 
 function renderSequenceItem(item, day) {
-  if (item.type === 'stay') return renderStay(item.stay, day.date);
-  if (item.type === 'transit-boundary') return renderTransitBoundary(item);
-  if (item.type === 'transit-stage') return renderTransitStage(item);
+  if (item.type === 'stay') return renderStay(item.stay, day.date, day.leg);
+  if (item.type === 'transit-boundary') return renderTransitBoundary(item, day.leg);
+  if (item.type === 'transit-stage') return renderTransitStage(item, day.leg);
+  if (item.type === 'scenario-tabs') return renderScenarioTabs(day);
   return renderSection(item, day);
 }
 
@@ -374,7 +507,7 @@ function renderScenarioTabs(day) {
 // single root-wide query. (The route-variant tabs below don't fit this
 // pattern — their stage rows are scattered non-adjacent siblings, not one
 // contiguous panel — see wireRouteVariantTabs.)
-function wireTabs(root, tabsSelector, panelSelector) {
+export function wireTabs(root, tabsSelector, panelSelector) {
   root.querySelectorAll(tabsSelector).forEach((tabsEl) => {
     const panels = tabsEl.nextElementSibling.querySelectorAll(panelSelector);
     tabsEl.addEventListener('change', () => {
@@ -434,24 +567,24 @@ export function wireScenarioFollowers(root) {
 }
 
 // day.sequence (built in trip-model.js) is already the real chronological
-// order for everything that doesn't branch — Stay check-in/check-out events,
-// plus any non-branching Transit/Activity — merged by their own timestamp,
-// but today's checkout/check-in events are pulled out to the front/back of
-// the rendered order — see splitOutStayBoundaries above. Branching material
-// (day.scenarioTracks) renders after the rest, as the tab group.
+// order for everything on the day, branching material included — a single
+// { type: 'scenario-tabs' } placeholder sits wherever the branching content's
+// own earliest real time actually falls (buildScenarioTracks' anchorKey),
+// so the tab group renders inline at that point rather than always trailing
+// every other event regardless of when it happens. Today's checkout/check-in
+// events are still pulled out to the front/back of the rendered order — see
+// splitOutStayBoundaries above.
 export function renderDayDetailBody(day) {
   const { checkOuts, rest, checkIns } = splitOutStayBoundaries(day.sequence);
   const checkOutHtml = checkOuts.map((item) => renderSequenceItem(item, day)).join('');
   const itemsHtml = rest.map((item) => renderSequenceItem(item, day)).join('');
-  const tabsHtml = renderScenarioTabs(day);
   const checkInHtml = checkIns.map((item) => renderSequenceItem(item, day)).join('');
-  const emptyHtml = checkOutHtml || itemsHtml || tabsHtml || checkInHtml ? '' : `<p class="md-typescale-body-medium">Nothing scheduled yet.</p>`;
+  const emptyHtml = checkOutHtml || itemsHtml || checkInHtml ? '' : `<p class="md-typescale-body-medium">Nothing scheduled yet.</p>`;
 
   const body = toFragment(`
     ${renderNotes(day.notes)}
     ${checkOutHtml}
     ${itemsHtml}
-    ${tabsHtml}
     ${checkInHtml}
     ${emptyHtml}
   `);
@@ -492,9 +625,9 @@ export function renderDayBlock(day) {
 // dayMapEmbedUrl (trip-model.js) is null when the day has nothing resolvable
 // to map yet (e.g. a still-unplanned day with no places named anywhere) —
 // same "degrade gracefully" convention as renderPlaceUnavailable below.
-export function renderDayMapSheetBody(day) {
-  const url = dayMapEmbedUrl(day);
-  const fullRouteUrl = dayFullRouteUrl(day);
+export function renderDayMapSheetBody(day, selections = {}) {
+  const url = dayMapEmbedUrl(day, selections);
+  const fullRouteUrl = dayFullRouteUrl(day, selections);
   const fullRouteLink = fullRouteUrl
     ? `<div class="place-links"><a class="place-link md-typescale-label-large" href="${fullRouteUrl}" target="_blank" rel="noopener">Open full route in Google Maps</a></div>`
     : '';
@@ -549,6 +682,7 @@ export function placeTypeIcon(details) {
 
 const DINING_FORMAT_ICON = {
   included: 'redeem',
+  package: 'local_offer',
   'sit-down': 'restaurant',
   'grab-and-go': 'takeout_dining',
   drivethru: 'directions_car',
@@ -557,6 +691,7 @@ const DINING_FORMAT_ICON = {
 
 const DINING_FORMAT_LABEL = {
   included: 'Included with the stay',
+  package: 'Covered by package',
   'sit-down': 'Sit-down',
   'grab-and-go': 'Grab-and-go',
   drivethru: 'Drive-thru',
@@ -567,20 +702,34 @@ const DINING_FORMAT_LABEL = {
 // with the stay" fits a side-sheet line but not a tab label.
 const DINING_FORMAT_PILL_LABEL = {
   included: 'Included',
+  package: 'Package',
   'sit-down': 'Sit-down',
   'grab-and-go': 'Grab-and-go',
   drivethru: 'Drive-thru',
   'self-catered': 'Self-catered',
 };
 
-// An 'included' candidate only actually reads as "included" once its stay is
-// underway — this same day, before check-in has happened, there's no room to
-// have gotten breakfast bundled into yet (see the Stay entity's checkInAt/
-// checkOutAt and trip-model.js's stayRelation). Any other diningFormat has no
-// such precondition.
+// Which Stay a MealOption's includedIn ref is actually about — a plain
+// { entity: 'stay' } ref for 'included', or a { entity: 'package' } ref for
+// 'package', which requires looking inside each day.stays' own packages[] to
+// find the one that owns that package id (see data-model.html's Stay entity).
+function stayForIncludedIn(day, includedIn) {
+  if (!includedIn) return null;
+  if (includedIn.entity === 'stay') return day.stays.find((s) => s._id === includedIn.id) ?? null;
+  if (includedIn.entity === 'package') {
+    return day.stays.find((s) => s.packages?.some((p) => p._id === includedIn.id)) ?? null;
+  }
+  return null;
+}
+
+// An 'included' or 'package' candidate only actually reads as covered once its
+// stay is underway — this same day, before check-in has happened, there's no
+// room to have gotten breakfast bundled (or package-covered) into yet (see the
+// Stay entity's checkInAt/checkOutAt and trip-model.js's stayRelation). Any
+// other diningFormat has no such precondition.
 function isIncludedOptionActive(day, option) {
-  if (option.diningFormat !== 'included') return true;
-  const stay = day.stays.find((s) => s._id === option.includedIn?.id);
+  if (option.diningFormat !== 'included' && option.diningFormat !== 'package') return true;
+  const stay = stayForIncludedIn(day, option.includedIn);
   return !!stay && stayRelation(stay, day.date) !== 'Check in';
 }
 
@@ -632,7 +781,7 @@ function renderMealRow(activity, day) {
       </md-tabs>`
     : '';
   return `
-    <div class="meal-row">
+    <div class="meal-row" data-filter-tags="${filterTagsFor(activity, day.leg).join(' ')}">
       <div class="row-icon-slot">${renderMealRowImage(selected)}</div>
       <div class="meal-row-body">
         <button type="button" class="meal-row-header" data-activity-id="${activity._id}">
@@ -703,7 +852,13 @@ export function activityDetailTitle(activity, selectedOption) {
 // back gracefully).
 export function renderActivityDetailBody(activity, selectedOption) {
   const place = selectedOption ? selectedOption.place : activity.place;
-  const placePanel = place ? `<div class="place-panel"><md-circular-progress indeterminate></md-circular-progress></div>` : '';
+  // Only a Place with a real Google Place id gets the live-lookup panel — a
+  // named-but-unresolved place (place.id: null, e.g. a shipboard restaurant
+  // with no static geolocation to look up — see data-model.html's Place
+  // entity) has nothing for places.js to fetch, so skip straight past it
+  // rather than showing a loading spinner that can only ever resolve to
+  // "unavailable".
+  const placePanel = place?.id ? `<div class="place-panel"><md-circular-progress indeterminate></md-circular-progress></div>` : '';
   const image = firstImage(activity) ?? firstImage(place);
 
   const body = toFragment(`

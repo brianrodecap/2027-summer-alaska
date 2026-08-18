@@ -8,20 +8,17 @@
         "tone": "direct",
         "label": "Direct — via the (New) Glenn Highway and Parks Highway",
         "via": [
-          { "place": { "id": "ChIJ5fRlonmTyVYRoUv9eNLny3g", "label": "Glenn Highway" }, "durationMinutes": 45 },
-          { "place": { "id": "ChIJCyuT6-QdyVYRUN2N53uoJr4", "label": "Palmer" }, "durationMinutes": 5 },
-          { "place": { "id": "ChIJhwdv8UZfzFYRM7f7fCsuLC0", "label": "George Parks Highway" }, "durationMinutes": 90 }
+          { "kind": "waypoint", "place": { "id": "ChIJCyuT6-QdyVYRUN2N53uoJr4", "label": "Palmer" }, "durationMinutes": 50 }
         ]
       },
       {
         "tone": "scenic",
         "label": "Scenic — via the Old Glenn Highway and Parks Highway",
         "via": [
-          { "place": { "id": "ChIJ74oLNrLjyFYR49fH3Tczh2I", "label": "Old Glenn Highway" }, "durationMinutes": 25 },
-          { "place": { "id": "ChIJiUspZMCMyFYRp_UYSpwkZoM", "label": "Eagle River" }, "durationMinutes": 5 },
-          { "place": { "id": "ChIJ-8WuMUHpyFYRfPkhqA6gNuE", "label": "Chugiak" }, "durationMinutes": 10 },
-          { "place": { "id": "ChIJCyuT6-QdyVYRUN2N53uoJr4", "label": "Palmer" }, "durationMinutes": 35 },
-          { "place": { "id": "ChIJhwdv8UZfzFYRM7f7fCsuLC0", "label": "George Parks Highway" }, "durationMinutes": 90 }
+          { "kind": "override", "place": { "id": "ChIJ74oLNrLjyFYR49fH3Tczh2I", "label": "Old Glenn Highway" }, "durationMinutes": 25 },
+          { "kind": "waypoint", "place": { "id": "ChIJiUspZMCMyFYRp_UYSpwkZoM", "label": "Eagle River" }, "durationMinutes": 5 },
+          { "kind": "waypoint", "place": { "id": "ChIJ-8WuMUHpyFYRfPkhqA6gNuE", "label": "Chugiak" }, "durationMinutes": 10 },
+          { "kind": "waypoint", "place": { "id": "ChIJCyuT6-QdyVYRUN2N53uoJr4", "label": "Palmer" }, "durationMinutes": 35 }
         ]
       }
     ],
@@ -36,21 +33,17 @@
         "tone": "direct",
         "label": "Direct — Richardson Highway to Glennallen, then the (New) Glenn Highway",
         "via": [
-          { "place": { "id": "ChIJ079lh9Qfy1YRzAFODlB2i1E", "label": "Richardson Highway" }, "durationMinutes": 175 },
-          { "place": { "id": "ChIJgeXeo3yPtVYRiOp0uuoG7bY", "label": "Glennallen" }, "durationMinutes": 5 },
-          { "place": { "id": "ChIJ5fRlonmTyVYRoUv9eNLny3g", "label": "Glenn Highway" }, "durationMinutes": 225 }
+          { "kind": "waypoint", "place": { "id": "ChIJgeXeo3yPtVYRiOp0uuoG7bY", "label": "Glennallen" }, "durationMinutes": 180 }
         ]
       },
       {
         "tone": "scenic",
         "label": "Scenic — Richardson Highway to Glennallen, then the Old Glenn Highway",
         "via": [
-          { "place": { "id": "ChIJ079lh9Qfy1YRzAFODlB2i1E", "label": "Richardson Highway" }, "durationMinutes": 175 },
-          { "place": { "id": "ChIJgeXeo3yPtVYRiOp0uuoG7bY", "label": "Glennallen" }, "durationMinutes": 5 },
-          { "place": { "id": "ChIJ5fRlonmTyVYRoUv9eNLny3g", "label": "Glenn Highway" }, "durationMinutes": 165 },
-          { "place": { "id": "ChIJCyuT6-QdyVYRUN2N53uoJr4", "label": "Palmer" }, "durationMinutes": 35 },
-          { "place": { "id": "ChIJ74oLNrLjyFYR49fH3Tczh2I", "label": "Old Glenn Highway" }, "durationMinutes": 40 },
-          { "place": { "id": "ChIJiUspZMCMyFYRp_UYSpwkZoM", "label": "Eagle River" }, "durationMinutes": 15 }
+          { "kind": "waypoint", "place": { "id": "ChIJgeXeo3yPtVYRiOp0uuoG7bY", "label": "Glennallen" }, "durationMinutes": 180 },
+          { "kind": "waypoint", "place": { "id": "ChIJCyuT6-QdyVYRUN2N53uoJr4", "label": "Palmer" }, "durationMinutes": 200 },
+          { "kind": "override", "place": { "id": "ChIJ74oLNrLjyFYR49fH3Tczh2I", "label": "Old Glenn Highway" }, "durationMinutes": 40 },
+          { "kind": "waypoint", "place": { "id": "ChIJiUspZMCMyFYRp_UYSpwkZoM", "label": "Eagle River" }, "durationMinutes": 15 }
         ]
       }
     ],
@@ -65,10 +58,9 @@
         "tone": "direct",
         "label": "Only practical route — the Seward Highway",
         "via": [
-          { "place": { "id": "ChIJmR6OA-PEx1YRZT5tC6jtjTo", "label": "Seward Highway" }, "durationMinutes": 40 },
-          { "place": { "id": "ChIJrZNXUGx7yFYRTbgad_F100o", "label": "Girdwood" }, "durationMinutes": 5 },
-          { "place": { "id": "ChIJZyfB370NyFYR9QAqNUYxru4", "label": "Portage Glacier / Whittier junction" }, "note": "Anchorage–Whittier drives split off here onto the Whittier Access Road and tunnel instead of continuing south", "durationMinutes": 15 },
-          { "place": { "id": "ChIJd8zQE4t3yFYR6ON3mmwv0mw", "label": "Turnagain Pass" }, "durationMinutes": 25 }
+          { "kind": "waypoint", "place": { "id": "ChIJrZNXUGx7yFYRTbgad_F100o", "label": "Girdwood" }, "durationMinutes": 45 },
+          { "kind": "override", "place": { "id": "ChIJZyfB370NyFYR9QAqNUYxru4", "label": "Portage Glacier / Whittier junction" }, "note": "Anchorage–Whittier drives split off here onto the Whittier Access Road and tunnel instead of continuing south", "durationMinutes": 15 },
+          { "kind": "waypoint", "place": { "id": "ChIJd8zQE4t3yFYR6ON3mmwv0mw", "label": "Turnagain Pass" }, "durationMinutes": 25 }
         ]
       }
     ],
@@ -83,9 +75,7 @@
         "tone": "direct",
         "label": "Only practical route — the Elliott Highway to the Dalton Highway",
         "via": [
-          { "place": { "id": "ChIJp965PMwNMlERN-lw4hKGdMg", "label": "Elliott Highway" }, "durationMinutes": 80 },
-          { "place": { "id": "ChIJ4waXwW73LVER8yMRgZh3rXQ", "label": "Livengood" }, "durationMinutes": 5 },
-          { "place": { "id": "ChIJU6nK6JQ8JlERaRzvKCtcEdI", "label": "Dalton Highway" }, "durationMinutes": 240 }
+          { "kind": "waypoint", "place": { "id": "ChIJ4waXwW73LVER8yMRgZh3rXQ", "label": "Livengood" }, "durationMinutes": 85 }
         ]
       }
     ],
@@ -100,9 +90,8 @@
         "tone": "direct",
         "label": "Only practical route — the George Parks Highway",
         "via": [
-          { "place": { "id": "ChIJhwdv8UZfzFYRM7f7fCsuLC0", "label": "George Parks Highway" }, "durationMinutes": 120 },
-          { "place": { "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc", "label": "Denali National Park entrance" }, "durationMinutes": 5 },
-          { "place": { "id": "ChIJvxsddoaXMlERUCqo_qABWtk", "label": "Nenana" }, "durationMinutes": 90 }
+          { "kind": "waypoint", "place": { "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc", "label": "Denali National Park entrance" }, "durationMinutes": 125 },
+          { "kind": "waypoint", "place": { "id": "ChIJvxsddoaXMlERUCqo_qABWtk", "label": "Nenana" }, "durationMinutes": 90 }
         ]
       }
     ],
@@ -117,9 +106,8 @@
         "tone": "direct",
         "label": "Only practical route — the Richardson Highway",
         "via": [
-          { "place": { "id": "ChIJ079lh9Qfy1YRzAFODlB2i1E", "label": "Richardson Highway" }, "durationMinutes": 100 },
-          { "place": { "id": "ChIJIaw7oi-KNFERtQYZ2zBPMZA", "label": "Delta Junction" }, "durationMinutes": 5 },
-          { "place": { "id": "ChIJibeE-E15tVYRXwpMcJNVSMU", "label": "Gakona" }, "durationMinutes": 95 }
+          { "kind": "waypoint", "place": { "id": "ChIJIaw7oi-KNFERtQYZ2zBPMZA", "label": "Delta Junction" }, "durationMinutes": 105 },
+          { "kind": "waypoint", "place": { "id": "ChIJibeE-E15tVYRXwpMcJNVSMU", "label": "Gakona" }, "durationMinutes": 95 }
         ]
       }
     ],
@@ -134,9 +122,8 @@
         "tone": "direct",
         "label": "Only practical route — Richardson Highway to Chitina, then the McCarthy Road",
         "via": [
-          { "place": { "id": "ChIJ079lh9Qfy1YRzAFODlB2i1E", "label": "Richardson Highway" }, "durationMinutes": 40 },
-          { "place": { "id": "ChIJAfrBn7Y5tFYRPe8_YnPBNj4", "label": "Chitina" }, "durationMinutes": 5 },
-          { "place": { "id": "ChIJ9-tzIfhxtFYRBZUt1JYCoTY", "label": "McCarthy Road" }, "durationMinutes": 115 }
+          { "kind": "waypoint", "place": { "id": "ChIJAfrBn7Y5tFYRPe8_YnPBNj4", "label": "Chitina" }, "durationMinutes": 45 },
+          { "kind": "override", "place": { "id": "ChIJ9-tzIfhxtFYRBZUt1JYCoTY", "label": "McCarthy Road" }, "durationMinutes": 115 }
         ]
       }
     ],

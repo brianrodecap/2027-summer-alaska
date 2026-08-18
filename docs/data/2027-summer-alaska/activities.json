@@ -677,10 +677,10 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": null,
+    "startAt": "2027-06-28T09:00",
     "endAt": null,
-    "timeLabel": "9:00am (approx.)",
-    "order": 3,
+    "timeLabel": null,
+    "order": null,
     "priority": null,
     "text": "Board the reserved Transit Bus toward East Fork Bridge (Mile 43)",
     "place": {
@@ -1118,7 +1118,7 @@
     "status": "planning",
     "startAt": null,
     "endAt": null,
-    "timeLabel": "Late morning/midday",
+    "timeLabel": "Morning",
     "order": 3,
     "priority": null,
     "text": "Gates of the Arctic Tour flight to Frigid Crags and Boreal Mountain via Holmes Pass",
@@ -1656,7 +1656,7 @@
     "status": "planning",
     "startAt": null,
     "endAt": null,
-    "timeLabel": "Remaining afternoon",
+    "timeLabel": "Afternoon",
     "order": 5,
     "priority": null,
     "text": "Museum of the North, if there’s time; otherwise just rest",
@@ -2025,8 +2025,8 @@
     },
     "booking": null,
     "mealType": "dinner",
-    "diningFormat": "sit-down",
-    "includedIn": null,
+    "diningFormat": "package",
+    "includedIn": { "entity": "package", "id": "pkg_kennicott_meals" },
     "options": null,
     "images": []
   },
@@ -2048,8 +2048,8 @@
     },
     "booking": null,
     "mealType": "breakfast",
-    "diningFormat": "sit-down",
-    "includedIn": null,
+    "diningFormat": "package",
+    "includedIn": { "entity": "package", "id": "pkg_kennicott_meals" },
     "options": null,
     "images": []
   },
@@ -2144,7 +2144,7 @@
     "includedIn": null,
     "options": [
       {
-        "diningFormat": "sit-down",
+        "diningFormat": "package",
         "place": {
           "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
           "label": "Kennicott Glacier Lodge",
@@ -2156,7 +2156,7 @@
             }
           ]
         },
-        "includedIn": null,
+        "includedIn": { "entity": "package", "id": "pkg_kennicott_meals" },
         "note": "At the lodge."
       },
       {
@@ -2182,7 +2182,7 @@
     "timeLabel": null,
     "order": null,
     "priority": null,
-    "text": "Breakfast at Kennicott Glacier Lodge, check out",
+    "text": "Breakfast at Kennicott Glacier Lodge",
     "place": {
       "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
       "label": "Kennicott Glacier Lodge",
@@ -2190,8 +2190,8 @@
     },
     "booking": null,
     "mealType": "breakfast",
-    "diningFormat": "sit-down",
-    "includedIn": null,
+    "diningFormat": "package",
+    "includedIn": { "entity": "package", "id": "pkg_kennicott_meals" },
     "options": null,
     "images": []
   },
@@ -2250,7 +2250,7 @@
     "endAt": "2027-07-05T14:00",
     "timeLabel": null,
     "order": null,
-    "priority": null,
+    "priority": "high",
     "text": "Matanuska Glacier helicopter tour with Sheep Mountain Air",
     "place": {
       "id": "ChIJS37BSCqNyVYRmTFsCdbhoYA",
@@ -2434,11 +2434,11 @@
   {
     "_id": "act_jul6_4",
     "legId": "leg_parks",
-    "scenarioId": null,
+    "scenarioId": "scenario_jul6_ideal",
     "status": "planning",
     "startAt": null,
     "endAt": null,
-    "timeLabel": "Early–mid afternoon",
+    "timeLabel": "Afternoon",
     "order": 4,
     "priority": null,
     "text": "Kobuk Valley flightseeing, weather permitting",
@@ -2461,11 +2461,11 @@
   {
     "_id": "act_jul6_5",
     "legId": "leg_parks",
-    "scenarioId": null,
+    "scenarioId": "scenario_jul6_alt",
     "status": "planning",
     "startAt": null,
     "endAt": null,
-    "timeLabel": "Early–mid afternoon, if no flight",
+    "timeLabel": "Afternoon",
     "order": 5,
     "priority": null,
     "text": "Northwest Arctic Heritage Center",
@@ -2614,7 +2614,7 @@
   {
     "_id": "act_jul8_1",
     "legId": "leg_parks",
-    "scenarioId": null,
+    "scenarioId": "scenario_jul8_ideal",
     "status": "planning",
     "startAt": null,
     "endAt": null,
@@ -2641,11 +2641,11 @@
   {
     "_id": "act_jul8_2",
     "legId": "leg_parks",
-    "scenarioId": null,
+    "scenarioId": "scenario_jul8_alt",
     "status": "planning",
     "startAt": null,
     "endAt": null,
-    "timeLabel": "If no flight",
+    "timeLabel": null,
     "order": 1,
     "priority": null,
     "text": "Northwest Arctic Heritage Center",
@@ -3657,7 +3657,7 @@
     "timeLabel": null,
     "order": null,
     "priority": null,
-    "text": "Breakfast at the lodge, check out",
+    "text": "Breakfast at the lodge",
     "place": null,
     "booking": null,
     "mealType": "breakfast",
@@ -3808,13 +3808,13 @@
         "note": "The World Fresh Marketplace buffet, low-key after a long travel day."
       },
       {
-        "diningFormat": "included",
-        "place": null,
+        "diningFormat": "package",
+        "place": { "id": null, "label": "Sabatini's", "images": [] },
         "includedIn": {
-          "entity": "stay",
-          "id": "stay_cruise"
+          "entity": "package",
+          "id": "pkg_princess_premier"
         },
-        "note": "Sabatini's — Princess's Italian trattoria, included under the Premier package."
+        "note": "Princess's Italian trattoria."
       }
     ],
     "images": []
@@ -3945,13 +3945,13 @@
         "note": "The main dining room, timed to catch the glacier views."
       },
       {
-        "diningFormat": "included",
-        "place": null,
+        "diningFormat": "package",
+        "place": { "id": null, "label": "Crown Grill", "images": [] },
         "includedIn": {
-          "entity": "stay",
-          "id": "stay_cruise"
+          "entity": "package",
+          "id": "pkg_princess_premier"
         },
-        "note": "Crown Grill — the steakhouse, included under the Premier package."
+        "note": "The steakhouse."
       }
     ],
     "images": []
@@ -4066,13 +4066,13 @@
         "note": "The main dining room."
       },
       {
-        "diningFormat": "included",
-        "place": null,
+        "diningFormat": "package",
+        "place": { "id": null, "label": "Sabatini's", "images": [] },
         "includedIn": {
-          "entity": "stay",
-          "id": "stay_cruise"
+          "entity": "package",
+          "id": "pkg_princess_premier"
         },
-        "note": "Sabatini's, included under the Premier package."
+        "note": null
       }
     ],
     "images": []
@@ -4244,13 +4244,13 @@
         "note": "The main dining room."
       },
       {
-        "diningFormat": "included",
-        "place": null,
+        "diningFormat": "package",
+        "place": { "id": null, "label": "Crown Grill", "images": [] },
         "includedIn": {
-          "entity": "stay",
-          "id": "stay_cruise"
+          "entity": "package",
+          "id": "pkg_princess_premier"
         },
-        "note": "Crown Grill, included under the Premier package."
+        "note": null
       }
     ],
     "images": []
@@ -4413,13 +4413,13 @@
         "note": "The main dining room."
       },
       {
-        "diningFormat": "included",
-        "place": null,
+        "diningFormat": "package",
+        "place": { "id": null, "label": "Sabatini's", "images": [] },
         "includedIn": {
-          "entity": "stay",
-          "id": "stay_cruise"
+          "entity": "package",
+          "id": "pkg_princess_premier"
         },
-        "note": "Sabatini's, included under the Premier package."
+        "note": null
       }
     ],
     "images": []
@@ -4488,15 +4488,15 @@
     "options": [
       {
         "diningFormat": "sit-down",
-        "place": null,
+        "place": { "id": null, "label": "Alaska Fish House at Salmon Landing", "images": [] },
         "includedIn": null,
-        "note": "Alaska Fish House at Salmon Landing — busy at peak lunch hours but the line moves fast."
+        "note": "Busy at peak lunch hours but the line moves fast."
       },
       {
         "diningFormat": "sit-down",
-        "place": null,
+        "place": { "id": null, "label": "Annabelle's Famous Keg and Chowder House on Front Street", "images": [] },
         "includedIn": null,
-        "note": "Annabelle's Famous Keg and Chowder House on Front Street, a quieter alternative."
+        "note": "A quieter alternative."
       }
     ],
     "images": []
@@ -4555,13 +4555,13 @@
         "note": "The main dining room."
       },
       {
-        "diningFormat": "included",
-        "place": null,
+        "diningFormat": "package",
+        "place": { "id": null, "label": "Crown Grill", "images": [] },
         "includedIn": {
-          "entity": "stay",
-          "id": "stay_cruise"
+          "entity": "package",
+          "id": "pkg_princess_premier"
         },
-        "note": "Crown Grill, included under the Premier package."
+        "note": null
       }
     ],
     "images": []
@@ -4688,22 +4688,22 @@
         "note": "The main dining room, a proper send-off."
       },
       {
-        "diningFormat": "included",
-        "place": null,
+        "diningFormat": "package",
+        "place": { "id": null, "label": "Sabatini's", "images": [] },
         "includedIn": {
-          "entity": "stay",
-          "id": "stay_cruise"
+          "entity": "package",
+          "id": "pkg_princess_premier"
         },
-        "note": "Sabatini's, included under the Premier package."
+        "note": null
       },
       {
-        "diningFormat": "included",
-        "place": null,
+        "diningFormat": "package",
+        "place": { "id": null, "label": "Crown Grill", "images": [] },
         "includedIn": {
-          "entity": "stay",
-          "id": "stay_cruise"
+          "entity": "package",
+          "id": "pkg_princess_premier"
         },
-        "note": "Crown Grill, included under the Premier package."
+        "note": null
       }
     ],
     "images": []

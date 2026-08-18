@@ -48,5 +48,37 @@
     "icon": "cloud",
     "followsScenarioDate": "2027-06-30",
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg", "credit": "U.S. Fish and Wildlife Service, public domain", "caption": "Aerial view of the Brooks Range, Gates of the Arctic" } ]
+  },
+  {
+    "_id": "scenario_jul6_ideal",
+    "legId": "leg_parks",
+    "tone": "ideal",
+    "label": "Ideal — flight goes",
+    "icon": "flight_takeoff",
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg", "credit": "Photo by LCGS Russ / CC BY-SA 3.0", "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park" } ]
+  },
+  {
+    "_id": "scenario_jul6_alt",
+    "legId": "leg_parks",
+    "tone": "alternate",
+    "label": "Alternate — flight weathered out",
+    "icon": "cloud",
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg", "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0", "caption": "Drizzly, low-cloud day in the Central Brooks Range" } ]
+  },
+  {
+    "_id": "scenario_jul8_ideal",
+    "legId": "leg_parks",
+    "tone": "ideal",
+    "label": "Ideal — flight goes",
+    "icon": "flight_takeoff",
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg", "credit": "Photo by LCGS Russ / CC BY-SA 3.0", "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park" } ]
+  },
+  {
+    "_id": "scenario_jul8_alt",
+    "legId": "leg_parks",
+    "tone": "alternate",
+    "label": "Alternate — flight weathered out",
+    "icon": "cloud",
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg", "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0", "caption": "Drizzly, low-cloud day in the Central Brooks Range" } ]
   }
 ]

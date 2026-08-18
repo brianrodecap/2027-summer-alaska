@@ -147,6 +147,47 @@ function notesForActivity(notes, activityId) {
   return notes.filter((n) => n.concerns.some((r) => refMatchesEntity(r, 'activity', [activityId])));
 }
 
+function entityHasWarning(notes, entity, id) {
+  return notes.some((n) => n.kind === 'warning' && n.concerns.some((r) => refMatchesEntity(r, entity, [id])));
+}
+
+// ---------- filter tags — the token vocabulary the trip page's filter nav
+// (docs/js/filters.js) reads to show or hide each Stay/Transit/Activity row.
+// Every row always carries at least a leg:<id> token; the booking/attr
+// tokens only get added when the entity actually has something to say on
+// that axis. filters.js's rowMatches groups tokens by their `prefix:` (OR
+// within a group, AND across groups), so this is the entire vocabulary a new
+// filter option would need to plug into.
+
+// TODO(you): a Leg can be booked as one bundle — leg_cruise's own `booking`
+// covers the whole week — while nearly every Stay/Transit/Activity inside it
+// still carries `booking: null` of its own, because nothing about that one
+// day was reserved separately. Right now this only ever looks at the
+// entity's own booking, so almost everything inside a bundled leg shows as
+// neither "Booked" nor "Needs booking" in the filter nav, even though the
+// leg itself is fully paid for. Decide whether/how a bundled leg's own
+// booking.status should roll down onto a child with no booking of its own —
+// `entity` is the Stay/Transit/Activity in question, `leg` is the Leg it
+// belongs to (day.leg), with its own optional `booking` — every call site
+// below already has both in hand.
+//
+// This placeholder only ever looks at the entity's own booking, so the
+// feature works end to end while you decide the real rule.
+function resolveBookingTag(entity, leg) {
+  if (entity.booking?.status === 'booked') return 'booking:booked';
+  if (entity.booking?.status === 'planning') return 'booking:needs';
+  return null;
+}
+
+export function filterTagsFor(entity, leg) {
+  const tags = [`leg:${leg._id}`];
+  const bookingTag = resolveBookingTag(entity, leg);
+  if (bookingTag) tags.push(bookingTag);
+  if (entity.priority) tags.push('attr:highlight');
+  if (entity.hasWarningNote) tags.push('attr:attention');
+  return tags;
+}
+
 // ---------- building the computed Day view ----------
 
 function stayOverlapsDay(stay, dayStart, dayEnd) {
@@ -199,12 +240,40 @@ export function stayRelation(stay, date) {
 // A Stay with no check-in/check-out event today (already occupied, or
 // occupied for the rest of the day) has no instant to sort by — it's
 // standing context for the whole day, not a scheduled event — so it's
-// anchored to the start of the day. Fuzzy-timed activities (timeLabel/order
-// only, no startAt/endAt) have no timestamp either; they sort after every
-// timed item, in their own already-authored order.
+// anchored to the start of the day. Fuzzy-timed activities (timeLabel only,
+// no startAt/endAt) have no real timestamp either, but timeLabel is a closed
+// vocabulary (TIME_LABEL_ANCHORS below) rather than free text, so per
+// Guiding principle 03 each one gets a real anchor time straight from that
+// table. A timeLabel outside the table (a one-off conditional string that
+// doesn't reduce to a single time of day) still borrows the timestamp of the
+// nearest real-timed activity before it in the day's own already-authored
+// array order (or dayStart, if nothing timed precedes it yet).
 
-function activitySortKey(activity) {
-  return activity.startAt ?? activity.endAt ?? null;
+// The only three anchors this trip's days actually need — deliberately
+// coarse, since a fuzzy label like "Morning" was never claiming more
+// precision than this in the first place. Each maps to an HH:MM used only
+// to compute a sort key; activityTimeLabel (above) still shows the label
+// text itself, never this clock time.
+const TIME_LABEL_ANCHORS = {
+  Morning: '09:00',
+  Afternoon: '13:00',
+  Evening: '20:00',
+};
+
+function activitySortKey(activity, dayStart) {
+  if (activity.startAt) return activity.startAt;
+  if (activity.endAt) return activity.endAt;
+  const anchor = activity.timeLabel ? TIME_LABEL_ANCHORS[activity.timeLabel] : null;
+  return anchor ? `${dayStart.slice(0, 10)}T${anchor}` : null;
+}
+
+function resolveActivityKeys(activities, dayStart) {
+  let lastKey = dayStart;
+  return activities.map((activity) => {
+    const key = activitySortKey(activity, dayStart) ?? lastKey;
+    lastKey = key;
+    return { type: 'activity', activity, key };
+  });
 }
 
 function stayEventKey(stay, relation, dayStart) {
@@ -279,7 +348,7 @@ function stageTimesForVariant(variant, transit, inTransitActivities) {
       }
     }
     clockMs = Math.min(clockMs, arriveMs - 60000);
-    return { label: v.label ?? v.place.label, placeId: v.place?.id ?? null, note: v.note ?? null, key: formatWallClock(clockMs) };
+    return { label: v.label ?? v.place.label, placeId: v.place?.id ?? null, note: v.note ?? null, kind: v.kind, key: formatWallClock(clockMs) };
   });
 }
 
@@ -311,14 +380,12 @@ function transitSequenceItems(transit, dayStart) {
   return items;
 }
 
-// Merge-sorts already-keyed items (key: an ISO timestamp, or null for an
-// untimed item) into real chronological order, untimed items trailing in
-// their own already-authored order.
+// Merge-sorts already-keyed items (key: an ISO timestamp — every item has
+// one by now, real or borrowed, see resolveActivityKeys) into chronological
+// order. A stable sort so same-key items (e.g. an activity that borrowed a
+// preceding item's exact key) keep their original already-authored order.
 function mergeByTime(items) {
-  const timed = items.filter((i) => i.key !== null);
-  const untimed = items.filter((i) => i.key === null);
-  timed.sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
-  return [...timed, ...untimed];
+  return [...items].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
 }
 
 // Collapses consecutive { type: 'activity' } items into one
@@ -344,7 +411,15 @@ function collapseActivityRuns(ordered) {
   return sequence;
 }
 
-function buildSequence(dayStays, dayTransits, dayActivities, date, dayStart) {
+// scenarioAnchorKey (from buildScenarioTracks below) is the earliest real key
+// among everything in the day's branching content — passed in here so a
+// single { type: 'scenario-tabs' } placeholder can be merge-sorted into the
+// backbone at that real chronological position, instead of the tab group
+// always trailing every other event on the day regardless of when its own
+// content actually falls (see renderDayDetailBody in day-render.js, which
+// now just renders whatever lands at that slot rather than special-casing
+// the tab group's placement itself).
+function buildSequence(dayStays, dayTransits, dayActivities, date, dayStart, scenarioAnchorKey) {
   const items = [
     ...dayStays.map((stay) => {
       const relation = stayRelation(stay, date);
@@ -353,10 +428,12 @@ function buildSequence(dayStays, dayTransits, dayActivities, date, dayStart) {
     ...dayTransits
       .filter((t) => !t.scenarioId)
       .flatMap((transit) => transitSequenceItems(transit, dayStart)),
-    ...dayActivities
-      .filter((a) => !a.scenarioId)
-      .map((activity) => ({ type: 'activity', activity, key: activitySortKey(activity) })),
+    ...resolveActivityKeys(
+      dayActivities.filter((a) => !a.scenarioId),
+      dayStart
+    ),
   ];
+  if (scenarioAnchorKey) items.push({ type: 'scenario-tabs', key: scenarioAnchorKey });
   return collapseActivityRuns(mergeByTime(items));
 }
 
@@ -366,23 +443,28 @@ function buildScenarioTracks(dayTransits, dayActivities, scenariosById, notes, d
     ...dayActivities.map((a) => a.scenarioId).filter(Boolean),
   ]);
   const tracks = [];
+  let anchorKey = null;
   for (const [scenarioId, scenario] of scenariosById) {
     if (!present.has(scenarioId)) continue;
     const items = [
       ...dayTransits
         .filter((t) => t.scenarioId === scenarioId)
         .flatMap((transit) => transitSequenceItems(transit, dayStart)),
-      ...dayActivities
-        .filter((a) => a.scenarioId === scenarioId)
-        .map((activity) => ({ type: 'activity', activity, key: activitySortKey(activity) })),
+      ...resolveActivityKeys(
+        dayActivities.filter((a) => a.scenarioId === scenarioId),
+        dayStart
+      ),
     ];
+    for (const item of items) {
+      if (anchorKey === null || item.key < anchorKey) anchorKey = item.key;
+    }
     tracks.push({
       scenario,
       notes: notesForScenario(notes, scenarioId),
       sequence: collapseActivityRuns(mergeByTime(items)),
     });
   }
-  return tracks;
+  return { tracks, anchorKey };
 }
 
 function truncateSummary(text) {
@@ -470,10 +552,55 @@ export function splitOutStayBoundaries(sequence) {
   return { checkOuts, rest, checkIns };
 }
 
-function sequenceMapLabels(sequence) {
+// A meal's own place lives on whichever MealOption is still open
+// (data-model.html) rather than activity.place. Matching the row's own live
+// tab selection needs day-render.js's activeMealOptions (it filters out
+// options an earlier Stay checkout already closed off — see
+// isIncludedOptionActive) to know which candidate a tab index even refers
+// to, and this module deliberately doesn't import day-render.js (which
+// already imports from here) to get it — so a caller that resolved the
+// selection off the DOM against activeMealOptions itself (app.js) passes
+// the *place* it landed on directly, as mealPlaces (activityId -> place or
+// null, only for activities the caller actually found a meal row for).
+// Anything not in the map — a non-meal activity, or a caller that skipped
+// reading DOM state — falls back to the first candidate that names a place,
+// same as before this was made selectable.
+function resolveActivityPlace(activity, mealPlaces) {
+  if (activity.place) return activity.place;
+  if (mealPlaces?.has(activity._id)) return mealPlaces.get(activity._id);
+  return activity.options?.find((o) => o.place)?.place ?? null;
+}
+
+// Same "planned by default" convention deriveSummary/deriveTitle use, but
+// overridable by a live scenario-tab selection (scenarioTone) a caller read
+// off the DOM — see dayMapStops/dayFullRouteStops below, both of which want
+// whichever branch the reader is actually looking at, not always the plan.
+function selectedTrack(day, scenarioTone) {
+  if (scenarioTone) {
+    const track = day.scenarioTracks.find((t) => t.scenario.tone === scenarioTone);
+    if (track) return track;
+  }
+  return idealOrFirstTrack(day);
+}
+
+function sequenceMapLabels(sequence, mealPlaces) {
   const labels = [];
   for (const item of sequence) {
-    if (item.type === 'stay' && item.stay.lodging?.name) labels.push(item.stay.lodging.name);
+    // A 'Staying' item (every night of a multi-night Stay that isn't the
+    // actual arrival/departure day) is deliberately excluded even when
+    // lodging.name exists — dayFullRouteStops below already only anchors on
+    // Check out/Check in boundaries, and a bare lodging name geocoded as
+    // free text is exactly the "no canonical id/coords" shape this trip's
+    // data model otherwise requires for real-world places (data-model.html's
+    // Route entity note). It silently works for a fixed hotel, whose name
+    // happens to geocode near itself, but fails hard for a Stay with no
+    // fixed point at all — a cruise ship mid-voyage (lodging.placeId: null)
+    // — where Google's classic embed resolves the free-text ship name to
+    // the cruise line's corporate HQ address instead, plotting a fictional
+    // thousands-of-miles driving route on a day that's really just shore
+    // excursions. Dropping it here leaves those real, place-id-backed stops
+    // as the map's actual start/end.
+    if (item.type === 'stay' && item.relation !== 'Staying' && item.stay.lodging?.name) labels.push(item.stay.lodging.name);
     else if (item.type === 'transit-boundary') labels.push((item.phase === 'depart' ? item.transit.from : item.transit.to).label);
     // transit-stage (a route's interim via-points) is deliberately skipped —
     // not a data-quality concern (every via now resolves to a real Place ID
@@ -489,12 +616,7 @@ function sequenceMapLabels(sequence) {
     // through to routeStageItems, since nothing reads them yet.
     else if (item.type === 'section') {
       for (const activity of item.activities) {
-        // A meal's own place lives on whichever MealOption is still open
-        // (data-model.html) rather than activity.place — the first candidate
-        // that names one is close enough for a route waypoint; matching the
-        // row's own live tab selection would need day-render.js's
-        // activeMealOptions, which this module deliberately doesn't import.
-        const place = activity.place ?? activity.options?.find((o) => o.place)?.place ?? null;
+        const place = resolveActivityPlace(activity, mealPlaces);
         if (place) labels.push(place.label);
       }
     }
@@ -502,17 +624,21 @@ function sequenceMapLabels(sequence) {
   return labels;
 }
 
-// A branching day maps only its planned (ideal, or first) track — same
-// "planned by default" convention deriveSummary/deriveTitle already use —
-// rather than plotting both weather branches' places onto one confusing route.
-export function dayMapStops(day) {
+// A branching day maps only its planned (ideal, or first) track by default —
+// same "planned by default" convention deriveSummary/deriveTitle already
+// use — rather than plotting both weather branches' places onto one
+// confusing route, unless selections names a live scenario/meal choice to
+// follow instead (see selectedTrack/resolveActivityPlace above). selections
+// is `{ scenarioTone, mealPlaces }`, both optional — see
+// dayFullRouteStops below for the sibling shape routeTones adds.
+export function dayMapStops(day, selections = {}) {
   const { checkOuts, rest, checkIns } = splitOutStayBoundaries(day.sequence);
-  const track = idealOrFirstTrack(day);
+  const track = selectedTrack(day, selections.scenarioTone);
   const all = [
-    ...sequenceMapLabels(checkOuts),
-    ...sequenceMapLabels(rest),
-    ...(track ? sequenceMapLabels(track.sequence) : []),
-    ...sequenceMapLabels(checkIns),
+    ...sequenceMapLabels(checkOuts, selections.mealPlaces),
+    ...sequenceMapLabels(rest, selections.mealPlaces),
+    ...(track ? sequenceMapLabels(track.sequence, selections.mealPlaces) : []),
+    ...sequenceMapLabels(checkIns, selections.mealPlaces),
   ];
   // Collapses immediate repeats (e.g. a Transit arriving exactly where the
   // next Activity already is) — a real detour back to an earlier place later
@@ -530,8 +656,8 @@ export function dayMapStops(day) {
 // detour through the Lower 48. A start→end route is still a real, useful
 // "where does today go" answer; every stop in between is already right there
 // in the day's own timeline.
-export function dayMapEmbedUrl(day) {
-  const stops = dayMapStops(day);
+export function dayMapEmbedUrl(day, selections = {}) {
+  const stops = dayMapStops(day, selections);
   if (!stops.length) return null;
   if (stops.length === 1) return `https://maps.google.com/maps?q=${encodeURIComponent(stops[0])}&output=embed`;
   const start = encodeURIComponent(stops[0]);
@@ -582,9 +708,20 @@ function routeStop(placeLike, fallbackLabel) {
 // stages — physical points on the day's path), or 'activity' (a chosen
 // thing to do, ranked by its own priority like deriveTitle above).
 // selectRouteWaypoints (below) is what actually uses the tagging.
-function dayFullRouteStops(day) {
+//
+// selections extends the { scenarioTone, mealPlaces } shape dayMapStops
+// takes with a third live choice this link also has to honor: routeTones
+// (transitId -> tone), overriding which variant's stages count as this
+// day's route for a Transit whose picker (day-render.js's
+// renderRouteVariantTabs) the reader has actually switched away from the
+// model's own default. All three fall back to their own model default
+// (routeInfo.selectedTone; idealOrFirstTrack; the first place-bearing
+// option) for whatever a caller didn't read off the DOM — see app.js's
+// map-button handler, which reads every live tab selection back off the
+// day-block's DOM the same way selectedMealOption does for a single meal row.
+function dayFullRouteStops(day, selections = {}) {
   const { checkOuts, rest, checkIns } = splitOutStayBoundaries(day.sequence);
-  const track = idealOrFirstTrack(day);
+  const track = selectedTrack(day, selections.scenarioTone);
   const stops = [];
   const pushStay = (item) => {
     const stop = routeStop(item.stay.lodging);
@@ -597,11 +734,20 @@ function dayFullRouteStops(day) {
         const stop = routeStop(place);
         if (stop) stops.push({ ...stop, tier: 'via', priorityRank: null });
       } else if (item.type === 'transit-stage') {
+        // day.sequence carries every route variant's stages (see
+        // routeStageItems), each just tagged hidden for the DOM tab toggle —
+        // so without this filter a Transit with 2+ variants (e.g. New vs.
+        // Old Glenn Highway) would mix both routes' via-points into one
+        // link. Prefer whichever tone the reader actually has selected
+        // (selections.routeTones); only fall back to routeInfo's own
+        // default when the caller didn't pass one (e.g. no DOM to read yet).
+        const tone = selections.routeTones?.get(item.transit._id) ?? item.transit.routeInfo.selectedTone;
+        if (item.variant.tone !== tone) continue;
         const stop = routeStop({ id: item.stage.placeId, label: item.stage.label });
         if (stop) stops.push({ ...stop, tier: 'via', priorityRank: null });
       } else if (item.type === 'section') {
         for (const activity of item.activities) {
-          const place = activity.place ?? activity.options?.find((o) => o.place)?.place ?? null;
+          const place = resolveActivityPlace(activity, selections.mealPlaces);
           const stop = routeStop(place);
           if (stop) stops.push({ ...stop, tier: 'activity', priorityRank: PRIORITY_RANK[activity.priority] ?? 0 });
         }
@@ -634,8 +780,8 @@ function selectRouteWaypoints(middle, maxWaypoints) {
   return middle.slice(0, maxWaypoints);
 }
 
-export function dayFullRouteUrl(day) {
-  const stops = dayFullRouteStops(day);
+export function dayFullRouteUrl(day, selections = {}) {
+  const stops = dayFullRouteStops(day, selections);
   if (stops.length < 2) return null;
   const origin = stops[0];
   const destination = stops[stops.length - 1];
@@ -688,6 +834,8 @@ function buildDay(date, legs, stays, transits, activitiesByDate, scenariosById, 
   const stayIds = dayStays.map((s) => s._id);
   const transitIds = dayTransits.map((t) => t._id);
 
+  const { tracks: scenarioTracks, anchorKey: scenarioAnchorKey } = buildScenarioTracks(dayTransits, dayActivities, scenariosById, notes, dayStart);
+
   const day = {
     date,
     dateLabel: formatDateLabel(date),
@@ -695,8 +843,8 @@ function buildDay(date, legs, stays, transits, activitiesByDate, scenariosById, 
     location,
     stays: dayStays,
     transits: dayTransits,
-    sequence: buildSequence(dayStays, dayTransits, dayActivities, date, dayStart),
-    scenarioTracks: buildScenarioTracks(dayTransits, dayActivities, scenariosById, notes, dayStart),
+    sequence: buildSequence(dayStays, dayTransits, dayActivities, date, dayStart, scenarioAnchorKey),
+    scenarioTracks,
     notes: notesForDay(notes, date, stayIds, transitIds),
   };
   day.summary = deriveSummary(day);
@@ -747,12 +895,156 @@ function resolveTransitRoute(transit, routesById, activities) {
   return { variants, selectedTone };
 }
 
-export function deriveRouteStops(days) {
-  const stops = [];
-  for (const day of days) {
-    if (stops[stops.length - 1] !== day.location) stops.push(day.location);
+// ---------- Budget — a computed view over every booking already in the
+// model (Leg/Stay/Transit/Activity), sliced by Leg, Day, and Traveler.
+// Nothing new is stored: every number below is derived from booking.status/
+// cost plus, for the spent/pending split, the same depositPaidAt/
+// finalPaymentDueAt pair leg_cruise's own booking already carries (see
+// data-model.html) — the only booking on this trip with a real payment
+// schedule today, but the rule holds for any future one that gets it too.
+
+function todayDateStr() {
+  const d = new Date();
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// A booking sorts into exactly one bucket, or none at all:
+//  - 'spent'     — booked, and either has no payment schedule (the common
+//                  case — a campsite fee, a ferry ticket, paid in full at
+//                  booking) or its finalPaymentDueAt has already passed.
+//  - 'pending'   — booked, but a deposit/final-payment schedule says a
+//                  balance is still owed (finalPaymentDueAt hasn't arrived).
+//  - 'estimated' — not booked yet, but already carries a real cost guess
+//                  (e.g. a still-planning activity with a known price).
+//  - 'unplanned' — not booked, no cost guess either — nothing to sum, just
+//                  a count of "still needs a number."
+// A cancelled booking, or no booking at all, contributes nothing (null).
+export function bookingBucket(booking, today) {
+  if (!booking || booking.status === 'cancelled') return null;
+  if (booking.status === 'booked') {
+    return booking.finalPaymentDueAt && booking.finalPaymentDueAt > today ? 'pending' : 'spent';
   }
-  return stops;
+  return booking.cost ? 'estimated' : 'unplanned';
+}
+
+function emptyBudgetTotals() {
+  return { spent: 0, pending: 0, estimated: 0, unplannedCount: 0, currency: null };
+}
+
+function addToBudgetTotals(totals, bucket, cost) {
+  if (bucket === 'unplanned') { totals.unplannedCount += 1; return; }
+  totals[bucket] += cost.amount;
+  totals.currency = totals.currency ?? cost.currency;
+}
+
+// Every Leg/Stay/Transit/Activity that carries a booking, flattened to one
+// shape budget grouping can work with uniformly. `date` is the single day a
+// Stay/Transit/Activity's cost is attributed to (check-in date for a Stay,
+// departure date for a Transit, its own resolved date for an Activity) —
+// `null` for a Leg's own bundled booking (the cruise fare), since a
+// week-long bundle has no single day it belongs to; the by-day grouping
+// below simply skips those, and the Leg grouping is where they show up.
+function bookingLineItems(legs, stays, transits, activities) {
+  const items = [];
+  for (const leg of legs) {
+    if (leg.booking) items.push({ entity: 'leg', id: leg._id, legId: leg._id, label: leg.name, date: null, booking: leg.booking });
+  }
+  for (const stay of stays) {
+    if (stay.booking) items.push({ entity: 'stay', id: stay._id, legId: stay.legId, label: stay.lodging?.name ?? 'Lodging', date: dateOnly(stay.checkInAt), booking: stay.booking });
+  }
+  for (const transit of transits) {
+    if (transit.booking) items.push({ entity: 'transit', id: transit._id, legId: transit.legId, label: `${transit.from.label} → ${transit.to.label}`, date: dateOnly(transit.departsAt), booking: transit.booking });
+  }
+  for (const activity of activities) {
+    if (activity.booking) items.push({ entity: 'activity', id: activity._id, legId: activity.legId, label: activity.text, date: activity.date, booking: activity.booking });
+  }
+  return dedupeMirroredBookings(items);
+}
+
+// A Leg bought as one bundle (the cruise) has its cost mirrored onto a child
+// Stay/Transit/Activity's own booking too — data-model.html calls this out
+// explicitly for stay_cruise, which repeats leg_cruise's cost and
+// confirmationNumber so the cabin's own detail view has something to show —
+// but summing both would double-count the same fare. Same confirmationNumber
+// within the same Leg is the signal a mirror actually happened; the Leg's
+// own entry wins (it alone carries the deposit/final-payment schedule),
+// and the mirrored child is dropped from the budget entirely.
+function dedupeMirroredBookings(items) {
+  const legConfirmations = new Set(
+    items.filter((i) => i.entity === 'leg' && i.booking.confirmationNumber).map((i) => `${i.legId}::${i.booking.confirmationNumber}`)
+  );
+  return items.filter((i) => i.entity === 'leg' || !legConfirmations.has(`${i.legId}::${i.booking.confirmationNumber}`));
+}
+
+function bucketedRows(items, today) {
+  const rows = [];
+  for (const item of items) {
+    const bucket = bookingBucket(item.booking, today);
+    if (bucket) rows.push({ ...item, bucket });
+  }
+  return rows;
+}
+
+function totalsFor(rows) {
+  const totals = emptyBudgetTotals();
+  for (const row of rows) addToBudgetTotals(totals, row.bucket, row.booking.cost);
+  return totals;
+}
+
+function groupBudgetByLeg(legs, rows) {
+  return legs
+    .map((leg) => {
+      const legRows = rows.filter((r) => r.legId === leg._id);
+      return { leg, totals: totalsFor(legRows), rows: legRows };
+    })
+    .filter((g) => g.rows.length);
+}
+
+function groupBudgetByDay(days, rows) {
+  const datedRows = rows.filter((r) => r.date);
+  return days
+    .map((day) => {
+      const dayRows = datedRows.filter((r) => r.date === day.date);
+      return { day, totals: totalsFor(dayRows), rows: dayRows };
+    })
+    .filter((g) => g.rows.length);
+}
+
+// A row with real passengers[] (a per-traveler fare split, e.g. the cruise
+// or the flight/ferry examples in data-model.html) attributes its cost
+// exactly as booked. Everything else has no per-traveler breakdown at all —
+// an even split across every trip traveler is the least-wrong default
+// (marked in the UI as inferred, not authored), rather than leaving those
+// costs out of the by-traveler view entirely.
+function groupBudgetByTraveler(travelers, rows) {
+  const totalsByName = new Map(travelers.map((t) => [t.name, emptyBudgetTotals()]));
+  for (const row of rows) {
+    if (row.bucket === 'unplanned') continue;
+    if (row.booking.passengers?.length) {
+      for (const p of row.booking.passengers) {
+        if (!totalsByName.has(p.name)) totalsByName.set(p.name, emptyBudgetTotals());
+        addToBudgetTotals(totalsByName.get(p.name), row.bucket, p.fare);
+      }
+    } else {
+      const share = travelers.length || 1;
+      const cost = { amount: row.booking.cost.amount / share, currency: row.booking.cost.currency };
+      for (const t of travelers) addToBudgetTotals(totalsByName.get(t.name), row.bucket, cost);
+    }
+  }
+  return [...totalsByName.entries()].map(([name, totals]) => ({ name, totals }));
+}
+
+export function buildBudgetView(trip, legs, days, stays, transits, activities) {
+  const today = todayDateStr();
+  const rows = bucketedRows(bookingLineItems(legs, stays, transits, activities), today);
+  return {
+    today,
+    totals: totalsFor(rows),
+    byLeg: groupBudgetByLeg(legs, rows),
+    byDay: groupBudgetByDay(days, rows),
+    byTraveler: groupBudgetByTraveler(trip.travelers, rows),
+  };
 }
 
 export function buildTripView(data) {
@@ -765,10 +1057,16 @@ export function buildTripView(data) {
     ...a,
     date: resolveActivityDate(a, tripYear),
     notes: notesForActivity(notes, a._id),
+    hasWarningNote: entityHasWarning(notes, 'activity', a._id),
   }));
   const activitiesById = new Map(enrichedActivities.map((a) => [a._id, a]));
 
-  const routedTransits = transits.map((t) => ({ ...t, routeInfo: resolveTransitRoute(t, routesById, enrichedActivities) }));
+  const enrichedStays = stays.map((s) => ({ ...s, hasWarningNote: entityHasWarning(notes, 'stay', s._id) }));
+  const routedTransits = transits.map((t) => ({
+    ...t,
+    routeInfo: resolveTransitRoute(t, routesById, enrichedActivities),
+    hasWarningNote: entityHasWarning(notes, 'transit', t._id),
+  }));
 
   const activitiesByDate = new Map();
   for (const a of enrichedActivities) {
@@ -778,7 +1076,7 @@ export function buildTripView(data) {
   }
 
   const days = dateRangeArray(trip.startDate, trip.endDate)
-    .map((date) => buildDay(date, legs, stays, routedTransits, activitiesByDate, scenariosById, notes))
+    .map((date) => buildDay(date, legs, enrichedStays, routedTransits, activitiesByDate, scenariosById, notes))
     .filter(Boolean);
 
   const legSummaries = legs.map((leg) => ({
@@ -787,5 +1085,7 @@ export function buildTripView(data) {
     notes: notesForLeg(notes, leg._id),
   }));
 
-  return { trip, days, legSummaries, activitiesById, scenariosById };
+  const budget = buildBudgetView(trip, legs, days, enrichedStays, routedTransits, enrichedActivities);
+
+  return { trip, days, legSummaries, activitiesById, scenariosById, budget };
 }

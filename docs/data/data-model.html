@@ -373,7 +373,7 @@
             </div>
           </div>
           <div class="ladder-row">
-            <div class="ladder-label"><strong>Booking status</strong> — inside an optional <code>booking</code> on Leg, Stay, Transit, and Activity, present only when a reservation actually applies. Independent of plan status: a cancelled <em>booking</em> doesn't mean the stay itself is cancelled — you might rebook it elsewhere.</div>
+            <div class="ladder-label"><strong>Booking status</strong> — inside an optional <code>booking</code> on Leg, Stay, Transit, and Activity, present only when a reservation actually applies. Independent of plan status: a cancelled <em>booking</em> doesn't mean the stay itself is cancelled — you might rebook it elsewhere. A <code>Package</code> (see Stay) reuses this exact ladder for the same reason — whether the add-on itself has been purchased is independent of whether the Stay it belongs to is booked.</div>
             <div class="pills">
               <span class="pill active">planning</span><span class="arrow">→</span>
               <span class="pill active">booked</span>
@@ -491,7 +491,40 @@
     deckGroup: 'Upper', shipZone: 'Mid-Forward', // no hotel Stay needs these
   },
   booking: { status: 'booked', cost: { amount: 9336.00, currency: 'USD' }, confirmationNumber: 'MWVV6Q' },
+  packages: [                    // Package[] | null — optional paid add-ons this
+    {                             // Stay offers, on top of whatever's already
+      _id: 'pkg_princess_premier', // bundled into the base rate
+      name: 'Princess Premier',
+      status: 'planning',        // same booking-status ladder as Booking, above
+      cost: null,
+      confirmationNumber: null,
+      benefits: [
+        'Unlimited specialty dining',
+        'Unlimited casual dining (Alfredo’s, O’Malley’s, etc.)',
+        'Beverage package — alcoholic and specialty drinks up to $15 each, including bottled water',
+        'MedallionNet Max wifi, one device per guest',
+        '18% gratuities included',
+        'Unlimited professional photos',
+        'Shore excursion credit',
+      ],
+      note: null,
+    },
+  ],
   images: [],
+}</code></pre>
+        <p class="schema-label">The Package shape, used by Stay.packages</p>
+        <pre class="schema"><code>type Package = {
+  _id: string,
+  name: string,                                 // 'Princess Premier', 'Kennicott
+                                                   // Glacier Lodge meal package'
+  status: 'planning' | 'booked' | 'cancelled',  // same ladder as Booking.status
+  cost: { amount, currency } | null,
+  confirmationNumber: string | null,
+  benefits: string[] | null,   // itemized perks, e.g. one line per inclusion —
+                                 // not a fixed enum, since what a package bundles
+                                 // varies too much across providers to normalize
+  note: string | null,         // free-text caveat/context, e.g. why it's worth
+                                 // booking, distinct from the itemized benefits
 }</code></pre>
         <p class="schema-label">Still open — nowhere chosen yet</p>
         <pre class="schema"><code>{
@@ -564,6 +597,7 @@
           <li><strong>bookedThrough extends <code>booking</code></strong>, surfaced by testing against a real Capital One Travel hotel reservation whose only confirmation number belongs to the booking agent, not the hotel itself. Originally added as a flat name string with <code>confirmationNumber</code> left ambiguous ("whichever code manages the reservation") — promoted to <code>{ name, confirmationNumber }</code> once the flight test (see Transit) proved a booking can carry <em>two</em> live codes at once, a vendor one and an agent one, that a single field can't hold. <code>confirmationNumber</code> now consistently means the vendor's own code, <code>null</code> when none was ever given, as here.</li>
           <li><strong>cost stays the flat amount actually charged</strong>, not a line-item breakdown — that same reservation's room/taxes/travel-credit split collapses to one number the same way a cruise fare or a campsite fee already does. No shape change; "derive, don't store" holds.</li>
           <li><strong>Payment method (masked card number, expiry) was deliberately left out</strong>, same reasoning as the Princess Captain's Circle numbers and on-file phone in the cruise test: an account identifier with no itinerary value, not worth the exposure in a public repo.</li>
+          <li><strong>packages holds optional paid add-ons</strong> — a purchase distinct from both the base <code>booking</code> (which pays for the Stay itself) and an Activity's <code>diningFormat: 'included'</code> (bundled into the base rate at no extra decision). Princess Plus/Premier and a hotel's optional meal plan are the same shape: a single purchase, made once at the Stay level, that then covers many individual Activities. Surfaced by the Kennicott Glacier Lodge and Discovery Princess data — a meal previously modeled as <code>diningFormat: 'included'</code> with a note explaining it only counted "if the package is purchased" was really a distinct, not-yet-decided fact being smuggled into free text. <code>Activity.diningFormat: 'package'</code> plus an <code>includedIn</code> pointing at <code>{ entity: 'package', id }</code> (see Activity) makes that fact structured instead: every Activity the package would cover references the one <code>Package</code>, so its purchase status lives in exactly one place rather than being repeated — and potentially drifting — per meal.</li>
         </ul>
       </article>
 
@@ -694,23 +728,20 @@
     {
       tone: 'scenic',
       label: 'Scenic — via the Seward Highway',
-      via: [ { place: { id: 'ChIJ...', label: 'Seward Highway' }, durationMinutes: 40 },
-             { place: { id: 'ChIJ...', label: 'Girdwood' }, durationMinutes: 5,
-               note: 'photo stop' } ],
+      via: [ { kind: 'waypoint', place: { id: 'ChIJ...', label: 'Girdwood' }, durationMinutes: 40,
+               note: 'photo stop' },
+             { kind: 'override', place: { id: 'ChIJ...', label: 'Portage Glacier / Whittier junction' },
+               note: 'Anchorage–Whittier drives split off here', durationMinutes: 15 } ],
     },
-    { tone: 'direct', label: 'Direct — via the Glenn Highway',
-      // fallback shape — only used when Places genuinely has no entry for the
-      // point; every via in this trip's own data resolved to a real place instead
-      via: [ { label: 'Glenn Highway', coordinates: { lat: 61.7911178, lng: -147.6756775 },
-               durationMinutes: 45 } ] },
   ],
   images: [],
 }</code></pre>
         <ul class="rationale">
           <li><strong>No tripId, no dates, no booking.</strong> The same trip, or a different trip entirely, can reference this route again.</li>
           <li><strong>variants[].tone has its own vocabulary</strong> — <code>scenic</code>/<code>direct</code>, deliberately not reusing Scenario's <code>ideal</code>/<code>alternate</code>. A route choice isn't a go/no-go safety branch.</li>
-          <li><strong>Every via entry resolves to a real geo-point — a rule, not a convenience — and a Place ID is always tried first.</strong> Even a plain stretch of named highway ('Glenn Highway', 'George Parks Highway') turns out to have its own resolvable Google Place (type <code>route</code>), so in this trip's own data every via entry ended up as a real <code>place</code>. <code>coordinates: { lat, lng }</code>, sitting alongside a plain <code>label</code> instead of <code>place</code>, is the fallback for the rarer point Google's Places index genuinely has no entry for — never the default. What a via entry may never do is carry only a bare text <code>label</code> with neither. That used to be allowed ("via is loosely typed") until a computed map (the trip page's day-list map button, docs/js/trip-model.js's <code>dayMapEmbedUrl</code>) fed a bare label like 'Palmer' to Google's geocoder with no state/region qualifier and got a same-named town in a different state back — silently routing an Anchorage–Talkeetna drive through the Lower 48. A resolved Place ID or explicit coordinates can't be ambiguous the way free text can, which is the whole point of requiring one or the other.</li>
-          <li><strong>via[].durationMinutes is the drive time from whichever via point (or Depart) came before it</strong> — geography, same as the rest of Route, so it stays reusable across trips instead of being a discrete clock time that's only ever true for one specific departure. A trip's computed Day (trip-model.js's <code>stageTimesForVariant</code>) turns that into an actual estimated time by walking it forward from a specific Transit's <code>departsAt</code>, nudged later by any real Activity — a lunch stop, say — actually reached along the way. Superseded the earlier <code>waypoints[]</code> idea (a separate list of suggested stops with no timing at all): once every via point already carries a real duration, a stop worth calling out is just an ordinary via entry with a <code>note</code>, not a second parallel array.</li>
+          <li><strong>Every via entry resolves to a real geo-point — a rule, not a convenience — and a Place ID is always tried first.</strong> <code>coordinates: { lat, lng }</code>, sitting alongside a plain <code>label</code> instead of <code>place</code>, is the fallback for the rare point Google's Places index genuinely has no entry for. What a via entry may never do is carry only a bare text <code>label</code> with neither. That used to be allowed ("via is loosely typed") until a computed map (the trip page's day-list map button, docs/js/trip-model.js's <code>dayMapEmbedUrl</code>) fed a bare label like 'Palmer' to Google's geocoder with no state/region qualifier and got a same-named town in a different state back — silently routing an Anchorage–Talkeetna drive through the Lower 48. A resolved Place ID or explicit coordinates can't be ambiguous the way free text can, which is the whole point of requiring one or the other.</li>
+          <li><strong>Every via entry also carries a <code>kind</code>: <code>'waypoint'</code> or <code>'override'</code>.</strong> A plain named highway ('Glenn Highway', 'Richardson Highway', 'George Parks Highway') turns out to have its own resolvable Google Place — but it's one fixed point for the entire, often 100+ mile road, not "wherever this particular route happens to be on it." This trip's data originally used those whole-highway Places as via entries on <em>multiple</em> Route documents covering different real stretches of the same highway (e.g. 'Glenn Highway' as a stand-in for both the Anchorage–Palmer stretch and the Glennallen stretch, 150 miles apart) — since it's the same Place ID both times, the Directions URL link (<code>dayFullRouteUrl</code>) sent drivers on a real, absurd multi-hour detour toward whichever stretch the point actually sat on. The fix: a via entry is now either a <strong>waypoint</strong> — a real, individually-resolvable stop worth calling out (a town, a pass, a viewpoint) that's also safe to hand to Google's Directions API as a routing waypoint — or an <strong>override</strong> — a point that exists specifically to steer Directions off its default path onto the intended road (a fork, a cutoff, a side road), and still resolves to one real geo-point of its own rather than the whole highway's. A bare "you are now on Highway X" entry, with no distinct point and no steering purpose, isn't either — that information already lives in the variant's own <code>label</code>, so it was simply dropped rather than kept as a third kind.</li>
+          <li><strong>via[].durationMinutes is the drive time from whichever via point (or Depart) came before it</strong> — geography, same as the rest of Route, so it stays reusable across trips instead of being a discrete clock time that's only ever true for one specific departure. A trip's computed Day (trip-model.js's <code>stageTimesForVariant</code>) turns that into an actual estimated time by walking it forward from a specific Transit's <code>departsAt</code>, nudged later by any real Activity — a lunch stop, say — actually reached along the way. Superseded the earlier <code>waypoints[]</code> idea (a separate list of suggested stops with no timing at all): once every via point already carries a real duration, a stop worth calling out is just an ordinary via entry with a <code>note</code>, not a second parallel array — <code>kind</code> now carries the "is this really just a stop" distinction that array split used to.</li>
         </ul>
       </article>
 
@@ -725,10 +756,13 @@
           </div>
         </div>
         <pre class="schema"><code>{ id: 'ChIJS63CqrW_zlYRNQYObIK7Szk', label: 'Flying Squirrel Bakery Cafe', images: [] }</code></pre>
+        <p class="schema-label">Named, but with no static geolocation to resolve — a restaurant aboard a moving cruise ship</p>
+        <pre class="schema"><code>{ id: null, label: 'Crown Grill', images: [] }</code></pre>
         <ul class="rationale">
           <li><strong>id is a pinned Google Place ID</strong> — hours, address, and website are fetched live, never stored redundantly.</li>
           <li><strong>Reused everywhere a real point is needed</strong>: Activity's <code>place</code>, Stay's <code>lodging</code>, Route's <code>from</code>/<code>to</code>/<code>via[].place</code>, and (as of the ferry test) Transit's <code>from</code>/<code>to</code> all share this exact shape.</li>
           <li><strong>images is the one field the live lookup can't fill in</strong> — the Places API call this site makes deliberately skips the Enterprise+Atmosphere fields (photos, rating, reviews) to avoid that pricing tier, so a stored, hand-picked photo is the only way a Place gets one at all. It's independent of whatever <code>images</code> an Activity or Stay that references this Place carries on itself — a restaurant's storefront photo and a specific dish photo for a meal there are different pictures.</li>
+          <li><strong>id can be null</strong> — the same allowance <code>Stay.lodging.placeId</code> already makes for a named-but-unresolved location (a roadside pullout with no formal address), just generalized to every field that reuses this shape. Surfaced by two of this trip's own MealOption candidates: a cruise-ship specialty restaurant (Sabatini's, Crown Grill) has no static geolocation to resolve at all — the venue's location is relative to the ship, not the earth, the same reason <code>stay_cruise.lodging.placeId</code> is itself <code>null</code> — while a Ketchikan shore restaurant (Alaska Fish House, Annabelle's) has a real, resolvable address that just hasn't been looked up yet. Both read identically as <code>id: null</code>; the presentation tier renders <code>label</code> either way and simply skips the live Places lookup panel when <code>id</code> is absent (see <code>places.js</code>) rather than showing a loading state that can only ever resolve to "unavailable." Distinct from <code>place: null</code> itself, which still means no resolvable venue at all — self-catered, included with no venue to name, or genuinely not yet named.</li>
         </ul>
       </article>
 
@@ -772,8 +806,15 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   status: 'planning',   // planning | active | completed | cancelled
   startAt: '2027-06-27T09:30',
   endAt:   '2027-06-27T11:30',
-  timeLabel: null,   // fallback for fuzzy timing, e.g. "Evening"
-  order: null,        // tiebreaker only when startAt is absent
+  timeLabel: null,   // fallback for fuzzy timing — closed vocabulary:
+                       // 'Morning' | 'Afternoon' | 'Evening', each mapped to
+                       // a fixed 9am/1pm/8pm sort anchor in trip-model.js's
+                       // TIME_LABEL_ANCHORS. Anything outside this vocabulary
+                       // (a one-off conditional string that can't collapse to
+                       // a single time of day) is left as free text and just
+                       // borrows the nearest preceding real timestamp instead.
+  order: null,         // vestigial — no code reads this; array position in
+                       // the JSON already is the authored order
   priority: 'high',   // 'high' | 'medium' | 'low' | null — null for the vast
                        // majority of activities; drives the computed Day's
                        // title (see below) and any future "what matters most
@@ -783,9 +824,9 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   booking: { status: 'booked', cost: null, confirmationNumber: null },
   mealType: null,          // 'breakfast' | 'lunch' | 'dinner' | 'snack' | null — null
                             // for the vast majority of activities that aren't food at all
-  diningFormat: null,      // 'included' | 'sit-down' | 'grab-and-go' | 'drivethru' |
-                            // 'self-catered' | null — only set when mealType is
-  includedIn: null,        // Ref | null — only set when diningFormat is 'included'
+  diningFormat: null,      // 'included' | 'package' | 'sit-down' | 'grab-and-go' |
+                            // 'drivethru' | 'self-catered' | null — only set when mealType is
+  includedIn: null,        // Ref | null — only set when diningFormat is 'included' or 'package'
   options: null,           // MealOption[] | null — only set while undecided among
                             // several candidates; see below
   images: [],
@@ -807,6 +848,26 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   mealType: 'breakfast',
   diningFormat: 'included',
   includedIn: { entity: 'stay', id: 'stay_talkeetna' },
+  options: null,
+  images: [],
+}</code></pre>
+        <p class="schema-label">A meal, covered by an optional purchased Package rather than the base rate</p>
+        <pre class="schema"><code>{
+  _id: 'act_jul22_dinner_opt2',
+  legId: 'leg_cruise',
+  scenarioId: null,
+  status: 'planning',
+  startAt: '2027-07-22T19:30',
+  endAt: null,
+  timeLabel: null,
+  order: null,
+  priority: null,
+  text: 'Crown Grill',
+  place: null,
+  booking: null,
+  mealType: 'dinner',
+  diningFormat: 'package',
+  includedIn: { entity: 'package', id: 'pkg_princess_premier' },
   options: null,
   images: [],
 }</code></pre>
@@ -841,19 +902,20 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
 }</code></pre>
         <p class="schema-label">The MealOption shape, used only by Activity.options</p>
         <pre class="schema"><code>type MealOption = {
-  diningFormat: 'included' | 'sit-down' | 'grab-and-go' | 'drivethru' | 'self-catered',
+  diningFormat: 'included' | 'package' | 'sit-down' | 'grab-and-go' | 'drivethru' | 'self-catered',
   place: Place | null,      // same Place shape as Activity.place; null when there's no
-                              // resolvable venue (included, self-catered, or not yet named)
-  includedIn: Ref | null,   // set only when diningFormat is 'included' — same rule as
-                              // Activity.includedIn, just scoped to this one candidate
+                              // resolvable venue (included, package, self-catered, or not yet named)
+  includedIn: Ref | null,   // set only when diningFormat is 'included' or 'package' — same
+                              // rule as Activity.includedIn, just scoped to this one candidate
   note: string | null,      // why this option's on the table, e.g. a timing or cost trade-off
 }</code></pre>
         <ul class="rationale">
-          <li><strong>startAt/endAt are set only when actually known.</strong> timeLabel and order exist specifically for the honestly-vague cases — "Remaining afternoon" — instead of inventing false precision.</li>
+          <li><strong>startAt/endAt are set only when actually known.</strong> timeLabel exists for the honestly-vague cases — "Afternoon" — instead of inventing false precision; see Activity's own timeLabel note above for its closed vocabulary and sort-anchor mapping.</li>
           <li><strong>booking is absent for most activities</strong> — a casual stroll never needs one — while <code>status</code> is always present, tracking the activity's own plan independent of whether it's reserved.</li>
           <li><strong>mealType/diningFormat/includedIn are two independent axes plus a pointer, not one field</strong> — which meal slot (or snack) this is, versus how the food actually happens, versus what's paying for it. Collapsing them (e.g. a single <code>mealType: 'included-breakfast'</code>) would combinatorially explode the same way the model already avoids elsewhere (see Transit's <code>mode</code> rationale). A meal running late and becoming a drivethru instead needs no special structure to support — it's just editing <code>diningFormat</code>/<code>place</code> on an ordinary <code>status: 'planning'</code> Activity, the same flexibility every other field on this page already has.</li>
           <li><strong>An activity can be a meal without ever setting <code>place</code>.</strong> "Packed lunch" or "snacks from the cooler" is <code>mealType: 'snack'</code>/<code>'lunch'</code>, <code>diningFormat: 'self-catered'</code>, and no resolvable Place at all — same reasoning as Transit's <code>from</code>/<code>to</code> staying null for a whole city rather than forcing a point that doesn't exist.</li>
-          <li><strong>includedIn reuses Note's <code>Ref</code> type</strong> rather than inventing a second polymorphic pointer — a bundled meal points at whichever Stay, Leg, or Activity's booking actually covers it, so cost and confirmation number stay owned by that one booking instead of being duplicated onto the meal itself. Only set when <code>diningFormat</code> is <code>'included'</code>; every other format leaves it <code>null</code>.</li>
+          <li><strong>includedIn reuses Note's <code>Ref</code> type</strong> rather than inventing a second polymorphic pointer — a bundled meal points at whichever Stay, Leg, or Activity's booking actually covers it, so cost and confirmation number stay owned by that one booking instead of being duplicated onto the meal itself. Set when <code>diningFormat</code> is <code>'included'</code> (points at a <code>{ entity: 'stay', ... }</code>, etc. — the base rate itself) or <code>'package'</code> (points at a <code>{ entity: 'package', ... }</code> — see Stay); every other format leaves it <code>null</code>.</li>
+          <li><strong>'included' and 'package' are deliberately separate <code>diningFormat</code> values</strong>, not one "covered somehow" flag — <code>'included'</code> means the base rate already pays for it, no separate decision required; <code>'package'</code> means it's covered only if a specific optional add-on gets purchased, and that purchase has its own <code>planning</code>/<code>booked</code>/<code>cancelled</code> status independent of the Stay. Collapsing them would either lose that distinction or force a not-yet-decided purchase to read as already-included.</li>
           <li><strong>options is the one genuinely new mechanism here</strong>, added once "which of these three places for breakfast" turned out not to fit the single-value fields at all — the three candidates can each have a <em>different</em> <code>diningFormat</code> (included / sit-down / grab-and-go), so the choice has to live per-candidate, not on the Activity itself. It mirrors <code>Stay.lodging: null</code>'s "nothing chosen yet" — just extended to hold the actual named candidates instead of only recording that a decision is pending. <code>diningFormat</code>/<code>place</code>/<code>includedIn</code> stay <code>null</code> on the Activity the whole time <code>options</code> is set; deciding means picking one candidate, copying its three fields up onto the Activity itself, and clearing <code>options</code> back to <code>null</code> — the array never holds the decided state, only the open one.</li>
           <li><strong>priority is an enumerated rank, not a boolean</strong> — matching every other significance-style field on this page (<code>status</code>, <code>mealType</code>, <code>diningFormat</code>) rather than a loose <code>highlight: true/false</code>. Null for nearly everything; set only on the handful of activities worth calling out. It's what the computed Day's title reads to decide whether to name a day after its headline activity — "Denali Flightseeing" — instead of falling back to wherever that night's Stay is. When a day has several activities tied at the same top priority, the title joins their <code>text</code> with " &amp; ", in sequence order. Deliberately generic rather than single-purpose: any future "what matters today" or trip-highlights view can read the same field without a new one being invented.</li>
         </ul>
@@ -911,7 +973,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   images: [] }</code></pre>
         <p class="schema-label">The Ref shape, reusable beyond Note</p>
         <pre class="schema"><code>type Ref =
-  | { entity: 'trip'|'leg'|'stay'|'transit'|'route'|'activity'|'scenario', id }
+  | { entity: 'trip'|'leg'|'stay'|'transit'|'route'|'activity'|'scenario'|'package', id }
   | { date }
   | { dateRange: [start, end] }</code></pre>
         <ul class="rationale">

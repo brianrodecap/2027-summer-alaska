@@ -37,19 +37,17 @@
 <header class="hero" id="trip-hero">
   <div class="hero-image" id="trip-hero-image" hidden></div>
   <div class="hero-frame">
-    <md-icon-button id="back-to-trips" aria-label="All trips">
+    <md-icon-button id="hero-back" aria-label="Back">
       <md-icon>arrow_back</md-icon>
     </md-icon-button>
     <p class="eyebrow md-typescale-label-large">Field Itinerary</p>
     <h1 class="md-typescale-display-small" id="trip-title"></h1>
-    <details class="route-details">
-      <summary class="route-summary md-typescale-label-large">Route<span id="route-stop-count"></span></summary>
-      <ol class="route" aria-label="Route"></ol>
-    </details>
-    <md-chip-set id="travelers-row"></md-chip-set>
     <md-chip-set>
       <md-suggestion-chip id="trip-date-chip">
         <md-icon slot="icon">calendar_month</md-icon>
+      </md-suggestion-chip>
+      <md-suggestion-chip id="trip-budget-chip" label="Budget">
+        <md-icon slot="icon">payments</md-icon>
       </md-suggestion-chip>
     </md-chip-set>
   </div>
@@ -60,17 +58,35 @@
 <section id="overview">
   <p class="lead md-typescale-body-large" id="trip-summary"></p>
 
-  <div class="legs-grid" id="legs-grid"></div>
+  <div id="budget-strip-mount"></div>
 
-  <div class="date-jump">
-    <md-filled-tonal-button id="date-picker-open">
-      Jump to a day
-      <md-icon slot="icon">calendar_month</md-icon>
-    </md-filled-tonal-button>
-  </div>
+  <div class="legs-grid" id="legs-grid"></div>
 </section>
 
-<section id="day-list"></section>
+<!-- A sibling of #overview, not nested inside it: position: sticky only
+     sticks for as long as its own parent's box is on screen, and #overview's
+     box ends right after the legs grid — nowhere near long enough to float
+     across the whole day list below. <main> spans the entire page, so
+     anchoring here is what lets it float the whole way. -->
+<div id="days-view" hidden>
+  <div class="filter-nav" id="filter-nav">
+    <md-icon-button id="date-picker-open" aria-label="Jump to a day">
+      <md-icon>calendar_month</md-icon>
+    </md-icon-button>
+    <md-icon-button id="filter-menu-open" aria-label="Filters">
+      <md-icon>filter_list</md-icon>
+    </md-icon-button>
+    <md-menu id="filter-menu" anchor="filter-menu-open"></md-menu>
+  </div>
+
+  <section id="day-list"></section>
+  <p class="md-typescale-body-large" id="day-list-empty" hidden>No days match the selected filters.</p>
+</div>
+
+<div id="budget-view" hidden>
+  <section id="budget-summary"></section>
+  <section id="budget-breakdowns"></section>
+</div>
 
 </main>
 
