@@ -761,12 +761,12 @@ detail-side-sheet.open .panel {
 }
 
 /* ---------- row edit button (render-shared.js's renderEditButton) — a pencil
-   trailing every Stay/Transit-depart/plain-Activity row, opening the
-   standalone #edit-dialog popup. A .stay-block already lays out as a flex
-   row with align-items: flex-start (for its own multi-line content), so the
-   button needs its own vertical centering; .activity-row-wrap below exists
-   only because a plain md-list-item has no trailing slot of its own that
-   isn't already the chevron. ---------- */
+   trailing every Stay/Transit-depart row, opening the standalone #edit-dialog
+   popup (a plain Activity row opens the same popup via its side sheet's own
+   edit button instead — see app.js's openActivity). A .stay-block already
+   lays out as a flex row with align-items: flex-start (for its own
+   multi-line content), so the button needs its own vertical centering.
+   ---------- */
 
 .row-edit-button {
   flex-shrink: 0;
@@ -775,16 +775,6 @@ detail-side-sheet.open .panel {
 
 .stay-block .row-edit-button {
   align-self: center;
-}
-
-.activity-row-wrap {
-  display: flex;
-  align-items: center;
-}
-
-.activity-row-wrap md-list-item {
-  flex: 1;
-  min-width: 0;
 }
 
 /* A Route stage row (trip-model.js's transitSequenceItems) sits between a

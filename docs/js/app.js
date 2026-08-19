@@ -14,12 +14,6 @@ import { renderDatePicker } from './date-picker.js';
 import { buildFilterGroups, renderFilterMenuItems, applyFilters } from './filters.js';
 import { renderEditForm, applyEdit, EDIT_ENTITY_LABEL } from './edit.js';
 
-function toNode(html) {
-  const template = document.createElement('template');
-  template.innerHTML = html.trim();
-  return template.content.firstElementChild;
-}
-
 document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
 
 // ---------- routing: '#/' is the trips list; '#/<slug>' opens a trip into
@@ -163,12 +157,12 @@ function readDaySelections(dayBlockEl, day) {
 
 async function openActivity(activity, selectedOption = null) {
   const place = selectedOption ? selectedOption.place : activity.place;
-  // Editing in place is only offered for a plain activity — a meal row's
-  // selected MealOption isn't itself one of the three edit.js kinds (see
-  // edit.js's own scope note), so the sheet's edit button just stays hidden
-  // when a selectedOption is passed in.
+  // Editing is only offered for a plain activity — a meal row's selected
+  // MealOption isn't itself one of the three edit.js kinds (see edit.js's own
+  // scope note), so the sheet's edit button just stays hidden when a
+  // selectedOption is passed in.
   sideSheet.open(activityDetailTitle(activity, selectedOption), renderActivityDetailBody(activity, selectedOption), {
-    onEdit: selectedOption ? null : () => enterActivityEditMode(activity),
+    onEdit: selectedOption ? null : () => openEditPopup('activity', activity._id),
   });
   if (!place?.id) return;
   const details = await hydratePlaceDetails(sideSheet.querySelector('.place-panel'), place);
@@ -181,17 +175,17 @@ async function openActivity(activity, selectedOption = null) {
   }
 }
 
-// ---------- editing day-list line items (edit.js) — two chrome shells
-// around the same renderEditForm/applyEdit pair: the side sheet's own edit
-// button (Activities only — see openActivity above) swaps its body in place
-// for enterActivityEditMode; every row's pencil button (Activity, Stay, and
-// Transit — see render-shared.js's renderEditButton) opens the lighter-weight
-// #edit-dialog popup instead, the only edit entry point Stay/Transit have
-// since neither opens a side sheet at all. Neither surface writes back to
-// the *.json files this data loaded from — there's no backend to write to
-// (see CLAUDE.md) — so a save only mutates the in-memory `data` this trip's
-// `view` was built from; exportDirtyCollections (below) is how an edit
-// becomes durable, by downloading the touched file(s) back out. ----------
+// ---------- editing day-list line items (edit.js) — one shared
+// renderEditForm/applyEdit pair hosted by the standalone #edit-dialog popup:
+// the side sheet's own edit button (Activities only — see openActivity
+// above) opens it via openEditPopup, and every Stay/Transit row's pencil
+// button (render-shared.js's renderEditButton) opens it the same way, the
+// only edit entry point Stay/Transit have since neither opens a side sheet
+// at all. It doesn't write back to the *.json files this data loaded from —
+// there's no backend to write to (see CLAUDE.md) — so a save only mutates
+// the in-memory `data` this trip's `view` was built from; exportDirtyCollections
+// (below) is how an edit becomes durable, by downloading the touched file(s)
+// back out. ----------
 
 const COLLECTION_FOR_KIND = { activity: 'activities', stay: 'stays', transit: 'transits' };
 const dirtyCollections = new Set();
@@ -236,40 +230,9 @@ function refreshAfterEdit(kind, id) {
   if (freshDate) document.getElementById(`day-${freshDate}`)?.scrollIntoView({ block: 'start' });
 }
 
-// The side sheet's own in-place edit mode (Activities only) — swaps the
-// sheet body for the form plus its own Save/Cancel row (the sheet has no
-// dialog-style actions slot of its own to borrow), leaving the header's edit
-// button hidden (openActivity only passes onEdit for the read view) since
-// there's nothing more to switch into while already editing.
-function enterActivityEditMode(activity) {
-  const formNode = renderEditForm('activity', activity, { tripTravelers: view.trip.travelers });
-  const errorEl = toNode(`<p class="edit-dialog-error md-typescale-body-medium" hidden></p>`);
-  const cancelBtn = toNode(`<md-text-button type="button">Cancel</md-text-button>`);
-  const saveBtn = toNode(`<md-filled-button type="button">Save</md-filled-button>`);
-  const actions = toNode(`<div class="edit-form-actions"></div>`);
-  actions.append(cancelBtn, saveBtn);
-
-  cancelBtn.addEventListener('click', () => openActivity(activity));
-  saveBtn.addEventListener('click', () => {
-    const error = applyEdit('activity', activity, formNode);
-    if (error) {
-      errorEl.textContent = error;
-      errorEl.hidden = false;
-      return;
-    }
-    markDirty('activity');
-    refreshAfterEdit('activity', activity._id);
-    openActivity(view.activitiesById.get(activity._id));
-  });
-
-  const wrap = document.createDocumentFragment();
-  wrap.append(errorEl, formNode, actions);
-  sideSheet.open(activityDetailTitle(activity), wrap);
-}
-
-// The standalone popup — the only edit entry point for Stay/Transit, and a
-// quicker alternative to the sheet for a plain Activity too (see
-// render-shared.js's renderEditButton on every row).
+// The standalone popup — the only edit entry point for Stay/Transit, and for
+// Activity too now that the side sheet's own edit button (openActivity,
+// above) opens this same popup rather than an in-place form.
 let editTarget = null;
 
 function openEditPopup(kind, id) {
@@ -329,17 +292,16 @@ dayListEl.addEventListener('click', (event) => {
   sideSheet.open(`Map — ${day.dateLabel}`, renderDayMapSheetBody(day, selections));
 });
 
-// Every row's pencil button (render-shared.js's renderEditButton) is a sibling
-// of whatever interactive element the row itself has (its md-list-item, its
-// .stay-block), never nested inside one — so this never conflicts with the
-// activity-open listener above; clicking a pencil doesn't also open the row
-// it's on.
+// A Stay/Transit-depart row's pencil button (render-shared.js's
+// renderEditButton — the only day-list row that still has one; a plain
+// Activity's own edit entry point is its side sheet's header button instead,
+// see openActivity) is a sibling of its .stay-block, never nested inside it
+// — so this never conflicts with the activity-open listener above.
 dayListEl.addEventListener('click', (event) => {
   const editButton = event.target.closest('.row-edit-button');
   if (!editButton) return;
-  const { editActivityId, editStayId, editTransitId } = editButton.dataset;
-  if (editActivityId) openEditPopup('activity', editActivityId);
-  else if (editStayId) openEditPopup('stay', editStayId);
+  const { editStayId, editTransitId } = editButton.dataset;
+  if (editStayId) openEditPopup('stay', editStayId);
   else if (editTransitId) openEditPopup('transit', editTransitId);
 });
 

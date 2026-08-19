@@ -1,12 +1,10 @@
 // Editing day-list line items — Activity, Stay, and Transit, the three kinds
 // scoped for this pass (a Route's via[] stages and a MealOption candidate are
 // both computed/nested rather than a standalone line item, so neither gets
-// its own edit form here). Two chrome shells share this same form/apply pair
-// rather than each having their own copy: the activity side sheet swaps its
-// read-only body for renderEditForm('activity', ...) in place (see app.js's
-// enterActivityEditMode), and the standalone #edit-dialog popup (opened from
-// any row's pencil button, including Stay/Transit, which have no side sheet
-// at all) hosts the same form. Both call applyEdit on Save.
+// its own edit form here). One chrome shell hosts renderEditForm for all
+// three: the standalone #edit-dialog popup (app.js's openEditPopup), opened
+// from a Stay/Transit row's pencil button or from the activity side sheet's
+// own edit button. It calls applyEdit on Save.
 //
 // There's no backend this can write to — see CLAUDE.md: docs/ is served
 // as-is by GitHub Pages from static *.json files. So an edit only ever

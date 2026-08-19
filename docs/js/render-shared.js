@@ -52,12 +52,14 @@ export function renderBookingChip(booking) {
 
 // ---------- row edit button ----------
 
-// The pencil trailing every Stay/Transit-depart/plain-Activity row, opening
-// the standalone #edit-dialog popup (app.js) for that entity — a sibling of
-// the row's own interactive element rather than nested inside it, same move
+// The pencil trailing every Stay/Transit-depart row, opening the standalone
+// #edit-dialog popup (app.js) for that entity — a sibling of the row's own
+// interactive element rather than nested inside it, same move
 // meal-row-render.js's renderMealRow already makes for its tabs vs. its
 // header button, so a pencil click can't double-fire the row's own "open"
 // handler and there's no real `<button>`-in-`<button>` nesting to worry about.
+// A plain Activity row has no pencil of its own — its side sheet's header
+// edit button (app.js's openActivity) opens this same popup instead.
 export function renderEditButton(kind, id) {
   return `<md-icon-button class="row-edit-button" data-edit-${kind}-id="${id}" aria-label="Edit">
     <md-icon>edit</md-icon>
