@@ -40,7 +40,7 @@ function dateOnly(iso) {
   return iso.slice(0, 10);
 }
 
-function addDaysStr(dateStr, n) {
+export function addDaysStr(dateStr, n) {
   const [y, m, d] = dateStr.split('-').map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
   dt.setUTCDate(dt.getUTCDate() + n);
@@ -93,22 +93,16 @@ export function activityTimeLabel(activity) {
   return 'Time TBD';
 }
 
-// ---------- Activity's date is usually startAt/endAt, but a handful of
-// single-item days (e.g. act_jul7_1) were migrated with neither — the old
-// per-day file structure implied the date positionally, and Activity has no
-// date field to carry that forward. As a last resort, read it out of the
-// activity's own _id (e.g. "act_jul7_1" -> 2027-07-07): the id is stored data,
-// even though it's meant as an opaque key rather than a date field. ----------
+// ---------- Activity's date is usually implied by startAt/endAt. The fuzzy-
+// time path (timeLabel only, no exact startAt/endAt — see TIME_LABEL_ANCHORS
+// below) has no timestamp to read a date from, so Activity carries an
+// explicit `date` field for exactly that case (data-model.html) — set only
+// when startAt and endAt are both null, alongside timeLabel. ----------
 
-const ID_DATE_RE = /^act_(jun|jul)(\d{1,2})(?:_|$)/;
-const MONTH_NUM = { jun: '06', jul: '07' };
-
-function resolveActivityDate(activity, tripYear) {
+function resolveActivityDate(activity) {
   if (activity.startAt) return dateOnly(activity.startAt);
   if (activity.endAt) return dateOnly(activity.endAt);
-  const m = ID_DATE_RE.exec(activity._id);
-  if (!m) return null;
-  return `${tripYear}-${MONTH_NUM[m[1]]}-${m[2].padStart(2, '0')}`;
+  return activity.date ?? null;
 }
 
 // ---------- Note.concerns matching — see docs/data/data-model.html's Ref type.
@@ -184,7 +178,7 @@ export function filterTagsFor(entity, leg) {
   const bookingTag = resolveBookingTag(entity, leg);
   if (bookingTag) tags.push(bookingTag);
   if (entity.priority) tags.push('attr:highlight');
-  if (entity.hasWarningNote) tags.push('attr:attention');
+  if (entity.hasWarningNote || entity.transitOverlapWarning) tags.push('attr:attention');
   return tags;
 }
 
@@ -262,18 +256,21 @@ const TIME_LABEL_ANCHORS = {
   Evening: '20:00',
 };
 
-// Every Activity must resolve to a real sort position: startAt, endAt, or a
-// timeLabel drawn from TIME_LABEL_ANCHORS above. A timeLabel outside that
-// closed vocabulary (a one-off conditional string) doesn't count — it has no
-// anchor time of its own. Checked once at load time so a bad entry fails
-// loudly here rather than sorting on an undefined key downstream — this is
-// what lets activitySortKey (below) always return a real value instead of
-// needing its own null-handling fallback.
+// Every Activity must resolve to both a real sort position and a real date:
+// startAt, endAt, or a `date` paired with a timeLabel drawn from
+// TIME_LABEL_ANCHORS above. A timeLabel outside that closed vocabulary (a
+// one-off conditional string) doesn't count — it has no anchor time of its
+// own — and neither does a timeLabel with no `date`, since resolveActivityDate
+// would have nowhere left to place it. Checked once at load time so a bad
+// entry fails loudly here rather than sorting on an undefined key, or
+// silently vanishing from the day list, downstream — this is what lets
+// activitySortKey (below) always return a real value instead of needing its
+// own null-handling fallback.
 function validateActivityTiming(activities) {
-  const untimed = activities.filter((a) => !a.startAt && !a.endAt && !TIME_LABEL_ANCHORS[a.timeLabel]);
+  const untimed = activities.filter((a) => !a.startAt && !a.endAt && !(a.date && TIME_LABEL_ANCHORS[a.timeLabel]));
   if (untimed.length) {
     throw new Error(
-      `Activity(s) missing startAt, endAt, and a valid timeLabel anchor: ${untimed.map((a) => a._id).join(', ')}`
+      `Activity(s) missing startAt, endAt, or a date+timeLabel pair: ${untimed.map((a) => a._id).join(', ')}`
     );
   }
 }
@@ -326,42 +323,84 @@ function formatWallClock(ms) {
   return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}T${pad(dt.getUTCHours())}:${pad(dt.getUTCMinutes())}`;
 }
 
+// A meal Activity reached mid-drive is exempt from the transit-overlap
+// warning (see transitOverlapFor, below) — eating during a long drive is
+// normal, not a modeling mistake — but it still genuinely takes time, and a
+// meal with no authored endAt (a still-undecided "choosing where", or a
+// self-catered packed lunch that was never given a real duration) used to
+// fold into the walk below as zero minutes, silently understating how long
+// the stop actually took. These are rough, diningFormat-shaped guesses —
+// grab-and-go/drivethru barely slow the drive, a sit-down meal genuinely
+// does — used only when a real endAt isn't already on record. A still-open
+// meal (activity.options set, diningFormat null) borrows its first
+// candidate's format as the best available guess.
+const DEFAULT_MEAL_DURATION_MINUTES = {
+  included: 30,
+  package: 45,
+  'sit-down': 60,
+  'grab-and-go': 15,
+  drivethru: 10,
+  'self-catered': 20,
+};
+const FALLBACK_MEAL_DURATION_MINUTES = 30;
+
+function activityEffectiveEndMs(activity) {
+  if (activity.endAt) return wallClockMs(activity.endAt);
+  const startMs = wallClockMs(activity.startAt);
+  if (!activity.mealType) return startMs;
+  const format = activity.diningFormat ?? activity.options?.[0]?.diningFormat ?? null;
+  const minutes = DEFAULT_MEAL_DURATION_MINUTES[format] ?? FALLBACK_MEAL_DURATION_MINUTES;
+  return startMs + minutes * 60000;
+}
+
 // Every variant gets its own independent walk — even though only one
 // variant's stages are visible at a time (day-render.js's route-variant
 // tabs), the hidden one still needs its own correct times ready for when
 // it's switched to. inTransitActivities is consumed here as a local queue,
-// one via segment's durationMinutes at a time: if an activity's real
-// startAt falls inside the segment currently being driven, only the portion
-// of the segment up to that point is spent as drive time, the clock then
-// jumps to that activity's own real endAt (its actual duration, not an
-// estimate), and whatever of the segment's duration is still left keeps
-// driving from there — so a lunch stop's real 30 minutes and a segment's
-// estimated 45 minutes of driving both actually elapse, instead of one
-// silently swallowing the other. Clamped just under arrivesAt so an
-// underestimated remainder never sorts a stage after the Transit's own
-// Arrive row.
+// one segment's durationMinutes at a time: if an activity's real startAt
+// falls inside the segment currently being driven, only the portion of the
+// segment up to that point is spent as drive time, the clock then jumps to
+// that activity's own effective end (its real endAt, or the meal-format
+// estimate above), and whatever of the segment's duration is still left
+// keeps driving from there — so a lunch stop's real time and a segment's
+// estimated drive time both actually elapse, instead of one silently
+// swallowing the other.
+//
+// The walk doesn't stop at the last named via — variant.finalLegMinutes
+// (Route entity, data-model.html) is appended as one more, unlabeled
+// segment covering the drive from the last via (or Depart) to the route's
+// own destination, so the walk's own final clock position is the Transit's
+// real arrival time given everything it actually passed along the way —
+// not clamped to whatever arrivesAt happened to be authored. That's what
+// buildTripView reads back as the Transit's resolved arrivesAt for any
+// routed drive (see resolveTransitRoute, below); arrivesAt only stays a
+// flatly authored fact for a mode with a genuine external schedule (a
+// flight, a ferry) or a Transit with no route to walk at all.
 function stageTimesForVariant(variant, transit, inTransitActivities) {
-  const arriveMs = wallClockMs(transit.arrivesAt);
   let clockMs = wallClockMs(transit.departsAt);
   const queue = [...inTransitActivities];
-  return variant.via.map((v) => {
-    let remainingMs = (v.durationMinutes ?? 0) * 60000;
+  const segments = [...variant.via, { finalLeg: true, durationMinutes: variant.finalLegMinutes ?? 0 }];
+  const stages = [];
+  for (const seg of segments) {
+    let remainingMs = (seg.durationMinutes ?? 0) * 60000;
     while (remainingMs > 0) {
       const next = queue[0];
       const nextStartMs = next ? wallClockMs(next.startAt) : null;
       if (next && nextStartMs >= clockMs && nextStartMs <= clockMs + remainingMs) {
         const driveMs = nextStartMs - clockMs;
         remainingMs -= driveMs;
-        clockMs = wallClockMs(next.endAt ?? next.startAt);
+        clockMs = activityEffectiveEndMs(next);
         queue.shift();
       } else {
         clockMs += remainingMs;
         remainingMs = 0;
       }
     }
-    clockMs = Math.min(clockMs, arriveMs - 60000);
-    return { label: v.label ?? v.place.label, placeId: v.place?.id ?? null, note: v.note ?? null, kind: v.kind, key: formatWallClock(clockMs) };
-  });
+    if (!seg.finalLeg) {
+      stages.push({ label: seg.label ?? seg.place.label, placeId: seg.place?.id ?? null, note: seg.note ?? null, kind: seg.kind, key: formatWallClock(clockMs) });
+    }
+  }
+  return { stages, arrivesAt: formatWallClock(clockMs) };
 }
 
 function routeStageItems(transit) {
@@ -954,11 +993,33 @@ function buildDay(date, legs, stays, transits, activitiesByDate, scenariosById, 
 // place them — not a stored link, since which Activities a drive happens to
 // pass is a fact about this trip's timing, not something Route (reusable,
 // dateless reference data) should ever point back at.
+function activityFallsWithinTransit(activity, transit) {
+  return (
+    activity.legId === transit.legId &&
+    activity.scenarioId === transit.scenarioId &&
+    !!activity.startAt &&
+    activity.startAt >= transit.departsAt &&
+    activity.startAt < transit.arrivesAt
+  );
+}
+
 function inTransitActivities(transit, activities) {
   return activities
-    .filter((a) => a.legId === transit.legId && a.scenarioId === transit.scenarioId)
-    .filter((a) => a.startAt && a.startAt >= transit.departsAt && a.startAt < transit.arrivesAt)
+    .filter((a) => activityFallsWithinTransit(a, transit))
     .sort((a, b) => (a.startAt < b.startAt ? -1 : 1));
+}
+
+// An Activity is never supposed to land inside a Transit's own span at all —
+// a real stop reached partway through a drive belongs on the Route as a via
+// waypoint (data-model.html's Route entity), not as an ordinary Activity that
+// happens to share the movement's own time window. This doesn't throw the
+// way validateActivityTiming/validateRoutes do, since existing data may still
+// have these pending migration to a real waypoint — it's surfaced instead as
+// a visible warning on the row (activity-row-render.js/meal-row-render.js),
+// so a bad case is seen and fixed rather than silently absorbed the way the
+// route-stage folding above already treats it.
+function transitOverlapFor(activity, transits) {
+  return transits.find((t) => activityFallsWithinTransit(activity, t)) ?? null;
 }
 
 // Every via entry must carry a kind of 'waypoint' or 'override' (never a
@@ -998,24 +1059,33 @@ function validateRoutes(routes) {
           problems.push(`${where}: durationMinutes must be a non-negative number, got ${JSON.stringify(via.durationMinutes)}`);
         }
       }
+      if (typeof variant.finalLegMinutes !== 'number' || variant.finalLegMinutes < 0) {
+        problems.push(`${route._id} (${variant.tone}): finalLegMinutes must be a non-negative number, got ${JSON.stringify(variant.finalLegMinutes)}`);
+      }
     }
   }
   if (problems.length) throw new Error(`Invalid Route via entries:\n${problems.join('\n')}`);
 }
 
+// A routed drive's own arrivesAt is resolved here per variant (see
+// stageTimesForVariant) rather than trusted from the Transit's authored
+// field — a real stop along the way (a lunch break with no fixed duration
+// of its own, say) means the true arrival isn't known until the walk
+// actually accounts for it. selectedTone picks which variant's resolved
+// arrival buildTripView reads back as the Transit's own arrivesAt.
 function resolveTransitRoute(transit, routesById, activities) {
   if (!transit.routeId) return null;
   const route = routesById.get(transit.routeId);
   if (!route) return null;
   const inTransit = inTransitActivities(transit, activities);
-  const variants = route.variants.map((v) => ({
-    tone: v.tone,
-    label: `${v.tone[0].toUpperCase()}${v.tone.slice(1)}`,
-    stages: stageTimesForVariant(v, transit, inTransit),
-  }));
+  const variants = route.variants.map((v) => {
+    const { stages, arrivesAt } = stageTimesForVariant(v, transit, inTransit);
+    return { tone: v.tone, label: `${v.tone[0].toUpperCase()}${v.tone.slice(1)}`, stages, arrivesAt };
+  });
   if (!variants.length) return null;
   const selectedTone = variants.some((v) => v.tone === transit.routeVariant) ? transit.routeVariant : variants[0].tone;
-  return { variants, selectedTone };
+  const resolvedArrivesAt = variants.find((v) => v.tone === selectedTone).arrivesAt;
+  return { variants, selectedTone, resolvedArrivesAt };
 }
 
 // ---------- Budget — a computed view over every booking already in the
@@ -1224,31 +1294,48 @@ export function buildTripView(data) {
   const { trip, legs, stays, transits, activities, scenarios, notes, routes } = data;
   validateActivityTiming(activities);
   validateRoutes(routes);
-  const tripYear = trip.startDate.slice(0, 4);
   const scenariosById = new Map(scenarios.map((s) => [s._id, s]));
   const routesById = new Map((routes ?? []).map((r) => [r._id, r]));
   const packagesById = new Map(stays.flatMap((s) => s.packages ?? []).map((p) => [p._id, p]));
 
-  const enrichedActivities = activities.map((a) => ({
-    ...a,
-    date: resolveActivityDate(a, tripYear),
-    notes: notesForActivity(notes, a._id),
-    hasWarningNote: entityHasWarning(notes, 'activity', a._id),
-    travelers: a.mealType
-      ? resolveMealTravelers(trip.travelers, a.includedIn, packagesById)
-      : resolveExcursionTravelers(trip.travelers, a.travelers),
-    options: a.options
-      ? a.options.map((o) => ({ ...o, travelers: resolveMealTravelers(trip.travelers, o.includedIn, packagesById) }))
-      : a.options,
-  }));
+  const enrichedActivities = activities.map((a) => {
+    // A meal is exempt from the warning — see DEFAULT_MEAL_DURATION_MINUTES
+    // above for why eating mid-drive is normal, not a modeling mistake.
+    const overlappingTransit = a.mealType ? null : transitOverlapFor(a, transits);
+    return {
+      ...a,
+      date: resolveActivityDate(a),
+      notes: notesForActivity(notes, a._id),
+      hasWarningNote: entityHasWarning(notes, 'activity', a._id),
+      transitOverlapWarning: overlappingTransit
+        ? `During transit: ${overlappingTransit.from.label} → ${overlappingTransit.to.label}`
+        : null,
+      travelers: a.mealType
+        ? resolveMealTravelers(trip.travelers, a.includedIn, packagesById)
+        : resolveExcursionTravelers(trip.travelers, a.travelers),
+      options: a.options
+        ? a.options.map((o) => ({ ...o, travelers: resolveMealTravelers(trip.travelers, o.includedIn, packagesById) }))
+        : a.options,
+    };
+  });
   const activitiesById = new Map(enrichedActivities.map((a) => [a._id, a]));
 
   const enrichedStays = stays.map((s) => ({ ...s, hasWarningNote: entityHasWarning(notes, 'stay', s._id) }));
-  const routedTransits = transits.map((t) => ({
-    ...t,
-    routeInfo: resolveTransitRoute(t, routesById, enrichedActivities),
-    hasWarningNote: entityHasWarning(notes, 'transit', t._id),
-  }));
+  // arrivesAt is overridden with the route walk's own resolved arrival for
+  // any Transit with a route (see resolveTransitRoute) — every downstream
+  // reader of transit.arrivesAt (sorting, day placement, rendering) picks
+  // this up for free without knowing it was ever derived. It stays the
+  // flatly authored fact only when there's no route to walk: a genuine
+  // external schedule (flight, ferry) or a Transit with no routeId at all.
+  const routedTransits = transits.map((t) => {
+    const routeInfo = resolveTransitRoute(t, routesById, enrichedActivities);
+    return {
+      ...t,
+      routeInfo,
+      arrivesAt: routeInfo ? routeInfo.resolvedArrivesAt : t.arrivesAt,
+      hasWarningNote: entityHasWarning(notes, 'transit', t._id),
+    };
+  });
 
   const activitiesByDate = new Map();
   for (const a of enrichedActivities) {

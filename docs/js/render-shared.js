@@ -50,6 +50,21 @@ export function renderBookingChip(booking) {
     </div>`;
 }
 
+// ---------- transit-overlap warning ----------
+
+// Set on an Activity (trip-model.js's transitOverlapFor) whenever its startAt
+// falls inside some Transit's own departsAt–arrivesAt span — a real stop
+// belongs on the Route as a via waypoint instead, so this renders as a
+// visible, error-toned flag on the row rather than passing silently.
+export function renderTransitOverlapWarning(activity) {
+  if (!activity.transitOverlapWarning) return '';
+  return `
+    <div class="transit-overlap-chip md-typescale-label-medium">
+      <md-icon>warning</md-icon>
+      <span>${activity.transitOverlapWarning}</span>
+    </div>`;
+}
+
 // ---------- row edit button ----------
 
 // The pencil trailing every Stay/Transit-depart row, opening the standalone
@@ -128,7 +143,11 @@ const MEAL_TYPE_LABEL = {
   snack: 'Snack',
 };
 
+// Every day-list row leads with "time · type" on its overline — mealType for
+// a meal Activity, 'Activity' for a plain one — matching Depart/Via/Waypoint/
+// Arrive's own time-plus-type overline (day-render.js's renderTransitBoundary
+// / renderTransitStage) and Stay's relation-only one (renderStay).
 export function timeAndMealTypeLabel(activity) {
   const time = activityTimeLabel(activity);
-  return activity.mealType ? `${time} · ${MEAL_TYPE_LABEL[activity.mealType]}` : time;
+  return `${time} · ${activity.mealType ? MEAL_TYPE_LABEL[activity.mealType] : 'Activity'}`;
 }

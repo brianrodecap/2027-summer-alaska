@@ -5,7 +5,7 @@
 // scenario/day's activities.
 
 import { filterTagsFor } from './trip-model.js';
-import { firstImage, renderBookingChip, renderTravelerChips, timeAndMealTypeLabel, DEFAULT_PLACE_ICON, DINING_FORMAT_ICON } from './render-shared.js';
+import { firstImage, renderBookingChip, renderTravelerChips, renderTransitOverlapWarning, timeAndMealTypeLabel, DEFAULT_PLACE_ICON, DINING_FORMAT_ICON } from './render-shared.js';
 import { renderMealRow } from './meal-row-render.js';
 
 // Every activity row needs *something* in the leading slot — a missing one
@@ -26,7 +26,9 @@ export function renderActivityRow(activity, day) {
   const startSlot = image
     ? `<div slot="start" class="row-icon-slot"><img class="activity-row-image" src="${image.uri}" alt="" loading="lazy"></div>`
     : `<div slot="start" class="row-icon-slot"><md-icon>${activityRowIcon(activity)}</md-icon></div>`;
-  const supportingBits = [renderTravelerChips(activity.travelers), renderBookingChip(activity.booking)].filter(Boolean).join('');
+  const supportingBits = [renderTravelerChips(activity.travelers), renderBookingChip(activity.booking), renderTransitOverlapWarning(activity)]
+    .filter(Boolean)
+    .join('');
   const supportingSlot = supportingBits ? `<div slot="supporting-text">${supportingBits}</div>` : '';
   const filterTags = filterTagsFor(activity, day.leg).join(' ');
   return `

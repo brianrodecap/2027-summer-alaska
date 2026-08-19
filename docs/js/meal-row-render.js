@@ -6,7 +6,7 @@
 
 import { stayRelation, filterTagsFor } from './trip-model.js';
 import { toNode } from './render-dom.js';
-import { firstImage, renderTravelerChips, renderTravelerChipsHtml, timeAndMealTypeLabel, DINING_FORMAT_ICON, DINING_FORMAT_LABEL } from './render-shared.js';
+import { firstImage, renderTravelerChips, renderTravelerChipsHtml, renderTransitOverlapWarning, timeAndMealTypeLabel, DINING_FORMAT_ICON, DINING_FORMAT_LABEL } from './render-shared.js';
 
 // Which Stay a MealOption's includedIn ref is actually about — a plain
 // { entity: 'stay' } ref for 'included', or a { entity: 'package' } ref for
@@ -91,6 +91,7 @@ export function renderMealRow(activity, day) {
             <span class="meal-row-time md-typescale-label-medium">${timeAndMealTypeLabel(activity)}</span>
             <span class="meal-row-selected md-typescale-body-large">${selected ? mealOptionLabel(selected) : activity.text}</span>
             ${renderTravelerChips(selected?.travelers)}
+            ${renderTransitOverlapWarning(activity)}
           </span>
           <md-icon>chevron_right</md-icon>
         </button>

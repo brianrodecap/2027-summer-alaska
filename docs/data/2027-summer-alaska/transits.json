@@ -40,7 +40,7 @@
     },
     "departsAt": "2027-06-28T06:30",
     "arrivesAt": "2027-06-28T08:30",
-    "routeId": "route_parks_highway",
+    "routeId": "route_new_8",
     "routeVariant": "direct",
     "booking": null,
     "images": [
@@ -428,7 +428,7 @@
     },
     "departsAt": "2027-07-17T14:00",
     "arrivesAt": "2027-07-17T15:00",
-    "routeId": "route_seward_highway",
+    "routeId": "route_anchorage_whittier",
     "routeVariant": "direct",
     "booking": null,
     "images": [

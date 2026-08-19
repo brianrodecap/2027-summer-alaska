@@ -259,9 +259,9 @@
     "legId": "leg_parks",
     "scenarioId": "scenario_jun27_ideal",
     "status": "planning",
-    "startAt": "2027-06-27T13:00",
-    "endAt": "2027-06-27T14:00",
-    "timeLabel": null,
+    "startAt": null,
+    "endAt": null,
+    "timeLabel": "Afternoon",
     "order": null,
     "priority": null,
     "text": "Talkeetna Historical Society Museum",
@@ -282,7 +282,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-06-27"
   },
   {
     "_id": "act_jun27_ideal_6",
@@ -450,7 +451,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-06-27"
   },
   {
     "_id": "act_jun27_alt_1",
@@ -572,7 +574,7 @@
     "scenarioId": "scenario_jun27_alt",
     "status": "planning",
     "startAt": "2027-06-27T14:00",
-    "endAt": "2027-06-27T15:00",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -714,7 +716,8 @@
         "credit": "Photo by Jason Bennett / NPS, CC BY 2.0",
         "caption": "Denali's summit wrapped in thick cloud cover"
       }
-    ]
+    ],
+    "date": "2027-06-27"
   },
   {
     "_id": "act_jun28_breakfast",
@@ -862,7 +865,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-06-28T13:30",
-    "endAt": "2027-06-28T14:00",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -947,36 +950,6 @@
     "images": []
   },
   {
-    "_id": "act_jun28_8",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-06-28T17:30",
-    "endAt": "2027-06-28T18:00",
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Arrive Fairbanks, check into Westmark Fairbanks",
-    "place": {
-      "id": "ChIJ_aR34k5FMlERqYeOQVWen5I",
-      "label": "Westmark Fairbanks Hotel & Conference Center",
-      "images": []
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [
-      {
-        "uri": "http://img1.wsimg.com/isteam/ip/4a011874-e82f-4945-b561-9350f89109a8/IMG_0252.jpeg",
-        "credit": "Courtesy of Westmark Fairbanks Hotel",
-        "caption": "Westmark Fairbanks Hotel"
-      }
-    ]
-  },
-  {
     "_id": "act_jun28_9",
     "legId": "leg_parks",
     "scenarioId": null,
@@ -1048,7 +1021,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-06-29T09:15",
-    "endAt": "2027-06-29T09:45",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -1108,7 +1081,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-06-29T11:45",
-    "endAt": "2027-06-29T12:15",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -1229,7 +1202,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-06-29T17:00",
-    "endAt": "2027-06-29T18:00",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -1281,7 +1254,8 @@
         "credit": "Craig McCaa / BLM Alaska, public domain",
         "caption": "Arctic Interagency Visitor Center in Coldfoot, Alaska"
       }
-    ]
+    ],
+    "date": "2027-06-29"
   },
   {
     "_id": "act_jun30_ideal_1",
@@ -1289,7 +1263,7 @@
     "scenarioId": "scenario_jun30_ideal",
     "status": "planning",
     "startAt": "2027-06-30T08:00",
-    "endAt": "2027-06-30T08:45",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -1375,7 +1349,8 @@
         "credit": "U.S. Fish and Wildlife Service, public domain",
         "caption": "Aerial view of the Brooks Range, Gates of the Arctic"
       }
-    ]
+    ],
+    "date": "2027-06-30"
   },
   {
     "_id": "act_jun30_ideal_4",
@@ -1405,7 +1380,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-06-30"
   },
   {
     "_id": "act_jun30_ideal_lunch",
@@ -1437,7 +1413,7 @@
     "scenarioId": "scenario_jun30_ideal",
     "status": "planning",
     "startAt": "2027-06-30T17:00",
-    "endAt": "2027-06-30T18:00",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -1489,7 +1465,8 @@
         "credit": "Craig McCaa / BLM Alaska, public domain",
         "caption": "Arctic Interagency Visitor Center in Coldfoot, Alaska"
       }
-    ]
+    ],
+    "date": "2027-06-30"
   },
   {
     "_id": "act_jun30_alt_1",
@@ -1497,7 +1474,7 @@
     "scenarioId": "scenario_jun30_alt",
     "status": "planning",
     "startAt": "2027-06-30T08:00",
-    "endAt": "2027-06-30T08:45",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -1617,7 +1594,7 @@
     "scenarioId": "scenario_jun30_alt",
     "status": "planning",
     "startAt": "2027-06-30T11:15",
-    "endAt": "2027-06-30T13:00",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -1673,7 +1650,7 @@
     "scenarioId": "scenario_jun30_alt",
     "status": "planning",
     "startAt": "2027-06-30T17:00",
-    "endAt": "2027-06-30T18:00",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -1725,7 +1702,8 @@
         "credit": "Courtesy of Coyote Air",
         "caption": "Coyote Air bush flying operation, Coldfoot Airport"
       }
-    ]
+    ],
+    "date": "2027-06-30"
   },
   {
     "_id": "act_jul1_ideal_1",
@@ -1733,7 +1711,7 @@
     "scenarioId": "scenario_jul1_ideal",
     "status": "planning",
     "startAt": "2027-07-01T08:00",
-    "endAt": "2027-07-01T08:45",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -1890,7 +1868,7 @@
     "scenarioId": "scenario_jul1_alt",
     "status": "planning",
     "startAt": "2027-07-01T06:00",
-    "endAt": "2027-07-01T06:45",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -2192,7 +2170,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-07-02T11:30",
-    "endAt": "2027-07-02T12:15",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -2399,7 +2377,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-07-03T13:15",
-    "endAt": "2027-07-03T13:45",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -2656,7 +2634,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-07-04T13:30",
-    "endAt": "2027-07-04T14:30",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -2842,7 +2820,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-07-05T12:30",
-    "endAt": "2027-07-05T13:00",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -3054,7 +3032,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-07-06T11:45",
-    "endAt": "2027-07-06T12:15",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -3121,7 +3099,8 @@
         "credit": "Photo by LCGS Russ / CC BY-SA 3.0",
         "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park"
       }
-    ]
+    ],
+    "date": "2027-07-06"
   },
   {
     "_id": "act_jul6_5",
@@ -3151,7 +3130,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-07-06"
   },
   {
     "_id": "act_jul6_6",
@@ -3189,7 +3169,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-07-07T07:30",
-    "endAt": "2027-07-07T08:15",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -3239,7 +3219,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-07-07"
   },
   {
     "_id": "act_jul7_retry_alt_free",
@@ -3259,7 +3240,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-07-07"
   },
   {
     "_id": "act_jul7_bonus",
@@ -3293,7 +3275,8 @@
         "credit": "Photo by LCGS Russ / CC BY-SA 3.0",
         "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park"
       }
-    ]
+    ],
+    "date": "2027-07-07"
   },
   {
     "_id": "act_jul7_bonus_heritage",
@@ -3323,7 +3306,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-07-07"
   },
   {
     "_id": "act_jul7_lunch",
@@ -3417,7 +3401,8 @@
         "credit": "Photo by LCGS Russ / CC BY-SA 3.0",
         "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park"
       }
-    ]
+    ],
+    "date": "2027-07-08"
   },
   {
     "_id": "act_jul8_2",
@@ -3441,7 +3426,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-07-08"
   },
   {
     "_id": "act_jul8_bonusday",
@@ -3465,7 +3451,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-07-08"
   },
   {
     "_id": "act_jul8_lunch",
@@ -3535,7 +3522,8 @@
         "credit": "U.S. Fish and Wildlife Service, public domain",
         "caption": "Aerial view of Kotzebue on the Chukchi Sea coast"
       }
-    ]
+    ],
+    "date": "2027-07-09"
   },
   {
     "_id": "act_jul9_breakfast",
@@ -3567,7 +3555,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-07-09T12:30",
-    "endAt": "2027-07-09T13:00",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -3840,7 +3828,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-07-11T12:45",
-    "endAt": "2027-07-11T13:15",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -4058,7 +4046,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-07-13T07:00",
-    "endAt": "2027-07-13T07:45",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -4183,7 +4171,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-07-13"
   },
   {
     "_id": "act_jul13_return",
@@ -5434,7 +5423,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-07-21T12:15",
-    "endAt": "2027-07-21T13:00",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -5601,7 +5590,7 @@
     "scenarioId": null,
     "status": "planning",
     "startAt": "2027-07-22T12:15",
-    "endAt": "2027-07-22T12:45",
+    "endAt": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
@@ -5741,7 +5730,8 @@
         "credit": "Photo by Allen Lubitz, public domain",
         "caption": "Coastal mountains and fjord along the Inside Passage"
       }
-    ]
+    ],
+    "date": "2027-07-23"
   },
   {
     "_id": "act_jul23_breakfast",

@@ -638,7 +638,10 @@
   from: { placeId: null, label: 'Anchorage' },  // null — a whole city, no one
   to:   { placeId: null, label: 'Whittier' },    // correct point to pin
   departsAt: '2027-07-05T09:00',
-  arrivesAt: '2027-07-05T12:30',
+  arrivesAt: '2027-07-05T12:30',  // authored seed value only — since routeId is
+                                   // set, the computed view overrides this with
+                                   // the Route's own walked arrival (see Route's
+                                   // finalLegMinutes, below) rather than trusting it
   routeId: 'route_anc_to_whittier',
   routeVariant: 'scenic',
   booking: null,           // own car, no reservation — status still tracks the plan
@@ -712,6 +715,7 @@
           <li><strong>Deliberately atomic.</strong> A multi-hop journey — walk to a bus stop, bus to the ferry — is several Transits sharing one <code>journeyId</code>, not one Transit with internal segments.</li>
           <li><strong>Layovers are never stored.</strong> They're the gap between one Transit's <code>arrivesAt</code> and the next one's <code>departsAt</code> within the same <code>journeyId</code>.</li>
           <li><strong>routeId/routeVariant</strong> record which reusable Route this specific movement followed, and which of that route's named alternatives was actually chosen.</li>
+          <li><strong>arrivesAt is authored, but not always trusted.</strong> For a mode with a genuine external schedule (a flight's ticketed landing time, a ferry's posted arrival) or a Transit with no <code>routeId</code> at all, it's the real fact and the computed view uses it as-is. For a routed drive, though, a fixed "definitive" arrival stopped making sense once a real stop along the way (a lunch break with no fixed duration of its own) could push the true arrival later than whatever was guessed at authoring time — so the computed view (trip-model.js's <code>resolveTransitRoute</code>) walks the Route's own via chain plus <code>finalLegMinutes</code> forward from <code>departsAt</code>, folding in any real Activity reached along the way, and that walked result — not the authored field — is what every reader of the Transit's arrival actually sees. The authored value stays in the data only as the seed a Route's <code>finalLegMinutes</code> was originally backfilled from, and as a fallback if the route reference is ever removed.</li>
           <li><strong>booking stays null for a drive in your own car</strong> — there's nothing to reserve, ever — while <code>status</code> still tracks whether this leg of movement is planned, underway, done, or scrapped.</li>
           <li><strong>scenarioId closes a gap the first migration pass surfaced</strong>: a drive-back whose departure time itself depends on which weather branch happened (e.g. a backup-flight day) couldn't be recorded at all without it — <code>Activity</code> could reference a <code>Scenario</code>, but <code>Transit</code> had no way to. It's the same reference used on <code>Activity</code>, reused here rather than inventing a second mechanism.</li>
           <li><strong>from/to gained placeId</strong>, matching Route's shape exactly — surfaced by testing against a real ferry reservation whose two terminals are genuinely resolvable points, unlike the regional labels ('Anchorage', 'Whittier') the original example used. Null for any endpoint that's really a whole city or a highway junction rather than one place; populated wherever a Transit's endpoint actually is one. The flight test confirms it unchanged — an airport is exactly the kind of single resolvable point the field was built for.</li>
@@ -747,6 +751,9 @@
                note: 'photo stop' },
              { kind: 'override', place: { id: 'ChIJ...', label: 'Portage Glacier / Whittier junction' },
                note: 'Anchorage–Whittier drives split off here', durationMinutes: 15 } ],
+      finalLegMinutes: 20,  // drive time from the last via (or Depart, if none)
+                             // to this route's own `to` — completes the chain
+                             // via[].durationMinutes only carries stop-to-stop
     },
   ],
   images: [],
@@ -757,6 +764,7 @@
           <li><strong>Every via entry resolves to a real geo-point — a rule, not a convenience — and a Place ID is always tried first.</strong> <code>coordinates: { lat, lng }</code>, sitting alongside a plain <code>label</code> instead of <code>place</code>, is the fallback for the rare point Google's Places index genuinely has no entry for. What a via entry may never do is carry only a bare text <code>label</code> with neither. That used to be allowed ("via is loosely typed") until a computed map (the trip page's day-list map button, docs/js/trip-model.js's <code>dayMapEmbedUrl</code>) fed a bare label like 'Palmer' to Google's geocoder with no state/region qualifier and got a same-named town in a different state back — silently routing an Anchorage–Talkeetna drive through the Lower 48. A resolved Place ID or explicit coordinates can't be ambiguous the way free text can, which is the whole point of requiring one or the other.</li>
           <li><strong>Every via entry also carries a <code>kind</code>: <code>'waypoint'</code> or <code>'override'</code>.</strong> A plain named highway ('Glenn Highway', 'Richardson Highway', 'George Parks Highway') turns out to have its own resolvable Google Place — but it's one fixed point for the entire, often 100+ mile road, not "wherever this particular route happens to be on it." This trip's data originally used those whole-highway Places as via entries on <em>multiple</em> Route documents covering different real stretches of the same highway (e.g. 'Glenn Highway' as a stand-in for both the Anchorage–Palmer stretch and the Glennallen stretch, 150 miles apart) — since it's the same Place ID both times, the Directions URL link (<code>dayFullRouteUrl</code>) sent drivers on a real, absurd multi-hour detour toward whichever stretch the point actually sat on. The fix: a via entry is now either a <strong>waypoint</strong> — a real, individually-resolvable stop worth calling out (a town, a pass, a viewpoint) that's also safe to hand to Google's Directions API as a routing waypoint — or an <strong>override</strong> — a point that exists specifically to steer Directions off its default path onto the intended road (a fork, a cutoff, a side road), and still resolves to one real geo-point of its own rather than the whole highway's. A bare "you are now on Highway X" entry, with no distinct point and no steering purpose, isn't either — that information already lives in the variant's own <code>label</code>, so it was simply dropped rather than kept as a third kind.</li>
           <li><strong>via[].durationMinutes is the drive time from whichever via point (or Depart) came before it</strong> — geography, same as the rest of Route, so it stays reusable across trips instead of being a discrete clock time that's only ever true for one specific departure. A trip's computed Day (trip-model.js's <code>stageTimesForVariant</code>) turns that into an actual estimated time by walking it forward from a specific Transit's <code>departsAt</code>, nudged later by any real Activity — a lunch stop, say — actually reached along the way. Superseded the earlier <code>waypoints[]</code> idea (a separate list of suggested stops with no timing at all): once every via point already carries a real duration, a stop worth calling out is just an ordinary via entry with a <code>note</code>, not a second parallel array — <code>kind</code> now carries the "is this really just a stop" distinction that array split used to.</li>
+          <li><strong>variants[].finalLegMinutes completes the chain via[] leaves open.</strong> A via entry only ever carries the drive time <em>to</em> itself — nothing represents the remaining drive from the last named stop to the route's actual destination, so without this field a walked arrival would always land short of where the movement really ends. Surfaced once a routed Transit's arrival stopped being trusted from its own authored field (see Transit's <code>arrivesAt</code> rationale, above): the via chain plus this one closing number is what lets <code>stageTimesForVariant</code> walk all the way to a real arrival instead of stopping at the last via and clamping to a guess. Same status as every other duration on this page — geography, reusable across trips, never a discrete clock time.</li>
         </ul>
       </article>
 
@@ -828,6 +836,12 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
                        // (a one-off conditional string that can't collapse to
                        // a single time of day) is left as free text and just
                        // borrows the nearest preceding real timestamp instead.
+  date: null,          // 'YYYY-MM-DD' | null — set only when startAt and endAt
+                       // are both null, alongside a real timeLabel anchor:
+                       // fuzzy timing still needs a real date to place the
+                       // activity on, which a timeLabel string alone can't
+                       // supply (see trip-model.js's resolveActivityDate).
+                       // Always null whenever startAt/endAt carries the date.
   order: null,         // vestigial — no code reads this; array position in
                        // the JSON already is the authored order
   priority: 'high',   // 'high' | 'medium' | 'low' | null — null for the vast

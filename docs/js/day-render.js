@@ -28,7 +28,8 @@ function renderStay(stay, date, leg) {
     <div class="stay-block" data-filter-tags="${filterTagsFor(stay, leg).join(' ')}">
       ${renderRowIconSlot(stay, 'hotel')}
       <div class="stay-block-content">
-        <p class="md-typescale-title-small">${stayRelation(stay, date)} — ${name}</p>
+        <p class="md-typescale-label-medium stay-detail">${stayRelation(stay, date)}</p>
+        <p class="md-typescale-title-small">${name}</p>
         <p class="md-typescale-body-small">${formatTime(stay.checkInAt)} in · ${formatTime(stay.checkOutAt)} out</p>
         ${detailBits.length ? `<p class="md-typescale-body-small stay-detail">${detailBits.join(' · ')}</p>` : ''}
         ${stay.lodging?.checkInInstructions ? `<p class="md-typescale-body-small stay-detail">${stay.lodging.checkInInstructions}</p>` : ''}
@@ -94,14 +95,19 @@ function renderTransitBoundary(item, leg) {
     <div class="stay-block" data-filter-tags="${filterTagsFor(transit, leg).join(' ')}">
       ${iconSlot}
       <div class="stay-block-content">
-        <p class="md-typescale-label-medium stay-detail">${formatTime(time)}</p>
-        <p class="md-typescale-title-small">${isDepart ? 'Depart' : 'Arrive'} ${place}</p>
+        <p class="md-typescale-label-medium stay-detail">${formatTime(time)} · ${isDepart ? 'Depart' : 'Arrive'}</p>
+        <p class="md-typescale-title-small">${place}</p>
         ${isDepart ? renderBookingChip(transit.booking) : ''}
         ${isDepart ? renderRouteVariantTabs(transit) : ''}
       </div>
       ${isDepart ? renderEditButton('transit', transit._id) : ''}
     </div>`;
 }
+
+// A stage's kind (data-model.html: 'waypoint' — a real, callable-out stop —
+// or 'override' — a point that exists only to steer Directions onto the
+// intended road) picks its overline word, same as Depart/Arrive above.
+const STAGE_KIND_LABEL = { waypoint: 'Waypoint', override: 'Via' };
 
 // A stage's optional note (e.g. "this is where a Whittier drive splits off")
 // surfaces as a title tooltip rather than its own line, so a normally-quiet
@@ -122,8 +128,8 @@ function renderTransitStage(item, leg) {
     <div class="stay-block transit-stage-row" data-transit-id="${transit._id}" data-route-tone="${variant.tone}" data-filter-tags="${filterTagsFor(transit, leg).join(' ')}"${hidden ? ' hidden' : ''}>
       <div class="row-icon-slot"><md-icon>signpost</md-icon></div>
       <div class="stay-block-content">
-        <p class="md-typescale-label-medium stay-detail">${formatTime(key)}</p>
-        <p class="md-typescale-title-small"${stage.note ? ` title="${stage.note}"` : ''}>Via ${stage.label}</p>
+        <p class="md-typescale-label-medium stay-detail">${formatTime(key)} · ${STAGE_KIND_LABEL[stage.kind] ?? 'Via'}</p>
+        <p class="md-typescale-title-small"${stage.note ? ` title="${stage.note}"` : ''}>${stage.label}</p>
       </div>
     </div>`;
 }

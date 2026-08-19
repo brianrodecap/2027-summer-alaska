@@ -38,6 +38,33 @@ function getPlace(id) {
   return cache.get(id);
 }
 
+// Free-text search — the Places API (New) Text Search endpoint, used only by
+// the editor's place picker (edit.js's wirePlacePicker) to find a Place ID
+// when a name is known but the id isn't. Deliberately separate from
+// fetchPlace/getPlace above: Text Search is pricier per call (Enterprise:
+// $35/1k vs. Place Details Enterprise's $20/1k, per the file-top note) and
+// returns a list of candidates rather than one exact place, which is fine
+// for an occasional editing action but wrong for the per-visitor Place
+// Details hydration every activity's side sheet already runs on every page
+// load — this never runs outside the edit dialog, so it never touches that
+// per-visitor cost.
+const SEARCH_FIELD_MASK = ['places.id', 'places.displayName', 'places.formattedAddress'].join(',');
+
+export async function searchPlaces(query) {
+  const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Goog-Api-Key': PLACES_API_KEY,
+      'X-Goog-FieldMask': SEARCH_FIELD_MASK,
+    },
+    body: JSON.stringify({ textQuery: query, maxResultCount: 5 }),
+  });
+  if (!res.ok) throw new Error(`Places API error ${res.status}`);
+  const { places } = await res.json();
+  return (places ?? []).map((p) => ({ id: p.id, label: p.displayName?.text ?? '', address: p.formattedAddress ?? '' }));
+}
+
 // Fills `container` (the placeholder left by renderActivityDetailBody) with the
 // fetched place details, or a degraded-but-still-useful fallback if the key isn't
 // configured yet or the request fails — the activity's own text/time still render

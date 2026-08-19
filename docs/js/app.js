@@ -11,6 +11,7 @@ import { firstImage } from './render-shared.js';
 import { renderBudgetStrip, renderBudgetSummary, renderBudgetBreakdowns } from './budget-render.js';
 import { hydratePlaceDetails } from './places.js';
 import { renderDatePicker } from './date-picker.js';
+import { renderTimePicker, readTimePicker } from './time-picker.js';
 import { buildFilterGroups, renderFilterMenuItems, applyFilters } from './filters.js';
 import { renderEditForm, applyEdit, EDIT_ENTITY_LABEL } from './edit.js';
 
@@ -52,13 +53,20 @@ const legDialogBody = document.querySelector('#leg-dialog-body');
 const budgetStripMount = document.querySelector('#budget-strip-mount');
 const filterMenu = document.querySelector('#filter-menu');
 const datePickerDialog = document.querySelector('#date-picker-dialog');
+const datePickerDialogTitle = document.querySelector('#date-picker-dialog-title');
 const datePickerBody = document.querySelector('#date-picker-body');
+const timePickerDialog = document.querySelector('#time-picker-dialog');
+const timePickerDialogTitle = document.querySelector('#time-picker-dialog-title');
+const timePickerBody = document.querySelector('#time-picker-body');
 const editDialog = document.querySelector('#edit-dialog');
 const editDialogTitle = document.querySelector('#edit-dialog-title');
 const editDialogBody = document.querySelector('#edit-dialog-body');
 const editDialogError = document.querySelector('#edit-dialog-error');
+const editDialogDeleteButton = document.querySelector('#edit-dialog-delete');
 const exportEditsButton = document.querySelector('#export-edits');
 const appBarEl = document.querySelector('#app-bar');
+const routesDialog = document.querySelector('#routes-dialog');
+const routesDialogBody = document.querySelector('#routes-dialog-body');
 
 // M3's top app bar is flat while it's the page's own leading edge and only
 // gains elevation once content has scrolled in underneath it — .app-bar's
@@ -76,7 +84,9 @@ window.addEventListener('scroll', updateAppBarElevation, { passive: true });
 function closeAllPanels() {
   legDialog.close();
   datePickerDialog.close();
+  timePickerDialog.close();
   editDialog.close();
+  routesDialog.close();
   sideSheet.close();
   filterMenu.open = false;
 }
@@ -187,7 +197,7 @@ async function openActivity(activity, selectedOption = null) {
 // (below) is how an edit becomes durable, by downloading the touched file(s)
 // back out. ----------
 
-const COLLECTION_FOR_KIND = { activity: 'activities', stay: 'stays', transit: 'transits' };
+const COLLECTION_FOR_KIND = { activity: 'activities', stay: 'stays', transit: 'transits', route: 'routes' };
 const dirtyCollections = new Set();
 
 function findEntity(kind, id) {
@@ -230,19 +240,47 @@ function refreshAfterEdit(kind, id) {
   if (freshDate) document.getElementById(`day-${freshDate}`)?.scrollIntoView({ block: 'start' });
 }
 
+// Removes the entity outright — no confirmation step, matching the rest of
+// this editor's low-stakes framing (see the comment above editing day-list
+// line items: nothing here writes back to the *.json files until an
+// explicit export). The date to scroll back to has to be read off the
+// entity *before* it's spliced out of `data`, since refreshAfterEdit's own
+// post-rebuild findEntity lookup would come back empty for a deleted id.
+function deleteEntity(kind, id) {
+  const entity = findEntity(kind, id);
+  if (!entity) return;
+  const freshDate = kind === 'activity' ? view.activitiesById.get(id)?.date : (kind === 'stay' ? entity.checkInAt : entity.departsAt)?.slice(0, 10);
+  const collection = COLLECTION_FOR_KIND[kind];
+  data[collection] = data[collection].filter((e) => e._id !== id);
+  markDirty(kind);
+  view = buildTripView(data);
+  renderTripBody();
+  if (freshDate) document.getElementById(`day-${freshDate}`)?.scrollIntoView({ block: 'start' });
+}
+
 // The standalone popup — the only edit entry point for Stay/Transit, and for
 // Activity too now that the side sheet's own edit button (openActivity,
-// above) opens this same popup rather than an in-place form.
+// above) opens this same popup rather than an in-place form. Route reuses it
+// too (see openRoutesDialog below); `isNew` marks a route created via "+ Add
+// route" that's already been pushed into data.routes speculatively so
+// findEntity/applyEdit can treat it like any other in-progress edit — Cancel
+// (below) splices it back out again if the user never actually saves it.
 let editTarget = null;
 
-function openEditPopup(kind, id) {
+function openEditPopup(kind, id, { isNew = false } = {}) {
   const entity = findEntity(kind, id);
   if (!entity) return;
   closeAllPanels();
-  editTarget = { kind, id };
-  editDialogTitle.textContent = EDIT_ENTITY_LABEL[kind];
+  editTarget = { kind, id, isNew };
+  editDialogTitle.textContent = isNew ? 'Add route' : EDIT_ENTITY_LABEL[kind];
+  editDialogDeleteButton.hidden = isNew;
   editDialogError.hidden = true;
-  const context = kind === 'activity' ? { tripTravelers: view.trip.travelers } : undefined;
+  const context = {
+    openDatePicker,
+    openTimePicker,
+    ...(kind === 'activity' ? { tripTravelers: view.trip.travelers } : {}),
+    ...(kind === 'transit' ? { routes: data.routes ?? [] } : {}),
+  };
   editDialogBody.replaceChildren(renderEditForm(kind, entity, context));
   editDialog.show();
 }
@@ -265,9 +303,67 @@ document.querySelector('#edit-dialog-save').addEventListener('click', () => {
 });
 
 document.querySelector('#edit-dialog-cancel').addEventListener('click', () => {
+  if (editTarget?.isNew) {
+    const collection = COLLECTION_FOR_KIND[editTarget.kind];
+    data[collection] = data[collection].filter((e) => e._id !== editTarget.id);
+  }
   editTarget = null;
   editDialog.close();
 });
+
+document.querySelector('#edit-dialog-delete').addEventListener('click', () => {
+  if (!editTarget) return;
+  const { kind, id } = editTarget;
+  editTarget = null;
+  editDialog.close();
+  deleteEntity(kind, id);
+});
+
+// ---------- Routes list (routes.json) — a separate small dialog, not a
+// day-list drill-down like the other three kinds, since a Route isn't
+// scoped to any one date; a Transit merely points at one via its own
+// routeId/routeVariant fields (see edit.js's transitFields). Rebuilt from
+// data.routes on every open rather than kept in sync live, since opening it
+// always closes whatever's already open (closeAllPanels) — the same "just
+// redo it" simplicity edit.js's via-row editing leans on. ----------
+
+function nextRouteId(routes) {
+  let n = routes.length + 1;
+  while (routes.some((r) => r._id === `route_new_${n}`)) n += 1;
+  return `route_new_${n}`;
+}
+
+function renderRoutesDialogBody() {
+  routesDialogBody.replaceChildren(...(data.routes ?? []).map((route) => {
+    const item = document.createElement('div');
+    item.className = 'routes-list-item';
+    item.innerHTML = `
+      <span class="md-typescale-body-large">${route.from.label} → ${route.to.label}</span>
+      <md-icon-button data-edit-route-id="${route._id}" aria-label="Edit route"><md-icon>edit</md-icon></md-icon-button>`;
+    return item;
+  }));
+}
+
+function openRoutesDialog() {
+  closeAllPanels();
+  renderRoutesDialogBody();
+  routesDialog.show();
+}
+
+function openNewRouteEditor() {
+  const id = nextRouteId(data.routes);
+  data.routes.push({ _id: id, from: { label: '' }, to: { label: '' }, variants: [] });
+  openEditPopup('route', id, { isNew: true });
+}
+
+routesDialogBody.addEventListener('click', (event) => {
+  const editButton = event.target.closest('[data-edit-route-id]');
+  if (editButton) openEditPopup('route', editButton.dataset.editRouteId);
+});
+
+document.querySelector('#routes-add').addEventListener('click', openNewRouteEditor);
+document.querySelector('#routes-manage-open').addEventListener('click', openRoutesDialog);
+document.querySelector('#routes-dialog-close').addEventListener('click', () => routesDialog.close());
 
 dayListEl.addEventListener('click', (event) => {
   const el = event.target.closest('[data-activity-id]');
@@ -387,25 +483,36 @@ filterMenu.addEventListener('click', (event) => {
   if (row) toggleFilterToken(row.dataset.token);
 });
 
-// ---------- date picker — "Jump to a day", its own top-level icon button in
-// the filter nav (see index.html), separate from the filter menu since it
-// isn't a filter. Month-at-a-time state (pickerYear/pickerMonth) lives here,
-// not in date-picker.js, since renderDatePicker is a pure render function
-// like every render function in this codebase's render-*.js modules — only the caller knows which month is
-// currently showing. ----------
+// ---------- date picker — shared by the trip page's top-level "Jump to a
+// day" icon button (see index.html) and every date field an edit form opens
+// (edit.js's context.openDatePicker, passed through app.js's openEditPopup
+// below). Month-at-a-time state (pickerYear/pickerMonth) lives here, not in
+// date-picker.js, since renderDatePicker is a pure render function like
+// every render function in this codebase's render-*.js modules — only the
+// caller knows which month is currently showing. Selectable dates are always
+// `view.days` — every date some Leg actually covers — the same restriction
+// "Jump to a day" already had, since an edit form's own date field is never
+// meant to place something outside the trip either. ----------
 
 let pickerYear = null;
 let pickerMonth = null;
+let pickerOnSelect = null;
 
 function renderPicker() {
   datePickerBody.replaceChildren(renderDatePicker(view.days, view.trip.startDate, view.trip.endDate, pickerYear, pickerMonth));
 }
 
-function openDatePicker() {
-  closeAllPanels();
-  const [y, m] = view.trip.startDate.split('-').map(Number);
+// `initialDate` seeds which month the grid opens on (falling back to the
+// trip's own start when nothing's picked yet); `onSelect(date)` fires once,
+// right as the dialog closes itself on a cell click — this dialog commits
+// immediately on pick rather than needing its own OK step, matching the M3
+// docked date-picker variant's one-tap selection.
+function openDatePicker(initialDate, title, onSelect) {
+  datePickerDialogTitle.textContent = title;
+  const [y, m] = (initialDate || view.trip.startDate).split('-').map(Number);
   pickerYear = y;
   pickerMonth = m - 1;
+  pickerOnSelect = onSelect;
   renderPicker();
   datePickerDialog.show();
 }
@@ -424,11 +531,40 @@ datePickerBody.addEventListener('click', (event) => {
     return;
   }
   const cell = event.target.closest('.date-picker-cell');
-  if (cell && !cell.disabled) scrollToDay(cell.dataset.date);
+  if (cell && !cell.disabled) {
+    datePickerDialog.close();
+    pickerOnSelect?.(cell.dataset.date);
+  }
 });
 
-document.querySelector('#date-picker-open').addEventListener('click', openDatePicker);
+document.querySelector('#date-picker-open').addEventListener('click', () => {
+  closeAllPanels();
+  openDatePicker(null, 'Jump to a day', scrollToDay);
+});
 document.querySelector('#date-picker-close').addEventListener('click', () => datePickerDialog.close());
+
+// ---------- time picker — the M3 Input-variant dialog (time-picker.js), an
+// edit form's own date fields' counterpart for the time half of a
+// date+time pair (edit.js's context.openTimePicker). Unlike the date picker
+// above this always needs an explicit OK, since two text fields plus an
+// AM/PM toggle has no single "the pick is done" tap the way a calendar cell
+// click does. ----------
+
+let timePickerOnSelect = null;
+
+function openTimePicker(hhmm, title, onSelect) {
+  timePickerDialogTitle.textContent = title;
+  timePickerBody.replaceChildren(renderTimePicker(hhmm));
+  timePickerOnSelect = onSelect;
+  timePickerDialog.show();
+}
+
+document.querySelector('#time-picker-ok').addEventListener('click', () => {
+  const value = readTimePicker(timePickerBody);
+  timePickerDialog.close();
+  timePickerOnSelect?.(value);
+});
+document.querySelector('#time-picker-cancel').addEventListener('click', () => timePickerDialog.close());
 
 // ---------- loading a trip into the (single, reused) trip page ----------
 
