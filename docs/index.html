@@ -69,7 +69,7 @@
      across the whole day list below. <main> spans the entire page, so
      anchoring here is what lets it float the whole way. -->
 <div id="days-view" hidden>
-  <div class="filter-nav" id="filter-nav">
+  <div class="app-bar" id="app-bar">
     <md-icon-button id="date-picker-open" aria-label="Jump to a day">
       <md-icon>calendar_month</md-icon>
     </md-icon-button>
@@ -77,6 +77,9 @@
       <md-icon>filter_list</md-icon>
     </md-icon-button>
     <md-menu id="filter-menu" anchor="filter-menu-open"></md-menu>
+    <md-icon-button id="export-edits" aria-label="Download edited files" hidden>
+      <md-icon>download</md-icon>
+    </md-icon-button>
   </div>
 
   <section id="day-list"></section>
@@ -110,6 +113,20 @@
     </md-icon-button>
   </div>
   <div slot="content" id="date-picker-body" class="date-picker"></div>
+</md-dialog>
+
+<md-dialog id="edit-dialog">
+  <div slot="headline" class="dialog-headline">
+    <span id="edit-dialog-title"></span>
+  </div>
+  <div slot="content" id="edit-dialog-content">
+    <p class="edit-dialog-error md-typescale-body-medium" id="edit-dialog-error" hidden></p>
+    <div id="edit-dialog-body"></div>
+  </div>
+  <div slot="actions">
+    <md-text-button id="edit-dialog-cancel">Cancel</md-text-button>
+    <md-filled-button id="edit-dialog-save">Save</md-filled-button>
+  </div>
 </md-dialog>
 
 <detail-side-sheet></detail-side-sheet>

@@ -313,6 +313,18 @@ function renderRowIconSlot(entity, fallbackIcon) {
   return `<div class="row-icon-slot">${content}</div>`;
 }
 
+// The pencil trailing every Stay/Transit-depart/plain-Activity row, opening
+// the standalone #edit-dialog popup (app.js) for that entity — a sibling of
+// the row's own interactive element rather than nested inside it, same move
+// renderMealRow already makes for its tabs vs. its header button, so a
+// pencil click can't double-fire the row's own "open" handler and there's no
+// real `<button>`-in-`<button>` nesting to worry about.
+function renderEditButton(kind, id) {
+  return `<md-icon-button class="row-edit-button" data-edit-${kind}-id="${id}" aria-label="Edit">
+    <md-icon>edit</md-icon>
+  </md-icon-button>`;
+}
+
 function renderStay(stay, date, leg) {
   const name = stay.lodging?.name ?? 'Lodging still open';
   const detailBits = [stay.lodging?.roomType, stay.lodging?.roomNumber && `Room/cabin ${stay.lodging.roomNumber}`, stay.lodging?.campsite, stay.lodging?.bedConfiguration].filter(Boolean);
@@ -326,6 +338,7 @@ function renderStay(stay, date, leg) {
         ${stay.lodging?.checkInInstructions ? `<p class="md-typescale-body-small stay-detail">${stay.lodging.checkInInstructions}</p>` : ''}
         ${renderBookingChip(stay.booking)}
       </div>
+      ${renderEditButton('stay', stay._id)}
     </div>`;
 }
 
@@ -389,6 +402,7 @@ function renderTransitBoundary(item, leg) {
         ${isDepart ? renderBookingChip(transit.booking) : ''}
         ${isDepart ? renderRouteVariantTabs(transit) : ''}
       </div>
+      ${isDepart ? renderEditButton('transit', transit._id) : ''}
     </div>`;
 }
 
@@ -438,13 +452,48 @@ function renderActivityRow(activity, day) {
   const startSlot = image
     ? `<div slot="start" class="row-icon-slot"><img class="activity-row-image" src="${image.uri}" alt="" loading="lazy"></div>`
     : `<div slot="start" class="row-icon-slot"><md-icon>${activityRowIcon(activity)}</md-icon></div>`;
+  const supportingBits = [renderTravelerChips(activity.travelers), renderBookingChip(activity.booking)].filter(Boolean).join('');
+  const supportingSlot = supportingBits ? `<div slot="supporting-text">${supportingBits}</div>` : '';
+  const filterTags = filterTagsFor(activity, day.leg).join(' ');
+  // filterTagsFor's tags are duplicated onto the wrapper as well as the
+  // md-list-item itself — applyFilters (filters.js) toggles `.filtered-out`
+  // on every [data-filter-tags] match, and the md-list-item copy is what its
+  // own "collapse a fully-filtered md-list" pass reads — but only hiding the
+  // *wrapper* actually takes the sibling edit button (day-render.js's
+  // renderEditButton) down with the row when it's filtered out.
   return `
-    <md-list-item type="button" data-activity-id="${activity._id}" data-filter-tags="${filterTagsFor(activity, day.leg).join(' ')}">
-      ${startSlot}
-      <div slot="overline">${activityTimeLabel(activity)}</div>
-      <div slot="headline">${activity.text}</div>
-      <md-icon slot="end">chevron_right</md-icon>
-    </md-list-item>`;
+    <div class="activity-row-wrap" data-filter-tags="${filterTags}">
+      <md-list-item type="button" data-activity-id="${activity._id}" data-filter-tags="${filterTags}">
+        ${startSlot}
+        <div slot="overline">${activityTimeLabel(activity)}</div>
+        <div slot="headline">${activity.text}</div>
+        ${supportingSlot}
+        <md-icon slot="end">chevron_right</md-icon>
+      </md-list-item>
+      ${renderEditButton('activity', activity._id)}
+    </div>`;
+}
+
+// ---------- Traveler chips — who's actually part of a day-list row. Two
+// different rules feed the same `.travelers` field a row reads (see
+// trip-model.js's resolveMealTravelers/resolveExcursionTravelers): a meal
+// row always carries one (every traveler, or a Package-restricted subset —
+// a meal always has real attendees, so "everyone" is worth showing same as
+// a restricted two), while a plain activity row only carries one when it's
+// an excursion with an explicitly authored, partial roster — the ordinary
+// case (no excursion roster authored) is null, rendering nothing, since
+// there's nothing to flag. First names only: compact enough for a day-list
+// row, still legible for a four-person family trip. Named "chip" rather
+// than "pill" to match this file's existing terminology for the same
+// small-capsule shape — see the booking chip (renderBookingChip) and
+// .budget-chip.
+function renderTravelerChipsHtml(names) {
+  return (names ?? []).map((n) => `<span class="traveler-chip">${n.split(' ')[0]}</span>`).join('');
+}
+
+function renderTravelerChips(names) {
+  if (!names?.length) return '';
+  return `<div class="traveler-chips">${renderTravelerChipsHtml(names)}</div>`;
 }
 
 function renderSection(section, day) {
@@ -456,7 +505,10 @@ function renderSequenceItem(item, day) {
   if (item.type === 'stay') return renderStay(item.stay, day.date, day.leg);
   if (item.type === 'transit-boundary') return renderTransitBoundary(item, day.leg);
   if (item.type === 'transit-stage') return renderTransitStage(item, day.leg);
-  if (item.type === 'scenario-tabs') return renderScenarioTabs(day);
+  // The day's own top-level placeholder (buildSequence, trip-model.js) carries
+  // no `tracks` of its own, so it falls back to day.scenarioTracks; a nested
+  // one (buildScenarioTracks' own child placeholder) always carries its own.
+  if (item.type === 'scenario-tabs') return renderScenarioTabs(day, item.tracks ?? day.scenarioTracks, !item.tracks);
   return renderSection(item, day);
 }
 
@@ -471,19 +523,34 @@ function renderSequenceItem(item, day) {
 // scenarios follow Jun 30's go/no-go) — data-scenario-date/data-follows-date
 // on the rendered <md-tabs> are how wireScenarioFollowers (below) finds the
 // pair after both days' blocks are in the DOM, without renderScenarioTabs
-// itself needing to know about any other day.
-function renderScenarioTabs(day) {
-  const tracks = day.scenarioTracks;
+// itself needing to know about any other day. Only the top-level call carries
+// data-scenario-date/data-follows-date — a nested child group (see
+// buildScenarioTracks in trip-model.js) is reached only by whichever parent
+// panel it lives inside, so it has no cross-day identity of its own to
+// publish or follow.
+//
+// A followed scenario that isn't just "copy the tone" but genuinely changes
+// which options even apply (e.g. Jul 7's tabs mean something different
+// depending on whether Jul 6's flight already went) marks each such track's
+// scenario with `requiresScenarioId` — an array of the specific upstream
+// scenario _ids it applies to, not just a tone. That renders as
+// data-requires-scenario on the tab itself; wireScenarioFollowers reads it to
+// decide which of this day's tabs even get shown once the followed day's
+// pick is known.
+function renderScenarioTabs(day, tracks = day.scenarioTracks, topLevel = true) {
   if (!tracks.length) return '';
-  const followsDate = tracks[0].scenario.followsScenarioDate ?? null;
+  const followsDate = topLevel ? tracks[0].scenario.followsScenarioDate ?? null : null;
   const tabs = tracks
-    .map(
-      (track, i) => `
-      <md-primary-tab class="tone-${track.scenario.tone}" inline-icon${i === 0 ? ' active' : ''}>
+    .map((track, i) => {
+      const requires = track.scenario.requiresScenarioId
+        ? ` data-requires-scenario="${track.scenario.requiresScenarioId.join(',')}"`
+        : '';
+      return `
+      <md-primary-tab class="tone-${track.scenario.tone}" inline-icon${i === 0 ? ' active' : ''} data-scenario-id="${track.scenario._id}"${requires}>
         <md-icon slot="icon">${track.scenario.icon}</md-icon>
         ${track.scenario.label}
-      </md-primary-tab>`
-    )
+      </md-primary-tab>`;
+    })
     .join('');
   const panels = tracks
     .map(
@@ -494,8 +561,8 @@ function renderScenarioTabs(day) {
       </div>`
     )
     .join('');
-  const followsAttr = followsDate ? ` data-follows-date="${followsDate}"` : '';
-  return `<md-tabs class="scenario-tabs" data-scenario-date="${day.date}"${followsAttr}>${tabs}</md-tabs><div class="scenario-panels">${panels}</div>`;
+  const idAttrs = topLevel ? ` data-scenario-date="${day.date}"${followsDate ? ` data-follows-date="${followsDate}"` : ''}` : '';
+  return `<md-tabs class="scenario-tabs"${idAttrs}>${tabs}</md-tabs><div class="scenario-panels">${panels}</div>`;
 }
 
 // Clicking a tab only needs to show its own panel and hide the rest — no
@@ -506,10 +573,14 @@ function renderScenarioTabs(day) {
 // listener, each keyed to its own panels via nextElementSibling, not a
 // single root-wide query. (The route-variant tabs below don't fit this
 // pattern — their stage rows are scattered non-adjacent siblings, not one
-// contiguous panel — see wireRouteVariantTabs.)
+// contiguous panel — see wireRouteVariantTabs.) `:scope >` keeps this to the
+// panel group's own direct children — a nested scenario (e.g. Jul 1's own
+// if-flew/if-grounded split inside its alt panel) plants another
+// .scenario-panel two levels deeper, which an unscoped query would wrongly
+// sweep into the outer group's own panel list.
 export function wireTabs(root, tabsSelector, panelSelector) {
   root.querySelectorAll(tabsSelector).forEach((tabsEl) => {
-    const panels = tabsEl.nextElementSibling.querySelectorAll(panelSelector);
+    const panels = tabsEl.nextElementSibling.querySelectorAll(`:scope > ${panelSelector}`);
     tabsEl.addEventListener('change', () => {
       panels.forEach((panel, i) => { panel.hidden = i !== tabsEl.activeTabIndex; });
     });
@@ -536,34 +607,83 @@ function wireRouteVariantTabs(root) {
 
 // A scenario tab whose data-follows-date names another day's own scenario
 // tabs (see renderScenarioTabs) defaults to and stays synced with whichever
-// tone (ideal/alternate) is active over there — e.g. Jul 1's backup-day tabs
-// track Jun 30's go/no-go instead of asking the reader to remember it and
-// pick again. The follower tabs stay independently clickable (exploring the
-// other branch doesn't lose your place), but re-picking the followed day's
-// tab snaps the follower back to match. Called once, after every day block
-// is in the DOM, since a follower's target may be a sibling day-block.
+// branch is active over there — e.g. Jul 1's backup-day tabs track Jun 30's
+// go/no-go instead of asking the reader to remember it and pick again.
+// Re-picking the followed day's tab snaps the follower back to match.
+//
+// Two shapes of "following" both live here:
+//  - Plain tone-copy (every follower tab lacks data-requires-scenario, e.g.
+//    Jun 30 -> Jul 1): both follower tabs stay visible and clickable, and a
+//    followed-day change just re-defaults the follower to whichever of its
+//    own tabs shares the followed day's tone.
+//  - Gated (a follower tab carries data-requires-scenario — a
+//    comma-separated list of specific upstream scenario _ids, not just a
+//    tone, since which OPTIONS even apply can differ by upstream branch, not
+//    just which is picked — e.g. Jul 7's "bonus flightseeing" pair only
+//    applies if Jul 6's original flight already went): a tab whose own
+//    requires-list doesn't include the followed day's active scenario id is
+//    hidden outright, not just deselected, and the first surviving tab
+//    becomes the default. If gating leaves exactly one tab standing (e.g.
+//    Jul 8 collapsing to a single guaranteed "bonus day" once both Jul 6 and
+//    Jul 7's flights already succeeded), that single tab just renders alone.
+//
+// A ladder more than one day deep (Jul 8 follows Jul 7 follows Jul 6)
+// resolves correctly because every top-level scenario-tabs group — follower
+// or not — is walked in date order on every change anywhere in the chain, so
+// a later day always reads its own followed day's *just-updated* pick rather
+// than a stale one. Called once, after every day block is in the DOM, since
+// a follower's target may be a sibling day-block.
 export function wireScenarioFollowers(root) {
-  root.querySelectorAll('.scenario-tabs[data-follows-date]').forEach((followerTabs) => {
-    const followedTabs = root.querySelector(`.scenario-tabs[data-scenario-date="${followerTabs.dataset.followsDate}"]`);
-    if (!followedTabs) return;
-    const followerTabEls = [...followerTabs.querySelectorAll('md-primary-tab')];
-    const followerPanels = followerTabs.nextElementSibling.querySelectorAll('.scenario-panel');
-    const followedTabEls = [...followedTabs.querySelectorAll('md-primary-tab')];
-    const toneOf = (tabEl) => tabEl.className.match(/tone-(\S+)/)[1];
-    const applyTone = (tone) => {
-      const targetIndex = followerTabEls.findIndex((tab) => toneOf(tab) === tone);
-      if (targetIndex < 0) return;
-      followerTabs.activeTabIndex = targetIndex;
-      followerPanels.forEach((panel, i) => { panel.hidden = i !== targetIndex; });
-    };
-    followedTabs.addEventListener('change', () => applyTone(toneOf(followedTabEls[followedTabs.activeTabIndex])));
-    // md-tabs (a Lit component) hasn't resolved its own activeTabIndex yet at
-    // this point, right after insertion — so the very first sync reads which
-    // tab we ourselves marked `active` in the rendered markup instead of
-    // asking the not-yet-upgraded component.
-    const initialTab = followedTabEls.find((tab) => tab.hasAttribute('active')) ?? followedTabEls[0];
-    applyTone(toneOf(initialTab));
-  });
+  const groups = [...root.querySelectorAll('.scenario-tabs[data-scenario-date]')]
+    .sort((a, b) => (a.dataset.scenarioDate < b.dataset.scenarioDate ? -1 : a.dataset.scenarioDate > b.dataset.scenarioDate ? 1 : 0));
+  const toneOf = (tabEl) => tabEl.className.match(/tone-(\S+)/)[1];
+
+  // Prefers the component's own resolved activeTabIndex (reliable once a
+  // real 'change' has fired at least once); falls back to whichever tab we
+  // ourselves marked `active` in the rendered markup, for the very first
+  // pass before md-tabs (a Lit component) has resolved that property.
+  function activeTabEl(tabsEl) {
+    const tabEls = [...tabsEl.querySelectorAll(':scope > md-primary-tab')];
+    const idx = tabsEl.activeTabIndex;
+    if (Number.isInteger(idx) && tabEls[idx] && !tabEls[idx].hidden) return tabEls[idx];
+    const visible = tabEls.filter((t) => !t.hidden);
+    const pool = visible.length ? visible : tabEls;
+    return pool.find((t) => t.hasAttribute('active')) ?? pool[0];
+  }
+
+  function applyFollow(tabsEl, followedActiveTab) {
+    const tabEls = [...tabsEl.querySelectorAll(':scope > md-primary-tab')];
+    const panels = tabsEl.nextElementSibling.querySelectorAll(':scope > .scenario-panel');
+    const gated = tabEls.some((t) => t.dataset.requiresScenario);
+
+    let visible = tabEls;
+    if (gated && followedActiveTab) {
+      const followedId = followedActiveTab.dataset.scenarioId;
+      visible = tabEls.filter((t) => !t.dataset.requiresScenario || t.dataset.requiresScenario.split(',').includes(followedId));
+    }
+    tabEls.forEach((t) => { t.hidden = !visible.includes(t); });
+    if (!visible.length) return;
+
+    const targetEl = gated || !followedActiveTab
+      ? visible[0] // gating already narrowed things down to the right set(s)
+      : visible.find((t) => toneOf(t) === toneOf(followedActiveTab)) ?? visible[0];
+    const targetIndex = tabEls.indexOf(targetEl);
+    tabsEl.activeTabIndex = targetIndex;
+    panels.forEach((p, i) => { p.hidden = i !== targetIndex; });
+  }
+
+  function resolveAll() {
+    for (const tabsEl of groups) {
+      const followsDate = tabsEl.dataset.followsDate;
+      if (!followsDate) continue;
+      const followedTabs = root.querySelector(`.scenario-tabs[data-scenario-date="${followsDate}"]`);
+      if (!followedTabs) continue;
+      applyFollow(tabsEl, activeTabEl(followedTabs));
+    }
+  }
+
+  groups.forEach((tabsEl) => tabsEl.addEventListener('change', resolveAll));
+  resolveAll();
 }
 
 // day.sequence (built in trip-model.js) is already the real chronological
@@ -690,17 +810,6 @@ const DINING_FORMAT_ICON = {
 };
 
 const DINING_FORMAT_LABEL = {
-  included: 'Included with the stay',
-  package: 'Covered by package',
-  'sit-down': 'Sit-down',
-  'grab-and-go': 'Grab-and-go',
-  drivethru: 'Drive-thru',
-  'self-catered': 'Self-catered',
-};
-
-// Short forms of DINING_FORMAT_LABEL for the compact meal-option tabs — "Included
-// with the stay" fits a side-sheet line but not a tab label.
-const DINING_FORMAT_PILL_LABEL = {
   included: 'Included',
   package: 'Package',
   'sit-down': 'Sit-down',
@@ -774,7 +883,7 @@ function renderMealRow(activity, day) {
             (option, i) => `
             <md-primary-tab inline-icon${i === 0 ? ' active' : ''}>
               <md-icon slot="icon">${DINING_FORMAT_ICON[option.diningFormat]}</md-icon>
-              ${DINING_FORMAT_PILL_LABEL[option.diningFormat]}
+              ${DINING_FORMAT_LABEL[option.diningFormat]}
             </md-primary-tab>`
           )
           .join('')}
@@ -788,6 +897,7 @@ function renderMealRow(activity, day) {
           <span class="meal-row-header-text">
             <span class="meal-row-time md-typescale-label-medium">${activityTimeLabel(activity)}</span>
             <span class="meal-row-selected md-typescale-body-large">${selected ? mealOptionLabel(selected) : activity.text}</span>
+            ${renderTravelerChips(selected?.travelers)}
           </span>
           <md-icon>chevron_right</md-icon>
         </button>
@@ -808,6 +918,17 @@ export function syncMealRow(activity, day, tabsEl) {
   const row = tabsEl.closest('.meal-row');
   row.querySelector('.row-icon-slot').innerHTML = renderMealRowImage(option);
   row.querySelector('.meal-row-selected').textContent = mealOptionLabel(option);
+  const headerText = row.querySelector('.meal-row-header-text');
+  let chipsEl = headerText.querySelector('.traveler-chips');
+  if (option.travelers?.length) {
+    if (!chipsEl) {
+      chipsEl = toNode('<div class="traveler-chips"></div>');
+      headerText.append(chipsEl);
+    }
+    chipsEl.innerHTML = renderTravelerChipsHtml(option.travelers);
+  } else if (chipsEl) {
+    chipsEl.remove();
+  }
 }
 
 // A meal Activity's own place is never on activity.place (only options are —

@@ -154,13 +154,6 @@
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg", "credit": "U.S. Fish and Wildlife Service, public domain", "caption": "Aerial view of the Brooks Range, Gates of the Arctic" } ]
   },
   {
-    "_id": "note_kennecott_compression",
-    "kind": "info",
-    "text": "This fits both Kennecott essentials into 2 days and satisfies the lodge's 2-night minimum. It does mean skipping the dedicated Wrangell–St. Elias flightseeing day — worth reconsidering during the buffer pass, either as an early-morning add-on before the Root Glacier hike on July 4, or reinstated as a third day if you'd rather not compress further.",
-    "concerns": [ { "entity": "stay", "id": "stay_kennicott" } ],
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Kennecott_Copper_Mill.jpg", "credit": "Photo by Michael F. Wacht / CC BY-SA 4.0", "caption": "The historic Kennecott copper concentration mill" } ]
-  },
-  {
     "_id": "note_kotzebue_bonus_buffer",
     "kind": "info",
     "text": "Taking the early flight turns this from a pure travel day into a bonus buffer day for Kobuk Valley — you land with the afternoon still open instead of arriving in the evening.",
@@ -233,7 +226,7 @@
   {
     "_id": "note_wrangell_flightseeing_optional",
     "kind": "footnote",
-    "text": "Optional, book ahead: Mount Wrangell flightseeing with Copper Valley Air Service — no walk-in hours; \"Three Peak Tour\" (~60 min, ~$400/person, Mt. Sanford/Mt. Drum/Mt. Wrangell) or \"Flight of Majesty\" (~120 min, adds mud volcanoes and wildlife) — would replace one of the day's other stops given the long drive.",
+    "text": "Optional, book ahead — no walk-in hours: Mount Wrangell flightseeing with Copper Valley Air Service (Gulkana Airport, Glennallen, ~15 min from Copper Center). \"Three Peak Tour\" (~60 min, ~$400/person, fly-over of Mt. Sanford, Mt. Drum, Mt. Wrangell, no landing) or \"Flight of Majesty\" (~120 min, adds mud volcanoes and wildlife spotting). Weather-dependent; would replace one of the day's other stops if booked, but slotted into a non-dedicated day so skipping it costs nothing.",
     "concerns": [ { "entity": "leg", "id": "leg_parks" }, { "date": "2027-07-02" } ],
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/MountWrangell.jpg", "credit": "Photo by B. Cella / NPS, public domain", "caption": "Mount Wrangell shield volcano seen from the southwest" } ]
   },
@@ -247,7 +240,7 @@
   {
     "_id": "note_florida_flight_options",
     "kind": "footnote",
-    "text": "Flights to Anchorage from Florida: MIA, FLL, TPA, MCO, RSW.",
+    "text": "Flights to Anchorage from Florida: MIA, FLL, TPA, MCO, RSW — exact arrival time depends on which one we book.",
     "concerns": [ { "entity": "activity", "id": "act_jun26_1" } ],
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Ted_Stevens_Anchorage_International_Airport,_main_lobby_of_South_Terminal.jpg", "credit": "Photo by Wonderlane / CC BY 2.0", "caption": "Main lobby of the South Terminal, Ted Stevens Airport" } ]
   },
@@ -269,13 +262,6 @@
     "text": "Jul 1 is a dual-purpose day: if Jun 30's flight was weathered out, this is the backup attempt (still flying during the day and driving back to Fairbanks that same night); otherwise it's just the drive-back day.",
     "concerns": [ { "entity": "leg", "id": "leg_parks" }, { "dateRange": ["2027-06-30", "2027-07-01"] } ],
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg", "credit": "U.S. Fish and Wildlife Service, public domain", "caption": "Aerial view of the Brooks Range, Gates of the Arctic" } ]
-  },
-  {
-    "_id": "note_copper_valley_air_detail",
-    "kind": "footnote",
-    "text": "Copper Valley Air Service (Gulkana Airport, Glennallen, ~15 min from Copper Center): \"Three Peak Tour\" (~60 min, ~$400/person, fly-over of Mt. Sanford, Mt. Drum, Mt. Wrangell, no landing) or \"Flight of Majesty\" (~120 min, adds mud volcanoes and wildlife spotting). Weather-dependent, but optional and slotted into a non-dedicated day, so no schedule impact if skipped.",
-    "concerns": [ { "entity": "leg", "id": "leg_parks" }, { "date": "2027-07-02" } ],
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/MountWrangell.jpg", "credit": "Photo by B. Cella / NPS, public domain", "caption": "Mount Wrangell shield volcano seen from the southwest" } ]
   },
   {
     "_id": "note_kennicott_lodge_detail",
@@ -379,7 +365,7 @@
     "_id": "note_jul8_heritage_walk",
     "kind": "footnote",
     "text": "Includes a walk along Shore Avenue by the lagoon, if there's time.",
-    "concerns": [ { "entity": "activity", "id": "act_jul8_2" } ],
+    "concerns": [ { "entity": "activity", "id": "act_jul8_2" }, { "entity": "activity", "id": "act_jul8_bonusday" } ],
     "images": []
   },
   {
@@ -462,7 +448,7 @@
   {
     "_id": "note_kennecott_compression_tradeoff",
     "kind": "info",
-    "text": "Kennecott was compressed from 3 nights to 2 (Root Glacier hike + Mill Tour fit into one full day), which originally freed up July 5 — now used for the Matanuska Glacier helicopter tour en route to Anchorage. The dedicated Wrangell–St. Elias flightseeing day is still the one dropped in this compression; still worth reconsidering during the buffer re-evaluation pass if you'd rather not have skipped it.",
+    "text": "Kennecott was compressed from 3 nights to 2 — the Root Glacier hike and Mill Tour fit into one full day, which also satisfies the lodge's 2-night minimum — which originally freed up July 5, now used for the Matanuska Glacier helicopter tour en route to Anchorage. The dedicated Wrangell–St. Elias flightseeing day is still the one dropped in this compression — worth reconsidering during the buffer re-evaluation pass, either as an early-morning add-on before the Root Glacier hike on July 4, or reinstated as a third Kennecott day if you'd rather not compress further.",
     "concerns": [ { "entity": "stay", "id": "stay_kennicott" }, { "entity": "transit", "id": "transit_kennecott_anchorage" } ],
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Kennecott_Copper_Mill.jpg", "credit": "Photo by Michael F. Wacht / CC BY-SA 4.0", "caption": "The historic Kennecott copper concentration mill" } ]
   },
@@ -483,7 +469,7 @@
   {
     "_id": "note_cruise_premier_package",
     "kind": "footnote",
-    "text": "Fare includes the Princess Premier package: beverage package (Zero-Alcohol Package automatically substituted for guests under 21), MedallionNet Max WiFi (unlimited, up to 4 devices), pre-paid crew appreciation (gratuities), unlimited casual and specialty dining, a premier photo package, reserved theater seating for production shows, and a one-time $100 shore excursion credit (the 6–9 day voyage tier).",
+    "text": "Princess Premier is a separately purchased package (not automatically bundled into every cabin fare) — already booked, but for Brian and Stacy only; Lorelei and Redding aren't covered and follow Princess's standard, non-Premier inclusions instead. Its cost is folded into the total fare paid rather than itemized on its own. For Brian and Stacy, it covers: a beverage package, MedallionNet Max WiFi, pre-paid crew appreciation (gratuities), unlimited casual and specialty dining, a premier photo package, reserved theater seating for production shows, and a one-time $100 shore excursion credit (the 6–9 day voyage tier).",
     "concerns": [ { "entity": "leg", "id": "leg_cruise" } ],
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/2023_04_29b_Discovery_Princess_16_(52935882014).jpg", "credit": "Photo by Blake Handley / CC BY 2.0", "caption": "Discovery Princess docked at Ogden Point, Victoria BC" } ]
   },
@@ -548,6 +534,34 @@
     "kind": "footnote",
     "text": "Southeast Aviation is another well-regarded Misty Fjords floatplane operator out of Ketchikan, worth comparing against Family Air Tours when booking.",
     "concerns": [ { "entity": "activity", "id": "act_jul22_2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul8_bonus_backup_plan",
+    "kind": "footnote",
+    "text": "If musk ox viewing over Noatak/Kotzebue Sound isn't workable, Golden Eagle Outfitters may offer a Kobuk Valley flight instead — same slot, alternate destination depending on conditions.",
+    "concerns": [ { "entity": "activity", "id": "act_jul8_1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul12_walk_options",
+    "kind": "footnote",
+    "text": "An orientation walk toward the Tanalian Falls trailhead is one option; otherwise just relax lakeside — nothing booked either way.",
+    "concerns": [ { "entity": "activity", "id": "act_jul12_walk" } ],
+    "images": []
+  },
+  {
+    "_id": "note_jul16_flightseeing_option",
+    "kind": "footnote",
+    "text": "The flightseeing option would be a Lake Clark Pass loop over the Redoubt and Iliamna volcanoes — operator and cost still need picking, unlike every other flightseeing activity in this trip.",
+    "concerns": [ { "entity": "activity", "id": "act_jul16_buffer_ideal" } ],
+    "images": []
+  },
+  {
+    "_id": "note_portalsworth_charter",
+    "kind": "footnote",
+    "text": "Port Alsworth is accessible only by air — this charter flight is typically arranged directly through the lodge (Lake Clark Resort / The Farm Lodge) rather than booked as a standalone commercial flight; exact carrier and time to be confirmed with them.",
+    "concerns": [ { "entity": "transit", "id": "transit_anchorage_portalsworth" }, { "entity": "transit", "id": "transit_portalsworth_anchorage" } ],
     "images": []
   }
 ]

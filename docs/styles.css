@@ -28,6 +28,7 @@
   --md-sys-color-outline: #79747e;
   --md-sys-color-outline-variant: #cac4d0;
   --md-sys-color-shadow: #000000;
+  --md-sys-color-scrim: #000000;
 
   --md-sys-color-surface-container-lowest: #ffffff;
   --md-sys-color-surface-container-low: #f7f2fa;
@@ -191,31 +192,42 @@ sup a {
   min-height: 8rem;
 }
 
-/* ---------- filter nav: "Jump to a day" (the calendar-grid date picker) as
-   its own top-level icon button, plus the filters themselves behind an
-   md-menu anchored to a second one (see docs/js/filters.js) — that menu
-   landed on after comparing it live against a chip bar and a leading-edge
-   navigation rail (both tried and dropped), and before that a leading-edge
-   navigation drawer. */
+/* ---------- app bar: a fourth `@material/web` gap alongside Card/Side
+   sheet/Date picker (see the CLAUDE.md component-gap list) — the library has
+   no Top App Bar, not even in `labs/`, so this is approximated as a plain
+   div sized to M3's small top-app-bar spec (64dp) rather than a real md-*
+   component. "Jump to a day" (the calendar-grid date picker) sits as its own
+   top-level icon button, plus the filters themselves behind an md-menu
+   anchored to a second one (see docs/js/filters.js) — that menu landed on
+   after comparing it live against a chip bar and a leading-edge navigation
+   rail (both tried and dropped), and before that a leading-edge navigation
+   drawer. */
 
-/* Sticky (not just relative) so the filter controls stay reachable while
-   scrolling through the day list, the same way each day's own header does
-   (see the day-block-header comment below) — z-index above it (6 vs. 5) so
-   this bar stays on top once a day's sticky header reaches it, and an opaque
-   surface background since day content now scrolls in underneath. Height is
-   pinned via min-height (not left to content) so .day-block-header's own
-   `top` offset below has a fixed, correct value to stick right underneath it. */
-.filter-nav {
+/* Sticky (not just relative) so the app bar stays reachable while scrolling
+   through the day list, the same way each day's own header does (see the
+   day-block-header comment below) — z-index above it (6 vs. 5) so this bar
+   stays on top once a day's sticky header reaches it, and an opaque surface
+   background since day content now scrolls in underneath. Height is pinned
+   via min-height (not left to content) so .day-block-header's own `top`
+   offset below has a fixed, correct value to stick right underneath it.
+   Elevation is applied only via .is-elevated (toggled from app.js on scroll,
+   the real M3 top-app-bar behavior: flat while it's the page's leading
+   edge, shadowed once content has scrolled in underneath it) rather than
+   shown unconditionally. */
+.app-bar {
   position: sticky;
   top: 0;
   z-index: 6;
-  min-height: 3.75rem;
+  min-height: 4rem;
   margin-top: 0.5rem;
   padding: 0.5rem 0;
   display: flex;
   align-items: center;
   gap: 0.5rem;
   background: var(--md-sys-color-surface);
+}
+
+.app-bar.is-elevated {
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
@@ -318,10 +330,92 @@ sup a {
   margin-bottom: 0.75rem;
 }
 
+/* ---------- edit forms (edit.js) — shared by the standalone #edit-dialog
+   popup and the activity side sheet's own in-place edit mode (app.js's
+   enterActivityEditMode), so the same field/spacing rules apply to both
+   hosts rather than each defining its own. ---------- */
+
+#edit-dialog {
+  --md-dialog-container-max-width: 26rem;
+}
+
+/* Not just belt-and-suspenders like #leg-dialog-body — load-bearing. Verified
+   against the live v2.5.0 shadow stylesheet: md-dialog's internal <dialog>
+   element hardcodes `max-height: min(560px, 100% - 48px)`, a flat ~560px
+   budget for the *entire* dialog (headline + content + actions) on any
+   normal-height viewport, and --md-dialog-container-max-height is a no-op
+   against it (same finding the mobile media query below already documents
+   for #leg-dialog, just without the physical-property override that fixes
+   it there). With the full Activity attribute set (status/priority/time/
+   place/meal/travelers/booking) this form's natural height blows well past
+   that 560px cap — and content past the cap isn't just hidden behind a
+   scrollbar, it's unreachable, since the outer dialog clips *before* this
+   div's own overflow: auto ever gets a chance to scroll to it. So this has
+   to stay comfortably under the leftover room (560px minus the headline,
+   two dividers, and the actions row — roughly 300-350px) rather than sized
+   proportionally to the viewport like #leg-dialog-body's 60vh. */
+#edit-dialog-content {
+  max-height: 19rem;
+  overflow-y: auto;
+}
+
+.edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding-top: 0.25rem;
+}
+
+.edit-checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.edit-checkbox-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.edit-field {
+  width: 100%;
+}
+
+.edit-field-row {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.edit-field-row .edit-field {
+  flex: 1;
+  min-width: 0;
+}
+
+.edit-section-label {
+  color: var(--md-sys-color-on-surface-variant);
+  margin-top: 0.25rem;
+}
+
+.edit-dialog-error {
+  color: var(--md-sys-color-error);
+  margin: 0 0 0.75rem;
+}
+
+/* The side sheet's own edit mode has no dialog-style actions slot to borrow,
+   so its Save/Cancel row is just appended after the form fields — see
+   app.js's enterActivityEditMode. */
+.edit-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
 /* ---------- day list (main Trip page): one <section class="day-block"> per
    Day, each with a sticky header. Because .day-block-header is position:
    sticky *within its own .day-block*, it stays pinned just below the
-   floating .filter-nav above (see its own `top` offset below) for exactly as
+   floating .app-bar above (see its own `top` offset below) for exactly as
    long as that day's content is scrolling past — the instant the block's
    bottom edge reaches that offset, the header stops being able to stick
    (it's constrained to its parent's box) and the next day's header —
@@ -343,7 +437,7 @@ sup a {
 
 .day-block-header {
   position: sticky;
-  top: 3.75rem; /* .filter-nav's own min-height, so it sticks just below it */
+  top: 4rem; /* .app-bar's own min-height, so it sticks just below it */
   z-index: 5;
   display: flex;
   align-items: center;
@@ -503,10 +597,13 @@ sup a {
   padding-left: 0.5rem;
 }
 
-/* ---------- side sheet: no md-side-sheet in @material/web — anchored per the
-   M3 side-sheet spec (m3.material.io/components/side-sheets) using md-elevation
-   + md-icon-button + md-divider + md-list for content, with the minimum
-   structural CSS needed to position/animate the panel and scrim ---------- */
+/* ---------- side sheet: no md-side-sheet in @material/web — the *modal*
+   variant per the M3 side-sheet spec (m3.material.io/components/side-sheets),
+   full-height and edge-to-edge (not the optional detached/margined treatment),
+   using md-elevation + md-icon-button + md-divider + md-list for content, with
+   the minimum structural CSS needed to position/animate the panel and scrim;
+   padding/gap/corner-radius/max-width/colors below mirror the spec's own
+   dp values and color-role table ---------- */
 
 detail-side-sheet {
   position: fixed;
@@ -518,7 +615,7 @@ detail-side-sheet {
 detail-side-sheet .scrim {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.32);
+  background: color-mix(in srgb, var(--md-sys-color-scrim) 32%, transparent);
   opacity: 0;
   transition: opacity 0.2s ease;
 }
@@ -528,7 +625,7 @@ detail-side-sheet .panel {
   top: 0;
   right: 0;
   height: 100%;
-  width: min(24rem, 100vw);
+  width: min(25rem, 100vw); /* max-width: 400dp per spec */
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -555,8 +652,8 @@ detail-side-sheet.open .panel {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 1rem;
-  padding: 1rem 0.75rem 1rem 1.25rem;
+  gap: 0.75rem; /* padding between top elements: 12dp */
+  padding: 1.5rem 1.5rem 1rem; /* top/start/end padding: 24dp */
 }
 
 .panel-header span {
@@ -567,7 +664,7 @@ detail-side-sheet.open .panel {
 }
 
 .panel-body {
-  padding: 0 1.25rem 1.5rem;
+  padding: 0 1.5rem 1.5rem; /* start/end padding: 24dp */
 }
 
 .panel-body md-list {
@@ -663,6 +760,33 @@ detail-side-sheet.open .panel {
   color: var(--md-sys-color-on-surface-variant);
 }
 
+/* ---------- row edit button (day-render.js's renderEditButton) — a pencil
+   trailing every Stay/Transit-depart/plain-Activity row, opening the
+   standalone #edit-dialog popup. A .stay-block already lays out as a flex
+   row with align-items: flex-start (for its own multi-line content), so the
+   button needs its own vertical centering; .activity-row-wrap below exists
+   only because a plain md-list-item has no trailing slot of its own that
+   isn't already the chevron. ---------- */
+
+.row-edit-button {
+  flex-shrink: 0;
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.stay-block .row-edit-button {
+  align-self: center;
+}
+
+.activity-row-wrap {
+  display: flex;
+  align-items: center;
+}
+
+.activity-row-wrap md-list-item {
+  flex: 1;
+  min-width: 0;
+}
+
 /* A Route stage row (trip-model.js's transitSequenceItems) sits between a
    Transit's Depart/Arrive rows — visually a quieter, passed-through waypoint
    rather than a real stop. It keeps the same row-icon-slot column width AND
@@ -684,6 +808,25 @@ detail-side-sheet.open .panel {
    with no competing display rule of its own, so this is the one place that
    needs it spelled out. */
 .transit-stage-row[hidden] {
+  display: none;
+}
+
+/* Same root cause as .transit-stage-row[hidden] above: wireScenarioFollowers
+   (day-render.js) hides a gated scenario tab (e.g. Jul 7's "bonus" pair when
+   Jul 6 was weathered out) by toggling `hidden` directly on the
+   <md-primary-tab>, but the component's own :host display rule is an author
+   rule of equal specificity to the UA default, and wins the tie. */
+md-primary-tab[hidden] {
+  display: none;
+}
+
+/* Same root cause again: md-icon-button's own :host display rule ties with
+   the UA [hidden] default. Covers the side sheet's edit button (hidden
+   whenever the sheet is showing something that isn't an editable entity —
+   see side-sheet.js's open) and the app-bar's export-edits button
+   (hidden until an edit actually needs exporting — see app.js's
+   markDirty/openTrip). */
+md-icon-button[hidden] {
   display: none;
 }
 
@@ -751,6 +894,36 @@ detail-side-sheet.open .panel {
 .booking-row.booking-planning {
   background: var(--md-sys-color-surface-container-high);
   color: var(--md-sys-color-on-surface-variant);
+}
+
+/* ---------- Traveler chips — who a day-list row's committed choice (or, on
+   a meal row, its currently selected MealOption) actually involves, from
+   each Activity/option's resolved `travelers` list (docs/js/trip-model.js's
+   resolveMealTravelers/resolveExcursionTravelers) — a meal always resolves
+   to a real list (every traveler, or a Package-restricted subset); a plain
+   excursion only carries one when its roster was explicitly authored as
+   fewer than everyone. Shared by a plain activity row's slot="supporting-text"
+   and a meal row's header text column, so it's defined once, generically,
+   rather than per row type. Named "chip" rather than "pill" to match the
+   booking chip above and .budget-chip — same small-capsule shape, same
+   term. Deliberately the same quiet, unfilled-outline tone regardless of
+   who's listed — it's informational, not a status to draw the eye like the
+   booking chip is. */
+.traveler-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+
+.traveler-chip {
+  padding: 0.05rem 0.55rem;
+  border-radius: var(--md-sys-shape-corner-full);
+  border: 1px solid var(--md-sys-color-outline-variant);
+  color: var(--md-sys-color-on-surface-variant);
+  font-size: 0.7rem;
+  line-height: 1.5;
+  white-space: nowrap;
 }
 
 /* ---------- Meal row (day list) — a meal Activity with several still-open
@@ -1047,9 +1220,10 @@ footer {
   .day-block-body { padding: 0.25rem 1rem 1.5rem; }
   detail-side-sheet .panel { width: 100vw; border-radius: 0; }
 
-  /* Full-screen the one remaining drill-down dialog on small viewports,
-     matching the side sheet's full-bleed treatment above — a centered
-     card with visible margins wastes too much of a phone screen.
+  /* Full-screen the dialogs with real scrollable content on small viewports
+     (the Leg dialog and the edit popup — the date picker's compact grid
+     doesn't need it), matching the side sheet's full-bleed treatment above —
+     a centered card with visible margins wastes too much of a phone screen.
      md-dialog's own shadow root hardcodes `:host { max-width/max-height:
      min(560px, 100% - 48px) }` directly — it isn't wired to any custom
      property (--md-dialog-container-max-width etc. are no-ops for sizing,
@@ -1059,7 +1233,8 @@ footer {
      inherit them straight through ("inherit" is literally what they're
      set to). --md-dialog-container-shape *is* a real custom property
      (used by the corner-radius rules), so that one still applies normally. */
-  #leg-dialog {
+  #leg-dialog,
+  #edit-dialog {
     width: 100vw;
     height: 100dvh;
     max-width: 100vw;
@@ -1070,7 +1245,8 @@ footer {
     --md-dialog-container-shape: 0;
   }
 
-  #leg-dialog-body {
+  #leg-dialog-body,
+  #edit-dialog-content {
     max-height: calc(100dvh - 8rem);
   }
 }

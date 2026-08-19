@@ -70,6 +70,7 @@
         "cost": null,
         "confirmationNumber": null,
         "benefits": [ "Breakfast in the lodge dining room", "Dinner in the lodge dining room" ],
+        "travelers": null,
         "note": "On-site dining is otherwise limited to the Meatza Wagon food truck or a trip into McCarthy — worth booking given the 2-night minimum stay."
       }
     ],
@@ -148,7 +149,7 @@
       {
         "_id": "pkg_princess_premier",
         "name": "Princess Premier",
-        "status": "planning",
+        "status": "booked",
         "cost": null,
         "confirmationNumber": null,
         "benefits": [
@@ -160,7 +161,8 @@
           "Unlimited professional photos",
           "Shore excursion credit"
         ],
-        "note": null
+        "travelers": ["trav_brian", "trav_stacy"],
+        "note": "A separately purchased add-on, already booked — its cost is folded into the total cruise fare above rather than broken out as its own line item."
       }
     ],
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/2023_04_29b_Discovery_Princess_16_(52935882014).jpg", "credit": "Photo by Blake Handley / CC BY 2.0", "caption": "Discovery Princess docked at Ogden Point, Victoria BC" } ]

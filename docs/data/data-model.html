@@ -401,13 +401,14 @@
   startDate: '2027-06-26',
   endDate:   '2027-07-24',
   status: 'planning',        // planning | active | completed | cancelled
-  travelers: [ { name: 'Brian Rodecap', age: 51 } ],
+  travelers: [ { id: 'trav_brian', name: 'Brian Rodecap', age: 51 } ],
   images: [],             // hero image, per Guiding principle 06
 }</code></pre>
         <ul class="rationale">
           <li><strong>startDate/endDate are declared independently</strong> of its Legs — an unbooked gap, like the open Lake Clark/Katmai block, shouldn't shrink the trip's apparent length just because nothing inside it is finalized yet.</li>
           <li><strong>No booking.</strong> A trip isn't itself a purchase — it's booked through what's inside it. Same reason its status ladder skips "booked" entirely.</li>
           <li><strong>travelers gained <code>age</code></strong> once the cruise line's own booking confirmation supplied it per passenger — still just a lightweight embedded list, not the fuller per-traveler identity floated in Open threads.</li>
+          <li><strong>travelers[].id gives each traveler a stable handle to link against</strong> — added once <code>Package.travelers</code> (see Stay) needed to reference specific travelers the same way every other cross-entity pointer on this page does: by id, not by restating <code>name</code> and hoping it never drifts. Still a small, additive step rather than the fuller per-traveler identity floated in Open threads — <code>id</code> exists to be pointed at, nothing more.</li>
           <li><strong><code>name</code> is the display title</strong> shown as both the trip's hero headline and its card headline on the multi-trip landing screen — not a short internal slug. The folder name under <code>docs/data/</code> (e.g. <code>2027-summer-alaska</code>) is the actual stable identifier every URL and cross-trip reference uses; <code>name</code> is free to read well instead.</li>
           <li><strong><code>summary</code> is optional</strong>, one paragraph, rendered as-is on the trip's Overview tab — added once a second trip made it clear this couldn't stay hardcoded page copy.</li>
         </ul>
@@ -495,7 +496,7 @@
     {                             // Stay offers, on top of whatever's already
       _id: 'pkg_princess_premier', // bundled into the base rate
       name: 'Princess Premier',
-      status: 'planning',        // same booking-status ladder as Booking, above
+      status: 'booked',          // same booking-status ladder as Booking, above
       cost: null,
       confirmationNumber: null,
       benefits: [
@@ -507,6 +508,10 @@
         'Unlimited professional photos',
         'Shore excursion credit',
       ],
+      travelers: ['trav_brian', 'trav_stacy'],  // bought for only 2 of this
+                                 // trip's 4 travelers (Trip.travelers[].id,
+                                 // not name) — the other 2 are on the
+                                 // cabin's standard, non-Premier fare
       note: null,
     },
   ],
@@ -523,6 +528,15 @@
   benefits: string[] | null,   // itemized perks, e.g. one line per inclusion —
                                  // not a fixed enum, since what a package bundles
                                  // varies too much across providers to normalize
+  travelers: string[] | null,  // which Trip.travelers[].id this package
+                                 // actually covers — ids, not names, so the
+                                 // link survives a traveler's name changing —
+                                 // null means the whole party (the common
+                                 // case); a named subset (e.g. Princess
+                                 // Premier, bought for only 2 of this trip's
+                                 // 4 travelers) means every other traveler is
+                                 // on the Stay's own standard, non-package
+                                 // inclusions instead
   note: string | null,         // free-text caveat/context, e.g. why it's worth
                                  // booking, distinct from the itemized benefits
 }</code></pre>
@@ -598,6 +612,7 @@
           <li><strong>cost stays the flat amount actually charged</strong>, not a line-item breakdown — that same reservation's room/taxes/travel-credit split collapses to one number the same way a cruise fare or a campsite fee already does. No shape change; "derive, don't store" holds.</li>
           <li><strong>Payment method (masked card number, expiry) was deliberately left out</strong>, same reasoning as the Princess Captain's Circle numbers and on-file phone in the cruise test: an account identifier with no itinerary value, not worth the exposure in a public repo.</li>
           <li><strong>packages holds optional paid add-ons</strong> — a purchase distinct from both the base <code>booking</code> (which pays for the Stay itself) and an Activity's <code>diningFormat: 'included'</code> (bundled into the base rate at no extra decision). Princess Plus/Premier and a hotel's optional meal plan are the same shape: a single purchase, made once at the Stay level, that then covers many individual Activities. Surfaced by the Kennicott Glacier Lodge and Discovery Princess data — a meal previously modeled as <code>diningFormat: 'included'</code> with a note explaining it only counted "if the package is purchased" was really a distinct, not-yet-decided fact being smuggled into free text. <code>Activity.diningFormat: 'package'</code> plus an <code>includedIn</code> pointing at <code>{ entity: 'package', id }</code> (see Activity) makes that fact structured instead: every Activity the package would cover references the one <code>Package</code>, so its purchase status lives in exactly one place rather than being repeated — and potentially drifting — per meal.</li>
+          <li><strong>packages[].travelers scopes a package to whichever travelers actually bought it</strong> — surfaced once Princess Premier turned out to cover only 2 of this trip's 4 travelers, a fact that had briefly been smuggled into <code>note</code> as free text the same way the purchase-vs-included distinction above once was. <code>null</code> is the common case (a package everyone on the booking gets, e.g. a hotel's whole-room meal plan); a named subset means every other Trip.traveler is on the Stay's own standard inclusions instead for anything that package would otherwise cover. Points at <code>Trip.travelers[].id</code>, not <code>name</code> — every other cross-entity pointer on this page (<code>legId</code>, <code>routeId</code>, every <code>Ref</code>) links by id, and a name is exactly the field someone might reasonably edit later (a nickname, a legal-name correction) without meaning to break a package's coverage list. The trip page's day-list rows read this (via each Activity/MealOption's resolved traveler list — see trip-model.js's <code>resolveMealTravelers</code>, which turns the ids back into display names, and only resolves anything at all when <code>diningFormat</code> is <code>'package'</code> — a plain <code>'included'</code> meal, or any à-la-carte format, renders no chip, since nobody's coverage was ever gated on it) to show who's actually covered by a given <em>purchased</em> meal choice, not just whether one exists. Its non-meal sibling is Activity's own <code>travelers</code> (see below) — a package scopes who a <em>purchase</em> covers, while an excursion's own <code>travelers</code> scopes who's doing that <em>activity</em>, and the two are read by different rules precisely because a meal and an excursion answer "who's involved" differently.</li>
         </ul>
       </article>
 
@@ -829,6 +844,31 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   includedIn: null,        // Ref | null — only set when diningFormat is 'included' or 'package'
   options: null,           // MealOption[] | null — only set while undecided among
                             // several candidates; see below
+  travelers: null,         // string[] | null — Trip.travelers[].id; only meaningful
+                            // on an excursion (mealType: null) whose attendees are
+                            // known to be fewer than the whole party — see below
+  images: [],
+}</code></pre>
+        <p class="schema-label">An excursion only some travelers are doing (illustrative — no excursion in this trip's own data has a partial roster authored yet)</p>
+        <pre class="schema"><code>{
+  _id: 'act_example_zipline',
+  legId: 'leg_cruise',
+  scenarioId: null,
+  status: 'planning',
+  startAt: '2027-07-20T14:00',
+  endAt: '2027-07-20T16:00',
+  timeLabel: null,
+  order: null,
+  priority: null,
+  text: 'ZipRider at Icy Strait Point',
+  place: { id: 'ChIJ...', label: 'Icy Strait Point', images: [] },
+  booking: { status: 'planning', cost: null, confirmationNumber: null },
+  mealType: null,
+  diningFormat: null,
+  includedIn: null,
+  options: null,
+  travelers: ['trav_brian', 'trav_stacy'],   // the other 2 are doing something
+                                               // else this afternoon instead
   images: [],
 }</code></pre>
         <p class="schema-label">A meal, bundled into a Stay's rate</p>
@@ -918,6 +958,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
           <li><strong>'included' and 'package' are deliberately separate <code>diningFormat</code> values</strong>, not one "covered somehow" flag — <code>'included'</code> means the base rate already pays for it, no separate decision required; <code>'package'</code> means it's covered only if a specific optional add-on gets purchased, and that purchase has its own <code>planning</code>/<code>booked</code>/<code>cancelled</code> status independent of the Stay. Collapsing them would either lose that distinction or force a not-yet-decided purchase to read as already-included.</li>
           <li><strong>options is the one genuinely new mechanism here</strong>, added once "which of these three places for breakfast" turned out not to fit the single-value fields at all — the three candidates can each have a <em>different</em> <code>diningFormat</code> (included / sit-down / grab-and-go), so the choice has to live per-candidate, not on the Activity itself. It mirrors <code>Stay.lodging: null</code>'s "nothing chosen yet" — just extended to hold the actual named candidates instead of only recording that a decision is pending. <code>diningFormat</code>/<code>place</code>/<code>includedIn</code> stay <code>null</code> on the Activity the whole time <code>options</code> is set; deciding means picking one candidate, copying its three fields up onto the Activity itself, and clearing <code>options</code> back to <code>null</code> — the array never holds the decided state, only the open one.</li>
           <li><strong>priority is an enumerated rank, not a boolean</strong> — matching every other significance-style field on this page (<code>status</code>, <code>mealType</code>, <code>diningFormat</code>) rather than a loose <code>highlight: true/false</code>. Null for nearly everything; set only on the handful of activities worth calling out. It's what the computed Day's title reads to decide whether to name a day after its headline activity — "Denali Flightseeing" — instead of falling back to wherever that night's Stay is. When a day has several activities tied at the same top priority, the title joins their <code>text</code> with " &amp; ", in sequence order. Deliberately generic rather than single-purpose: any future "what matters today" or trip-highlights view can read the same field without a new one being invented.</li>
+          <li><strong>travelers is an excursion's own, directly authored roster</strong> — <code>Trip.travelers[].id</code>, the same link <code>Package.travelers</code> uses. It exists for exactly one case: an activity someone plans or books individually, where not every traveler is necessarily doing it — a shore excursion one family member skips, say. It's deliberately <em>not</em> read on a meal (<code>mealType</code> set) — a meal's real attendees are already derivable from <code>diningFormat</code>/<code>includedIn</code> against whichever <code>Package</code> backs it (trip-model.js's <code>resolveMealTravelers</code>), and authoring a second, competing traveler list on the same Activity would just invite the two to drift. Null is the default on every activity today, meaning either everyone's doing it or it just isn't decided yet — a day watching scenery go by from the ship, for instance, isn't an excursion at all and was never a candidate for this field, regardless of whether every traveler happens to be there.</li>
         </ul>
       </article>
 
@@ -992,7 +1033,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
           </div>
           <div class="thread">
             <span class="mark">→</span>
-            <p><strong>Trip.travelers</strong><span>Still just a list of names. Undesigned: whether travelers need their own identity (for a multi-user "real app"), or stay a lightweight embedded list.</span></p>
+            <p><strong>Trip.travelers</strong><span>Gained a stable <code>id</code> once <code>Package.travelers</code> needed something to link against, but is otherwise still just a lightweight embedded list. Undesigned: whether travelers need a fuller identity (for a multi-user "real app"), or an <code>id</code> is as far as this ever needs to go.</span></p>
           </div>
           <div class="thread">
             <span class="mark">→</span>

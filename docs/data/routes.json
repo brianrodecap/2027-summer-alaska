@@ -15,10 +15,10 @@
         "tone": "scenic",
         "label": "Scenic — via the Old Glenn Highway and Parks Highway",
         "via": [
-          { "kind": "override", "place": { "id": "ChIJ74oLNrLjyFYR49fH3Tczh2I", "label": "Old Glenn Highway" }, "durationMinutes": 25 },
-          { "kind": "waypoint", "place": { "id": "ChIJiUspZMCMyFYRp_UYSpwkZoM", "label": "Eagle River" }, "durationMinutes": 5 },
+          { "kind": "waypoint", "place": { "id": "ChIJiUspZMCMyFYRp_UYSpwkZoM", "label": "Eagle River" }, "durationMinutes": 15 },
           { "kind": "waypoint", "place": { "id": "ChIJ-8WuMUHpyFYRfPkhqA6gNuE", "label": "Chugiak" }, "durationMinutes": 10 },
-          { "kind": "waypoint", "place": { "id": "ChIJCyuT6-QdyVYRUN2N53uoJr4", "label": "Palmer" }, "durationMinutes": 35 }
+          { "kind": "override", "place": { "id": "ChIJ74oLNrLjyFYR49fH3Tczh2I", "label": "Old Glenn Highway" }, "durationMinutes": 30 },
+          { "kind": "waypoint", "place": { "id": "ChIJCyuT6-QdyVYRUN2N53uoJr4", "label": "Palmer" }, "durationMinutes": 20 }
         ]
       }
     ],

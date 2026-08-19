@@ -244,36 +244,48 @@ export function stayRelation(stay, date) {
 // no startAt/endAt) have no real timestamp either, but timeLabel is a closed
 // vocabulary (TIME_LABEL_ANCHORS below) rather than free text, so per
 // Guiding principle 03 each one gets a real anchor time straight from that
-// table. A timeLabel outside the table (a one-off conditional string that
-// doesn't reduce to a single time of day) still borrows the timestamp of the
-// nearest real-timed activity before it in the day's own already-authored
-// array order (or dayStart, if nothing timed precedes it yet).
+// table — validateActivityTiming (below) enforces every Activity has one of
+// startAt, endAt, or a table entry, so there's never a timeLabel left over
+// with no anchor to fall back on.
 
-// The only three anchors this trip's days actually need — deliberately
-// coarse, since a fuzzy label like "Morning" was never claiming more
-// precision than this in the first place. Each maps to an HH:MM used only
-// to compute a sort key; activityTimeLabel (above) still shows the label
-// text itself, never this clock time.
+// The only anchors this trip's days actually need — deliberately coarse,
+// since a fuzzy label like "Morning" was never claiming more precision than
+// this in the first place. Each maps to an HH:MM used only to compute a sort
+// key; activityTimeLabel (above) still shows the label text itself, never
+// this clock time. "All day" is for a whole-day banner activity (e.g. a
+// cruise sea day) that has no time of its own and belongs before the day's
+// other, real-timed activities — hence the earliest possible anchor.
 const TIME_LABEL_ANCHORS = {
+  'All day': '00:00',
   Morning: '09:00',
   Afternoon: '13:00',
   Evening: '20:00',
 };
 
+// Every Activity must resolve to a real sort position: startAt, endAt, or a
+// timeLabel drawn from TIME_LABEL_ANCHORS above. A timeLabel outside that
+// closed vocabulary (a one-off conditional string) doesn't count — it has no
+// anchor time of its own. Checked once at load time so a bad entry fails
+// loudly here rather than sorting on an undefined key downstream — this is
+// what lets activitySortKey (below) always return a real value instead of
+// needing its own null-handling fallback.
+function validateActivityTiming(activities) {
+  const untimed = activities.filter((a) => !a.startAt && !a.endAt && !TIME_LABEL_ANCHORS[a.timeLabel]);
+  if (untimed.length) {
+    throw new Error(
+      `Activity(s) missing startAt, endAt, and a valid timeLabel anchor: ${untimed.map((a) => a._id).join(', ')}`
+    );
+  }
+}
+
 function activitySortKey(activity, dayStart) {
   if (activity.startAt) return activity.startAt;
   if (activity.endAt) return activity.endAt;
-  const anchor = activity.timeLabel ? TIME_LABEL_ANCHORS[activity.timeLabel] : null;
-  return anchor ? `${dayStart.slice(0, 10)}T${anchor}` : null;
+  return `${dayStart.slice(0, 10)}T${TIME_LABEL_ANCHORS[activity.timeLabel]}`;
 }
 
 function resolveActivityKeys(activities, dayStart) {
-  let lastKey = dayStart;
-  return activities.map((activity) => {
-    const key = activitySortKey(activity, dayStart) ?? lastKey;
-    lastKey = key;
-    return { type: 'activity', activity, key };
-  });
+  return activities.map((activity) => ({ type: 'activity', activity, key: activitySortKey(activity, dayStart) }));
 }
 
 function stayEventKey(stay, relation, dayStart) {
@@ -380,10 +392,10 @@ function transitSequenceItems(transit, dayStart) {
   return items;
 }
 
-// Merge-sorts already-keyed items (key: an ISO timestamp — every item has
-// one by now, real or borrowed, see resolveActivityKeys) into chronological
-// order. A stable sort so same-key items (e.g. an activity that borrowed a
-// preceding item's exact key) keep their original already-authored order.
+// Merge-sorts already-keyed items (key: an ISO timestamp — every item has a
+// real one by now, see activitySortKey) into chronological order. A stable
+// sort so same-key items (e.g. two activities both anchored to the same
+// "Morning" timeLabel) keep their original already-authored order.
 function mergeByTime(items) {
   return [...items].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
 }
@@ -437,16 +449,29 @@ function buildSequence(dayStays, dayTransits, dayActivities, date, dayStart, sce
   return collapseActivityRuns(mergeByTime(items));
 }
 
+// A track's own scenario can carry `parentScenarioId`, naming another
+// scenario present the *same* day it nests under instead of standing as its
+// own top-level tab — e.g. Jul 1's "if it flew today" / "if grounded today"
+// split only makes sense once you're already inside the alt track's own
+// afternoon, so it renders as its own small <md-tabs> inside that track's
+// panel (see renderScenarioTabs in day-render.js) rather than as a sibling
+// of Jul 1's ideal/alt pair. buildTrack recurses to pick up any such
+// children — each nested group gets folded into its PARENT's own sequence as
+// a { type: 'scenario-tabs', tracks } placeholder, keyed to the earliest of
+// its children's own real times, for exactly the reason scenarioAnchorKey
+// (above) exists for the day's outer tab group: without it, the nested tabs
+// would always render after every other item in the parent panel regardless
+// of when their own content actually falls, the same bug that placeholder
+// was built to avoid one level up.
 function buildScenarioTracks(dayTransits, dayActivities, scenariosById, notes, dayStart) {
   const present = new Set([
     ...dayTransits.map((t) => t.scenarioId).filter(Boolean),
     ...dayActivities.map((a) => a.scenarioId).filter(Boolean),
   ]);
-  const tracks = [];
   let anchorKey = null;
-  for (const [scenarioId, scenario] of scenariosById) {
-    if (!present.has(scenarioId)) continue;
-    const items = [
+
+  function trackOwnItems(scenarioId) {
+    return [
       ...dayTransits
         .filter((t) => t.scenarioId === scenarioId)
         .flatMap((transit) => transitSequenceItems(transit, dayStart)),
@@ -455,14 +480,66 @@ function buildScenarioTracks(dayTransits, dayActivities, scenariosById, notes, d
         dayStart
       ),
     ];
-    for (const item of items) {
-      if (anchorKey === null || item.key < anchorKey) anchorKey = item.key;
+  }
+
+  function earliestKey(items) {
+    return items.reduce((min, item) => (min === null || item.key < min ? item.key : min), null);
+  }
+
+  // A *real* earliest key for one scenario's own content — unlike ownKey
+  // (below, from trackOwnItems), which runs a Transit's boundary through
+  // transitSortKey and so clamps a transit already in progress before today
+  // (departsAt before dayStart) up to dayStart. That clamp is correct for
+  // where the boundary itself renders in today's sequence, but wrong for
+  // deciding where a *nested* group's tab placeholder belongs relative to
+  // the parent's real timeline (see its one use, below) — a transit that's
+  // actually been running since yesterday shouldn't out-rank a same-day 7am
+  // event just because its clamped key reads as "start of day".
+  function realOwnKey(scenarioId) {
+    const transitKeys = dayTransits.filter((t) => t.scenarioId === scenarioId).map((t) => t.departsAt);
+    const activityKeys = dayActivities.filter((a) => a.scenarioId === scenarioId).map((a) => activitySortKey(a, dayStart));
+    return earliestKey([...transitKeys, ...activityKeys].map((key) => ({ key })));
+  }
+
+  function buildTrack(scenarioId, scenario) {
+    const items = trackOwnItems(scenarioId);
+    const ownKey = earliestKey(items);
+    if (ownKey !== null && (anchorKey === null || ownKey < anchorKey)) anchorKey = ownKey;
+
+    const children = [];
+    for (const [childId, childScenario] of scenariosById) {
+      if (childScenario.parentScenarioId === scenarioId && present.has(childId)) {
+        children.push(buildTrack(childId, childScenario));
+      }
     }
-    tracks.push({
+    const realAnchorKey = children.length
+      ? earliestKey([realOwnKey(scenarioId), ...children.map((c) => c.realAnchorKey)].filter((k) => k !== null).map((key) => ({ key })))
+      : realOwnKey(scenarioId);
+    const sequenceItems = [...items];
+    if (children.length) {
+      // A nested placeholder is keyed off a *real* signal wherever one
+      // exists in the subtree (e.g. Jul 1's actual 7:30am flight attempt),
+      // falling back to the possibly-borrowed per-child anchor only if the
+      // whole nested group is genuinely unanchored, and dayStart only if
+      // that's unanchored too.
+      const childKey = earliestKey(children.map((c) => c.realAnchorKey).filter((k) => k !== null).map((key) => ({ key })))
+        ?? earliestKey(children.filter((c) => c.anchorKey !== null).map((c) => ({ key: c.anchorKey })));
+      sequenceItems.push({ type: 'scenario-tabs', key: childKey ?? dayStart, tracks: children });
+    }
+    return {
       scenario,
       notes: notesForScenario(notes, scenarioId),
-      sequence: collapseActivityRuns(mergeByTime(items)),
-    });
+      sequence: collapseActivityRuns(mergeByTime(sequenceItems)),
+      anchorKey: ownKey,
+      realAnchorKey,
+    };
+  }
+
+  const tracks = [];
+  for (const [scenarioId, scenario] of scenariosById) {
+    if (scenario.parentScenarioId) continue; // picked up as a child, above
+    if (!present.has(scenarioId)) continue;
+    tracks.push(buildTrack(scenarioId, scenario));
   }
   return { tracks, anchorKey };
 }
@@ -855,12 +932,16 @@ function buildDay(date, legs, stays, transits, activitiesByDate, scenariosById, 
 // ---------- Route resolution — Route (docs/data/routes.json) is reference
 // data a Transit merely points at via routeId/routeVariant (see
 // data-model.html); nothing here is stored back onto the Transit itself.
-// A variant's via[] mixes named road segments ({ label }) and named place
-// stops ({ place: { label } }), in whatever order they're actually crossed —
-// every entry always carries one or the other, plus its own durationMinutes
-// (the drive time from whichever via point came before it). stages keeps
-// every entry, in that same sequence, reduced to label/note/key —
-// stageTimesForVariant (above) is what turns durationMinutes into that key.
+// A variant's via[] is a real, physically-ordered path — unlike Activity,
+// nothing about a via point has (or could have) its own timestamp, so array
+// order is the correct and only encoding of "which point comes before
+// which"; each entry's own durationMinutes (the drive time from whichever
+// via point came before it) is what turns that order into actual estimated
+// clock times, in stageTimesForVariant (above). Every entry always resolves
+// to a real geo-point (place.id, or coordinates as the fallback — see
+// validateRoutes, below) and carries a kind of 'waypoint' or 'override'.
+// stages keeps every entry, in that same sequence, reduced to
+// label/note/key.
 //
 // A Route with only one variant ("the only practical route") is never a real
 // choice, so resolveTransitRoute still exposes every variant (never just the
@@ -878,6 +959,48 @@ function inTransitActivities(transit, activities) {
     .filter((a) => a.legId === transit.legId && a.scenarioId === transit.scenarioId)
     .filter((a) => a.startAt && a.startAt >= transit.departsAt && a.startAt < transit.arrivesAt)
     .sort((a, b) => (a.startAt < b.startAt ? -1 : 1));
+}
+
+// Every via entry must carry a kind of 'waypoint' or 'override' (never a
+// bare "you're now on Highway X" placeholder — that belongs in the variant's
+// own label), resolve to a real geo-point: place.id, or coordinates only as
+// the fallback for the rare point Google's Places index has no entry for —
+// never a bare label with neither (see data-model.html's Route entity) —
+// and carry a non-negative durationMinutes. This isn't a style rule: this
+// trip's data once reused the same whole-highway Place ID as a via on two
+// Route documents covering different 100+-mile stretches of the same
+// highway, and because a via's place feeds straight into a live
+// geocoder/Directions URL (dayMapEmbedUrl, dayFullRouteUrl), that silently
+// sent a real "open in Google Maps" link on an 8-hour detour. The
+// non-negative durationMinutes check guards a second, subtler way order
+// could break: a route is an ordered list — variant.via.map in
+// stageTimesForVariant (above) always walks it in that authored order — but
+// each stage's own computed key still gets sorted alongside every other
+// event in the day by mergeByTime. That sort only ever preserves the via
+// list's authored order because a non-negative duration keeps
+// stageTimesForVariant's running clock non-decreasing as it walks via[]; a
+// negative durationMinutes would make a stage's key land earlier than the
+// one before it, and the sort would then actually reorder it out of its
+// authored position. Checked once at load time, same reasoning as
+// validateActivityTiming above: a bad via should fail loudly here, not
+// silently mis-route — or misorder — someone in the field.
+const VIA_KINDS = new Set(['waypoint', 'override']);
+
+function validateRoutes(routes) {
+  const problems = [];
+  for (const route of routes ?? []) {
+    for (const variant of route.variants ?? []) {
+      for (const via of variant.via ?? []) {
+        const where = `${route._id} (${variant.tone}) via ${via.place?.label ?? via.label ?? '?'}`;
+        if (!VIA_KINDS.has(via.kind)) problems.push(`${where}: kind must be 'waypoint' or 'override', got ${JSON.stringify(via.kind)}`);
+        if (!via.place?.id && !via.coordinates) problems.push(`${where}: no resolvable place.id or coordinates`);
+        if (typeof via.durationMinutes !== 'number' || via.durationMinutes < 0) {
+          problems.push(`${where}: durationMinutes must be a non-negative number, got ${JSON.stringify(via.durationMinutes)}`);
+        }
+      }
+    }
+  }
+  if (problems.length) throw new Error(`Invalid Route via entries:\n${problems.join('\n')}`);
 }
 
 function resolveTransitRoute(transit, routesById, activities) {
@@ -1047,17 +1170,76 @@ export function buildBudgetView(trip, legs, days, stays, transits, activities) {
   };
 }
 
+// ---------- Traveler scope — who's actually part of a committed Activity,
+// one still-open MealOption candidate, or an excursion. Two independent
+// sources, by kind:
+//
+//  - A meal (Activity.mealType set) only resolves an attendee chip when
+//    diningFormat is 'package' — i.e. includedIn points at a Package, a
+//    separately purchased add-on that can genuinely differ per traveler
+//    (Princess Premier's specialty dining vs. the Standard-tier travelers
+//    left on the ship's ordinary included dining). A plain 'included' meal
+//    (covered by the booking itself, no separate purchase in play — the
+//    main dining room, a hotel's breakfast, a lodge's meal plan) has no
+//    such decision to report, so it renders no chip at all, the same as
+//    'sit-down'/'grab-and-go'/'drivethru'/'self-catered' — ordinary
+//    à-la-carte food choices nobody's coverage was ever gated on.
+//  - Anything else — an excursion: a tour, hike, or shore activity someone
+//    plans or books individually — has no such derivation to lean on.
+//    Different travelers can do different excursions (one family member
+//    skips the zipline, say), so Activity.travelers is authored directly
+//    (data-model.html's Activity entity), the same Trip.travelers[].id link
+//    Package.travelers uses. null (the default on every activity today) means
+//    either everyone's doing it or it just isn't decided — either way,
+//    nothing to flag, so no traveler chips render at all (see day-render.js).
+//
+// Resolved once here rather than re-derived per render, per Guiding
+// principle 03 — the same "derive, don't store" reasoning
+// notesForActivity/hasWarningNote (below) already follow. Package.travelers
+// holds ids, not names (every other cross-entity pointer on this page links
+// by id), so a restricted package's ids are turned back into display names
+// here, the one place that translation needs to happen.
+function travelersById(tripTravelers) {
+  return new Map(tripTravelers.map((t) => [t.id, t.name]));
+}
+
+function resolveMealTravelers(tripTravelers, includedIn, packagesById) {
+  if (includedIn?.entity !== 'package') return null;
+  const everyone = tripTravelers.map((t) => t.name);
+  const pkg = packagesById.get(includedIn.id);
+  if (!pkg?.travelers?.length) return everyone;
+  const byId = travelersById(tripTravelers);
+  const names = pkg.travelers.map((id) => byId.get(id)).filter(Boolean);
+  return names.length ? names : everyone;
+}
+
+function resolveExcursionTravelers(tripTravelers, travelerIds) {
+  if (!travelerIds?.length) return null;
+  const byId = travelersById(tripTravelers);
+  const names = travelerIds.map((id) => byId.get(id)).filter(Boolean);
+  return names.length ? names : null;
+}
+
 export function buildTripView(data) {
   const { trip, legs, stays, transits, activities, scenarios, notes, routes } = data;
+  validateActivityTiming(activities);
+  validateRoutes(routes);
   const tripYear = trip.startDate.slice(0, 4);
   const scenariosById = new Map(scenarios.map((s) => [s._id, s]));
   const routesById = new Map((routes ?? []).map((r) => [r._id, r]));
+  const packagesById = new Map(stays.flatMap((s) => s.packages ?? []).map((p) => [p._id, p]));
 
   const enrichedActivities = activities.map((a) => ({
     ...a,
     date: resolveActivityDate(a, tripYear),
     notes: notesForActivity(notes, a._id),
     hasWarningNote: entityHasWarning(notes, 'activity', a._id),
+    travelers: a.mealType
+      ? resolveMealTravelers(trip.travelers, a.includedIn, packagesById)
+      : resolveExcursionTravelers(trip.travelers, a.travelers),
+    options: a.options
+      ? a.options.map((o) => ({ ...o, travelers: resolveMealTravelers(trip.travelers, o.includedIn, packagesById) }))
+      : a.options,
   }));
   const activitiesById = new Map(enrichedActivities.map((a) => [a._id, a]));
 

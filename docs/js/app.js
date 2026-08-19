@@ -6,6 +6,13 @@ import { renderLegCard, renderDayBlock, renderLegDialogBody, renderActivityDetai
 import { hydratePlaceDetails } from './places.js';
 import { renderDatePicker } from './date-picker.js';
 import { buildFilterGroups, renderFilterMenuItems, applyFilters } from './filters.js';
+import { renderEditForm, applyEdit, EDIT_ENTITY_LABEL } from './edit.js';
+
+function toNode(html) {
+  const template = document.createElement('template');
+  template.innerHTML = html.trim();
+  return template.content.firstElementChild;
+}
 
 document.adoptedStyleSheets.push(typescaleStyles.styleSheet);
 
@@ -26,6 +33,7 @@ const budgetSummaryEl = document.querySelector('#budget-summary');
 const budgetBreakdownsEl = document.querySelector('#budget-breakdowns');
 
 let view = null;
+let data = null;
 let currentSlug = null;
 
 // ---------- drill-down: Overview's Leg cards → Leg dialog → a day's inline
@@ -45,10 +53,30 @@ const budgetStripMount = document.querySelector('#budget-strip-mount');
 const filterMenu = document.querySelector('#filter-menu');
 const datePickerDialog = document.querySelector('#date-picker-dialog');
 const datePickerBody = document.querySelector('#date-picker-body');
+const editDialog = document.querySelector('#edit-dialog');
+const editDialogTitle = document.querySelector('#edit-dialog-title');
+const editDialogBody = document.querySelector('#edit-dialog-body');
+const editDialogError = document.querySelector('#edit-dialog-error');
+const exportEditsButton = document.querySelector('#export-edits');
+const appBarEl = document.querySelector('#app-bar');
+
+// M3's top app bar is flat while it's the page's own leading edge and only
+// gains elevation once content has scrolled in underneath it — .app-bar's
+// `position: sticky` alone can't express that (it can't tell "positioned at
+// top: 0 because nothing's scrolled yet" from "positioned at top: 0 because
+// it's pinned there"), so this reads the one signal that does distinguish
+// them: the sticky element's own bounding rect stays below zero until it's
+// actually pinned.
+function updateAppBarElevation() {
+  if (daysViewEl.hidden) return;
+  appBarEl.classList.toggle('is-elevated', appBarEl.getBoundingClientRect().top <= 0);
+}
+window.addEventListener('scroll', updateAppBarElevation, { passive: true });
 
 function closeAllPanels() {
   legDialog.close();
   datePickerDialog.close();
+  editDialog.close();
   sideSheet.close();
   filterMenu.open = false;
 }
@@ -129,7 +157,13 @@ function readDaySelections(dayBlockEl, day) {
 
 async function openActivity(activity, selectedOption = null) {
   const place = selectedOption ? selectedOption.place : activity.place;
-  sideSheet.open(activityDetailTitle(activity, selectedOption), renderActivityDetailBody(activity, selectedOption));
+  // Editing in place is only offered for a plain activity — a meal row's
+  // selected MealOption isn't itself one of the three edit.js kinds (see
+  // edit.js's own scope note), so the sheet's edit button just stays hidden
+  // when a selectedOption is passed in.
+  sideSheet.open(activityDetailTitle(activity, selectedOption), renderActivityDetailBody(activity, selectedOption), {
+    onEdit: selectedOption ? null : () => enterActivityEditMode(activity),
+  });
   if (!place?.id) return;
   const details = await hydratePlaceDetails(sideSheet.querySelector('.place-panel'), place);
   // Meal options already show their dining-format icon (known synchronously,
@@ -140,6 +174,131 @@ async function openActivity(activity, selectedOption = null) {
     if (iconEl) iconEl.textContent = placeTypeIcon(details);
   }
 }
+
+// ---------- editing day-list line items (edit.js) — two chrome shells
+// around the same renderEditForm/applyEdit pair: the side sheet's own edit
+// button (Activities only — see openActivity above) swaps its body in place
+// for enterActivityEditMode; every row's pencil button (Activity, Stay, and
+// Transit — see day-render.js's renderEditButton) opens the lighter-weight
+// #edit-dialog popup instead, the only edit entry point Stay/Transit have
+// since neither opens a side sheet at all. Neither surface writes back to
+// the *.json files this data loaded from — there's no backend to write to
+// (see CLAUDE.md) — so a save only mutates the in-memory `data` this trip's
+// `view` was built from; exportDirtyCollections (below) is how an edit
+// becomes durable, by downloading the touched file(s) back out. ----------
+
+const COLLECTION_FOR_KIND = { activity: 'activities', stay: 'stays', transit: 'transits' };
+const dirtyCollections = new Set();
+
+function findEntity(kind, id) {
+  return data[COLLECTION_FOR_KIND[kind]].find((e) => e._id === id);
+}
+
+function markDirty(kind) {
+  dirtyCollections.add(COLLECTION_FOR_KIND[kind]);
+  exportEditsButton.hidden = false;
+  exportEditsButton.title = `Download edited ${[...dirtyCollections].join(', ')}`;
+}
+
+function downloadJson(filename, value) {
+  const blob = new Blob([JSON.stringify(value, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+exportEditsButton.addEventListener('click', () => {
+  for (const collection of dirtyCollections) downloadJson(`${collection}.json`, data[collection]);
+});
+
+// Rebuilds `view` from the just-mutated `data` and re-renders the trip page
+// from it — the same full rebuild openTrip does on first load. This does
+// mean any other day's live tab selections (a route variant, a scenario
+// branch, a meal-option tab) reset to their model defaults on every save,
+// since those only ever lived in DOM state, not in `view` — an accepted
+// trade-off for how rarely a save happens versus how much simpler a full
+// rebuild is than surgically patching just the edited row back into an
+// already-rendered day-block.
+function refreshAfterEdit(kind, id) {
+  view = buildTripView(data);
+  renderTripBody();
+  const entity = findEntity(kind, id);
+  const freshDate = kind === 'activity' ? view.activitiesById.get(id)?.date : (kind === 'stay' ? entity.checkInAt : entity.departsAt)?.slice(0, 10);
+  if (freshDate) document.getElementById(`day-${freshDate}`)?.scrollIntoView({ block: 'start' });
+}
+
+// The side sheet's own in-place edit mode (Activities only) — swaps the
+// sheet body for the form plus its own Save/Cancel row (the sheet has no
+// dialog-style actions slot of its own to borrow), leaving the header's edit
+// button hidden (openActivity only passes onEdit for the read view) since
+// there's nothing more to switch into while already editing.
+function enterActivityEditMode(activity) {
+  const formNode = renderEditForm('activity', activity, { tripTravelers: view.trip.travelers });
+  const errorEl = toNode(`<p class="edit-dialog-error md-typescale-body-medium" hidden></p>`);
+  const cancelBtn = toNode(`<md-text-button type="button">Cancel</md-text-button>`);
+  const saveBtn = toNode(`<md-filled-button type="button">Save</md-filled-button>`);
+  const actions = toNode(`<div class="edit-form-actions"></div>`);
+  actions.append(cancelBtn, saveBtn);
+
+  cancelBtn.addEventListener('click', () => openActivity(activity));
+  saveBtn.addEventListener('click', () => {
+    const error = applyEdit('activity', activity, formNode);
+    if (error) {
+      errorEl.textContent = error;
+      errorEl.hidden = false;
+      return;
+    }
+    markDirty('activity');
+    refreshAfterEdit('activity', activity._id);
+    openActivity(view.activitiesById.get(activity._id));
+  });
+
+  const wrap = document.createDocumentFragment();
+  wrap.append(errorEl, formNode, actions);
+  sideSheet.open(activityDetailTitle(activity), wrap);
+}
+
+// The standalone popup — the only edit entry point for Stay/Transit, and a
+// quicker alternative to the sheet for a plain Activity too (see
+// day-render.js's renderEditButton on every row).
+let editTarget = null;
+
+function openEditPopup(kind, id) {
+  const entity = findEntity(kind, id);
+  if (!entity) return;
+  closeAllPanels();
+  editTarget = { kind, id };
+  editDialogTitle.textContent = EDIT_ENTITY_LABEL[kind];
+  editDialogError.hidden = true;
+  const context = kind === 'activity' ? { tripTravelers: view.trip.travelers } : undefined;
+  editDialogBody.replaceChildren(renderEditForm(kind, entity, context));
+  editDialog.show();
+}
+
+document.querySelector('#edit-dialog-save').addEventListener('click', () => {
+  if (!editTarget) return;
+  const { kind, id } = editTarget;
+  const entity = findEntity(kind, id);
+  const formEl = editDialogBody.querySelector('.edit-form');
+  const error = applyEdit(kind, entity, formEl);
+  if (error) {
+    editDialogError.textContent = error;
+    editDialogError.hidden = false;
+    return;
+  }
+  markDirty(kind);
+  editTarget = null;
+  editDialog.close();
+  refreshAfterEdit(kind, id);
+});
+
+document.querySelector('#edit-dialog-cancel').addEventListener('click', () => {
+  editTarget = null;
+  editDialog.close();
+});
 
 dayListEl.addEventListener('click', (event) => {
   const el = event.target.closest('[data-activity-id]');
@@ -162,6 +321,20 @@ dayListEl.addEventListener('click', (event) => {
   const dayBlock = mapButton.closest('.day-block');
   const selections = dayBlock ? readDaySelections(dayBlock, day) : {};
   sideSheet.open(`Map — ${day.dateLabel}`, renderDayMapSheetBody(day, selections));
+});
+
+// Every row's pencil button (day-render.js's renderEditButton) is a sibling
+// of whatever interactive element the row itself has (its md-list-item, its
+// .stay-block), never nested inside one — so this never conflicts with the
+// activity-open listener above; clicking a pencil doesn't also open the row
+// it's on.
+dayListEl.addEventListener('click', (event) => {
+  const editButton = event.target.closest('.row-edit-button');
+  if (!editButton) return;
+  const { editActivityId, editStayId, editTransitId } = editButton.dataset;
+  if (editActivityId) openEditPopup('activity', editActivityId);
+  else if (editStayId) openEditPopup('stay', editStayId);
+  else if (editTransitId) openEditPopup('transit', editTransitId);
 });
 
 // A meal row's own md-tabs (see day-render.js's renderMealRow) switches which
@@ -208,7 +381,7 @@ const legsGrid = document.querySelector('#legs-grid');
 // ---------- filter nav: an md-menu anchored to a small icon button (see
 // filters.js) — landed on after comparing it live against a chip bar and a
 // leading-edge navigation rail, both tried and dropped — see styles.css's
-// filter-nav comment. ----------
+// app-bar comment. ----------
 
 let filterGroups = [];
 const activeFilterTokens = new Set();
@@ -291,22 +464,14 @@ document.querySelector('#date-picker-close').addEventListener('click', () => dat
 
 // ---------- loading a trip into the (single, reused) trip page ----------
 
-async function openTrip(slug, sub, extra) {
-  currentSlug = slug;
-  const data = await loadTripData(slug);
-  view = buildTripView(data);
-
-  document.querySelector('#trip-title').textContent = view.trip.name;
-  document.querySelector('#trip-summary').textContent = view.trip.summary ?? '';
-  document.querySelector('#trip-date-chip').label = formatTripDateChip(view.trip, view.days.length);
-
-  const heroImage = firstImage(view.trip);
-  const heroImageEl = document.querySelector('#trip-hero-image');
-  heroImageEl.hidden = !heroImage;
-  heroImageEl.style.backgroundImage = heroImage ? `url("${heroImage.uri}")` : '';
-  heroImageEl.title = heroImage?.credit ?? '';
-  document.querySelector('#trip-hero').classList.toggle('has-hero-image', !!heroImage);
-
+// Shared by openTrip's first load and refreshAfterEdit's post-save rebuild —
+// everything that's read straight off `view` rather than off the trip's own
+// hero fields (name/summary/dates), which only ever change on a real trip
+// switch. Preserves whatever filters are currently active (refreshFilterNav
+// re-applies activeFilterTokens rather than clearing them) — only openTrip's
+// own caller clears those, since switching *trips* should reset filters but
+// saving an edit shouldn't.
+function renderTripBody() {
   budgetStripMount.replaceChildren(renderBudgetStrip(view.budget));
 
   legsGrid.replaceChildren(...view.legSummaries.map((summary) => {
@@ -319,8 +484,29 @@ async function openTrip(slug, sub, extra) {
   wireScenarioFollowers(dayListEl);
 
   filterGroups = buildFilterGroups(view);
-  activeFilterTokens.clear();
   refreshFilterNav();
+}
+
+async function openTrip(slug, sub, extra) {
+  currentSlug = slug;
+  data = await loadTripData(slug);
+  view = buildTripView(data);
+  dirtyCollections.clear();
+  exportEditsButton.hidden = true;
+
+  document.querySelector('#trip-title').textContent = view.trip.name;
+  document.querySelector('#trip-summary').textContent = view.trip.summary ?? '';
+  document.querySelector('#trip-date-chip').label = formatTripDateChip(view.trip, view.days.length);
+
+  const heroImage = firstImage(view.trip);
+  const heroImageEl = document.querySelector('#trip-hero-image');
+  heroImageEl.hidden = !heroImage;
+  heroImageEl.style.backgroundImage = heroImage ? `url("${heroImage.uri}")` : '';
+  heroImageEl.title = heroImage?.credit ?? '';
+  document.querySelector('#trip-hero').classList.toggle('has-hero-image', !!heroImage);
+
+  activeFilterTokens.clear();
+  renderTripBody();
 
   showPage(sub, extra);
 }
@@ -339,6 +525,7 @@ function showPage(sub, extra) {
   overviewEl.hidden = !!sub;
   daysViewEl.hidden = sub !== 'days';
   budgetViewEl.hidden = sub !== 'budget';
+  updateAppBarElevation();
 
   if (sub === 'budget') {
     document.title = `Budget — ${view.trip.name}`;

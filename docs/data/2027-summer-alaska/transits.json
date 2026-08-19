@@ -248,10 +248,10 @@
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
   },
   {
-    "_id": "transit_coldfoot_fairbanks_alt",
+    "_id": "transit_coldfoot_fairbanks_alt_flew",
     "legId": "leg_parks",
     "journeyId": null,
-    "scenarioId": "scenario_jul1_alt",
+    "scenarioId": "scenario_jul1_alt_flew",
     "status": "planning",
     "mode": "drive",
     "from": {
@@ -262,6 +262,26 @@
     },
     "departsAt": "2027-07-01T10:00",
     "arrivesAt": "2027-07-01T15:45",
+    "routeId": "route_dalton_highway",
+    "routeVariant": "direct",
+    "booking": null,
+    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
+  },
+  {
+    "_id": "transit_coldfoot_fairbanks_alt_grounded",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": "scenario_jul1_alt_grounded",
+    "status": "planning",
+    "mode": "drive",
+    "from": {
+      "label": "Coldfoot"
+    },
+    "to": {
+      "label": "Fairbanks"
+    },
+    "departsAt": "2027-07-01T07:30",
+    "arrivesAt": "2027-07-01T13:15",
     "routeId": "route_dalton_highway",
     "routeVariant": "direct",
     "booking": null,
