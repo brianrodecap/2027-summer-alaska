@@ -17,7 +17,13 @@
     "routeId": "route_anchorage_talkeetna",
     "routeVariant": "direct",
     "booking": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_Driving_along_George_Parks_Highway_-_NARA_-_7722405.jpg", "credit": "Alaska DOT&PF / Federal Highway Administration, public domain", "caption": "Driving the George Parks Highway toward Denali" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_Driving_along_George_Parks_Highway_-_NARA_-_7722405.jpg",
+        "credit": "Alaska DOT&PF / Federal Highway Administration, public domain",
+        "caption": "Driving the George Parks Highway toward Denali"
+      }
+    ]
   },
   {
     "_id": "transit_talkeetna_denali",
@@ -37,7 +43,13 @@
     "routeId": "route_parks_highway",
     "routeVariant": "direct",
     "booking": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_Driving_along_George_Parks_Highway_-_NARA_-_7722405.jpg", "credit": "Alaska DOT&PF / Federal Highway Administration, public domain", "caption": "Driving the George Parks Highway toward Denali" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_Driving_along_George_Parks_Highway_-_NARA_-_7722405.jpg",
+        "credit": "Alaska DOT&PF / Federal Highway Administration, public domain",
+        "caption": "Driving the George Parks Highway toward Denali"
+      }
+    ]
   },
   {
     "_id": "transit_denali_fairbanks",
@@ -52,12 +64,18 @@
     "to": {
       "label": "Fairbanks"
     },
-    "departsAt": "2027-06-28T15:00",
-    "arrivesAt": "2027-06-28T17:45",
+    "departsAt": "2027-06-28T15:30",
+    "arrivesAt": "2027-06-28T18:15",
     "routeId": "route_parks_highway",
     "routeVariant": "direct",
     "booking": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_River_View_from_Nenana_River_Wayside_-_NARA_-_7722402.jpg", "credit": "Alaska DOT&PF / Federal Highway Administration, public domain", "caption": "Nenana River Wayside along the Parks Highway" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_River_View_from_Nenana_River_Wayside_-_NARA_-_7722402.jpg",
+        "credit": "Alaska DOT&PF / Federal Highway Administration, public domain",
+        "caption": "Nenana River Wayside along the Parks Highway"
+      }
+    ]
   },
   {
     "_id": "transit_fairbanks_coldfoot",
@@ -77,7 +95,13 @@
     "routeId": "route_dalton_highway",
     "routeVariant": "direct",
     "booking": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG",
+        "credit": "Photo by Mison / CC BY-SA 3.0",
+        "caption": "Dalton Highway with pipeline near Finger Mountain"
+      }
+    ]
   },
   {
     "_id": "transit_fairbanks_coppercenter",
@@ -97,7 +121,13 @@
     "routeId": "route_richardson_highway",
     "routeVariant": "direct",
     "booking": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Richardson_Highway_ENBLA01.jpg", "credit": "Photo by Enrico Blasutto / CC BY-SA 4.0", "caption": "Richardson Highway between Thompson Pass and Copper Center" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Richardson_Highway_ENBLA01.jpg",
+        "credit": "Photo by Enrico Blasutto / CC BY-SA 4.0",
+        "caption": "Richardson Highway between Thompson Pass and Copper Center"
+      }
+    ]
   },
   {
     "_id": "transit_coppercenter_mccarthy",
@@ -117,7 +147,13 @@
     "routeId": "route_mccarthy_road",
     "routeVariant": "direct",
     "booking": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_Kuskulana_Bridge.jpg", "credit": "Photo by Henry Chen / CC BY-SA 2.0", "caption": "Kuskulana Bridge on the McCarthy Road" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_Kuskulana_Bridge.jpg",
+        "credit": "Photo by Henry Chen / CC BY-SA 2.0",
+        "caption": "Kuskulana Bridge on the McCarthy Road"
+      }
+    ]
   },
   {
     "_id": "transit_kennecott_anchorage",
@@ -137,7 +173,13 @@
     "routeId": "route_kennecott_anchorage",
     "routeVariant": "scenic",
     "booking": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Matanushka_glacier.jpg", "credit": "Photo by Tifoultoute / CC BY-SA", "caption": "Matanuska Glacier viewed from the Glenn Highway" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Matanushka_glacier.jpg",
+        "credit": "Photo by Tifoultoute / CC BY-SA",
+        "caption": "Matanuska Glacier viewed from the Glenn Highway"
+      }
+    ]
   },
   {
     "_id": "transit_flight_anc_otz",
@@ -161,7 +203,13 @@
       "cost": null,
       "confirmationNumber": null
     },
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Floatplane_Kodiak_archipelago.JPG", "credit": "NancyHeise, public domain", "caption": "Floatplane on the water in the Kodiak Archipelago" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Floatplane_Kodiak_archipelago.JPG",
+        "credit": "NancyHeise, public domain",
+        "caption": "Floatplane on the water in the Kodiak Archipelago"
+      }
+    ]
   },
   {
     "_id": "transit_flight_otz_anc",
@@ -185,7 +233,13 @@
       "cost": null,
       "confirmationNumber": null
     },
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Floatplane_Kodiak_archipelago.JPG", "credit": "NancyHeise, public domain", "caption": "Floatplane on the water in the Kodiak Archipelago" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Floatplane_Kodiak_archipelago.JPG",
+        "credit": "NancyHeise, public domain",
+        "caption": "Floatplane on the water in the Kodiak Archipelago"
+      }
+    ]
   },
   {
     "_id": "transit_anchorage_seward",
@@ -205,7 +259,13 @@
     "routeId": "route_seward_highway",
     "routeVariant": "direct",
     "booking": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Seward_Highway_ENBLA01.jpg", "credit": "Photo by Enrico Blasutto / CC BY-SA 4.0", "caption": "A pullout along the Seward Highway, about 20 km from Seward" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Seward_Highway_ENBLA01.jpg",
+        "credit": "Photo by Enrico Blasutto / CC BY-SA 4.0",
+        "caption": "A pullout along the Seward Highway, about 20 km from Seward"
+      }
+    ]
   },
   {
     "_id": "transit_seward_anchorage",
@@ -245,7 +305,13 @@
     "routeId": "route_dalton_highway",
     "routeVariant": "direct",
     "booking": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG",
+        "credit": "Photo by Mison / CC BY-SA 3.0",
+        "caption": "Dalton Highway with pipeline near Finger Mountain"
+      }
+    ]
   },
   {
     "_id": "transit_coldfoot_fairbanks_alt_flew",
@@ -265,7 +331,13 @@
     "routeId": "route_dalton_highway",
     "routeVariant": "direct",
     "booking": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG",
+        "credit": "Photo by Mison / CC BY-SA 3.0",
+        "caption": "Dalton Highway with pipeline near Finger Mountain"
+      }
+    ]
   },
   {
     "_id": "transit_coldfoot_fairbanks_alt_grounded",
@@ -285,7 +357,13 @@
     "routeId": "route_dalton_highway",
     "routeVariant": "direct",
     "booking": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG",
+        "credit": "Photo by Mison / CC BY-SA 3.0",
+        "caption": "Dalton Highway with pipeline near Finger Mountain"
+      }
+    ]
   },
   {
     "_id": "transit_anchorage_portalsworth",
@@ -353,6 +431,12 @@
     "routeId": "route_seward_highway",
     "routeVariant": "direct",
     "booking": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/AntonAndersonTunnel.jpg", "credit": "Photo by Gabor Eszes / CC BY-SA 3.0", "caption": "West portal of the Anton Anderson Memorial Tunnel" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/AntonAndersonTunnel.jpg",
+        "credit": "Photo by Gabor Eszes / CC BY-SA 3.0",
+        "caption": "West portal of the Anton Anderson Memorial Tunnel"
+      }
+    ]
   }
 ]
