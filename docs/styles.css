@@ -683,8 +683,8 @@ detail-side-sheet.open .panel {
   margin-top: 0.5rem;
 }
 
-/* inline-icon (see day-render.js's renderScenarioTabs/renderMealRow/
-   renderRouteVariantTabs) lays icon and label out horizontally instead of
+/* inline-icon (see day-render.js's renderScenarioTabs/renderRouteVariantTabs
+   and meal-row-render.js's renderMealRow) lays icon and label out horizontally instead of
    MD3's default icon-over-label stack — shared by every md-tabs group in the
    site (scenario, meal, and route-variant tabs alike), so a smaller icon
    here saves vertical space everywhere. */
@@ -760,7 +760,7 @@ detail-side-sheet.open .panel {
   color: var(--md-sys-color-on-surface-variant);
 }
 
-/* ---------- row edit button (day-render.js's renderEditButton) — a pencil
+/* ---------- row edit button (render-shared.js's renderEditButton) — a pencil
    trailing every Stay/Transit-depart/plain-Activity row, opening the
    standalone #edit-dialog popup. A .stay-block already lays out as a flex
    row with align-items: flex-start (for its own multi-line content), so the
@@ -927,7 +927,7 @@ md-icon-button[hidden] {
 }
 
 /* ---------- Meal row (day list) — a meal Activity with several still-open
-   MealOption candidates (docs/js/day-render.js's renderMealRow) renders as
+   MealOption candidates (docs/js/meal-row-render.js's renderMealRow) renders as
    its own row instead of a plain md-list-item: image + time + the currently
    selected candidate, shaped like every other activity row, plus an
    md-tabs bar underneath for switching candidates — same tabbed pattern as
@@ -1008,7 +1008,7 @@ md-icon-button[hidden] {
    #budget-view it links to, whose own summary reuses the exact same
    stat-card markup at the top plus a By Leg/By Day/By Traveler breakdown
    below (docs/js/trip-model.js's buildBudgetView, rendered by
-   day-render.js's renderBudgetStrip/renderBudgetSummary/
+   budget-render.js's renderBudgetStrip/renderBudgetSummary/
    renderBudgetBreakdowns). Each bucket gets its own container-color
    pairing, same convention as the booking chip above (booked = a filled
    container, planning = a neutral surface) — spent/pending are real

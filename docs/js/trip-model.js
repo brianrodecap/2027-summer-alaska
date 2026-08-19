@@ -631,10 +631,10 @@ export function splitOutStayBoundaries(sequence) {
 
 // A meal's own place lives on whichever MealOption is still open
 // (data-model.html) rather than activity.place. Matching the row's own live
-// tab selection needs day-render.js's activeMealOptions (it filters out
+// tab selection needs meal-row-render.js's activeMealOptions (it filters out
 // options an earlier Stay checkout already closed off — see
 // isIncludedOptionActive) to know which candidate a tab index even refers
-// to, and this module deliberately doesn't import day-render.js (which
+// to, and this module deliberately doesn't import meal-row-render.js (which
 // already imports from here) to get it — so a caller that resolved the
 // selection off the DOM against activeMealOptions itself (app.js) passes
 // the *place* it landed on directly, as mealPlaces (activityId -> place or
@@ -743,7 +743,7 @@ export function dayMapEmbedUrl(day, selections = {}) {
 }
 
 // ---------- day full-route link — a second, non-embedded map action shown
-// alongside dayMapEmbedUrl's iframe (see day-render.js's
+// alongside dayMapEmbedUrl's iframe (see day-map-render.js's
 // renderDayMapSheetBody). Targets the real Directions URL API
 // (https://developers.google.com/maps/documentation/urls/get-started#directions-action)
 // instead of the classic keyless embed above: verified by hand that a
@@ -1191,7 +1191,7 @@ export function buildBudgetView(trip, legs, days, stays, transits, activities) {
 //    (data-model.html's Activity entity), the same Trip.travelers[].id link
 //    Package.travelers uses. null (the default on every activity today) means
 //    either everyone's doing it or it just isn't decided — either way,
-//    nothing to flag, so no traveler chips render at all (see day-render.js).
+//    nothing to flag, so no traveler chips render at all (see render-shared.js).
 //
 // Resolved once here rather than re-derived per render, per Guiding
 // principle 03 — the same "derive, don't store" reasoning

@@ -2,7 +2,13 @@ import '@material/web/all.js';
 import { styles as typescaleStyles } from '@material/web/typography/md-typescale-styles.js';
 import './side-sheet.js';
 import { loadTripsIndex, loadTripData, buildTripView, formatTripDateChip, tripDayCount } from './trip-model.js';
-import { renderLegCard, renderDayBlock, renderLegDialogBody, renderActivityDetailBody, renderDayMapSheetBody, activityDetailTitle, placeTypeIcon, syncMealRow, activeMealOptions, firstImage, wireScenarioFollowers, renderBudgetStrip, renderBudgetSummary, renderBudgetBreakdowns, wireTabs } from './day-render.js';
+import { renderLegCard, renderLegDialogBody } from './leg-render.js';
+import { renderDayBlock, wireScenarioFollowers, wireTabs } from './day-render.js';
+import { renderDayMapSheetBody } from './day-map-render.js';
+import { renderActivityDetailBody, activityDetailTitle, placeTypeIcon } from './activity-detail-render.js';
+import { syncMealRow, activeMealOptions } from './meal-row-render.js';
+import { firstImage } from './render-shared.js';
+import { renderBudgetStrip, renderBudgetSummary, renderBudgetBreakdowns } from './budget-render.js';
 import { hydratePlaceDetails } from './places.js';
 import { renderDatePicker } from './date-picker.js';
 import { buildFilterGroups, renderFilterMenuItems, applyFilters } from './filters.js';
@@ -107,7 +113,7 @@ function openLegDialog(legId) {
 }
 
 // A meal row's header can only open whichever candidate its own tabs
-// currently have selected (see day-render.js's renderMealRow/syncMealRow) —
+// currently have selected (see meal-row-render.js's renderMealRow/syncMealRow) —
 // read that same selection back off the row's DOM rather than always
 // defaulting to the first option.
 function selectedMealOption(activity, day, rowEl) {
@@ -179,7 +185,7 @@ async function openActivity(activity, selectedOption = null) {
 // around the same renderEditForm/applyEdit pair: the side sheet's own edit
 // button (Activities only — see openActivity above) swaps its body in place
 // for enterActivityEditMode; every row's pencil button (Activity, Stay, and
-// Transit — see day-render.js's renderEditButton) opens the lighter-weight
+// Transit — see render-shared.js's renderEditButton) opens the lighter-weight
 // #edit-dialog popup instead, the only edit entry point Stay/Transit have
 // since neither opens a side sheet at all. Neither surface writes back to
 // the *.json files this data loaded from — there's no backend to write to
@@ -263,7 +269,7 @@ function enterActivityEditMode(activity) {
 
 // The standalone popup — the only edit entry point for Stay/Transit, and a
 // quicker alternative to the sheet for a plain Activity too (see
-// day-render.js's renderEditButton on every row).
+// render-shared.js's renderEditButton on every row).
 let editTarget = null;
 
 function openEditPopup(kind, id) {
@@ -323,7 +329,7 @@ dayListEl.addEventListener('click', (event) => {
   sideSheet.open(`Map — ${day.dateLabel}`, renderDayMapSheetBody(day, selections));
 });
 
-// Every row's pencil button (day-render.js's renderEditButton) is a sibling
+// Every row's pencil button (render-shared.js's renderEditButton) is a sibling
 // of whatever interactive element the row itself has (its md-list-item, its
 // .stay-block), never nested inside one — so this never conflicts with the
 // activity-open listener above; clicking a pencil doesn't also open the row
@@ -337,7 +343,7 @@ dayListEl.addEventListener('click', (event) => {
   else if (editTransitId) openEditPopup('transit', editTransitId);
 });
 
-// A meal row's own md-tabs (see day-render.js's renderMealRow) switches which
+// A meal row's own md-tabs (see meal-row-render.js's renderMealRow) switches which
 // MealOption candidate that row displays — a separate concern from the click
 // listener above, which only opens the side sheet via the row's header button.
 dayListEl.addEventListener('change', (event) => {
@@ -366,7 +372,7 @@ document.querySelector('#hero-back').addEventListener('click', () => {
   location.hash = parts.length > 1 ? `#/${parts[0]}` : '#/';
 });
 
-// The Overview stat strip (day-render.js's renderBudgetStrip) is itself a
+// The Overview stat strip (budget-render.js's renderBudgetStrip) is itself a
 // button — a teaser for the same numbers the dedicated Budget page shows in
 // full, same "click the summary to drill in" convention as a Leg card.
 budgetStripMount.addEventListener('click', (event) => {
@@ -423,7 +429,7 @@ filterMenu.addEventListener('click', (event) => {
 // the filter nav (see index.html), separate from the filter menu since it
 // isn't a filter. Month-at-a-time state (pickerYear/pickerMonth) lives here,
 // not in date-picker.js, since renderDatePicker is a pure render function
-// like everything in day-render.js — only the caller knows which month is
+// like every render function in this codebase's render-*.js modules — only the caller knows which month is
 // currently showing. ----------
 
 let pickerYear = null;

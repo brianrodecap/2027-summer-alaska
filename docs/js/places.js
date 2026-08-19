@@ -11,7 +11,7 @@
 // photos, no rating/reviews — those are Enterprise+Atmosphere and add review
 // display/attribution obligations on top of the extra cost).
 import { PLACES_API_KEY } from './places-config.js';
-import { renderPlaceDetails, renderPlaceUnavailable } from './day-render.js';
+import { renderPlaceDetails, renderPlaceUnavailable } from './activity-detail-render.js';
 
 // No "places." prefix here (unlike Text Search) — Place Details returns a
 // single Place object, not a list.

@@ -925,8 +925,8 @@
     "endAt": "2027-06-28T15:20",
     "timeLabel": null,
     "order": null,
-    "priority": null,
-    "text": "Denali Visitor Center exhibits",
+    "priority": "high",
+    "text": "Denali Visitor Center",
     "place": {
       "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
       "label": "Denali Visitor Center",
