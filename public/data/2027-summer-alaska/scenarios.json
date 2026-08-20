@@ -3,7 +3,7 @@
     "_id": "scenario_jun27_ideal",
     "legId": "leg_parks",
     "tone": "ideal",
-    "label": "Ideal — flight goes",
+    "label": "Flight goes",
     "icon": "flight_takeoff",
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_and_Range_from_Air_with_Plane_Wing_%287065283015%29.jpg", "credit": "Photo by Jacob W. Frank / NPS, CC BY 2.0", "caption": "Flightseeing plane wing over Denali and the Alaska Range" } ]
   },
@@ -11,7 +11,7 @@
     "_id": "scenario_jun27_alt",
     "legId": "leg_parks",
     "tone": "alternate",
-    "label": "Alternate — flight weathered out",
+    "label": "Grounded",
     "icon": "cloud",
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_in_the_clouds._NPS-Jason_Bennett_%2818062718644%29.jpg", "credit": "Photo by Jason Bennett / NPS, CC BY 2.0", "caption": "Denali's summit wrapped in thick cloud cover" } ]
   },
@@ -19,7 +19,7 @@
     "_id": "scenario_jun30_ideal",
     "legId": "leg_parks",
     "tone": "ideal",
-    "label": "Ideal — flight goes",
+    "label": "Flight goes",
     "icon": "flight_takeoff",
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg", "credit": "U.S. Fish and Wildlife Service, public domain", "caption": "Aerial view of the Brooks Range, Gates of the Arctic" } ]
   },
@@ -27,7 +27,7 @@
     "_id": "scenario_jun30_alt",
     "legId": "leg_parks",
     "tone": "alternate",
-    "label": "Alternate — flight weathered out",
+    "label": "Grounded",
     "icon": "cloud",
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg", "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0", "caption": "Drizzly, low-cloud day in the Central Brooks Range" } ]
   },
@@ -71,7 +71,7 @@
     "_id": "scenario_jul6_ideal",
     "legId": "leg_parks",
     "tone": "ideal",
-    "label": "Ideal — flight goes",
+    "label": "Flight goes",
     "icon": "flight_takeoff",
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg", "credit": "Photo by LCGS Russ / CC BY-SA 3.0", "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park" } ]
   },
@@ -79,7 +79,7 @@
     "_id": "scenario_jul6_alt",
     "legId": "leg_parks",
     "tone": "alternate",
-    "label": "Alternate — flight weathered out",
+    "label": "Grounded",
     "icon": "cloud",
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg", "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0", "caption": "Drizzly, low-cloud day in the Central Brooks Range" } ]
   },
@@ -97,7 +97,7 @@
     "_id": "scenario_jul7_bonus_alt",
     "legId": "leg_parks",
     "tone": "alternate",
-    "label": "Bonus flight weathered out",
+    "label": "Bonus flight grounded",
     "icon": "cloud",
     "followsScenarioDate": "2027-07-06",
     "requiresScenarioId": ["scenario_jul6_ideal"],
@@ -127,7 +127,7 @@
     "_id": "scenario_jul8_ideal",
     "legId": "leg_parks",
     "tone": "ideal",
-    "label": "Ideal — flight goes",
+    "label": "Flight goes",
     "icon": "flight_takeoff",
     "followsScenarioDate": "2027-07-07",
     "requiresScenarioId": ["scenario_jul7_bonus_alt", "scenario_jul7_retry_ideal", "scenario_jul7_retry_alt"],
@@ -137,7 +137,7 @@
     "_id": "scenario_jul8_alt",
     "legId": "leg_parks",
     "tone": "alternate",
-    "label": "Alternate — flight weathered out",
+    "label": "Grounded",
     "icon": "cloud",
     "followsScenarioDate": "2027-07-07",
     "requiresScenarioId": ["scenario_jul7_bonus_alt", "scenario_jul7_retry_ideal", "scenario_jul7_retry_alt"],
@@ -157,7 +157,7 @@
     "_id": "scenario_jul13_ideal",
     "legId": "leg_parks",
     "tone": "ideal",
-    "label": "Ideal — flight goes",
+    "label": "Flight goes",
     "icon": "flight_takeoff",
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Grizzly_Bear_Katmai_%2830245278167%29.jpg", "credit": "Photo by Christoph Strassler / CC BY-SA 2.0", "caption": "Brown bear at Brooks Falls, Katmai National Park" } ]
   },
@@ -165,7 +165,7 @@
     "_id": "scenario_jul13_alt",
     "legId": "leg_parks",
     "tone": "alternate",
-    "label": "Alternate — flight weathered out",
+    "label": "Grounded",
     "icon": "cloud",
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg", "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0", "caption": "Drizzly, low-cloud day" } ]
   },
