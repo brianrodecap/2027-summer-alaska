@@ -1,6 +1,6 @@
 // Live drive-time lookups via the Routes API (New) computeRoutes endpoint —
-// used only by the route editor's via-stage duration lookup (edit.js's
-// viaRowNode) to fill durationMinutes in automatically from two Place IDs
+// used only by the route editor's place-entry duration lookup (edit.js's
+// placeRowNode) to fill durationMinutes in automatically from two Place IDs
 // instead of requiring a hand-typed guess. A separate Google Cloud API from
 // Places (see places-config.js's own key note): the Routes API has to be
 // enabled for PLACES_API_KEY too, or every lookup here fails closed (edit.js

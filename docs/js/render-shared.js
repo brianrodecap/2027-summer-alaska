@@ -54,7 +54,7 @@ export function renderBookingChip(booking) {
 
 // Set on an Activity (trip-model.js's transitOverlapFor) whenever its startAt
 // falls inside some Transit's own departsAt–arrivesAt span — a real stop
-// belongs on the Route as a via waypoint instead, so this renders as a
+// belongs on the Route as a waypoint instead, so this renders as a
 // visible, error-toned flag on the row rather than passing silently.
 export function renderTransitOverlapWarning(activity) {
   if (!activity.transitOverlapWarning) return '';

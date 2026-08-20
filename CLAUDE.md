@@ -25,7 +25,7 @@ A private `data/2027-summer-alaska/attachments/` at the **repo root** (outside `
 ## Working with it
 
 - Edit files directly; there is nothing to install or compile.
-- Preview locally by serving `docs/` over HTTP, e.g. `python3 -m http.server 8934 --directory docs` then opening `http://localhost:8934/`. Opening `docs/index.html` directly via a `file://` URL does *not* work — browsers block both the ES module imports (`app.js`'s `import` statements) and the `fetch()` calls that load the JSON data under CORS from the `file:` origin. The `@material/web` import map points at `https://esm.run/@material/web/`, so a network connection is required even for local preview.
+- Preview locally by serving `docs/` over HTTP, e.g. `python3 -m http.server 8934 --directory docs` then opening `http://localhost:8934/`. Opening `docs/index.html` directly via a `file://` URL does *not* work — browsers block both the ES module imports (`app.js`'s `import` statements) and the `fetch()` calls that load the JSON data under CORS from the `file:` origin. The `@material/web` import map points at a version-pinned `https://esm.run/@material/web@<version>/` (not the unversioned `latest` alias, which could otherwise resolve to a different release between one page load and the next), so a network connection is required even for local preview.
 - Roboto Serif and Material Symbols Outlined are loaded from Google Fonts via `<link>` tags in `<head>` — no local font files.
 - Pushing to `main` updates the live GitHub Pages site directly; there is no staging/preview environment.
 

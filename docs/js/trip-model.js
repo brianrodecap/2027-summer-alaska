@@ -295,11 +295,11 @@ function transitSortKey(transit, dayStart) {
   return transit.departsAt < dayStart ? dayStart : transit.departsAt;
 }
 
-// A stage carries no timestamp of its own — routes.json's via[] is dateless
-// reference geography — but each entry does carry its own durationMinutes
-// (the drive time to reach it from whichever via point, or Depart, came
-// before), so a stage's place in the day's real chronological order is
-// computed by walking that variant's via[] and accumulating those durations
+// A stage carries no timestamp of its own — routes.json's places[] is
+// dateless reference geography — but each entry does carry its own
+// durationMinutes (the drive time to reach it from whichever place, or
+// Depart, came before), so a stage's place in the day's real chronological
+// order is computed by walking that variant's places[] and accumulating those durations
 // from the Transit's departsAt (see stageTimesForVariant, below, called from
 // resolveTransitRoute where the Transit's real in-transit Activities are
 // available to fold in). That's what lets a real, timed Activity reached
@@ -344,11 +344,20 @@ const DEFAULT_MEAL_DURATION_MINUTES = {
 };
 const FALLBACK_MEAL_DURATION_MINUTES = 30;
 
-function activityEffectiveEndMs(activity) {
+// formatOverrides (activityId -> diningFormat) lets a caller stand in
+// whichever MealOption candidate is actually live-selected in the day view
+// right now — day-render.js's meal-row tabs — in place of the model's own
+// stored default (activity.diningFormat, or its first still-open option).
+// Empty for the one-time build at page load (buildTripView), when nothing's
+// been picked yet; populated by app.js's recomputeRoutedTransits whenever a
+// meal row's own tabs change, so a lunch stop's picked format (sit-down vs.
+// drive-thru) actually reaches the drive-time walk below instead of only
+// changing that row's own display.
+function activityEffectiveEndMs(activity, formatOverrides) {
   if (activity.endAt) return wallClockMs(activity.endAt);
   const startMs = wallClockMs(activity.startAt);
   if (!activity.mealType) return startMs;
-  const format = activity.diningFormat ?? activity.options?.[0]?.diningFormat ?? null;
+  const format = formatOverrides?.get(activity._id) ?? activity.diningFormat ?? activity.options?.[0]?.diningFormat ?? null;
   const minutes = DEFAULT_MEAL_DURATION_MINUTES[format] ?? FALLBACK_MEAL_DURATION_MINUTES;
   return startMs + minutes * 60000;
 }
@@ -366,9 +375,9 @@ function activityEffectiveEndMs(activity) {
 // estimated drive time both actually elapse, instead of one silently
 // swallowing the other.
 //
-// The walk doesn't stop at the last named via — variant.finalLegMinutes
+// The walk doesn't stop at the last named place — variant.finalLegMinutes
 // (Route entity, data-model.html) is appended as one more, unlabeled
-// segment covering the drive from the last via (or Depart) to the route's
+// segment covering the drive from the last place (or Depart) to the route's
 // own destination, so the walk's own final clock position is the Transit's
 // real arrival time given everything it actually passed along the way —
 // not clamped to whatever arrivesAt happened to be authored. That's what
@@ -376,10 +385,10 @@ function activityEffectiveEndMs(activity) {
 // routed drive (see resolveTransitRoute, below); arrivesAt only stays a
 // flatly authored fact for a mode with a genuine external schedule (a
 // flight, a ferry) or a Transit with no route to walk at all.
-function stageTimesForVariant(variant, transit, inTransitActivities) {
+function stageTimesForVariant(variant, transit, inTransitActivities, formatOverrides) {
   let clockMs = wallClockMs(transit.departsAt);
   const queue = [...inTransitActivities];
-  const segments = [...variant.via, { finalLeg: true, durationMinutes: variant.finalLegMinutes ?? 0 }];
+  const segments = [...variant.places, { finalLeg: true, durationMinutes: variant.finalLegMinutes ?? 0 }];
   const stages = [];
   for (const seg of segments) {
     let remainingMs = (seg.durationMinutes ?? 0) * 60000;
@@ -389,7 +398,7 @@ function stageTimesForVariant(variant, transit, inTransitActivities) {
       if (next && nextStartMs >= clockMs && nextStartMs <= clockMs + remainingMs) {
         const driveMs = nextStartMs - clockMs;
         remainingMs -= driveMs;
-        clockMs = activityEffectiveEndMs(next);
+        clockMs = activityEffectiveEndMs(next, formatOverrides);
         queue.shift();
       } else {
         clockMs += remainingMs;
@@ -718,16 +727,16 @@ function sequenceMapLabels(sequence, mealPlaces) {
     // as the map's actual start/end.
     if (item.type === 'stay' && item.relation !== 'Staying' && item.stay.lodging?.name) labels.push(item.stay.lodging.name);
     else if (item.type === 'transit-boundary') labels.push((item.phase === 'depart' ? item.transit.from : item.transit.to).label);
-    // transit-stage (a route's interim via-points) is deliberately skipped —
-    // not a data-quality concern (every via now resolves to a real Place ID
-    // or explicit coordinates; see data-model.html's Route entity), but
+    // transit-stage (a route's interim places) is deliberately skipped —
+    // not a data-quality concern (every place now resolves to a real Place
+    // ID or explicit coordinates; see data-model.html's Route entity), but
     // because dayMapEmbedUrl below only ever draws a start→end route: this
     // same keyless embed endpoint mis-plots the trip when fed waypoints via
     // daddr's "+to:" chaining, even when every stop is individually
     // unambiguous — it's the waypoint-chaining mechanism itself that's
     // unreliable, verified by hand against this trip's own routes, not the
     // input data. The resolved place/coordinates are still there on each
-    // Route's own via[] (routes.json) if a future page ever needs to plot a
+    // Route's own places[] (routes.json) if a future page ever needs to plot a
     // stage on its own — stageTimesForVariant above just doesn't carry them
     // through to routeStageItems, since nothing reads them yet.
     else if (item.type === 'section') {
@@ -971,16 +980,17 @@ function buildDay(date, legs, stays, transits, activitiesByDate, scenariosById, 
 // ---------- Route resolution — Route (docs/data/routes.json) is reference
 // data a Transit merely points at via routeId/routeVariant (see
 // data-model.html); nothing here is stored back onto the Transit itself.
-// A variant's via[] is a real, physically-ordered path — unlike Activity,
-// nothing about a via point has (or could have) its own timestamp, so array
-// order is the correct and only encoding of "which point comes before
-// which"; each entry's own durationMinutes (the drive time from whichever
-// via point came before it) is what turns that order into actual estimated
-// clock times, in stageTimesForVariant (above). Every entry always resolves
-// to a real geo-point (place.id, or coordinates as the fallback — see
-// validateRoutes, below) and carries a kind of 'waypoint' or 'override'.
-// stages keeps every entry, in that same sequence, reduced to
-// label/note/key.
+// A variant's places[] is a real, physically-ordered sequence — unlike
+// Activity, nothing about a place entry has (or could have) its own
+// timestamp, so array order is the correct and only encoding of "which
+// place comes before which"; each entry's own durationMinutes (the drive
+// time from whichever place came before it) is what turns that order into
+// actual estimated clock times, in stageTimesForVariant (above). Every
+// entry always resolves to a real geo-point (place.id, or coordinates as
+// the fallback — see validateRoutes, below) and carries a kind of
+// 'waypoint' (a real, individually-resolvable stop) or 'via' (a
+// pass-through/steering point, no stop). stages keeps every entry, in that
+// same sequence, reduced to label/note/key.
 //
 // A Route with only one variant ("the only practical route") is never a real
 // choice, so resolveTransitRoute still exposes every variant (never just the
@@ -1022,41 +1032,41 @@ function transitOverlapFor(activity, transits) {
   return transits.find((t) => activityFallsWithinTransit(activity, t)) ?? null;
 }
 
-// Every via entry must carry a kind of 'waypoint' or 'override' (never a
-// bare "you're now on Highway X" placeholder — that belongs in the variant's
-// own label), resolve to a real geo-point: place.id, or coordinates only as
-// the fallback for the rare point Google's Places index has no entry for —
-// never a bare label with neither (see data-model.html's Route entity) —
-// and carry a non-negative durationMinutes. This isn't a style rule: this
-// trip's data once reused the same whole-highway Place ID as a via on two
-// Route documents covering different 100+-mile stretches of the same
-// highway, and because a via's place feeds straight into a live
-// geocoder/Directions URL (dayMapEmbedUrl, dayFullRouteUrl), that silently
-// sent a real "open in Google Maps" link on an 8-hour detour. The
-// non-negative durationMinutes check guards a second, subtler way order
-// could break: a route is an ordered list — variant.via.map in
-// stageTimesForVariant (above) always walks it in that authored order — but
-// each stage's own computed key still gets sorted alongside every other
-// event in the day by mergeByTime. That sort only ever preserves the via
-// list's authored order because a non-negative duration keeps
-// stageTimesForVariant's running clock non-decreasing as it walks via[]; a
-// negative durationMinutes would make a stage's key land earlier than the
-// one before it, and the sort would then actually reorder it out of its
-// authored position. Checked once at load time, same reasoning as
-// validateActivityTiming above: a bad via should fail loudly here, not
-// silently mis-route — or misorder — someone in the field.
-const VIA_KINDS = new Set(['waypoint', 'override']);
+// Every place entry must carry a kind of 'waypoint' or 'via' (never a bare
+// "you're now on Highway X" placeholder — that belongs in the variant's own
+// label), resolve to a real geo-point: place.id, or coordinates only as the
+// fallback for the rare point Google's Places index has no entry for — never
+// a bare label with neither (see data-model.html's Route entity) — and carry
+// a non-negative durationMinutes. This isn't a style rule: this trip's data
+// once reused the same whole-highway Place ID as a place entry on two Route
+// documents covering different 100+-mile stretches of the same highway, and
+// because a place entry's place feeds straight into a live geocoder/
+// Directions URL (dayMapEmbedUrl, dayFullRouteUrl), that silently sent a
+// real "open in Google Maps" link on an 8-hour detour. The non-negative
+// durationMinutes check guards a second, subtler way order could break: a
+// route is an ordered list — variant.places.map in stageTimesForVariant
+// (above) always walks it in that authored order — but each stage's own
+// computed key still gets sorted alongside every other event in the day by
+// mergeByTime. That sort only ever preserves the places list's authored
+// order because a non-negative duration keeps stageTimesForVariant's running
+// clock non-decreasing as it walks places[]; a negative durationMinutes
+// would make a stage's key land earlier than the one before it, and the
+// sort would then actually reorder it out of its authored position. Checked
+// once at load time, same reasoning as validateActivityTiming above: a bad
+// place entry should fail loudly here, not silently mis-route — or
+// misorder — someone in the field.
+const PLACE_KINDS = new Set(['waypoint', 'via']);
 
 function validateRoutes(routes) {
   const problems = [];
   for (const route of routes ?? []) {
     for (const variant of route.variants ?? []) {
-      for (const via of variant.via ?? []) {
-        const where = `${route._id} (${variant.tone}) via ${via.place?.label ?? via.label ?? '?'}`;
-        if (!VIA_KINDS.has(via.kind)) problems.push(`${where}: kind must be 'waypoint' or 'override', got ${JSON.stringify(via.kind)}`);
-        if (!via.place?.id && !via.coordinates) problems.push(`${where}: no resolvable place.id or coordinates`);
-        if (typeof via.durationMinutes !== 'number' || via.durationMinutes < 0) {
-          problems.push(`${where}: durationMinutes must be a non-negative number, got ${JSON.stringify(via.durationMinutes)}`);
+      for (const place of variant.places ?? []) {
+        const where = `${route._id} (${variant.tone}) place ${place.place?.label ?? place.label ?? '?'}`;
+        if (!PLACE_KINDS.has(place.kind)) problems.push(`${where}: kind must be 'waypoint' or 'via', got ${JSON.stringify(place.kind)}`);
+        if (!place.place?.id && !place.coordinates) problems.push(`${where}: no resolvable place.id or coordinates`);
+        if (typeof place.durationMinutes !== 'number' || place.durationMinutes < 0) {
+          problems.push(`${where}: durationMinutes must be a non-negative number, got ${JSON.stringify(place.durationMinutes)}`);
         }
       }
       if (typeof variant.finalLegMinutes !== 'number' || variant.finalLegMinutes < 0) {
@@ -1064,7 +1074,7 @@ function validateRoutes(routes) {
       }
     }
   }
-  if (problems.length) throw new Error(`Invalid Route via entries:\n${problems.join('\n')}`);
+  if (problems.length) throw new Error(`Invalid Route place entries:\n${problems.join('\n')}`);
 }
 
 // A routed drive's own arrivesAt is resolved here per variant (see
@@ -1072,18 +1082,27 @@ function validateRoutes(routes) {
 // field — a real stop along the way (a lunch break with no fixed duration
 // of its own, say) means the true arrival isn't known until the walk
 // actually accounts for it. selectedTone picks which variant's resolved
-// arrival buildTripView reads back as the Transit's own arrivesAt.
-function resolveTransitRoute(transit, routesById, activities) {
+// arrival is read back as the Transit's own arrivesAt.
+//
+// `live`, when given, is what makes this callable a second way: not just
+// once at page load (buildTripView, with no overrides — the model's own
+// authored routeVariant and every meal's own stored/first-option format),
+// but again at any later moment against whatever's actually selected in the
+// live day view right now (app.js's recomputeRoutedTransits) — a route tab
+// switched to Scenic, a meal row switched to a slower sit-down format. Same
+// walk either way; only which inputs it reads differ.
+export function resolveTransitRoute(transit, routesById, activities, live = {}) {
   if (!transit.routeId) return null;
   const route = routesById.get(transit.routeId);
   if (!route) return null;
   const inTransit = inTransitActivities(transit, activities);
   const variants = route.variants.map((v) => {
-    const { stages, arrivesAt } = stageTimesForVariant(v, transit, inTransit);
+    const { stages, arrivesAt } = stageTimesForVariant(v, transit, inTransit, live.formatOverrides);
     return { tone: v.tone, label: `${v.tone[0].toUpperCase()}${v.tone.slice(1)}`, stages, arrivesAt };
   });
   if (!variants.length) return null;
-  const selectedTone = variants.some((v) => v.tone === transit.routeVariant) ? transit.routeVariant : variants[0].tone;
+  const requestedTone = live.routeVariant ?? transit.routeVariant;
+  const selectedTone = variants.some((v) => v.tone === requestedTone) ? requestedTone : variants[0].tone;
   const resolvedArrivesAt = variants.find((v) => v.tone === selectedTone).arrivesAt;
   return { variants, selectedTone, resolvedArrivesAt };
 }
@@ -1356,5 +1375,9 @@ export function buildTripView(data) {
 
   const budget = buildBudgetView(trip, legs, days, enrichedStays, routedTransits, enrichedActivities);
 
-  return { trip, days, legSummaries, activitiesById, scenariosById, budget };
+  // routesById is exposed alongside the rest of the computed view so app.js's
+  // recomputeRoutedTransits can call resolveTransitRoute again later, live,
+  // the same way buildTripView itself just did above — see that function's
+  // own note on `live`.
+  return { trip, days, legSummaries, activitiesById, scenariosById, routesById, budget };
 }

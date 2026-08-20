@@ -31,16 +31,34 @@ export function renderTimePicker(hhmm) {
   const period = hour24 >= 12 ? 'PM' : 'AM';
   const hour12 = hour24 % 12 || 12;
 
-  return toNode(`
+  // No `maxlength` here: md-outlined-text-field auto-renders a "n / max"
+  // counter as supporting text the moment maxlength is set, with no way to
+  // keep the limit without it — digitsOnly (below) enforces the 2-digit cap
+  // instead. `autofocus` is md-dialog's own documented override for native
+  // showModal()'s default first-focusable-child behavior (see dialog.js's
+  // show()), which is how the hour field ends up focused on open; the
+  // 'focus' listener then selects its text so the first keystroke replaces
+  // it rather than appending.
+  const node = toNode(`
     <div class="time-picker">
-      <md-outlined-text-field class="time-picker-hour" label="Hour" value="${pad(hour12)}" inputmode="numeric" maxlength="2"></md-outlined-text-field>
-      <span class="time-picker-colon md-typescale-display-small">:</span>
-      <md-outlined-text-field class="time-picker-minute" label="Minute" value="${pad(minute)}" inputmode="numeric" maxlength="2"></md-outlined-text-field>
+      <md-outlined-text-field class="time-picker-hour" label="Hour" value="${pad(hour12)}" inputmode="numeric" autofocus></md-outlined-text-field>
+      <span class="time-picker-colon md-typescale-headline-small">:</span>
+      <md-outlined-text-field class="time-picker-minute" label="Minute" value="${pad(minute)}" inputmode="numeric"></md-outlined-text-field>
       <md-tabs class="time-picker-period">
         <md-primary-tab${period === 'AM' ? ' active' : ''}>AM</md-primary-tab>
         <md-primary-tab${period === 'PM' ? ' active' : ''}>PM</md-primary-tab>
       </md-tabs>
     </div>`);
+
+  const hourField = node.querySelector('.time-picker-hour');
+  hourField.addEventListener('focus', () => hourField.select(), { once: true });
+  for (const field of node.querySelectorAll('.time-picker-hour, .time-picker-minute')) {
+    field.addEventListener('input', () => {
+      const digitsOnly = field.value.replace(/\D/g, '').slice(0, 2);
+      if (digitsOnly !== field.value) field.value = digitsOnly;
+    });
+  }
+  return node;
 }
 
 // Reads the picker's current fields back into 24-hour 'HH:MM' — clamps

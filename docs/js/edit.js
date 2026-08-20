@@ -5,8 +5,11 @@ import { lookupDriveMinutes } from './directions.js';
 // Editing day-list line items — Activity, Stay, and Transit — plus Route,
 // the one reusable reference-data kind (routes.json) this file also covers,
 // since a Transit's own routeId/routeVariant fields need somewhere to point.
-// A MealOption candidate stays out of scope: it's computed/nested rather
-// than a standalone line item, so it gets no edit form here. One chrome
+// An Activity's options (MealOption[]) get their own add/edit/delete/reorder
+// list right inside the Activity form — see mealOptionRowNode/
+// updateMealOptionsToggle below — rather than a separate popup, since a
+// candidate is nested under one Activity, not a standalone line item of its
+// own. One chrome
 // shell hosts renderEditForm for all four kinds: the standalone #edit-dialog
 // popup (app.js's openEditPopup), opened from a Stay/Transit row's pencil
 // button, the activity side sheet's own edit button, or the Routes list
@@ -23,15 +26,32 @@ import { lookupDriveMinutes } from './directions.js';
 // path this trip's data already went through once.
 //
 // Every Activity field is covered here *except* legId, scenarioId, images,
-// options, and includedIn — not because they're unimportant, but because
-// each is load-bearing for *where this activity even appears*: legId/
-// scenarioId decide which day/leg or which scenario-branch tab this activity
-// is filtered into (trip-model.js's buildDay/buildScenarioTracks), so a
-// casual reassignment here could silently vanish it from the day list rather
-// than move it; images is a media concern this text-first form doesn't
-// touch; options/includedIn are the MealOption-candidate machinery, already
-// out of scope per the note above. _id and order (vestigial — nothing reads
-// it) aren't real attributes to edit at all.
+// and the Activity's own top-level includedIn — not because they're
+// unimportant, but because each is load-bearing for *where this activity
+// even appears*: legId/scenarioId decide which day/leg or which
+// scenario-branch tab this activity is filtered into (trip-model.js's
+// buildDay/buildScenarioTracks), so a casual reassignment here could
+// silently vanish it from the day list rather than move it; images is a
+// media concern this text-first form doesn't touch; the top-level
+// includedIn (as opposed to a MealOption candidate's own, which *is*
+// editable — see below) only ever gets set by promoting a decided
+// candidate, never hand-authored directly. _id and order (vestigial —
+// nothing reads it) aren't real attributes to edit at all.
+//
+// options is editable, but not as an ordinary field: data-model.html's own
+// rationale for MealOption is that it and the Activity's own place/
+// diningFormat/includedIn are mutually exclusive — options holds the
+// still-undecided candidates, the other three hold the decided single
+// answer, and only one side is ever populated at a time. The "Meal
+// candidates" list below (mealOptionRowNode/updateMealOptionsToggle) is an
+// add/remove/reorder list in the same append-and-splice style as Route's own
+// variants[]/places[] (see the Route-editing section further down): the
+// Place/Dining format fields above it are labelled .decided-meal-fields and
+// hide themselves live whenever the list holds at least one row, and
+// applyActivityEdit (below) is what actually enforces the exclusivity on
+// Save — a non-empty candidate list wins outright, clearing place/
+// diningFormat/includedIn back to null on the Activity itself, exactly the
+// state data-model.html describes for "genuinely undecided."
 
 function toNode(html) {
   const template = document.createElement('template');
@@ -45,34 +65,68 @@ function field(label, name, value, type = 'text') {
 
 // ---------- date/time picker pseudo-fields — a date+time value (Activity's
 // Starts/Ends, Stay's Check in/out, Transit's Departs/Arrives) renders as two
-// independently-pickable readonly fields rather than one native
-// datetime-local input, opened via the M3 date-picker/time-picker dialogs
-// (app.js's context.openDatePicker/openTimePicker — see renderEditForm's own
-// wiring below). Splitting them matters for more than just using the real
-// pickers: an Activity's date can be set while its time is left blank, which
-// is exactly the fuzzy-timeLabel case (trip-model.js's Activity.date) — a
+// independently-pickable fields rather than one native datetime-local input,
+// opened via the M3 date-picker/time-picker dialogs (app.js's
+// context.openDatePicker/openTimePicker — see renderEditForm's own wiring
+// below). Splitting them matters for more than just using the real pickers:
+// an Activity's date can be set while its time is left blank, which is
+// exactly the fuzzy-timeLabel case (trip-model.js's Activity.date) — a
 // single combined field could never represent "this date, but only roughly
-// this time of day". Each pseudo-field's real value lives in data-value
-// ('YYYY-MM-DD' or 'HH:MM', possibly '') rather than its displayed .value
-// text, which readDateField/readTimeField (below) read back on Save. ----------
+// this time of day".
+//
+// Rendered as flat text rather than a boxed md-outlined-text-field — these
+// are always readonly, opened via a full picker dialog rather than typed
+// into directly, so a text field's box only spends space promising an
+// affordance ("type here") the field never honors. A plain div instead, with
+// the field's own label standing in as muted placeholder text until a value
+// is actually picked (matching Google Calendar's own compact date/time
+// editor), and a background tint on hover/focus as the only "this is
+// tappable" cue (see the .date-picker-field/.time-picker-field rules in
+// styles.css). Each pseudo-field's real value lives in data-value
+// ('YYYY-MM-DD' or 'HH:MM', possibly '') rather than its displayed text,
+// which readDateField/readTimeField (below) read back on Save; data-label
+// holds the field's own label so setPickerFieldValue can fall back to it as
+// the empty-value placeholder without a closure carrying it around. ----------
 
 function formatClockTime(hhmm) {
   return formatTime(`2000-01-01T${hhmm}`);
 }
 
+function pickerFieldAriaLabel(label, displayValue) {
+  return `${label}: ${displayValue || 'not set'}`;
+}
+
+// Pushes a newly-picked (or cleared) value into a date/time pseudo-field's
+// DOM — the single place that keeps data-value, the visible text, the
+// placeholder styling, and the aria-label in sync, since every picker
+// callback and shiftPairedEndDate below all need to do exactly that together.
+function setPickerFieldValue(fieldEl, rawValue, displayValue) {
+  fieldEl.dataset.value = rawValue ?? '';
+  fieldEl.querySelector('.picker-field-value').textContent = displayValue || fieldEl.dataset.label;
+  fieldEl.classList.toggle('is-placeholder', !displayValue);
+  fieldEl.setAttribute('aria-label', pickerFieldAriaLabel(fieldEl.dataset.label, displayValue));
+}
+
 function dateField(label, name, isoDate) {
-  return `<md-outlined-text-field class="edit-field date-picker-field" label="${label}" name="${name}" readonly tabindex="0" value="${isoDate ? formatDateLabel(isoDate) : ''}" data-value="${isoDate ?? ''}"><md-icon slot="leading-icon">calendar_month</md-icon></md-outlined-text-field>`;
+  const displayValue = isoDate ? formatDateLabel(isoDate) : '';
+  return `<div class="edit-field date-picker-field${displayValue ? '' : ' is-placeholder'}" name="${name}" tabindex="0" role="button" aria-label="${pickerFieldAriaLabel(label, displayValue)}" data-value="${isoDate ?? ''}" data-label="${label}">
+    <md-icon>calendar_month</md-icon>
+    <span class="picker-field-value">${displayValue || label}</span>
+  </div>`;
 }
 
 // Time, unlike date, is genuinely optional on an Activity's Starts (see the
 // file-top note above) — the trailing clear button is how it gets back to
 // blank once a time picker has set it, since there's no fuzzy-time
-// equivalent of "just delete the text" for a readonly field.
+// equivalent of "just delete the text" for a readonly field. It only shows
+// once a time is actually set — nothing to clear otherwise.
 function timeField(label, name, hhmm) {
-  return `<md-outlined-text-field class="edit-field time-picker-field" label="${label}" name="${name}" readonly tabindex="0" value="${hhmm ? formatClockTime(hhmm) : ''}" data-value="${hhmm ?? ''}">
-    <md-icon slot="leading-icon">schedule</md-icon>
-    <md-icon-button slot="trailing-icon" class="clear-time-field" aria-label="Clear ${label}"><md-icon>close</md-icon></md-icon-button>
-  </md-outlined-text-field>`;
+  const displayValue = hhmm ? formatClockTime(hhmm) : '';
+  return `<div class="edit-field time-picker-field${displayValue ? '' : ' is-placeholder'}" name="${name}" tabindex="0" role="button" aria-label="${pickerFieldAriaLabel(label, displayValue)}" data-value="${hhmm ?? ''}" data-label="${label}">
+    <md-icon>schedule</md-icon>
+    <span class="picker-field-value">${displayValue || label}</span>
+    <md-icon-button class="clear-time-field" aria-label="Clear ${label}"${hhmm ? '' : ' hidden'}><md-icon>close</md-icon></md-icon-button>
+  </div>`;
 }
 
 // One date+time pair, side by side like every other .edit-field-row —
@@ -196,11 +250,11 @@ function readBookingEdit(formEl, currentBooking) {
   };
 }
 
-// A place's Name/Place ID fields (prefixed 'place' for Activity's own place,
-// 'viaPlace' for a Route via stage — see viaRowNode) plus a type-ahead search
-// field above them, since nobody actually knows a Google Place ID by heart:
-// wirePlacePicker (below) searches live as the field is typed into and fills
-// Name/Place ID in from a picked result, but both fields stay directly
+// A place's Name field (prefixed 'place' for Activity's own place and for a
+// Route place entry — see placeRowNode) doubles as its own type-ahead search
+// box, since nobody actually knows a Google Place ID by heart: wirePlacePicker
+// (below) searches live as Name is typed into and fills Name/Place ID in from
+// a picked result. Both Name and the Place ID field below it stay directly
 // editable too — search can miss or return the wrong match (see places.js's
 // own note on why Place Details, not Text Search, is what every visitor's
 // page load normally pays for), so typing the id straight in still has to
@@ -208,14 +262,11 @@ function readBookingEdit(formEl, currentBooking) {
 function placePickerHtml(prefix, place) {
   return `
     <div class="place-picker">
-      <md-outlined-text-field class="edit-field" label="Search places" name="${prefix}Search" value="">
+      <md-outlined-text-field class="edit-field" label="Name" name="${prefix}Label" value="${place?.label ?? ''}">
         <md-icon slot="leading-icon">search</md-icon>
       </md-outlined-text-field>
       <div class="place-picker-results" hidden></div>
-      <div class="edit-field-row">
-        ${field('Name', `${prefix}Label`, place?.label)}
-        ${field('Google Place ID', `${prefix}Id`, place?.id)}
-      </div>
+      ${field('Google Place ID', `${prefix}Id`, place?.id)}
     </div>`;
 }
 
@@ -261,14 +312,15 @@ const PLACE_SEARCH_MIN_LENGTH = 3;
 // Wires every `.place-picker` block found under `root` — called once on the
 // whole form for Activity's single Place and a Route's own From/To
 // (renderEditForm/renderRouteEditForm below) and once per row for a Route
-// variant's repeatable via-stage places (viaRowNode), since a via row is
+// variant's repeatable place entries (placeRowNode), since a place row is
 // built and wired independently of the shared renderEditForm path (see the
 // file-top Route-editing scope note). Scoping every querySelector to
 // `picker` itself, rather than `root`, is what keeps this safe to call on a
-// whole multi-row route form — one via row's own search field only ever
+// whole multi-row route form — one place row's own search field only ever
 // touches that same row's own fields. `onPicked`, when given, fires after a
-// result is filled in — viaRowNode's own duration lookup is the only caller
-// that needs it; From/To and Activity's place have nothing further to do.
+// result is filled in — placeRowNode's own duration lookup is the only
+// caller that needs it; From/To and Activity's place have nothing further
+// to do.
 //
 // Type-ahead, not search-then-click: results refresh live as the field is
 // typed into (debounced below), sorted alphabetically. `requestId` guards
@@ -277,9 +329,15 @@ const PLACE_SEARCH_MIN_LENGTH = 3;
 // keystroke instead of one explicit click.
 function wirePlacePicker(root, { onPicked } = {}) {
   root.querySelectorAll('.place-picker').forEach((picker) => {
-    const searchField = picker.querySelector('[name$="Search"]');
+    // Guards against double-wiring: a meal-option row wires its own picker
+    // at creation (mirroring placeRowNode), but also sits inside the whole
+    // form's own wirePlacePicker(formNode) call at the end of
+    // renderEditForm — without this guard that outer pass would attach a
+    // second, duration-blind set of listeners on top of the row's own.
+    if (picker.dataset.wired) return;
+    picker.dataset.wired = 'true';
+    const searchField = picker.querySelector('[name$="Label"]');
     const resultsEl = picker.querySelector('.place-picker-results');
-    const labelField = picker.querySelector('[name$="Label"]');
     const idField = picker.querySelector('[name$="Id"]');
 
     let debounceTimer = null;
@@ -294,7 +352,7 @@ function wirePlacePicker(root, { onPicked } = {}) {
         if (thisRequestId !== requestId) return;
         results.sort((a, b) => a.label.localeCompare(b.label));
         renderPlaceResults(resultsEl, results, (result) => {
-          labelField.value = result.label;
+          searchField.value = result.label;
           idField.value = result.id;
           resultsEl.hidden = true;
           resultsEl.innerHTML = '';
@@ -357,6 +415,106 @@ function readTravelersEdit(formEl) {
   return ids.length ? ids : null;
 }
 
+// MealOption's own diningFormat has no 'None' value — every candidate
+// commits to one of the six real formats, unlike the Activity-level field
+// above it (which stays null until a candidate is actually promoted) — so
+// this row-level select drops DINING_FORMAT_OPTIONS' leading 'None' entry.
+const MEAL_OPTION_DINING_FORMAT_OPTIONS = DINING_FORMAT_OPTIONS.filter((o) => o.value);
+
+// includedIn (data-model.html's Ref) points at either a whole Stay's base
+// rate or one specific Package nested inside a Stay — flattened here into a
+// single select whose value encodes both the entity kind and id
+// ('stay:<id>' / 'package:<id>') as the simplest way to offer "pick which
+// real thing this is covered by" without a second entity-kind select next to
+// it. `stays` is every Stay in the trip (app.js's openEditPopup passes
+// data.stays), not scoped to this activity's own leg — a candidate can
+// reasonably point at any stay in the trip.
+function includedInOptionsFor(stays) {
+  const options = [{ value: '', label: 'Not included/covered' }];
+  for (const stay of stays) {
+    options.push({ value: `stay:${stay._id}`, label: `Included with ${stay.lodging?.name ?? stay._id}` });
+    for (const pkg of stay.packages ?? []) {
+      options.push({ value: `package:${pkg._id}`, label: `Package: ${pkg.name}` });
+    }
+  }
+  return options;
+}
+
+// One MealOption candidate row — the same bordered-card-with-reorder-buttons
+// shape as Route's own variantNode (see the Route-editing section below),
+// just for "which breakfast" instead of "which route variant": a header row
+// (Dining format select + move-up/move-down, mirroring variantNode's
+// Tone/Label + reorder) over the rest of the candidate's own fields, with a
+// bottom-right remove button matching .edit-place-row's own. Reordering
+// matters here the same way it matters for a route's variants[] — options[0]
+// is the candidate a meal row's tabs (meal-row-render.js's renderMealRow)
+// show by default, and array order is tab order — so, unlike Route's
+// append-only places[], this list gets real move-up/move-down controls, not
+// just add/remove.
+function mealOptionRowNode(option = { diningFormat: 'sit-down', place: null, includedIn: null, note: null }, stays) {
+  const includedValue = option.includedIn ? `${option.includedIn.entity}:${option.includedIn.id}` : '';
+  const row = toNode(`
+    <div class="edit-variant edit-meal-option-row">
+      <div class="edit-variant-header">
+        <div class="edit-field-row">${select('Dining format', 'optionDiningFormat', option.diningFormat, MEAL_OPTION_DINING_FORMAT_OPTIONS)}</div>
+        <div class="edit-variant-reorder">
+          <md-icon-button class="move-option-up" type="button" aria-label="Move this candidate earlier"><md-icon>arrow_upward</md-icon></md-icon-button>
+          <md-icon-button class="move-option-down" type="button" aria-label="Move this candidate later"><md-icon>arrow_downward</md-icon></md-icon-button>
+        </div>
+      </div>
+      ${placePickerHtml('place', option.place)}
+      ${select('Included in', 'optionIncludedIn', includedValue, includedInOptionsFor(stays))}
+      ${field('Note (optional)', 'optionNote', option.note)}
+      <md-icon-button class="remove-meal-option" type="button" aria-label="Remove this candidate"><md-icon>delete</md-icon></md-icon-button>
+    </div>`);
+  row.querySelector('.remove-meal-option').addEventListener('click', () => {
+    const formNode = row.closest('.edit-form');
+    row.remove();
+    updateMealOptionsToggle(formNode);
+  });
+  // Same swap-with-sibling move as variantNode's own move-up/move-down — a
+  // no-op at either end of the list.
+  row.querySelector('.move-option-up').addEventListener('click', () => {
+    const prev = row.previousElementSibling;
+    if (prev) row.parentElement.insertBefore(row, prev);
+  });
+  row.querySelector('.move-option-down').addEventListener('click', () => {
+    const next = row.nextElementSibling;
+    if (next) row.parentElement.insertBefore(next, row);
+  });
+  // Self-wired at creation (placeRowNode's own move) rather than relying on
+  // renderEditForm's later whole-form wirePlacePicker(formNode) call — that
+  // outer pass still runs (for the Activity's own top-level Place field) and
+  // would otherwise double-wire this row too, hence wirePlacePicker's own
+  // dataset.wired guard.
+  wirePlacePicker(row);
+  return row;
+}
+
+function readMealOptionRow(rowEl) {
+  const includedRaw = readField(rowEl, 'optionIncludedIn');
+  const [entity, id] = includedRaw ? includedRaw.split(':') : [null, null];
+  return {
+    diningFormat: readField(rowEl, 'optionDiningFormat') || 'sit-down',
+    place: readPlaceEdit(rowEl, null),
+    includedIn: entity && id ? { entity, id } : null,
+    note: readField(rowEl, 'optionNote') || null,
+  };
+}
+
+// The Place/Dining format fields above the candidate list (wrapped
+// .decided-meal-fields in activityFields below) only make sense while this
+// meal is actually decided — once even one candidate exists, they're dead
+// weight applyActivityEdit is about to null out on Save anyway (see that
+// function's own note), so they hide live rather than sitting there
+// misleadingly editable. Called after every add/remove, and once up front by
+// renderEditForm for whatever candidates the entity already had.
+function updateMealOptionsToggle(formNode) {
+  if (!formNode) return;
+  const hasOptions = !!formNode.querySelector('.edit-meal-option-row');
+  formNode.querySelectorAll('.decided-meal-fields').forEach((el) => { el.hidden = hasOptions; });
+}
+
 // Starts' date field carries activity.date when there's no startAt — the
 // only way a fuzzy-timeLabel activity's date ever reaches the form at all
 // (see trip-model.js's Activity.date and dateTimeFieldRow's own note above).
@@ -365,15 +523,18 @@ function readTravelersEdit(formEl) {
 function activityFields(activity, { tripTravelers } = {}) {
   const startsValue = activity.startAt ?? (activity.date ? activity.date : null);
   return `
-    ${field('What', 'text', activity.text)}
-    ${select('Status', 'status', activity.status, STATUS_OPTIONS)}
-    ${select('Priority', 'priority', activity.priority, PRIORITY_OPTIONS)}
     ${dateTimeFieldRow('starts', 'Starts date', 'Starts time', startsValue)}
     ${dateTimeFieldRow('ends', 'Ends date', 'Ends time', activity.endAt)}
     ${select('Fuzzy time (used only when Starts has a date but no time, and Ends is blank)', 'timeLabel', activity.timeLabel, TIME_LABEL_OPTIONS)}
-    ${placeFields(activity.place)}
+    <div class="decided-meal-fields">${placeFields(activity.place)}</div>
+    ${field('Description', 'text', activity.text)}
+    ${select('Status', 'status', activity.status, STATUS_OPTIONS)}
+    ${select('Priority', 'priority', activity.priority, PRIORITY_OPTIONS)}
     ${select('Meal type', 'mealType', activity.mealType, MEAL_TYPE_OPTIONS)}
-    ${select('Dining format', 'diningFormat', activity.diningFormat, DINING_FORMAT_OPTIONS)}
+    <div class="decided-meal-fields">${select('Dining format', 'diningFormat', activity.diningFormat, DINING_FORMAT_OPTIONS)}</div>
+    <div class="edit-section-label md-typescale-label-large">Meal candidates — leave empty to keep the single decided place/dining format above; add a few to leave this meal undecided among them instead</div>
+    <div class="edit-variant-list edit-meal-option-list"></div>
+    <md-text-button class="add-meal-option" type="button">Add candidate</md-text-button>
     ${travelersFields(activity, tripTravelers)}
     ${bookingFields(activity.booking)}`;
 }
@@ -402,15 +563,30 @@ function routeVariantOptionsFor(route) {
   return route ? route.variants.map((v) => ({ value: v.tone, label: v.label })) : [{ value: '', label: '—' }];
 }
 
+// A routed Transit's Arrives date/time are never authored — trip-model.js's
+// resolveTransitRoute walks the selected route variant's own drive times
+// forward from Departs (folding in any real in-transit Activity along the
+// way), and that walked result is what every reader of the Transit's
+// arrival actually sees, live, not whatever's typed here. So the raw
+// Arrives fields only matter — and only show — once no route is picked
+// (routeId blank): a mode with no route to walk (a flight, a ferry, a drive
+// with nowhere named) still needs a real authored arrival, since nothing
+// else could ever produce one. Toggled live by the routeId change listener
+// in renderEditForm, same "hide what a route now makes moot" move as that
+// listener's own route-variant repopulation.
 function transitFields(transit, { routes = [] } = {}) {
   const selectedRoute = routes.find((r) => r._id === transit.routeId) ?? null;
+  const hasRoute = !!transit.routeId;
   return `
     <div class="edit-field-row">
       ${field('From', 'fromLabel', transit.from.label)}
       ${field('To', 'toLabel', transit.to.label)}
     </div>
     ${dateTimeFieldRow('departs', 'Departs date', 'Departs time', transit.departsAt)}
-    ${dateTimeFieldRow('arrives', 'Arrives date', 'Arrives time', transit.arrivesAt)}
+    <div class="arrives-field-row"${hasRoute ? ' hidden' : ''}>
+      ${dateTimeFieldRow('arrives', 'Arrives date', 'Arrives time', transit.arrivesAt)}
+    </div>
+    <p class="edit-computed-hint md-typescale-body-small"${hasRoute ? '' : ' hidden'}>Arrival is computed from the selected route's own drive times, updated live as it's picked.</p>
     ${select('Route', 'routeId', transit.routeId, routeSelectOptions(routes))}
     ${select('Route variant', 'routeVariant', transit.routeVariant, routeVariantOptionsFor(selectedRoute))}
     ${bookingFields(transit.booking)}`;
@@ -446,8 +622,7 @@ function shiftPairedEndDate(formNode, endFieldName, oldStart, newStart) {
   if (!endField) return;
   const oldEnd = endField.dataset.value || null;
   const newEnd = oldEnd && oldStart ? addDaysStr(newStart, daysBetween(oldStart, oldEnd)) : newStart;
-  endField.dataset.value = newEnd;
-  endField.value = formatDateLabel(newEnd);
+  setPickerFieldValue(endField, newEnd, formatDateLabel(newEnd));
 }
 
 export const EDIT_ENTITY_LABEL = { activity: 'Edit activity', stay: 'Edit stay', transit: 'Edit transit', route: 'Edit route' };
@@ -455,7 +630,8 @@ export const EDIT_ENTITY_LABEL = { activity: 'Edit activity', stay: 'Edit stay',
 // `context` always carries openDatePicker/openTimePicker (app.js's dialog
 // controllers — see dateTimeFieldRow's own note above for why these live as
 // two pseudo-fields rather than a native input) for kinds: 'activity' |
-// 'stay' | 'transit'; also { tripTravelers: Trip.travelers } for 'activity',
+// 'stay' | 'transit'; also { tripTravelers: Trip.travelers, stays: data.stays }
+// for 'activity' (stays feeds mealOptionRowNode's own Included-in select),
 // or { routes: routes.json } for 'transit' (see app.js's callers). Route
 // builds its own form directly (see renderRouteEditForm below) rather than
 // going through this shared string-template path, and needs neither.
@@ -466,10 +642,9 @@ export function renderEditForm(kind, entity, context) {
 
   formNode.querySelectorAll('.date-picker-field').forEach((fieldEl) => {
     const open = () =>
-      context.openDatePicker(fieldEl.dataset.value || null, fieldEl.getAttribute('label'), (date) => {
+      context.openDatePicker(fieldEl.dataset.value || null, fieldEl.dataset.label, (date) => {
         const oldStart = fieldEl.dataset.value || null;
-        fieldEl.dataset.value = date;
-        fieldEl.value = formatDateLabel(date);
+        setPickerFieldValue(fieldEl, date, formatDateLabel(date));
         const endFieldName = PAIRED_END_DATE_FIELD[fieldEl.getAttribute('name')];
         if (endFieldName) shiftPairedEndDate(formNode, endFieldName, oldStart, date);
       });
@@ -486,29 +661,52 @@ export function renderEditForm(kind, entity, context) {
   // below — otherwise clearing the field would immediately reopen the picker
   // that just cleared it.
   formNode.querySelectorAll('.time-picker-field').forEach((fieldEl) => {
+    const clearButton = fieldEl.querySelector('.clear-time-field');
     const open = () =>
-      context.openTimePicker(fieldEl.dataset.value || null, fieldEl.getAttribute('label'), (hhmm) => {
-        fieldEl.dataset.value = hhmm;
-        fieldEl.value = formatClockTime(hhmm);
+      context.openTimePicker(fieldEl.dataset.value || null, fieldEl.dataset.label, (hhmm) => {
+        setPickerFieldValue(fieldEl, hhmm, formatClockTime(hhmm));
+        clearButton.hidden = !hhmm;
       });
     fieldEl.addEventListener('click', open);
     fieldEl.addEventListener('keydown', (event) => {
       if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); open(); }
     });
-    fieldEl.querySelector('.clear-time-field').addEventListener('click', (event) => {
+    clearButton.addEventListener('click', (event) => {
       event.stopPropagation();
-      fieldEl.dataset.value = '';
-      fieldEl.value = '';
+      setPickerFieldValue(fieldEl, '', '');
+      clearButton.hidden = true;
     });
   });
 
   const routeSelect = formNode.querySelector('[name="routeId"]');
   const variantSelect = formNode.querySelector('[name="routeVariant"]');
   if (routeSelect && variantSelect) {
+    const arrivesRow = formNode.querySelector('.arrives-field-row');
+    const computedHint = formNode.querySelector('.edit-computed-hint');
     routeSelect.addEventListener('change', () => {
       const route = (context?.routes ?? []).find((r) => r._id === routeSelect.value) ?? null;
       setSelectOptions(variantSelect, routeVariantOptionsFor(route), route?.variants[0]?.tone ?? '');
+      const hasRoute = !!route;
+      if (arrivesRow) arrivesRow.hidden = hasRoute;
+      if (computedHint) computedHint.hidden = !hasRoute;
     });
+  }
+
+  // Populates this Activity's existing options[] as candidate rows and wires
+  // "Add candidate" — the same append-a-fresh-row move as Route's own
+  // add-place/add-variant buttons — before the whole-form wirePlacePicker
+  // pass below, so each pre-existing row's own place-picker is already
+  // self-wired (mealOptionRowNode) and skipped by that pass's dataset.wired
+  // guard rather than double-wired.
+  if (kind === 'activity') {
+    const optionList = formNode.querySelector('.edit-meal-option-list');
+    const stays = context.stays ?? [];
+    (entity.options ?? []).forEach((option) => optionList.appendChild(mealOptionRowNode(option, stays)));
+    formNode.querySelector('.add-meal-option').addEventListener('click', () => {
+      optionList.appendChild(mealOptionRowNode(undefined, stays));
+      updateMealOptionsToggle(formNode);
+    });
+    updateMealOptionsToggle(formNode);
   }
   wirePlacePicker(formNode);
   return formNode;
@@ -558,9 +756,24 @@ function applyActivityEdit(activity, formEl) {
   } else {
     return 'Needs a start/end time, or a Starts date with a fuzzy time.';
   }
-  activity.place = readPlaceEdit(formEl, activity.place);
   activity.mealType = readField(formEl, 'mealType') || null;
-  activity.diningFormat = readField(formEl, 'diningFormat') || null;
+  // A non-empty candidate list always wins: options and the Activity's own
+  // place/diningFormat/includedIn are mutually exclusive (see this file's
+  // top-of-file note on MealOption), so any candidates present here mean
+  // this meal is still genuinely undecided, and the decided single-answer
+  // fields — whatever .decided-meal-fields' own inputs hold, now hidden and
+  // moot — get cleared back to null rather than saved alongside options.
+  const optionRows = [...formEl.querySelectorAll('.edit-meal-option-row')];
+  if (optionRows.length) {
+    activity.options = optionRows.map(readMealOptionRow);
+    activity.place = null;
+    activity.diningFormat = null;
+    activity.includedIn = null;
+  } else {
+    activity.options = null;
+    activity.place = readPlaceEdit(formEl, activity.place);
+    activity.diningFormat = readField(formEl, 'diningFormat') || null;
+  }
   activity.travelers = readTravelersEdit(formEl);
   activity.booking = readBookingEdit(formEl, activity.booking);
   return null;
@@ -577,16 +790,22 @@ function applyStayEdit(stay, formEl) {
   return null;
 }
 
+// A routed Transit's Arrives is never authored (see transitFields' own
+// note) — it's walked live from Departs plus the selected route variant's
+// own drive times, so the field simply stays null in the data rather than
+// carrying a guess nothing ever reads. Only a Transit with no route picked
+// still needs a real one, since nothing else could produce an arrival for it.
 function applyTransitEdit(transit, formEl) {
   const departsAt = readDateTimePair(formEl, 'departs');
-  const arrivesAt = readDateTimePair(formEl, 'arrives');
-  if (!departsAt || !arrivesAt) return 'Needs both a departure and arrival time.';
+  const routeId = readField(formEl, 'routeId') || null;
+  const arrivesAt = routeId ? null : readDateTimePair(formEl, 'arrives');
+  if (!departsAt || (!routeId && !arrivesAt)) return 'Needs both a departure and arrival time.';
   transit.departsAt = departsAt;
   transit.arrivesAt = arrivesAt;
   transit.from.label = readField(formEl, 'fromLabel') || transit.from.label;
   transit.to.label = readField(formEl, 'toLabel') || transit.to.label;
-  transit.routeId = readField(formEl, 'routeId') || null;
-  transit.routeVariant = transit.routeId ? readField(formEl, 'routeVariant') || null : null;
+  transit.routeId = routeId;
+  transit.routeVariant = routeId ? readField(formEl, 'routeVariant') || null : null;
   transit.booking = readBookingEdit(formEl, transit.booking);
   return null;
 }
@@ -594,7 +813,7 @@ function applyTransitEdit(transit, formEl) {
 // ---------- Route editing — routes.json is reference data (see the file-top
 // scope note), not one of this file's three line-item kinds, so it gets its
 // own DOM-building path instead of the string-template + toNode() pattern
-// above: a route's variants[] and each variant's via[] are both open-ended
+// above: a route's variants[] and each variant's places[] are both open-ended
 // arrays a user can add to or remove from, which a static HTML string can't
 // express — each block below is built and wired (including its own remove
 // button) as a live element instead, the same "attach a listener that closes
@@ -606,48 +825,50 @@ const ROUTE_TONE_OPTIONS = [
   { value: 'scenic', label: 'Scenic' },
 ];
 
-// A via entry's kind is never optional and never a third value — see
-// data-model.html's Route section: 'waypoint' is a real, individually-
-// resolvable stop worth calling out; 'override' exists purely to steer
-// Google's Directions API off its default path (a fork, a cutoff) and still
-// resolves to one real geo-point, never the whole highway a plain named-
-// highway via used to (mis)point at.
-const VIA_KIND_OPTIONS = [
+// A route is an ordered sequence of places (variant.places[]); each entry's
+// kind is never optional and never a third value — see data-model.html's
+// Route section: 'waypoint' is a real, individually-resolvable stop worth
+// calling out; 'via' exists purely to steer Google's Directions API off its
+// default path (a fork, a cutoff) without stopping there, and still resolves
+// to one real geo-point, never the whole highway a plain named-highway entry
+// used to (mis)point at.
+const PLACE_KIND_OPTIONS = [
   { value: 'waypoint', label: 'Waypoint — a real stop worth calling out' },
-  { value: 'override', label: 'Override — steers Directions onto the right road' },
+  { value: 'via', label: 'Via — steers Directions onto the right road, no stop' },
 ];
 
-// The Place ID a new/re-picked via stage should measure drive time *from* —
-// via[].durationMinutes is defined (data-model.html) as the drive time from
-// whichever via point, or the route's own Depart/From, came immediately
-// before it. Since via rows are append-only with no reorder (see this
+// The Place ID a new/re-picked place entry should measure drive time *from* —
+// places[].durationMinutes is defined (data-model.html) as the drive time
+// from whichever place, or the route's own Depart/From, came immediately
+// before it. Since place rows are append-only with no reorder (see this
 // function's own note below), "immediately before" is always exactly the
-// previous `.edit-via-row` sibling in the same variant's via-list — or, for
-// a variant's first stage, the route form's own From place id. Returns null
-// (silently skipping the lookup — see viaRowNode) when that anchor point has
-// no id of its own, e.g. a From that's still just a whole-city label with no
-// pinned Place.
+// previous `.edit-place-row` sibling in the same variant's place list — or,
+// for a variant's first entry, the route form's own From place id. Returns
+// null (silently skipping the lookup — see placeRowNode) when that anchor
+// point has no id of its own, e.g. a From that's still just a whole-city
+// label with no pinned Place.
 function previousStopPlaceId(row) {
   const prevRow = row.previousElementSibling;
-  if (prevRow?.classList.contains('edit-via-row')) return readField(prevRow, 'viaPlaceId') || null;
+  if (prevRow?.classList.contains('edit-place-row')) return readField(prevRow, 'placeId') || null;
   return row.closest('.edit-form')?.querySelector('[name="fromId"]')?.value || null;
 }
 
-// variant.finalLegMinutes is the one duration a via chain never covers on
-// its own — the drive time from whichever stop comes last (the variant's
-// last via, or the route's own From when it has none) to the route's actual
-// To (data-model.html: "completes the chain via[] leaves open" — without
-// it, trip-model.js's stageTimesForVariant has no way to walk all the way
-// to a real arrival). Re-run after anything that could move "whichever stop
-// comes last" — a via stage picked, added, or removed, or the route's own
-// From/To repicked — same silent-skip-on-no-anchor, silent-leave-on-failure
-// behavior previousStopPlaceId's own callers already lean on.
+// variant.finalLegMinutes is the one duration a route's place chain never
+// covers on its own — the drive time from whichever stop comes last (the
+// variant's last place, or the route's own From when it has none) to the
+// route's actual To (data-model.html: "completes the chain places[] leaves
+// open" — without it, trip-model.js's stageTimesForVariant has no way to
+// walk all the way to a real arrival). Re-run after anything that could move
+// "whichever stop comes last" — a place entry picked, added, or removed, or
+// the route's own From/To repicked — same silent-skip-on-no-anchor,
+// silent-leave-on-failure behavior previousStopPlaceId's own callers already
+// lean on.
 async function refreshFinalLeg(variantEl) {
   const formEl = variantEl.closest('.edit-form');
   const toId = formEl?.querySelector('[name="toId"]')?.value || null;
   if (!toId) return;
-  const lastVia = variantEl.querySelector('.edit-via-list')?.lastElementChild;
-  const originId = lastVia ? readField(lastVia, 'viaPlaceId') || null : formEl?.querySelector('[name="fromId"]')?.value || null;
+  const lastStop = variantEl.querySelector('.edit-place-list')?.lastElementChild;
+  const originId = lastStop ? readField(lastStop, 'placeId') || null : formEl?.querySelector('[name="fromId"]')?.value || null;
   if (!originId) return;
   try {
     const minutes = await lookupDriveMinutes(originId, toId);
@@ -658,26 +879,26 @@ async function refreshFinalLeg(variantEl) {
   }
 }
 
-// One via stage. via[] order is the authoritative stage sequence —
-// trip-model.js's stageTimesForVariant walks it start to end summing
-// durationMinutes to place each stage in time — so this is deliberately an
-// append-only list with a per-row delete button (matching the rest of this
-// file's "no reorder UI, no confirmation" editing style) rather than a
-// reorderable one; fixing a mis-ordered via today means deleting and
-// re-adding it in the right spot, the same "just redo it" cost a mis-ordered
-// row anywhere else in this editor already has.
-function viaRowNode(via = { kind: 'waypoint', place: {}, durationMinutes: 0 }) {
+// One place entry (a waypoint or a via). places[] order is the authoritative
+// stage sequence — trip-model.js's stageTimesForVariant walks it start to
+// end summing durationMinutes to place each stage in time — so this is
+// deliberately an append-only list with a per-row delete button (matching
+// the rest of this file's "no reorder UI, no confirmation" editing style)
+// rather than a reorderable one; fixing a mis-ordered entry today means
+// deleting and re-adding it in the right spot, the same "just redo it" cost
+// a mis-ordered row anywhere else in this editor already has.
+function placeRowNode(entry = { kind: 'waypoint', place: {}, durationMinutes: 0 }) {
   const row = toNode(`
-    <div class="edit-via-row">
-      ${select('Kind', 'viaKind', via.kind, VIA_KIND_OPTIONS)}
-      ${placePickerHtml('viaPlace', via.place)}
+    <div class="edit-place-row">
+      ${select('Kind', 'placeKind', entry.kind, PLACE_KIND_OPTIONS)}
+      ${placePickerHtml('place', entry.place)}
       <div class="edit-field-row">
-        ${field('Minutes from previous stop', 'viaDuration', via.durationMinutes, 'number')}
-        ${field('Note (optional)', 'viaNote', via.note)}
+        ${field('Minutes from previous stop', 'placeDuration', entry.durationMinutes, 'number')}
+        ${field('Note (optional)', 'placeNote', entry.note)}
       </div>
-      <md-icon-button class="remove-via-row" aria-label="Remove this stage"><md-icon>delete</md-icon></md-icon-button>
+      <md-icon-button class="remove-place-row" aria-label="Remove this stage"><md-icon>delete</md-icon></md-icon-button>
     </div>`);
-  row.querySelector('.remove-via-row').addEventListener('click', () => {
+  row.querySelector('.remove-place-row').addEventListener('click', () => {
     const variantEl = row.closest('.edit-variant');
     row.remove();
     if (variantEl) refreshFinalLeg(variantEl);
@@ -689,15 +910,15 @@ function viaRowNode(via = { kind: 'waypoint', place: {}, durationMinutes: 0 }) {
   // API round-trip to. Failure (API not enabled, no drivable route, offline)
   // just leaves the duration field exactly as it was — still hand-editable,
   // the same fallback the place picker itself already leans on. Picking this
-  // row's place can also make it the variant's new *last* stage (if it's the
-  // last via row), so the variant's own finalLegMinutes gets re-measured too.
+  // row's place can also make it the variant's new *last* stop (if it's the
+  // last place row), so the variant's own finalLegMinutes gets re-measured too.
   wirePlacePicker(row, {
     onPicked: async (result) => {
       const originId = previousStopPlaceId(row);
       if (originId) {
         try {
           const minutes = await lookupDriveMinutes(originId, result.id);
-          if (minutes != null) row.querySelector('[name="viaDuration"]').value = minutes;
+          if (minutes != null) row.querySelector('[name="placeDuration"]').value = minutes;
         } catch {
           // leave the duration field alone — see the comment above.
         }
@@ -709,56 +930,79 @@ function viaRowNode(via = { kind: 'waypoint', place: {}, durationMinutes: 0 }) {
   return row;
 }
 
-function readViaRow(rowEl) {
-  const durationMinutes = Number(readField(rowEl, 'viaDuration'));
-  const note = readField(rowEl, 'viaNote');
+function readPlaceRow(rowEl) {
+  const durationMinutes = Number(readField(rowEl, 'placeDuration'));
+  const note = readField(rowEl, 'placeNote');
   return {
-    kind: readField(rowEl, 'viaKind') || 'waypoint',
-    place: { id: readField(rowEl, 'viaPlaceId') || null, label: readField(rowEl, 'viaPlaceLabel') },
+    kind: readField(rowEl, 'placeKind') || 'waypoint',
+    place: { id: readField(rowEl, 'placeId') || null, label: readField(rowEl, 'placeLabel') },
     durationMinutes: Number.isFinite(durationMinutes) ? durationMinutes : -1,
     ...(note ? { note } : {}),
   };
 }
 
 // One route variant (a "direct"/"scenic" alternative) — its own tone/label
-// fields, its own list of via stages, and its own finalLegMinutes (the drive
-// time via[] alone never covers: from the last stage — a via, or the
-// route's own From when there are none — to the route's actual To; see
-// data-model.html and refreshFinalLeg above). Same append-only, no-reorder
-// convention as viaRowNode above; a route with zero variants is rejected at
-// Save (see applyRouteEdit) since Transit.routeVariant always needs
-// something real to point at.
-function variantNode(variant = { tone: 'direct', label: '', via: [], finalLegMinutes: 0 }) {
+// fields, its own ordered sequence of places, and its own finalLegMinutes
+// (the drive time places[] alone never covers: from the last entry — a
+// waypoint or a via — or the route's own From when there are none — to the
+// route's actual To; see data-model.html and refreshFinalLeg above). A
+// route with zero variants is rejected at Save (see applyRouteEdit) since a
+// Transit pointing at this route always needs a real variant to select.
+//
+// Unlike placeRowNode's places[] (still append-only — see that function's
+// own note), variants[] order is user-reorderable via the move-up/move-down
+// buttons below: it's not just cosmetic, since day-render.js's
+// renderRouteVariantTabs and trip-model.js's dayFullRouteStops both read
+// route.variants in its own array order to decide which tab renders first
+// (and, before this, which tab a reader lands on by default).
+function variantNode(variant = { tone: 'direct', label: '', places: [], finalLegMinutes: 0 }) {
   const node = toNode(`
     <div class="edit-variant">
-      <div class="edit-field-row">
-        ${select('Tone', 'variantTone', variant.tone, ROUTE_TONE_OPTIONS)}
-        ${field('Label', 'variantLabel', variant.label)}
+      <div class="edit-variant-header">
+        <div class="edit-field-row">
+          ${select('Tone', 'variantTone', variant.tone, ROUTE_TONE_OPTIONS)}
+          ${field('Label', 'variantLabel', variant.label)}
+        </div>
+        <div class="edit-variant-reorder">
+          <md-icon-button class="move-variant-up" type="button" aria-label="Move this variant earlier"><md-icon>arrow_upward</md-icon></md-icon-button>
+          <md-icon-button class="move-variant-down" type="button" aria-label="Move this variant later"><md-icon>arrow_downward</md-icon></md-icon-button>
+        </div>
       </div>
-      <div class="edit-section-label md-typescale-label-large">Via stages</div>
-      <div class="edit-via-list"></div>
+      <div class="edit-section-label md-typescale-label-large">Places</div>
+      <div class="edit-place-list"></div>
       <div class="edit-variant-actions">
-        <md-text-button class="add-via-stage" type="button">Add stage</md-text-button>
+        <md-text-button class="add-route-place" type="button">Add place</md-text-button>
         <md-text-button class="remove-variant" type="button">Remove this variant</md-text-button>
       </div>
-      ${field('Final leg — minutes from the last stage to the route’s To', 'finalLegMinutes', variant.finalLegMinutes, 'number')}
+      ${field('Final leg — minutes from the last stop to the route’s To', 'finalLegMinutes', variant.finalLegMinutes, 'number')}
     </div>`);
-  const viaList = node.querySelector('.edit-via-list');
-  (variant.via ?? []).forEach((v) => viaList.appendChild(viaRowNode(v)));
-  node.querySelector('.add-via-stage').addEventListener('click', () => viaList.appendChild(viaRowNode()));
+  const placeList = node.querySelector('.edit-place-list');
+  (variant.places ?? []).forEach((p) => placeList.appendChild(placeRowNode(p)));
+  node.querySelector('.add-route-place').addEventListener('click', () => placeList.appendChild(placeRowNode()));
   node.querySelector('.remove-variant').addEventListener('click', () => node.remove());
+  // Swap this whole variant card with whichever sibling it's moving past —
+  // a no-op at either end of the list, since previousElementSibling/
+  // nextElementSibling is simply null there.
+  node.querySelector('.move-variant-up').addEventListener('click', () => {
+    const prev = node.previousElementSibling;
+    if (prev) node.parentElement.insertBefore(node, prev);
+  });
+  node.querySelector('.move-variant-down').addEventListener('click', () => {
+    const next = node.nextElementSibling;
+    if (next) node.parentElement.insertBefore(next, node);
+  });
   return node;
 }
 
 // From/To get the same search-or-type place picker Activity's own place and
-// each via stage use — a plain label-only pair before this could never carry
-// a Place ID at all, which meant a route's first via stage could never look
-// its own duration up (see previousStopPlaceId above): there was no
-// resolvable anchor point to measure from. The id stays optional, same as
-// the read-only data today (data-model.html: from/to are "often a whole
-// city/region" with no pinned Place), so leaving it blank is still valid —
-// it just means the first via stage's duration has to be hand-typed, the
-// same fallback every place picker already has.
+// each route place entry use — a plain label-only pair before this could
+// never carry a Place ID at all, which meant a route's first place entry
+// could never look its own duration up (see previousStopPlaceId above):
+// there was no resolvable anchor point to measure from. The id stays
+// optional, same as the read-only data today (data-model.html: from/to are
+// "often a whole city/region" with no pinned Place), so leaving it blank is
+// still valid — it just means the first place entry's duration has to be
+// hand-typed, the same fallback every place picker already has.
 function renderRouteEditForm(route) {
   const formNode = toNode(`
     <div class="edit-form" data-kind="route">
@@ -775,13 +1019,14 @@ function renderRouteEditForm(route) {
   const variantList = formNode.querySelector('.edit-variant-list');
   (route.variants ?? []).forEach((v) => variantList.appendChild(variantNode(v)));
   formNode.querySelector('#add-route-variant').addEventListener('click', () => variantList.appendChild(variantNode()));
-  // Scoped to .route-endpoints, not the whole formNode — every via row's own
-  // place picker (viaRowNode) is already wired individually as each row is
-  // built, with its own onPicked duration lookup; wiring the whole form here
-  // too would attach a second, duration-blind set of listeners to those same
-  // rows and double every search request. Repicking either From or To can
-  // change every variant's finalLegMinutes anchor (From when a variant has
-  // no via stages of its own, To always), so all of them get refreshed here.
+  // Scoped to .route-endpoints, not the whole formNode — every place row's
+  // own place picker (placeRowNode) is already wired individually as each
+  // row is built, with its own onPicked duration lookup; wiring the whole
+  // form here too would attach a second, duration-blind set of listeners to
+  // those same rows and double every search request. Repicking either From
+  // or To can change every variant's finalLegMinutes anchor (From when a
+  // variant has no places of its own, To always), so all of them get
+  // refreshed here.
   wirePlacePicker(formNode.querySelector('.route-endpoints'), {
     onPicked: () => formNode.querySelectorAll('.edit-variant').forEach(refreshFinalLeg),
   });
@@ -802,16 +1047,16 @@ function applyRouteEdit(route, formEl) {
     return {
       tone: readField(variantEl, 'variantTone') || 'direct',
       label: readField(variantEl, 'variantLabel'),
-      via: [...variantEl.querySelectorAll('.edit-via-row')].map(readViaRow),
+      places: [...variantEl.querySelectorAll('.edit-place-row')].map(readPlaceRow),
       finalLegMinutes: Number.isFinite(finalLegMinutes) ? finalLegMinutes : -1,
     };
   });
   for (const variant of variants) {
     if (!variant.label) return 'Every variant needs a label.';
-    for (const via of variant.via) {
-      if (!via.place.label) return 'Every via stage needs a place name.';
-      if (!via.place.id) return 'Every via stage needs a Google Place ID.';
-      if (via.durationMinutes < 0) return 'Every via stage needs a duration of zero or more minutes.';
+    for (const place of variant.places) {
+      if (!place.place.label) return 'Every place entry needs a place name.';
+      if (!place.place.id) return 'Every place entry needs a Google Place ID.';
+      if (place.durationMinutes < 0) return 'Every place entry needs a duration of zero or more minutes.';
     }
     if (variant.finalLegMinutes < 0) return 'Every variant needs a final-leg duration of zero or more minutes.';
   }

@@ -9,8 +9,14 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Serif:wght@400;500;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+<!-- Pinned, not "latest" (esm.run's unversioned @material/web/ alias) — an
+     unpinned CDN resolution can silently change which release loads between
+     one page load and the next (a stale cached module vs. a freshly-fetched
+     newer one), which is a correctness risk on its own even without a
+     concrete failure observed from it yet. Bump this version deliberately
+     when upgrading, not implicitly. -->
 <script type="importmap">
-  { "imports": { "@material/web/": "https://esm.run/@material/web/" } }
+  { "imports": { "@material/web/": "https://esm.run/@material/web@2.5.0/" } }
 </script>
 <script type="module" src="js/app.js"></script>
 <link rel="stylesheet" href="styles.css">
@@ -136,7 +142,12 @@
       <md-icon>close</md-icon>
     </md-icon-button>
   </div>
-  <div slot="content" id="routes-dialog-body" class="routes-list"></div>
+  <div slot="content" id="routes-dialog-content">
+    <md-outlined-text-field class="edit-field" id="routes-search" label="Search routes" value="">
+      <md-icon slot="leading-icon">search</md-icon>
+    </md-outlined-text-field>
+    <div id="routes-dialog-body" class="routes-list"></div>
+  </div>
   <div slot="actions">
     <md-text-button id="routes-add">Add route</md-text-button>
   </div>

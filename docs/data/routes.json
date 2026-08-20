@@ -11,7 +11,7 @@
       {
         "tone": "direct",
         "label": "Direct — via the (New) Glenn Highway and Parks Highway",
-        "via": [
+        "places": [
           {
             "kind": "waypoint",
             "place": {
@@ -26,7 +26,7 @@
       {
         "tone": "scenic",
         "label": "Scenic — via the Old Glenn Highway and Parks Highway",
-        "via": [
+        "places": [
           {
             "kind": "waypoint",
             "place": {
@@ -44,7 +44,7 @@
             "durationMinutes": 10
           },
           {
-            "kind": "override",
+            "kind": "via",
             "place": {
               "id": "ChIJ74oLNrLjyFYR49fH3Tczh2I",
               "label": "Old Glenn Highway"
@@ -83,7 +83,7 @@
       {
         "tone": "direct",
         "label": "Direct — Richardson Highway to Glennallen, then the (New) Glenn Highway",
-        "via": [
+        "places": [
           {
             "kind": "waypoint",
             "place": {
@@ -98,7 +98,7 @@
       {
         "tone": "scenic",
         "label": "Scenic — Richardson Highway to Glennallen, then the Old Glenn Highway",
-        "via": [
+        "places": [
           {
             "kind": "waypoint",
             "place": {
@@ -116,7 +116,7 @@
             "durationMinutes": 200
           },
           {
-            "kind": "override",
+            "kind": "via",
             "place": {
               "id": "ChIJ74oLNrLjyFYR49fH3Tczh2I",
               "label": "Old Glenn Highway"
@@ -155,7 +155,7 @@
       {
         "tone": "direct",
         "label": "Only practical route — the Seward Highway",
-        "via": [
+        "places": [
           {
             "kind": "waypoint",
             "place": {
@@ -165,7 +165,7 @@
             "durationMinutes": 45
           },
           {
-            "kind": "override",
+            "kind": "via",
             "place": {
               "id": "ChIJZyfB370NyFYR9QAqNUYxru4",
               "label": "Portage Glacier / Whittier junction"
@@ -205,7 +205,7 @@
       {
         "tone": "direct",
         "label": "Only practical route — the Elliott Highway to the Dalton Highway",
-        "via": [
+        "places": [
           {
             "kind": "waypoint",
             "place": {
@@ -238,7 +238,7 @@
       {
         "tone": "direct",
         "label": "Only practical route — the George Parks Highway",
-        "via": [
+        "places": [
           {
             "kind": "waypoint",
             "place": {
@@ -271,7 +271,7 @@
       {
         "tone": "direct",
         "label": "Only practical route — the Richardson Highway",
-        "via": [
+        "places": [
           {
             "kind": "waypoint",
             "place": {
@@ -312,7 +312,7 @@
       {
         "tone": "direct",
         "label": "Only practical route — Richardson Highway to Chitina, then the McCarthy Road",
-        "via": [
+        "places": [
           {
             "kind": "waypoint",
             "place": {
@@ -322,7 +322,7 @@
             "durationMinutes": 45
           },
           {
-            "kind": "override",
+            "kind": "via",
             "place": {
               "id": "ChIJ9-tzIfhxtFYRBZUt1JYCoTY",
               "label": "McCarthy Road"
@@ -344,16 +344,18 @@
   {
     "_id": "route_new_8",
     "from": {
+      "id": "ChIJoy8lnw_vy1YRc8fyP3dIJVE",
       "label": "Talkeetna"
     },
     "to": {
-      "label": "Denali National Park"
+      "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
+      "label": "Denali Visitor Center"
     },
     "variants": [
       {
         "tone": "direct",
         "label": "Direct route",
-        "via": [
+        "places": [
           {
             "kind": "waypoint",
             "place": {
@@ -387,7 +389,7 @@
       {
         "tone": "direct",
         "label": "Only practical route — the Seward Highway to the Whittier Access Road",
-        "via": [
+        "places": [
           {
             "kind": "waypoint",
             "place": {
@@ -397,7 +399,7 @@
             "durationMinutes": 45
           },
           {
-            "kind": "override",
+            "kind": "via",
             "place": {
               "id": "ChIJZyfB370NyFYR9QAqNUYxru4",
               "label": "Portage Glacier / Whittier junction"

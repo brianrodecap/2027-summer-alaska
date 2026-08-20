@@ -339,8 +339,13 @@ sup a {
   --md-dialog-container-max-height: 80vh;
 }
 
+#routes-search {
+  width: 100%;
+  margin-bottom: 0.5rem;
+}
+
 #routes-dialog-body {
-  max-height: 60vh;
+  max-height: 55vh;
   overflow-y: auto;
 }
 
@@ -452,13 +457,56 @@ sup a {
   min-width: 0;
 }
 
-/* A date+time pair's two pseudo-fields (edit.js's dateTimeFieldRow) —
-   readonly and opened via the real M3 date-picker/time-picker dialogs
-   rather than typed into directly, so they get a pointer cursor like any
-   other clickable control instead of a text field's default text caret. */
+/* A date+time pair's two pseudo-fields (edit.js's dateField/timeField) —
+   always readonly, opened via the real M3 date-picker/time-picker dialogs
+   rather than typed into directly, so boxing them like an outlined text
+   field would only spend space on a "type here" affordance neither ever
+   honors. Rendered as flat text instead (edit.js builds them as plain divs,
+   not md-outlined-text-field), saving the vertical space a full text-field
+   box costs — the field's own label stands in as muted placeholder text
+   (.is-placeholder, toggled by edit.js's setPickerFieldValue) until a value
+   is actually picked, and a background tint on hover/focus is the only
+   "this is tappable" cue, the same "flat until tapped" treatment Google
+   Calendar's own compact date/time editor uses. */
 .date-picker-field,
 .time-picker-field {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.6rem 0.65rem;
+  border-radius: var(--md-sys-shape-corner-small);
   cursor: pointer;
+  color: var(--md-sys-color-on-surface);
+}
+
+.date-picker-field md-icon,
+.time-picker-field md-icon {
+  color: var(--md-sys-color-on-surface-variant);
+  flex-shrink: 0;
+}
+
+.picker-field-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.date-picker-field.is-placeholder .picker-field-value,
+.time-picker-field.is-placeholder .picker-field-value {
+  color: var(--md-sys-color-on-surface-variant);
+}
+
+.date-picker-field:hover,
+.date-picker-field:focus-visible,
+.time-picker-field:hover,
+.time-picker-field:focus-visible {
+  background: var(--md-sys-color-surface-container-high);
+}
+
+.time-picker-field .clear-time-field {
+  flex-shrink: 0;
 }
 
 .edit-section-label {
@@ -466,12 +514,20 @@ sup a {
   margin-top: 0.25rem;
 }
 
-/* A route's variants[] and each variant's via[] (edit.js's variantNode/
-   viaRowNode) are both open-ended, user-extensible lists — the outlined box
-   is what visually separates "one variant's fields" or "one via stage's
+/* Stands in for the Transit editor's Arrives fields once a route is picked
+   (edit.js's transitFields) — arrival stops being an authored fact at that
+   point, so this explains where the number will come from instead. */
+.edit-computed-hint {
+  color: var(--md-sys-color-on-surface-variant);
+  margin: 0;
+}
+
+/* A route's variants[] and each variant's places[] (edit.js's variantNode/
+   placeRowNode) are both open-ended, user-extensible lists — the outlined box
+   is what visually separates "one variant's fields" or "one place entry's
    fields" from the flat field-after-field rest of this form. */
 .edit-variant,
-.edit-via-row {
+.edit-place-row {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -480,12 +536,12 @@ sup a {
   border-radius: var(--md-sys-shape-corner-medium);
 }
 
-.edit-via-row {
+.edit-place-row {
   background: var(--md-sys-color-surface-container-low);
 }
 
 .edit-variant-list,
-.edit-via-list {
+.edit-place-list {
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -496,17 +552,43 @@ sup a {
   justify-content: space-between;
 }
 
-.edit-via-row .remove-via-row {
+/* The Tone/Label fields sit beside this variant's own move-up/move-down
+   controls (edit.js's variantNode) — reordering acts on the whole card, so
+   its buttons live in the one row every variant card always has, rather
+   than beside the per-place reorder-less list below it. */
+.edit-variant-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.edit-variant-reorder {
+  display: flex;
+  flex-shrink: 0;
+}
+
+.edit-place-row .remove-place-row {
   align-self: flex-end;
 }
 
-/* ---------- place picker (edit.js's placePickerHtml/wirePlacePicker) — a
-   free-text search row above the existing Name/Place ID fields, since
-   nobody editing a trip actually knows a Google Place ID by heart. Used both
-   for Activity's own Place and, once per row, for a Route via stage's place
-   (viaRowNode) — .place-picker itself has no border/background of its own,
-   since it's just as at-home floating in the plain Activity form as it is
-   nested inside .edit-via-row's own bordered box. ---------- */
+/* A MealOption candidate row (edit.js's mealOptionRowNode) reuses .edit-variant
+   wholesale — same bordered card, header, and reorder controls as a Route
+   variant — so only its own remove button (unlike a variant, which removes
+   itself via a text button in a shared actions row) needs its own placement
+   rule, matching .edit-place-row's own bottom-right remove button above. */
+.edit-meal-option-row .remove-meal-option {
+  align-self: flex-end;
+}
+
+/* ---------- place picker (edit.js's placePickerHtml/wirePlacePicker) — the
+   Name field doubles as a free-text type-ahead search box above the Place ID
+   field, since nobody editing a trip actually knows a Google Place ID by
+   heart. Used both for Activity's own Place and, once per row, for a Route
+   place entry's place (placeRowNode) — .place-picker itself has no
+   border/background of its own, since it's just as at-home floating in the
+   plain Activity form as it is nested inside .edit-place-row's own bordered
+   box. ---------- */
 .place-picker {
   display: flex;
   flex-direction: column;
@@ -706,13 +788,24 @@ sup a {
    labs/segmentedbutton*), laid out in a row rather than the date picker's
    calendar grid. ---------- */
 
+/* A picker like this one is always opened from on top of an edit dialog
+   already filling most of the viewport in the same surface-container-high
+   tone — md-dialog's own scrim can't separate the two, since the scrim is a
+   plain fixed-position div outside the native <dialog> it renders next to
+   (see dialog-styles.css), so only the *lower* dialog's scrim ever
+   actually darkens anything; a second modal opened on top gets no scrim of
+   its own. --md-dialog-container-color and the boxShadow app.js applies to
+   this dialog's internal .container (there's no exposed elevation custom
+   property to reach it any other way) are what give this dialog a visible
+   edge against the one beneath it instead. */
 #time-picker-dialog {
   --md-dialog-container-max-width: 20rem;
+  --md-dialog-container-color: var(--md-sys-color-surface-container-highest);
 }
 
 .time-picker {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 0.75rem;
   flex-wrap: wrap;
   padding-top: 0.25rem;
@@ -725,6 +818,7 @@ sup a {
 
 .time-picker-colon {
   color: var(--md-sys-color-on-surface-variant);
+  margin-bottom: 1rem;
 }
 
 .time-picker-period {
@@ -862,23 +956,23 @@ detail-side-sheet.open .panel {
   margin-bottom: 0.5rem;
 }
 
-/* ---------- scenario tabs (branching days) — a real md-tabs/md-primary-tab
-   pair standing in for the old chip-per-section layout: one tab per Scenario,
-   flight-status tone (primary = go, error = no-go) carried by the active
-   indicator/label/icon tokens instead of a chip's outline. Only one
-   .scenario-panel is ever visible; day-render.js's wireScenarioTabs toggles
-   `hidden` on md-tabs' change event rather than re-rendering. ---------- */
+/* ---------- option-picker chips (branching days, route variants, meal
+   candidates) — a real md-chip-set/md-filter-chip group standing in for
+   md-tabs: content-width chips with a checkmark for the selected one, rather
+   than a full-width bar with a divider and underline indicator, since
+   md-tabs has no compact mode of its own (see day-render.js's
+   wireChipGroups, which gives the chip group the activeTabIndex/'change'
+   surface the rest of the codebase already expects from a tab bar). Only one
+   .scenario-panel is ever visible; day-render.js's wireTabs toggles `hidden`
+   on that same 'change' event rather than re-rendering. ---------- */
 
 .scenario-tabs,
 .route-tabs {
   margin-top: 0.5rem;
 }
 
-/* inline-icon (see day-render.js's renderScenarioTabs/renderRouteVariantTabs
-   and meal-row-render.js's renderMealRow) lays icon and label out horizontally instead of
-   MD3's default icon-over-label stack — shared by every md-tabs group in the
-   site (scenario, meal, and route-variant tabs alike), so a smaller icon
-   here saves vertical space everywhere. */
+/* Shared by every chip group in the site (scenario, meal, and route-variant
+   choices alike) so their leading icon doesn't crowd a compact chip. */
 .scenario-tabs md-icon,
 .meal-row-tabs md-icon,
 .route-tabs md-icon {
@@ -888,15 +982,15 @@ detail-side-sheet.open .panel {
 }
 
 .tone-ideal {
-  --md-primary-tab-active-indicator-color: var(--md-sys-color-primary);
-  --md-primary-tab-active-label-text-color: var(--md-sys-color-primary);
-  --md-primary-tab-active-icon-color: var(--md-sys-color-primary);
+  --md-filter-chip-selected-container-color: var(--md-sys-color-primary);
+  --md-filter-chip-selected-label-text-color: var(--md-sys-color-on-primary);
+  --md-filter-chip-selected-leading-icon-color: var(--md-sys-color-on-primary);
 }
 
 .tone-alternate {
-  --md-primary-tab-active-indicator-color: var(--md-sys-color-error);
-  --md-primary-tab-active-label-text-color: var(--md-sys-color-error);
-  --md-primary-tab-active-icon-color: var(--md-sys-color-error);
+  --md-filter-chip-selected-container-color: var(--md-sys-color-error);
+  --md-filter-chip-selected-label-text-color: var(--md-sys-color-on-error);
+  --md-filter-chip-selected-leading-icon-color: var(--md-sys-color-on-error);
 }
 
 .scenario-panel > .detail-note:first-child {
@@ -993,11 +1087,13 @@ detail-side-sheet.open .panel {
 }
 
 /* Same root cause as .transit-stage-row[hidden] above: wireScenarioFollowers
-   (day-render.js) hides a gated scenario tab (e.g. Jul 7's "bonus" pair when
+   (day-render.js) hides a gated scenario chip (e.g. Jul 7's "bonus" pair when
    Jul 6 was weathered out) by toggling `hidden` directly on the
-   <md-primary-tab>, but the component's own :host display rule is an author
-   rule of equal specificity to the UA default, and wins the tie. */
-md-primary-tab[hidden] {
+   <md-filter-chip>/<md-primary-tab> (budget/time-picker tabs still use the
+   latter), but each component's own :host display rule is an author rule of
+   equal specificity to the UA default, and wins the tie. */
+md-primary-tab[hidden],
+md-filter-chip[hidden] {
   display: none;
 }
 
@@ -1081,7 +1177,7 @@ md-icon-button[hidden] {
    lands inside some Transit's own departsAt–arrivesAt span (trip-model.js's
    transitOverlapFor); shares the booking chip's pill shape but the same
    error-container/error tone as .detail-note.note-warning, since this is a
-   structural problem to fix (model the stop as a Route via waypoint
+   structural problem to fix (model the stop as a Route waypoint
    instead), not routine status. ---------- */
 
 .transit-overlap-chip {
@@ -1135,9 +1231,9 @@ md-icon-button[hidden] {
 /* ---------- Meal row (day list) — a meal Activity with several still-open
    MealOption candidates (docs/js/meal-row-render.js's renderMealRow) renders as
    its own row instead of a plain md-list-item: image + time + the currently
-   selected candidate, shaped like every other activity row, plus an
-   md-tabs bar underneath for switching candidates — same tabbed pattern as
-   .scenario-tabs, just scoped to one row instead of the whole day. ---------- */
+   selected candidate, shaped like every other activity row, plus a
+   filter-chip group underneath for switching candidates — same chip pattern
+   as .scenario-tabs, just scoped to one row instead of the whole day. ---------- */
 
 .meal-row {
   display: flex;
@@ -1453,8 +1549,11 @@ footer {
   }
 
   #leg-dialog-body,
-  #edit-dialog-content,
-  #routes-dialog-body {
+  #edit-dialog-content {
     max-height: calc(100dvh - 8rem);
+  }
+
+  #routes-dialog-body {
+    max-height: calc(100dvh - 12rem);
   }
 }

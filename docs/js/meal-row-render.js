@@ -1,6 +1,6 @@
 // Renders a meal Activity that still has several open MealOption candidates
-// as its own "meal row" — image + time/selected-candidate line, plus an
-// md-tabs bar for switching candidates inline. activity-row-render.js's
+// as its own "meal row" — image + time/selected-candidate line, plus a
+// filter-chip group for switching candidates inline. activity-row-render.js's
 // renderActivityRow delegates to renderMealRow here whenever activity.options
 // is set (see docs/data/data-model.html's Activity entity).
 
@@ -57,12 +57,12 @@ function renderMealRowImage(option) {
 // A meal Activity with several still-open MealOption candidates renders as
 // its own row, shaped like every other activity row (image left, time +
 // title right) but with the "title" being whichever candidate is currently
-// selected, plus an md-tabs bar underneath for switching candidates — the
-// same tabbed pattern as the day's own ideal/alternate scenario tabs
+// selected, plus a filter-chip group underneath for switching candidates —
+// the same chip pattern as the day's own ideal/alternate scenario chips
 // (day-render.js's renderScenarioTabs), just for "which breakfast" instead of
 // "which weather". The header (image + time + selected line) is its own
-// <button data-activity-id>, a sibling of the tabs rather than a wrapper
-// around them, so a tab click can't bubble into the row's "open the side
+// <button data-activity-id>, a sibling of the chips rather than a wrapper
+// around them, so a chip click can't bubble into the row's "open the side
 // sheet" handler (see app.js's dayListEl listener) — switching candidates is
 // a separate action from opening the activity.
 export function renderMealRow(activity, day) {
@@ -70,17 +70,16 @@ export function renderMealRow(activity, day) {
   const selected = options[0] ?? null;
   const tabsHtml = options.length > 1
     ? `
-      <md-tabs class="meal-row-tabs">
+      <md-chip-set class="meal-row-tabs">
         ${options
           .map(
             (option, i) => `
-            <md-primary-tab inline-icon${i === 0 ? ' active' : ''}>
+            <md-filter-chip label="${DINING_FORMAT_LABEL[option.diningFormat]}"${i === 0 ? ' selected' : ''}>
               <md-icon slot="icon">${DINING_FORMAT_ICON[option.diningFormat]}</md-icon>
-              ${DINING_FORMAT_LABEL[option.diningFormat]}
-            </md-primary-tab>`
+            </md-filter-chip>`
           )
           .join('')}
-      </md-tabs>`
+      </md-chip-set>`
     : '';
   return `
     <div class="meal-row" data-filter-tags="${filterTagsFor(activity, day.leg).join(' ')}">

@@ -1,9 +1,9 @@
 import '@material/web/all.js';
 import { styles as typescaleStyles } from '@material/web/typography/md-typescale-styles.js';
 import './side-sheet.js';
-import { loadTripsIndex, loadTripData, buildTripView, formatTripDateChip, tripDayCount } from './trip-model.js';
+import { loadTripsIndex, loadTripData, buildTripView, formatTripDateChip, tripDayCount, resolveTransitRoute, formatTime } from './trip-model.js';
 import { renderLegCard, renderLegDialogBody } from './leg-render.js';
-import { renderDayBlock, wireScenarioFollowers, wireTabs } from './day-render.js';
+import { renderDayBlock, wireScenarioFollowers, wireTabs, stageOverlineText } from './day-render.js';
 import { renderDayMapSheetBody } from './day-map-render.js';
 import { renderActivityDetailBody, activityDetailTitle, placeTypeIcon } from './activity-detail-render.js';
 import { syncMealRow, activeMealOptions } from './meal-row-render.js';
@@ -139,18 +139,18 @@ function selectedMealOption(activity, day, rowEl) {
 function readDaySelections(dayBlockEl, day) {
   const routeTones = new Map();
   dayBlockEl.querySelectorAll('.route-tabs').forEach((tabsEl) => {
-    const tabEls = [...tabsEl.querySelectorAll('md-primary-tab')];
+    const tabEls = [...tabsEl.querySelectorAll('md-filter-chip')];
     const active = tabEls[tabsEl.activeTabIndex] ?? tabEls[0];
     if (active) routeTones.set(tabsEl.dataset.transitId, active.dataset.tone);
   });
 
-  // day.scenarioTracks and the scenario tab bar's own md-primary-tabs are
+  // day.scenarioTracks and the scenario tab bar's own md-filter-chips are
   // built from the same array in the same order (see day-render.js's
-  // renderScenarioTabs), so the active tab's index doubles as the index into
+  // renderScenarioTabs), so the active chip's index doubles as the index into
   // scenarioTracks — same positional match wireRouteVariantTabs relies on
   // for stage rows, just by index here instead of a data attribute.
   const scenarioTabsEl = dayBlockEl.querySelector(`.scenario-tabs[data-scenario-date="${day.date}"]`);
-  const scenarioTabCount = scenarioTabsEl?.querySelectorAll('md-primary-tab').length ?? 0;
+  const scenarioTabCount = scenarioTabsEl?.querySelectorAll('md-filter-chip').length ?? 0;
   const activeScenarioIndex = scenarioTabCount ? (scenarioTabsEl.activeTabIndex ?? 0) : -1;
   const scenarioTone = activeScenarioIndex >= 0 ? day.scenarioTracks[activeScenarioIndex]?.scenario.tone : undefined;
 
@@ -167,12 +167,13 @@ function readDaySelections(dayBlockEl, day) {
 
 async function openActivity(activity, selectedOption = null) {
   const place = selectedOption ? selectedOption.place : activity.place;
-  // Editing is only offered for a plain activity — a meal row's selected
-  // MealOption isn't itself one of the three edit.js kinds (see edit.js's own
-  // scope note), so the sheet's edit button just stays hidden when a
-  // selectedOption is passed in.
+  // The edit form always opens on the underlying Activity, never on a
+  // selectedOption — a MealOption candidate isn't one of edit.js's kinds
+  // (see its own scope note) — but the Activity's own fields (time, text,
+  // status, booking, ...) stay editable regardless of which candidate tab
+  // is active, since those live on the Activity itself, not per-candidate.
   sideSheet.open(activityDetailTitle(activity, selectedOption), renderActivityDetailBody(activity, selectedOption), {
-    onEdit: selectedOption ? null : () => openEditPopup('activity', activity._id),
+    onEdit: () => openEditPopup('activity', activity._id),
   });
   if (!place?.id) return;
   const details = await hydratePlaceDetails(sideSheet.querySelector('.place-panel'), place);
@@ -278,7 +279,7 @@ function openEditPopup(kind, id, { isNew = false } = {}) {
   const context = {
     openDatePicker,
     openTimePicker,
-    ...(kind === 'activity' ? { tripTravelers: view.trip.travelers } : {}),
+    ...(kind === 'activity' ? { tripTravelers: view.trip.travelers, stays: data.stays ?? [] } : {}),
     ...(kind === 'transit' ? { routes: data.routes ?? [] } : {}),
   };
   editDialogBody.replaceChildren(renderEditForm(kind, entity, context));
@@ -325,7 +326,7 @@ document.querySelector('#edit-dialog-delete').addEventListener('click', () => {
 // routeId/routeVariant fields (see edit.js's transitFields). Rebuilt from
 // data.routes on every open rather than kept in sync live, since opening it
 // always closes whatever's already open (closeAllPanels) — the same "just
-// redo it" simplicity edit.js's via-row editing leans on. ----------
+// redo it" simplicity edit.js's place-row editing leans on. ----------
 
 function nextRouteId(routes) {
   let n = routes.length + 1;
@@ -333,22 +334,35 @@ function nextRouteId(routes) {
   return `route_new_${n}`;
 }
 
-function renderRoutesDialogBody() {
-  routesDialogBody.replaceChildren(...(data.routes ?? []).map((route) => {
+function routeLabel(route) {
+  return `${route.from.label} → ${route.to.label}`;
+}
+
+function renderRoutesDialogBody(query = '') {
+  const needle = query.trim().toLowerCase();
+  const routes = (data.routes ?? [])
+    .filter((route) => !needle || routeLabel(route).toLowerCase().includes(needle))
+    .sort((a, b) => routeLabel(a).localeCompare(routeLabel(b)));
+  routesDialogBody.replaceChildren(...routes.map((route) => {
     const item = document.createElement('div');
     item.className = 'routes-list-item';
     item.innerHTML = `
-      <span class="md-typescale-body-large">${route.from.label} → ${route.to.label}</span>
+      <span class="md-typescale-body-large">${routeLabel(route)}</span>
       <md-icon-button data-edit-route-id="${route._id}" aria-label="Edit route"><md-icon>edit</md-icon></md-icon-button>`;
     return item;
   }));
 }
 
+const routesSearchField = document.querySelector('#routes-search');
+
 function openRoutesDialog() {
   closeAllPanels();
+  routesSearchField.value = '';
   renderRoutesDialogBody();
   routesDialog.show();
 }
+
+routesSearchField.addEventListener('input', () => renderRoutesDialogBody(routesSearchField.value));
 
 function openNewRouteEditor() {
   const id = nextRouteId(data.routes);
@@ -401,9 +415,63 @@ dayListEl.addEventListener('click', (event) => {
   else if (editTransitId) openEditPopup('transit', editTransitId);
 });
 
-// A meal row's own md-tabs (see meal-row-render.js's renderMealRow) switches which
-// MealOption candidate that row displays — a separate concern from the click
-// listener above, which only opens the side sheet via the row's header button.
+// A routed Transit's own walked stage/Arrive times (trip-model.js's
+// resolveTransitRoute) depend on two things a reader can change live, with
+// no reload: which route-variant tab is active, and which MealOption a
+// meal reached along the way is currently switched to (a sit-down lunch
+// eats far more drive-window than a drive-thru). Both listeners below call
+// this after their own more-local DOM update, re-walking every routed
+// Transit that departs on this same day against whichever tabs are
+// actually active right now — not the model's own authored defaults — and
+// patching just the stage-row/Arrive-row time text back in, rather than
+// re-rendering the whole day block and losing every other live selection
+// on it (see refreshAfterEdit's own note on that trade-off, which doesn't
+// apply here since nothing's being saved).
+function recomputeRoutedTransits(dayBlockEl) {
+  if (!dayBlockEl) return;
+  const day = view.days.find((d) => d.date === dayBlockEl.id.replace('day-', ''));
+  if (!day) return;
+
+  const formatOverrides = new Map();
+  dayBlockEl.querySelectorAll('.meal-row-tabs').forEach((tabsEl) => {
+    const activityId = tabsEl.closest('.meal-row').querySelector('[data-activity-id]').dataset.activityId;
+    const activity = view.activitiesById.get(activityId);
+    const option = activeMealOptions(activity, day)[tabsEl.activeTabIndex];
+    if (option) formatOverrides.set(activityId, option.diningFormat);
+  });
+
+  const activities = [...view.activitiesById.values()];
+  for (const transit of day.transits) {
+    if (!transit.routeId) continue;
+    const routeTabsEl = dayBlockEl.querySelector(`.route-tabs[data-transit-id="${transit._id}"]`);
+    let routeVariant;
+    if (routeTabsEl) {
+      const tabEls = [...routeTabsEl.querySelectorAll('md-filter-chip')];
+      routeVariant = (tabEls[routeTabsEl.activeTabIndex] ?? tabEls[0])?.dataset.tone;
+    }
+    const routeInfo = resolveTransitRoute(transit, view.routesById, activities, { routeVariant, formatOverrides });
+    if (!routeInfo) continue;
+
+    // Every variant, hidden ones included, so a still-hidden tab's stages
+    // are already correct for whenever it does get switched to.
+    routeInfo.variants.forEach((variant) => {
+      const stageRows = dayBlockEl.querySelectorAll(`.transit-stage-row[data-transit-id="${transit._id}"][data-route-tone="${variant.tone}"]`);
+      stageRows.forEach((row, i) => {
+        const stage = variant.stages[i];
+        const overline = stage && row.querySelector('.stage-overline');
+        if (overline) overline.textContent = stageOverlineText(stage.key, stage.kind);
+      });
+    });
+
+    const arriveEl = dayBlockEl.querySelector(`.transit-boundary-time[data-transit-id="${transit._id}"][data-phase="arrive"]`);
+    if (arriveEl) arriveEl.textContent = `${formatTime(routeInfo.resolvedArrivesAt)} · Arrive`;
+  }
+}
+
+// A meal row's own filter-chip group (see meal-row-render.js's renderMealRow)
+// switches which MealOption candidate that row displays — a separate concern
+// from the click listener above, which only opens the side sheet via the
+// row's header button.
 dayListEl.addEventListener('change', (event) => {
   const tabsEl = event.target.closest('.meal-row-tabs');
   if (!tabsEl) return;
@@ -411,6 +479,17 @@ dayListEl.addEventListener('change', (event) => {
   const activity = view.activitiesById.get(activityId);
   const day = view.days.find((d) => d.date === activity.date);
   syncMealRow(activity, day, tabsEl);
+  recomputeRoutedTransits(tabsEl.closest('.day-block'));
+});
+
+// The route-variant tab itself (day-render.js's renderRouteVariantTabs) —
+// day-render.js's own wireRouteVariantTabs already toggles which stage rows
+// are hidden on this same 'change' event; this is the separate concern of
+// keeping their times (and the Arrive row's) live-correct.
+dayListEl.addEventListener('change', (event) => {
+  const tabsEl = event.target.closest('.route-tabs');
+  if (!tabsEl) return;
+  recomputeRoutedTransits(tabsEl.closest('.day-block'));
 });
 
 legDialogBody.addEventListener('click', (event) => {
@@ -551,6 +630,13 @@ document.querySelector('#date-picker-close').addEventListener('click', () => dat
 // click does. ----------
 
 let timePickerOnSelect = null;
+
+// md-dialog exposes no elevation/shadow custom property (styles.css's
+// #time-picker-dialog rule explains why one is needed here); this reaches
+// its shadow root once, at module load, to give its surface a real M3
+// elevation-3 shadow (the values dialogs use by spec) directly.
+timePickerDialog.shadowRoot?.querySelector('.container')?.style.setProperty(
+  'box-shadow', '0px 1px 3px 0px rgba(0,0,0,0.3), 0px 4px 8px 3px rgba(0,0,0,0.15)');
 
 function openTimePicker(hhmm, title, onSelect) {
   timePickerDialogTitle.textContent = title;

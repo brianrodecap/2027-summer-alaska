@@ -58,16 +58,15 @@ const ROUTE_TONE_ICON = { direct: 'trending_flat', scenic: 'landscape' };
 function renderRouteVariantTabs(transit) {
   const info = transit.routeInfo;
   if (!info || info.variants.length < 2) return '';
-  const tabs = info.variants
+  const chips = info.variants
     .map(
       (v) => `
-      <md-primary-tab inline-icon${v.tone === info.selectedTone ? ' active' : ''} data-tone="${v.tone}">
+      <md-filter-chip label="${v.label}"${v.tone === info.selectedTone ? ' selected' : ''} data-tone="${v.tone}">
         <md-icon slot="icon">${ROUTE_TONE_ICON[v.tone] ?? 'route'}</md-icon>
-        ${v.label}
-      </md-primary-tab>`
+      </md-filter-chip>`
     )
     .join('');
-  return `<md-tabs class="route-tabs" data-transit-id="${transit._id}">${tabs}</md-tabs>`;
+  return `<md-chip-set class="route-tabs" data-transit-id="${transit._id}">${chips}</md-chip-set>`;
 }
 
 // A Transit renders as separate "Depart"/"Arrive" boundary rows (their own
@@ -81,6 +80,17 @@ function renderRouteVariantTabs(transit) {
 // on the Depart row when there's a real choice to make — its own stages
 // render separately, spread between Depart and Arrive (renderTransitStage,
 // below).
+// data-transit-id/data-phase mark this row so app.js's live recompute
+// (recomputeRoutedTransits, triggered whenever a route-variant or
+// meal-option tab changes anywhere in this day block — see that function's
+// own note) can find and patch the Arrive row's own time back in — a routed
+// drive's arrival isn't a fixed fact (see arrivesAtOverlineText below), so it
+// has to move with whichever route variant and in-transit meal durations are
+// currently selected, not just whatever the model computed once at load.
+function transitBoundaryOverlineText(time, isDepart) {
+  return `${formatTime(time)} · ${isDepart ? 'Depart' : 'Arrive'}`;
+}
+
 function renderTransitBoundary(item, leg) {
   const { transit, phase } = item;
   const isDepart = phase === 'depart';
@@ -95,7 +105,7 @@ function renderTransitBoundary(item, leg) {
     <div class="stay-block" data-filter-tags="${filterTagsFor(transit, leg).join(' ')}">
       ${iconSlot}
       <div class="stay-block-content">
-        <p class="md-typescale-label-medium stay-detail">${formatTime(time)} · ${isDepart ? 'Depart' : 'Arrive'}</p>
+        <p class="md-typescale-label-medium stay-detail transit-boundary-time" data-transit-id="${transit._id}" data-phase="${phase}">${transitBoundaryOverlineText(time, isDepart)}</p>
         <p class="md-typescale-title-small">${place}</p>
         ${isDepart ? renderBookingChip(transit.booking) : ''}
         ${isDepart ? renderRouteVariantTabs(transit) : ''}
@@ -105,9 +115,17 @@ function renderTransitBoundary(item, leg) {
 }
 
 // A stage's kind (data-model.html: 'waypoint' — a real, callable-out stop —
-// or 'override' — a point that exists only to steer Directions onto the
-// intended road) picks its overline word, same as Depart/Arrive above.
-const STAGE_KIND_LABEL = { waypoint: 'Waypoint', override: 'Via' };
+// or 'via' — a point that exists only to steer Directions onto the
+// intended road, no stop) picks its overline word, same as Depart/Arrive
+// above.
+const STAGE_KIND_LABEL = { waypoint: 'Waypoint', via: 'Via' };
+
+// Shared by the initial render below and app.js's live recompute
+// (recomputeRoutedTransits) so both ever produce this line the same way —
+// a stage's own kind never changes, only its walked time does.
+export function stageOverlineText(key, kind) {
+  return `${formatTime(key)} · ${STAGE_KIND_LABEL[kind] ?? 'Via'}`;
+}
 
 // A stage's optional note (e.g. "this is where a Whittier drive splits off")
 // surfaces as a title tooltip rather than its own line, so a normally-quiet
@@ -118,17 +136,19 @@ const STAGE_KIND_LABEL = { waypoint: 'Waypoint', override: 'Via' };
 // start visible — wireRouteVariantTabs flips that per row, scattered
 // non-adjacent siblings and all, when the Depart row's tabs change. The
 // leading time is stage.key — trip-model.js's stageTimesForVariant walking
-// via[]'s durationMinutes from Depart, nudged later by any real Activity
+// places[]'s durationMinutes from Depart, nudged later by any real Activity
 // (a lunch stop, say) actually reached along the way. It's a plan-quality
-// estimate, not a live pace/traffic calculation, so treat it the same as any
-// other still-being-planned time on this page.
+// estimate kept live: app.js's recomputeRoutedTransits re-walks it (and
+// patches this same overline back in) whenever a route-variant tab or an
+// in-transit meal's own option tab changes, rather than only computing it
+// once at page load.
 function renderTransitStage(item, leg) {
   const { transit, variant, stage, hidden, key } = item;
   return `
     <div class="stay-block transit-stage-row" data-transit-id="${transit._id}" data-route-tone="${variant.tone}" data-filter-tags="${filterTagsFor(transit, leg).join(' ')}"${hidden ? ' hidden' : ''}>
       <div class="row-icon-slot"><md-icon>signpost</md-icon></div>
       <div class="stay-block-content">
-        <p class="md-typescale-label-medium stay-detail">${formatTime(key)} · ${STAGE_KIND_LABEL[stage.kind] ?? 'Via'}</p>
+        <p class="md-typescale-label-medium stay-detail stage-overline">${stageOverlineText(key, stage.kind)}</p>
         <p class="md-typescale-title-small"${stage.note ? ` title="${stage.note}"` : ''}>${stage.label}</p>
       </div>
     </div>`;
@@ -150,17 +170,17 @@ function renderSequenceItem(item, day) {
   return renderSection(item, day);
 }
 
-// A branching day's scenarios each become one md-primary-tab; the tab bar
+// A branching day's scenarios each become one md-filter-chip; the chip group
 // picks which branch's own timeline shows below by toggling that scenario's
-// panel — the tabs *are* the "which branch" indicator MD3's chip-per-section
-// used to be, so a track's own panel carries no chip of its own. Each
+// panel — the chips *are* the "which branch" indicator, so a track's own
+// panel carries no separate chip-per-section of its own. Each
 // scenario's notes (Note.concerns entity:scenario — see trip-model.js) render
 // once at the top of that scenario's panel, not repeated per activity.
 //
 // A scenario can declare `followsScenarioDate` (e.g. Jul 1's backup-day
 // scenarios follow Jun 30's go/no-go) — data-scenario-date/data-follows-date
-// on the rendered <md-tabs> are how wireScenarioFollowers (below) finds the
-// pair after both days' blocks are in the DOM, without renderScenarioTabs
+// on the rendered <md-chip-set> are how wireScenarioFollowers (below) finds
+// the pair after both days' blocks are in the DOM, without renderScenarioTabs
 // itself needing to know about any other day. Only the top-level call carries
 // data-scenario-date/data-follows-date — a nested child group (see
 // buildScenarioTracks in trip-model.js) is reached only by whichever parent
@@ -168,26 +188,25 @@ function renderSequenceItem(item, day) {
 // publish or follow.
 //
 // A followed scenario that isn't just "copy the tone" but genuinely changes
-// which options even apply (e.g. Jul 7's tabs mean something different
+// which options even apply (e.g. Jul 7's chips mean something different
 // depending on whether Jul 6's flight already went) marks each such track's
 // scenario with `requiresScenarioId` — an array of the specific upstream
 // scenario _ids it applies to, not just a tone. That renders as
-// data-requires-scenario on the tab itself; wireScenarioFollowers reads it to
-// decide which of this day's tabs even get shown once the followed day's
+// data-requires-scenario on the chip itself; wireScenarioFollowers reads it
+// to decide which of this day's chips even get shown once the followed day's
 // pick is known.
 function renderScenarioTabs(day, tracks = day.scenarioTracks, topLevel = true) {
   if (!tracks.length) return '';
   const followsDate = topLevel ? tracks[0].scenario.followsScenarioDate ?? null : null;
-  const tabs = tracks
+  const chips = tracks
     .map((track, i) => {
       const requires = track.scenario.requiresScenarioId
         ? ` data-requires-scenario="${track.scenario.requiresScenarioId.join(',')}"`
         : '';
       return `
-      <md-primary-tab class="tone-${track.scenario.tone}" inline-icon${i === 0 ? ' active' : ''} data-scenario-id="${track.scenario._id}"${requires}>
+      <md-filter-chip class="tone-${track.scenario.tone}" label="${track.scenario.label}"${i === 0 ? ' selected' : ''} data-scenario-id="${track.scenario._id}"${requires}>
         <md-icon slot="icon">${track.scenario.icon}</md-icon>
-        ${track.scenario.label}
-      </md-primary-tab>`;
+      </md-filter-chip>`;
     })
     .join('');
   const panels = tracks
@@ -200,14 +219,15 @@ function renderScenarioTabs(day, tracks = day.scenarioTracks, topLevel = true) {
     )
     .join('');
   const idAttrs = topLevel ? ` data-scenario-date="${day.date}"${followsDate ? ` data-follows-date="${followsDate}"` : ''}` : '';
-  return `<md-tabs class="scenario-tabs"${idAttrs}>${tabs}</md-tabs><div class="scenario-panels">${panels}</div>`;
+  return `<md-chip-set class="scenario-tabs"${idAttrs}>${chips}</md-chip-set><div class="scenario-panels">${panels}</div>`;
 }
 
 // Clicking a tab only needs to show its own panel and hide the rest — no
 // re-render, since every branch's/option's content is already in the DOM.
-// Shared by the scenario tabs above and meal-row-render.js's meal-option
-// tabs — both keep their panel(s) as an immediate sibling of the <md-tabs>. A
-// day can hold more than one tab group of the same kind, so every match gets
+// Shared by the scenario chips above and the budget view's own <md-tabs>
+// (budget-render.js) — both keep their panel(s) as an immediate sibling of
+// the tab/chip group element. A day can hold more than one group of the same
+// kind, so every match gets
 // its own listener, each keyed to its own panels via nextElementSibling, not
 // a single root-wide query. (The route-variant tabs below don't fit this
 // pattern — their stage rows are scattered non-adjacent siblings, not one
@@ -225,6 +245,45 @@ export function wireTabs(root, tabsSelector, panelSelector) {
   });
 }
 
+// md-filter-chip has no built-in single-select behavior — clicking one
+// doesn't even toggle its own `selected`, since chips are natively
+// independent toggles (see M3's filter-chip spec) — so every "choose one of
+// several options" group in the day list (a Scenario branch, a Route
+// variant, a meal's open MealOption candidates) needs this to become a
+// mutually-exclusive picker. It gives a <md-chip-set> of <md-filter-chip>s
+// the same activeTabIndex/'change' surface md-tabs used to provide for free,
+// since wireScenarioFollowers, wireRouteVariantTabs, and app.js's own
+// selection-reading (readDaySelections, recomputeRoutedTransits,
+// syncMealRow) all key off exactly those two things and otherwise don't need
+// to know chips replaced tabs. activeTabIndex is a real accessor, not a
+// plain property, so a direct assignment (wireScenarioFollowers snapping a
+// follower to match its followed day) updates which chip shows `selected`
+// too, not just the group's own bookkeeping — while only a real click
+// dispatches the 'change' event, since programmatic follower updates already
+// handle their own panel toggling and shouldn't re-trigger downstream
+// recompute.
+export function wireChipGroups(root, selector = '.scenario-tabs, .route-tabs, .meal-row-tabs') {
+  root.querySelectorAll(selector).forEach((groupEl) => {
+    const chips = () => [...groupEl.querySelectorAll(':scope > md-filter-chip')];
+    let index = chips().findIndex((c) => c.selected);
+    if (index < 0) index = 0;
+    Object.defineProperty(groupEl, 'activeTabIndex', {
+      get: () => index,
+      set(newIndex) {
+        index = newIndex;
+        chips().forEach((c, i) => { c.selected = i === index; });
+      },
+    });
+    groupEl.addEventListener('click', (event) => {
+      const chip = event.target.closest('md-filter-chip');
+      const clickedIndex = chip ? chips().indexOf(chip) : -1;
+      if (clickedIndex < 0 || clickedIndex === groupEl.activeTabIndex) return;
+      groupEl.activeTabIndex = clickedIndex;
+      groupEl.dispatchEvent(new Event('change', { bubbles: true }));
+    });
+  });
+}
+
 // A route-variant tab bar (renderRouteVariantTabs) lives on the Depart row,
 // but the stage rows it controls (renderTransitStage) are spread through the
 // rest of the day's timeline by their own interpolated times — not one
@@ -235,7 +294,7 @@ export function wireTabs(root, tabsSelector, panelSelector) {
 function wireRouteVariantTabs(root) {
   root.querySelectorAll('.route-tabs').forEach((tabsEl) => {
     const stageRows = root.querySelectorAll(`.transit-stage-row[data-transit-id="${tabsEl.dataset.transitId}"]`);
-    const tabEls = [...tabsEl.querySelectorAll('md-primary-tab')];
+    const tabEls = [...tabsEl.querySelectorAll('md-filter-chip')];
     tabsEl.addEventListener('change', () => {
       const tone = tabEls[tabsEl.activeTabIndex].dataset.tone;
       stageRows.forEach((row) => { row.hidden = row.dataset.routeTone !== tone; });
@@ -276,21 +335,20 @@ export function wireScenarioFollowers(root) {
     .sort((a, b) => (a.dataset.scenarioDate < b.dataset.scenarioDate ? -1 : a.dataset.scenarioDate > b.dataset.scenarioDate ? 1 : 0));
   const toneOf = (tabEl) => tabEl.className.match(/tone-(\S+)/)[1];
 
-  // Prefers the component's own resolved activeTabIndex (reliable once a
-  // real 'change' has fired at least once); falls back to whichever tab we
-  // ourselves marked `active` in the rendered markup, for the very first
-  // pass before md-tabs (a Lit component) has resolved that property.
+  // Prefers the group's own activeTabIndex (wireChipGroups seeds it from
+  // whichever chip rendered `selected`); falls back to reading `selected`
+  // straight off the markup in case this group hasn't been wired yet.
   function activeTabEl(tabsEl) {
-    const tabEls = [...tabsEl.querySelectorAll(':scope > md-primary-tab')];
+    const tabEls = [...tabsEl.querySelectorAll(':scope > md-filter-chip')];
     const idx = tabsEl.activeTabIndex;
     if (Number.isInteger(idx) && tabEls[idx] && !tabEls[idx].hidden) return tabEls[idx];
     const visible = tabEls.filter((t) => !t.hidden);
     const pool = visible.length ? visible : tabEls;
-    return pool.find((t) => t.hasAttribute('active')) ?? pool[0];
+    return pool.find((t) => t.hasAttribute('selected')) ?? pool[0];
   }
 
   function applyFollow(tabsEl, followedActiveTab) {
-    const tabEls = [...tabsEl.querySelectorAll(':scope > md-primary-tab')];
+    const tabEls = [...tabsEl.querySelectorAll(':scope > md-filter-chip')];
     const panels = tabsEl.nextElementSibling.querySelectorAll(':scope > .scenario-panel');
     const gated = tabEls.some((t) => t.dataset.requiresScenario);
 
@@ -346,6 +404,7 @@ export function renderDayDetailBody(day) {
     ${checkInHtml}
     ${emptyHtml}
   `);
+  wireChipGroups(body);
   wireTabs(body, '.scenario-tabs', '.scenario-panel');
   wireRouteVariantTabs(body);
   return body;
