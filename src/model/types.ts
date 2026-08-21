@@ -260,6 +260,7 @@ export interface EnrichedActivity extends Omit<Activity, 'options' | 'travelers'
 }
 
 export interface EnrichedStay extends Stay {
+  notes: Note[];
   hasWarningNote: boolean;
 }
 
@@ -287,6 +288,7 @@ export interface ResolvedRouteInfo {
 export interface EnrichedTransit extends Omit<Transit, 'arrivesAt'> {
   routeInfo: ResolvedRouteInfo | null;
   arrivesAt: string | null; // overridden with the route walk's resolved arrival, when routed
+  notes: Note[];
   hasWarningNote: boolean;
 }
 

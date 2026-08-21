@@ -4,11 +4,11 @@ import Stack from '@mui/material/Stack';
 import Chip from '@mui/material/Chip';
 
 import { materialIcon } from '../shared/materialIcon';
-import { Notes } from '../shared/Notes';
+import { NotesCluster } from '../shared/Notes';
 import { useTripSelections } from '../../state/TripSelectionsContext';
 import { resolveActiveTrack, visibleTracksFor } from './scenarioSelection';
 import { DayTimeline } from './DayTimeline';
-import type { Day, EnrichedActivity, EnrichedMealOption, ScenarioTrack } from '../../model/types';
+import type { Day, EnrichedActivity, EnrichedMealOption, EnrichedStay, EnrichedTransit, ScenarioTrack } from '../../model/types';
 
 // A branching day's scenarios each become one chip; the chip group picks
 // which branch's own timeline shows below. Each scenario's notes render once
@@ -20,12 +20,16 @@ export function ScenarioTabsSection({
   topLevel,
   daysByDate,
   onOpenActivity,
+  onOpenStay,
+  onOpenTransit,
 }: {
   day: Day;
   tracks: ScenarioTrack[];
   topLevel: boolean;
   daysByDate: Map<string, Day>;
   onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
+  onOpenStay: (stay: EnrichedStay) => void;
+  onOpenTransit: (transit: EnrichedTransit) => void;
 }) {
   const { scenarioTone, selectScenario } = useTripSelections();
   const [localIndex, setLocalIndex] = useState(0);
@@ -66,8 +70,15 @@ export function ScenarioTabsSection({
         })}
       </Stack>
       <Box sx={{ mt: 1.5 }}>
-        <Notes notes={activeTrack.notes} />
-        <DayTimeline day={day} sequence={activeTrack.sequence} daysByDate={daysByDate} onOpenActivity={onOpenActivity} />
+        <NotesCluster notes={activeTrack.notes} />
+        <DayTimeline
+          day={day}
+          sequence={activeTrack.sequence}
+          daysByDate={daysByDate}
+          onOpenActivity={onOpenActivity}
+          onOpenStay={onOpenStay}
+          onOpenTransit={onOpenTransit}
+        />
       </Box>
     </Box>
   );

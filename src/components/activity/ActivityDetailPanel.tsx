@@ -6,7 +6,7 @@ import { mealOptionLabel } from '../../model/mealOptions';
 import { materialIcon, DEFAULT_PLACE_ICON, DINING_FORMAT_ICON } from '../shared/materialIcon';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { BookingChip } from '../shared/BookingChip';
-import { Notes } from '../shared/Notes';
+import { NotesCluster } from '../shared/Notes';
 import { PlacePanel } from './PlacePanel';
 import type { EnrichedActivity, EnrichedMealOption, Place } from '../../model/types';
 
@@ -80,7 +80,7 @@ export function ActivityDetailPanel({
           <BookingChip booking={activity.booking} />
         </Box>
       )}
-      <Notes notes={activity.notes} />
+      <NotesCluster notes={activity.notes} />
       {place && <PlacePanel place={place} />}
     </DetailSideSheet>
   );

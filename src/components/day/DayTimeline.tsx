@@ -1,4 +1,4 @@
-import { Fragment, type ReactElement } from 'react';
+import { Fragment, useState, type ReactElement } from 'react';
 import Timeline from '@mui/lab/Timeline';
 import TimelineItem from '@mui/lab/TimelineItem';
 import TimelineSeparator from '@mui/lab/TimelineSeparator';
@@ -8,23 +8,25 @@ import TimelineContent from '@mui/lab/TimelineContent';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import EditIcon from '@mui/icons-material/Edit';
 
 import { formatTime, splitOutStayBoundaries, stayRelation } from '../../model/tripModel';
 import { filterSequenceItems } from '../../model/filters';
 import { firstImage } from '../../model/formatting';
 import { materialIcon } from '../shared/materialIcon';
 import { BookingChip } from '../shared/BookingChip';
+import { NotesCluster, splitNotes } from '../shared/Notes';
 import { RouteVariantTabs } from './RouteVariantTabs';
+import { RowSpeedDial } from './RowSpeedDial';
 import { ActivityRow, ActivityLeading } from './ActivityRow';
 import { ScenarioTabsSection } from './ScenarioTabsSection';
 import { useTripSelections } from '../../state/TripSelectionsContext';
 import { useEdit } from '../../state/EditContext';
+import { useLongPress } from '../../hooks/useLongPress';
 import type {
   Day,
   EnrichedActivity,
   EnrichedMealOption,
+  EnrichedStay,
   EnrichedTransit,
   ScenarioTrack,
   SequenceItem,
@@ -51,7 +53,17 @@ function resolvedArrivesAtFor(transit: EnrichedTransit, routeTones: Map<string, 
   return transit.routeInfo.variants.find((v) => v.tone === tone)?.arrivesAt ?? transit.arrivesAt;
 }
 
-function StayNode({ item, date, isLast }: { item: StaySequenceItem; date: string; isLast: boolean }) {
+function StayNode({
+  item,
+  date,
+  isLast,
+  onOpen,
+}: {
+  item: StaySequenceItem;
+  date: string;
+  isLast: boolean;
+  onOpen: (stay: EnrichedStay) => void;
+}) {
   const { stay } = item;
   const name = stay.lodging?.name ?? 'Lodging still open';
   const detailBits = [
@@ -63,6 +75,9 @@ function StayNode({ item, date, isLast }: { item: StaySequenceItem; date: string
   const image = firstImage(stay);
   const Icon = materialIcon('hotel');
   const { openEdit } = useEdit();
+  const [dialOpen, setDialOpen] = useState(false);
+  const longPress = useLongPress<HTMLDivElement>(() => setDialOpen(true));
+  const { above, below } = splitNotes(stay.notes);
   return (
     <TimelineItem>
       <TimelineSeparator>
@@ -75,40 +90,57 @@ function StayNode({ item, date, isLast }: { item: StaySequenceItem; date: string
         )}
         {!isLast && <TimelineConnector />}
       </TimelineSeparator>
-      <TimelineContent sx={{ pb: 3, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="caption" color="text.secondary">
-            {stayRelation(stay, date)}
-          </Typography>
-          <Typography variant="subtitle1">{name}</Typography>
-          <Typography variant="body2" color="text.secondary">
-            {formatTime(stay.checkInAt)} in · {formatTime(stay.checkOutAt)} out
-          </Typography>
-          {detailBits.length > 0 && (
-            <Typography variant="body2" color="text.secondary">
-              {detailBits.join(' · ')}
+      <TimelineContent sx={{ pb: 3 }}>
+        <NotesCluster notes={above} />
+        <Box sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => onOpen(stay)} {...longPress}>
+          {dialOpen && (
+            <RowSpeedDial
+              entity="stay"
+              id={stay._id}
+              onEdit={() => openEdit('stay', stay._id)}
+              onClose={() => setDialOpen(false)}
+            />
+          )}
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="caption" color="text.secondary">
+              {stayRelation(stay, date)}
             </Typography>
-          )}
-          {stay.lodging?.checkInInstructions && (
+            <Typography variant="subtitle1">{name}</Typography>
             <Typography variant="body2" color="text.secondary">
-              {stay.lodging.checkInInstructions}
+              {formatTime(stay.checkInAt)} in · {formatTime(stay.checkOutAt)} out
             </Typography>
-          )}
-          {stay.booking && (
-            <Box sx={{ mt: 0.5 }}>
-              <BookingChip booking={stay.booking} />
-            </Box>
-          )}
+            {detailBits.length > 0 && (
+              <Typography variant="body2" color="text.secondary">
+                {detailBits.join(' · ')}
+              </Typography>
+            )}
+            {stay.lodging?.checkInInstructions && (
+              <Typography variant="body2" color="text.secondary">
+                {stay.lodging.checkInInstructions}
+              </Typography>
+            )}
+            {stay.booking && (
+              <Box sx={{ mt: 0.5 }}>
+                <BookingChip booking={stay.booking} />
+              </Box>
+            )}
+          </Box>
         </Box>
-        <IconButton size="small" aria-label="Edit" onClick={() => openEdit('stay', stay._id)}>
-          <EditIcon fontSize="small" />
-        </IconButton>
+        <NotesCluster notes={below} />
       </TimelineContent>
     </TimelineItem>
   );
 }
 
-function TransitBoundaryNode({ item, isLast }: { item: TransitBoundarySequenceItem; isLast: boolean }) {
+function TransitBoundaryNode({
+  item,
+  isLast,
+  onOpen,
+}: {
+  item: TransitBoundarySequenceItem;
+  isLast: boolean;
+  onOpen: (transit: EnrichedTransit) => void;
+}) {
   const { routeTones } = useTripSelections();
   const { transit, phase } = item;
   const isDepart = phase === 'depart';
@@ -118,6 +150,25 @@ function TransitBoundaryNode({ item, isLast }: { item: TransitBoundarySequenceIt
   const image = isDepart ? firstImage(transit) : null;
   const Icon = materialIcon(modeIconName);
   const { openEdit } = useEdit();
+  const [dialOpen, setDialOpen] = useState(false);
+  const longPress = useLongPress<HTMLDivElement>(() => setDialOpen(true));
+  const { above, below } = isDepart ? splitNotes(transit.notes) : { above: [], below: [] };
+
+  const boundaryContent = (
+    <Box sx={{ minWidth: 0 }}>
+      <Typography variant="caption" color="text.secondary">
+        {time ? `${formatTime(time)} · ${isDepart ? 'Depart' : 'Arrive'}` : isDepart ? 'Depart' : 'Arrive'}
+      </Typography>
+      <Typography variant="subtitle1">{place}</Typography>
+      {isDepart && transit.booking && (
+        <Box sx={{ mt: 0.5 }}>
+          <BookingChip booking={transit.booking} />
+        </Box>
+      )}
+      {isDepart && <RouteVariantTabs transit={transit} />}
+    </Box>
+  );
+
   return (
     <TimelineItem>
       <TimelineSeparator>
@@ -130,24 +181,24 @@ function TransitBoundaryNode({ item, isLast }: { item: TransitBoundarySequenceIt
         )}
         {!isLast && <TimelineConnector />}
       </TimelineSeparator>
-      <TimelineContent sx={{ pb: 3, display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 1 }}>
-        <Box sx={{ minWidth: 0 }}>
-          <Typography variant="caption" color="text.secondary">
-            {time ? `${formatTime(time)} · ${isDepart ? 'Depart' : 'Arrive'}` : isDepart ? 'Depart' : 'Arrive'}
-          </Typography>
-          <Typography variant="subtitle1">{place}</Typography>
-          {isDepart && transit.booking && (
-            <Box sx={{ mt: 0.5 }}>
-              <BookingChip booking={transit.booking} />
-            </Box>
-          )}
-          {isDepart && <RouteVariantTabs transit={transit} />}
-        </Box>
-        {isDepart && (
-          <IconButton size="small" aria-label="Edit" onClick={() => openEdit('transit', transit._id)}>
-            <EditIcon fontSize="small" />
-          </IconButton>
+      <TimelineContent sx={{ pb: 3 }}>
+        {isDepart && <NotesCluster notes={above} />}
+        {isDepart ? (
+          <Box sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => onOpen(transit)} {...longPress}>
+            {dialOpen && (
+              <RowSpeedDial
+                entity="transit"
+                id={transit._id}
+                onEdit={() => openEdit('transit', transit._id)}
+                onClose={() => setDialOpen(false)}
+              />
+            )}
+            {boundaryContent}
+          </Box>
+        ) : (
+          boundaryContent
         )}
+        {isDepart && <NotesCluster notes={below} />}
       </TimelineContent>
     </TimelineItem>
   );
@@ -195,6 +246,14 @@ function ActivityNode({
   isLast: boolean;
   onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
 }) {
+  const { openEdit } = useEdit();
+  const [dialOpen, setDialOpen] = useState(false);
+  // A meal's own MealRow already fans into per-option tabs — long-press
+  // there is a later refinement, not wired up yet.
+  const isMeal = Boolean(activity.options?.length);
+  const longPress = useLongPress<HTMLDivElement>(() => setDialOpen(true));
+  const { above, below } = splitNotes(activity.notes);
+
   return (
     <TimelineItem>
       <TimelineSeparator>
@@ -202,7 +261,19 @@ function ActivityNode({
         {!isLast && <TimelineConnector />}
       </TimelineSeparator>
       <TimelineContent sx={{ pb: 3, px: 2, pt: 0 }}>
-        <ActivityRow activity={activity} day={day} onOpen={onOpenActivity} />
+        <NotesCluster notes={above} />
+        <Box sx={{ position: 'relative' }} {...(isMeal ? {} : longPress)}>
+          {dialOpen && (
+            <RowSpeedDial
+              entity="activity"
+              id={activity._id}
+              onEdit={() => openEdit('activity', activity._id)}
+              onClose={() => setDialOpen(false)}
+            />
+          )}
+          <ActivityRow activity={activity} day={day} onOpen={onOpenActivity} />
+        </Box>
+        <NotesCluster notes={below} />
       </TimelineContent>
     </TimelineItem>
   );
@@ -215,6 +286,8 @@ function ScenarioTabsNode({
   isLast,
   daysByDate,
   onOpenActivity,
+  onOpenStay,
+  onOpenTransit,
 }: {
   day: Day;
   tracks: ScenarioTrack[];
@@ -222,6 +295,8 @@ function ScenarioTabsNode({
   isLast: boolean;
   daysByDate: Map<string, Day>;
   onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
+  onOpenStay: (stay: EnrichedStay) => void;
+  onOpenTransit: (transit: EnrichedTransit) => void;
 }) {
   const Icon = materialIcon('alt_route');
   return (
@@ -233,7 +308,15 @@ function ScenarioTabsNode({
         {!isLast && <TimelineConnector />}
       </TimelineSeparator>
       <TimelineContent sx={{ pb: 3 }}>
-        <ScenarioTabsSection day={day} tracks={tracks} topLevel={topLevel} daysByDate={daysByDate} onOpenActivity={onOpenActivity} />
+        <ScenarioTabsSection
+          day={day}
+          tracks={tracks}
+          topLevel={topLevel}
+          daysByDate={daysByDate}
+          onOpenActivity={onOpenActivity}
+          onOpenStay={onOpenStay}
+          onOpenTransit={onOpenTransit}
+        />
       </TimelineContent>
     </TimelineItem>
   );
@@ -244,11 +327,15 @@ export function DayTimeline({
   sequence,
   daysByDate,
   onOpenActivity,
+  onOpenStay,
+  onOpenTransit,
 }: {
   day: Day;
   sequence: SequenceItem[];
   daysByDate: Map<string, Day>;
   onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
+  onOpenStay: (stay: EnrichedStay) => void;
+  onOpenTransit: (transit: EnrichedTransit) => void;
 }) {
   const { activeFilterTokens } = useTripSelections();
   const filtered = filterSequenceItems(sequence, day, activeFilterTokens);
@@ -279,10 +366,20 @@ export function DayTimeline({
   // whole (each activity gets its own dot, matching every other node type).
   const nodes: { key: string; render: (isLast: boolean) => ReactElement }[] = flattened.flatMap((item, i) => {
     if (item.type === 'stay') {
-      return [{ key: `stay-${item.stay._id}-${i}`, render: (isLast: boolean) => <StayNode item={item} date={day.date} isLast={isLast} /> }];
+      return [
+        {
+          key: `stay-${item.stay._id}-${i}`,
+          render: (isLast: boolean) => <StayNode item={item} date={day.date} isLast={isLast} onOpen={onOpenStay} />,
+        },
+      ];
     }
     if (item.type === 'transit-boundary') {
-      return [{ key: `transit-${item.transit._id}-${item.phase}`, render: (isLast: boolean) => <TransitBoundaryNode item={item} isLast={isLast} /> }];
+      return [
+        {
+          key: `transit-${item.transit._id}-${item.phase}`,
+          render: (isLast: boolean) => <TransitBoundaryNode item={item} isLast={isLast} onOpen={onOpenTransit} />,
+        },
+      ];
     }
     if (item.type === 'transit-stage') {
       return [{ key: `stage-${item.transit._id}-${item.variant.tone}-${i}`, render: (isLast: boolean) => <TransitStageNode item={item} isLast={isLast} /> }];
@@ -305,6 +402,8 @@ export function DayTimeline({
             isLast={isLast}
             daysByDate={daysByDate}
             onOpenActivity={onOpenActivity}
+            onOpenStay={onOpenStay}
+            onOpenTransit={onOpenTransit}
           />
         ),
       },

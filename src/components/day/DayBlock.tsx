@@ -3,9 +3,9 @@ import IconButton from '@mui/material/IconButton';
 import Typography from '@mui/material/Typography';
 import MapIcon from '@mui/icons-material/Map';
 
-import { Notes } from '../shared/Notes';
+import { NotesCluster } from '../shared/Notes';
 import { DayTimeline } from './DayTimeline';
-import type { Day, EnrichedActivity, EnrichedMealOption } from '../../model/types';
+import type { Day, EnrichedActivity, EnrichedMealOption, EnrichedStay, EnrichedTransit } from '../../model/types';
 
 // One <section> per Day with a sticky header (date + title) and its full
 // Stay/Transit/Activity detail rendered inline underneath — position: sticky
@@ -16,11 +16,15 @@ export function DayBlock({
   day,
   daysByDate,
   onOpenActivity,
+  onOpenStay,
+  onOpenTransit,
   onOpenMap,
 }: {
   day: Day;
   daysByDate: Map<string, Day>;
   onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
+  onOpenStay: (stay: EnrichedStay) => void;
+  onOpenTransit: (transit: EnrichedTransit) => void;
   onOpenMap: (day: Day) => void;
 }) {
   return (
@@ -51,8 +55,15 @@ export function DayBlock({
         </IconButton>
       </Box>
       <Box sx={{ px: 3, py: 2 }}>
-        <Notes notes={day.notes} />
-        <DayTimeline day={day} sequence={day.sequence} daysByDate={daysByDate} onOpenActivity={onOpenActivity} />
+        <NotesCluster notes={day.notes} />
+        <DayTimeline
+          day={day}
+          sequence={day.sequence}
+          daysByDate={daysByDate}
+          onOpenActivity={onOpenActivity}
+          onOpenStay={onOpenStay}
+          onOpenTransit={onOpenTransit}
+        />
       </Box>
     </Box>
   );

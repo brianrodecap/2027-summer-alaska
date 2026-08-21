@@ -12,6 +12,7 @@ import DownloadIcon from '@mui/icons-material/Download';
 import { TripDataProvider, useTripData } from '../state/TripDataContext';
 import { TripSelectionsProvider } from '../state/TripSelectionsContext';
 import { EditProvider } from '../state/EditContext';
+import { NoteEditProvider } from '../state/NoteEditContext';
 import { formatTripDateChip, tripDayCount } from '../model/tripModel';
 import { exportEdits } from '../model/exportEdits';
 
@@ -67,8 +68,10 @@ export function TripLayout() {
     <TripDataProvider slug={slug}>
       <TripSelectionsProvider>
         <EditProvider>
-          <TripHero />
-          <Outlet />
+          <NoteEditProvider>
+            <TripHero />
+            <Outlet />
+          </NoteEditProvider>
         </EditProvider>
       </TripSelectionsProvider>
     </TripDataProvider>

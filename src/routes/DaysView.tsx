@@ -15,10 +15,12 @@ import { DayBlock } from '../components/day/DayBlock';
 import { DayMapPanel } from '../components/day/DayMapPanel';
 import { FilterMenu } from '../components/day/FilterMenu';
 import { ActivityDetailPanel } from '../components/activity/ActivityDetailPanel';
+import { StayDetailPanel } from '../components/day/StayDetailPanel';
+import { TransitDetailPanel } from '../components/day/TransitDetailPanel';
 import { JumpToDayPicker } from '../components/pickers/JumpToDayPicker';
 import { RoutesDialog } from '../components/edit/RoutesDialog';
 import { dayHasVisibleContent } from '../model/filters';
-import type { Day, EnrichedActivity, EnrichedMealOption, Route } from '../model/types';
+import type { Day, EnrichedActivity, EnrichedMealOption, EnrichedStay, EnrichedTransit, Route } from '../model/types';
 
 export function DaysView() {
   const { view, data, setData } = useTripData();
@@ -28,6 +30,8 @@ export function DaysView() {
   const navigate = useNavigate();
   const [mapDay, setMapDay] = useState<Day | null>(null);
   const [openActivity, setOpenActivity] = useState<{ activity: EnrichedActivity; selectedOption?: EnrichedMealOption } | null>(null);
+  const [openStay, setOpenStay] = useState<EnrichedStay | null>(null);
+  const [openTransit, setOpenTransit] = useState<EnrichedTransit | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [routesOpen, setRoutesOpen] = useState(false);
   // Flat while it's the page's own leading edge, shadowed only once content
@@ -84,7 +88,15 @@ export function DaysView() {
       ) : (
         <Stack divider={<Box sx={{ borderBottom: 1, borderColor: 'divider' }} />}>
           {visibleDays.map((day) => (
-            <DayBlock key={day.date} day={day} daysByDate={daysByDate} onOpenActivity={handleOpenActivity} onOpenMap={setMapDay} />
+            <DayBlock
+              key={day.date}
+              day={day}
+              daysByDate={daysByDate}
+              onOpenActivity={handleOpenActivity}
+              onOpenStay={setOpenStay}
+              onOpenTransit={setOpenTransit}
+              onOpenMap={setMapDay}
+            />
           ))}
         </Stack>
       )}
@@ -100,6 +112,34 @@ export function DaysView() {
                 const id = openActivity.activity._id;
                 setOpenActivity(null);
                 openEdit('activity', id);
+              }
+            : undefined
+        }
+      />
+      <StayDetailPanel
+        stay={openStay}
+        open={Boolean(openStay)}
+        onClose={() => setOpenStay(null)}
+        onEdit={
+          openStay
+            ? () => {
+                const id = openStay._id;
+                setOpenStay(null);
+                openEdit('stay', id);
+              }
+            : undefined
+        }
+      />
+      <TransitDetailPanel
+        transit={openTransit}
+        open={Boolean(openTransit)}
+        onClose={() => setOpenTransit(null)}
+        onEdit={
+          openTransit
+            ? () => {
+                const id = openTransit._id;
+                setOpenTransit(null);
+                openEdit('transit', id);
               }
             : undefined
         }

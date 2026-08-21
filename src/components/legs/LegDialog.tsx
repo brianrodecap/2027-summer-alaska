@@ -20,7 +20,7 @@ import Stack from '@mui/material/Stack';
 import { formatMoney } from '../../model/tripModel';
 import { firstImage } from '../../model/formatting';
 import { BookingChip } from '../shared/BookingChip';
-import { Notes } from '../shared/Notes';
+import { NotesCluster } from '../shared/Notes';
 import { groupDaysByLocation } from './legDayGroups';
 import type { Booking, Day, LegSummary } from '../../model/types';
 
@@ -148,7 +148,7 @@ export function LegDialog({
             No single reservation for this leg — booked piece by piece as its Stays/Transits/Activities.
           </Typography>
         )}
-        <Notes notes={notes} />
+        <NotesCluster notes={notes} />
         <Divider sx={{ my: 1 }} />
         <LegDayList days={days} onSelectDay={onSelectDay} />
       </DialogContent>

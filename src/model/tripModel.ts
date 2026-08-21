@@ -162,10 +162,13 @@ function resolveActivityDate(activity: Activity): string | null {
 
 // ---------- Note.concerns matching — see docs/data-model.html's Ref type.
 // Notes are bucketed to exactly one drill-down level by which kind of ref they
-// carry: entity:leg -> the Leg dialog, date/dateRange/entity:stay/entity:transit
-// -> that day's inline notes, entity:scenario -> once at the top of that
-// scenario's own tab panel, entity:activity -> that activity's side sheet. A
-// note with several refs (e.g. one leg ref plus a dateRange) naturally
+// carry: entity:leg -> the Leg dialog, entity:stay/entity:transit -> that
+// Stay/Transit's own day-list row (a Transit's notes attach at its Depart
+// row, never Arrive), entity:scenario -> the top of that scenario's own tab
+// panel, entity:activity -> that Activity's own day-list row (and its side
+// sheet). A bare date/dateRange ref with no entity has no row of its own to
+// attach to, so it's the only kind notesForDay still pools at the whole day.
+// A note with several refs (e.g. one leg ref plus a dateRange) naturally
 // surfaces at more than one level. ----------
 
 function refMatchesDate(ref: Ref, date: string): boolean {
@@ -178,24 +181,18 @@ function refMatchesEntity(ref: Ref, entity: RefEntityKind, ids: string[]): boole
   return 'entity' in ref && ref.entity === entity && ids.includes(ref.id);
 }
 
-function notesForLeg(notes: Note[], legId: string): Note[] {
-  return notes.filter((n) => n.concerns.some((r) => refMatchesEntity(r, 'leg', [legId])));
+// One bucket per RefEntityKind a note can name directly (leg/stay/transit/
+// scenario/activity) — each rendered right at that entity's own spot in the
+// UI (its day-list row, its side sheet, its tab section, its dialog) rather
+// than pooled at the day level. Only a bare date/dateRange ref (no entity)
+// has nowhere more specific to attach than the day itself — that's all
+// notesForDay matches now.
+function notesForEntity(notes: Note[], entity: RefEntityKind, id: string): Note[] {
+  return notes.filter((n) => n.concerns.some((r) => refMatchesEntity(r, entity, [id])));
 }
 
-function notesForDay(notes: Note[], date: string, stayIds: string[], transitIds: string[]): Note[] {
-  return notes.filter((n) =>
-    n.concerns.some(
-      (r) => refMatchesDate(r, date) || refMatchesEntity(r, 'stay', stayIds) || refMatchesEntity(r, 'transit', transitIds),
-    ),
-  );
-}
-
-function notesForScenario(notes: Note[], scenarioId: string): Note[] {
-  return notes.filter((n) => n.concerns.some((r) => refMatchesEntity(r, 'scenario', [scenarioId])));
-}
-
-function notesForActivity(notes: Note[], activityId: string): Note[] {
-  return notes.filter((n) => n.concerns.some((r) => refMatchesEntity(r, 'activity', [activityId])));
+function notesForDay(notes: Note[], date: string): Note[] {
+  return notes.filter((n) => n.concerns.some((r) => refMatchesDate(r, date)));
 }
 
 function entityHasWarning(notes: Note[], entity: RefEntityKind, id: string): boolean {
@@ -684,7 +681,7 @@ function buildScenarioTracks(
     }
     return {
       scenario,
-      notes: notesForScenario(notes, scenarioId),
+      notes: notesForEntity(notes, 'scenario', scenarioId),
       sequence: collapseActivityRuns(mergeByTime(sequenceItems)),
       anchorKey: ownKey,
       realAnchorKey,
@@ -1085,9 +1082,6 @@ function buildDay(
   const arrivingTransit = legTransits.find((t) => t.arrivesAt && dateOnly(t.arrivesAt) === date);
   const location = primaryStay?.lodging?.name ?? arrivingTransit?.to?.label ?? dayTransits[0]?.from?.label ?? leg.name;
 
-  const stayIds = dayStays.map((s) => s._id);
-  const transitIds = dayTransits.map((t) => t._id);
-
   const { tracks: scenarioTracks, anchorKey: scenarioAnchorKey } = buildScenarioTracks(
     dayTransits,
     dayActivities,
@@ -1105,7 +1099,7 @@ function buildDay(
     transits: dayTransits,
     sequence: buildSequence(dayStays, dayTransits, dayActivities, date, dayStart, scenarioAnchorKey),
     scenarioTracks,
-    notes: notesForDay(notes, date, stayIds, transitIds),
+    notes: notesForDay(notes, date),
     summary: '',
     title: '',
   };
@@ -1501,7 +1495,7 @@ export function buildTripView(data: TripData): TripView {
     return {
       ...a,
       date: resolveActivityDate(a),
-      notes: notesForActivity(notes, a._id),
+      notes: notesForEntity(notes, 'activity', a._id),
       hasWarningNote: entityHasWarning(notes, 'activity', a._id),
       transitOverlapWarning: overlappingTransit
         ? `During transit: ${overlappingTransit.from.label} → ${overlappingTransit.to.label}`
@@ -1515,7 +1509,11 @@ export function buildTripView(data: TripData): TripView {
     };
   });
 
-  const enrichedStays: EnrichedStay[] = stays.map((s) => ({ ...s, hasWarningNote: entityHasWarning(notes, 'stay', s._id) }));
+  const enrichedStays: EnrichedStay[] = stays.map((s) => ({
+    ...s,
+    notes: notesForEntity(notes, 'stay', s._id),
+    hasWarningNote: entityHasWarning(notes, 'stay', s._id),
+  }));
   // arrivesAt is overridden with the route walk's own resolved arrival for
   // any Transit with a route (see resolveTransitRoute) — every downstream
   // reader of transit.arrivesAt (sorting, day placement, rendering) picks
@@ -1528,6 +1526,7 @@ export function buildTripView(data: TripData): TripView {
       ...t,
       routeInfo,
       arrivesAt: routeInfo ? routeInfo.resolvedArrivesAt : t.arrivesAt,
+      notes: notesForEntity(notes, 'transit', t._id),
       hasWarningNote: entityHasWarning(notes, 'transit', t._id),
     };
   });
@@ -1546,7 +1545,7 @@ export function buildTripView(data: TripData): TripView {
   const legSummaries: LegSummary[] = legs.map((leg) => ({
     leg,
     days: days.filter((d) => d.leg._id === leg._id),
-    notes: notesForLeg(notes, leg._id),
+    notes: notesForEntity(notes, 'leg', leg._id),
   }));
 
   const budget = buildBudgetView(trip, legs, days, enrichedStays, routedTransits, enrichedActivities);
