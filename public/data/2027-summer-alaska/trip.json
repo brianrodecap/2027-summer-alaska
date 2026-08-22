@@ -6,10 +6,32 @@
   "endDate": "2027-07-24",
   "status": "planning",
   "travelers": [
-    { "id": "trav_brian", "name": "Brian Rodecap", "age": 51 },
-    { "id": "trav_stacy", "name": "Stacy Rodecap", "age": 46 },
-    { "id": "trav_lorelei", "name": "Lorelei Rodecap", "age": 13 },
-    { "id": "trav_redding", "name": "Redding Rodecap", "age": 17 }
+    {
+      "id": "trav_brian",
+      "name": "Brian Rodecap",
+      "age": 51
+    },
+    {
+      "id": "trav_stacy",
+      "name": "Stacy Rodecap",
+      "age": 46
+    },
+    {
+      "id": "trav_lorelei",
+      "name": "Lorelei Rodecap",
+      "age": 13
+    },
+    {
+      "id": "trav_redding",
+      "name": "Redding Rodecap",
+      "age": 17
+    }
   ],
-  "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Wonder_Lake_and_Denali.jpg", "credit": "NPS (Denali National Park and Preserve), public domain", "caption": "Denali reflected in Wonder Lake" } ]
+  "images": [
+    {
+      "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Wonder_Lake_and_Denali.jpg",
+      "credit": "NPS (Denali National Park and Preserve), public domain",
+      "caption": "Denali reflected in Wonder Lake"
+    }
+  ]
 }

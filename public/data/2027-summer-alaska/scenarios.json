@@ -5,7 +5,13 @@
     "tone": "ideal",
     "label": "Flight goes",
     "icon": "flight_takeoff",
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_and_Range_from_Air_with_Plane_Wing_%287065283015%29.jpg", "credit": "Photo by Jacob W. Frank / NPS, CC BY 2.0", "caption": "Flightseeing plane wing over Denali and the Alaska Range" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_and_Range_from_Air_with_Plane_Wing_%287065283015%29.jpg",
+        "credit": "Photo by Jacob W. Frank / NPS, CC BY 2.0",
+        "caption": "Flightseeing plane wing over Denali and the Alaska Range"
+      }
+    ]
   },
   {
     "_id": "scenario_jun27_alt",
@@ -13,7 +19,13 @@
     "tone": "alternate",
     "label": "Grounded",
     "icon": "cloud",
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_in_the_clouds._NPS-Jason_Bennett_%2818062718644%29.jpg", "credit": "Photo by Jason Bennett / NPS, CC BY 2.0", "caption": "Denali's summit wrapped in thick cloud cover" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_in_the_clouds._NPS-Jason_Bennett_%2818062718644%29.jpg",
+        "credit": "Photo by Jason Bennett / NPS, CC BY 2.0",
+        "caption": "Denali's summit wrapped in thick cloud cover"
+      }
+    ]
   },
   {
     "_id": "scenario_jun30_ideal",
@@ -21,7 +33,13 @@
     "tone": "ideal",
     "label": "Flight goes",
     "icon": "flight_takeoff",
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg", "credit": "U.S. Fish and Wildlife Service, public domain", "caption": "Aerial view of the Brooks Range, Gates of the Arctic" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg",
+        "credit": "U.S. Fish and Wildlife Service, public domain",
+        "caption": "Aerial view of the Brooks Range, Gates of the Arctic"
+      }
+    ]
   },
   {
     "_id": "scenario_jun30_alt",
@@ -29,7 +47,13 @@
     "tone": "alternate",
     "label": "Grounded",
     "icon": "cloud",
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg", "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0", "caption": "Drizzly, low-cloud day in the Central Brooks Range" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg",
+        "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0",
+        "caption": "Drizzly, low-cloud day in the Central Brooks Range"
+      }
+    ]
   },
   {
     "_id": "scenario_jul1_ideal",
@@ -38,7 +62,13 @@
     "label": "Relaxed drive-back day",
     "icon": "flight_takeoff",
     "followsScenarioDate": "2027-06-30",
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG", "credit": "Photo by Mison / CC BY-SA 3.0", "caption": "Dalton Highway with pipeline near Finger Mountain" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG",
+        "credit": "Photo by Mison / CC BY-SA 3.0",
+        "caption": "Dalton Highway with pipeline near Finger Mountain"
+      }
+    ]
   },
   {
     "_id": "scenario_jul1_alt",
@@ -47,7 +77,13 @@
     "label": "Last-chance backup day",
     "icon": "cloud",
     "followsScenarioDate": "2027-06-30",
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg", "credit": "U.S. Fish and Wildlife Service, public domain", "caption": "Aerial view of the Brooks Range, Gates of the Arctic" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg",
+        "credit": "U.S. Fish and Wildlife Service, public domain",
+        "caption": "Aerial view of the Brooks Range, Gates of the Arctic"
+      }
+    ]
   },
   {
     "_id": "scenario_jul1_alt_flew",
@@ -56,7 +92,13 @@
     "label": "Flight goes",
     "icon": "flight_takeoff",
     "parentScenarioId": "scenario_jul1_alt",
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg", "credit": "U.S. Fish and Wildlife Service, public domain", "caption": "Aerial view of the Brooks Range, Gates of the Arctic" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg",
+        "credit": "U.S. Fish and Wildlife Service, public domain",
+        "caption": "Aerial view of the Brooks Range, Gates of the Arctic"
+      }
+    ]
   },
   {
     "_id": "scenario_jul1_alt_grounded",
@@ -65,7 +107,13 @@
     "label": "Grounded",
     "icon": "cloud",
     "parentScenarioId": "scenario_jul1_alt",
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg", "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0", "caption": "Drizzly, low-cloud day in the Central Brooks Range" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg",
+        "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0",
+        "caption": "Drizzly, low-cloud day in the Central Brooks Range"
+      }
+    ]
   },
   {
     "_id": "scenario_jul6_ideal",
@@ -73,7 +121,13 @@
     "tone": "ideal",
     "label": "Flight goes",
     "icon": "flight_takeoff",
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg", "credit": "Photo by LCGS Russ / CC BY-SA 3.0", "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg",
+        "credit": "Photo by LCGS Russ / CC BY-SA 3.0",
+        "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park"
+      }
+    ]
   },
   {
     "_id": "scenario_jul6_alt",
@@ -81,7 +135,13 @@
     "tone": "alternate",
     "label": "Grounded",
     "icon": "cloud",
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg", "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0", "caption": "Drizzly, low-cloud day in the Central Brooks Range" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg",
+        "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0",
+        "caption": "Drizzly, low-cloud day in the Central Brooks Range"
+      }
+    ]
   },
   {
     "_id": "scenario_jul7_bonus_ideal",
@@ -90,8 +150,16 @@
     "label": "Bonus flightseeing goes",
     "icon": "flight_takeoff",
     "followsScenarioDate": "2027-07-06",
-    "requiresScenarioId": ["scenario_jul6_ideal"],
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg", "credit": "Photo by LCGS Russ / CC BY-SA 3.0", "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park" } ]
+    "requiresScenarioId": [
+      "scenario_jul6_ideal"
+    ],
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg",
+        "credit": "Photo by LCGS Russ / CC BY-SA 3.0",
+        "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park"
+      }
+    ]
   },
   {
     "_id": "scenario_jul7_bonus_alt",
@@ -100,8 +168,16 @@
     "label": "Bonus flight grounded",
     "icon": "cloud",
     "followsScenarioDate": "2027-07-06",
-    "requiresScenarioId": ["scenario_jul6_ideal"],
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg", "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0", "caption": "Drizzly, low-cloud day in the Central Brooks Range" } ]
+    "requiresScenarioId": [
+      "scenario_jul6_ideal"
+    ],
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg",
+        "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0",
+        "caption": "Drizzly, low-cloud day in the Central Brooks Range"
+      }
+    ]
   },
   {
     "_id": "scenario_jul7_retry_ideal",
@@ -110,8 +186,16 @@
     "label": "Flight goes",
     "icon": "flight_takeoff",
     "followsScenarioDate": "2027-07-06",
-    "requiresScenarioId": ["scenario_jul6_alt"],
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg", "credit": "Photo by LCGS Russ / CC BY-SA 3.0", "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park" } ]
+    "requiresScenarioId": [
+      "scenario_jul6_alt"
+    ],
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg",
+        "credit": "Photo by LCGS Russ / CC BY-SA 3.0",
+        "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park"
+      }
+    ]
   },
   {
     "_id": "scenario_jul7_retry_alt",
@@ -120,8 +204,16 @@
     "label": "Weathered out again",
     "icon": "cloud",
     "followsScenarioDate": "2027-07-06",
-    "requiresScenarioId": ["scenario_jul6_alt"],
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg", "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0", "caption": "Drizzly, low-cloud day in the Central Brooks Range" } ]
+    "requiresScenarioId": [
+      "scenario_jul6_alt"
+    ],
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg",
+        "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0",
+        "caption": "Drizzly, low-cloud day in the Central Brooks Range"
+      }
+    ]
   },
   {
     "_id": "scenario_jul8_ideal",
@@ -130,8 +222,18 @@
     "label": "Flight goes",
     "icon": "flight_takeoff",
     "followsScenarioDate": "2027-07-07",
-    "requiresScenarioId": ["scenario_jul7_bonus_alt", "scenario_jul7_retry_ideal", "scenario_jul7_retry_alt"],
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg", "credit": "Photo by LCGS Russ / CC BY-SA 3.0", "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park" } ]
+    "requiresScenarioId": [
+      "scenario_jul7_bonus_alt",
+      "scenario_jul7_retry_ideal",
+      "scenario_jul7_retry_alt"
+    ],
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg",
+        "credit": "Photo by LCGS Russ / CC BY-SA 3.0",
+        "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park"
+      }
+    ]
   },
   {
     "_id": "scenario_jul8_alt",
@@ -140,8 +242,18 @@
     "label": "Grounded",
     "icon": "cloud",
     "followsScenarioDate": "2027-07-07",
-    "requiresScenarioId": ["scenario_jul7_bonus_alt", "scenario_jul7_retry_ideal", "scenario_jul7_retry_alt"],
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg", "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0", "caption": "Drizzly, low-cloud day in the Central Brooks Range" } ]
+    "requiresScenarioId": [
+      "scenario_jul7_bonus_alt",
+      "scenario_jul7_retry_ideal",
+      "scenario_jul7_retry_alt"
+    ],
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg",
+        "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0",
+        "caption": "Drizzly, low-cloud day in the Central Brooks Range"
+      }
+    ]
   },
   {
     "_id": "scenario_jul8_bonusday",
@@ -150,8 +262,16 @@
     "label": "Bonus day — both flights secured",
     "icon": "redeem",
     "followsScenarioDate": "2027-07-07",
-    "requiresScenarioId": ["scenario_jul7_bonus_ideal"],
-    "images": [ { "uri": "https://www.nps.gov/kova/planyourvisit/images/nahc_1.jpg?maxwidth=1300&maxheight=1300&autorotate=false&format=webp", "credit": "NPS Photo / Charles Olin, public domain", "caption": "Northwest Arctic Heritage Center, Kotzebue visitor center" } ]
+    "requiresScenarioId": [
+      "scenario_jul7_bonus_ideal"
+    ],
+    "images": [
+      {
+        "uri": "https://www.nps.gov/kova/planyourvisit/images/nahc_1.jpg?maxwidth=1300&maxheight=1300&autorotate=false&format=webp",
+        "credit": "NPS Photo / Charles Olin, public domain",
+        "caption": "Northwest Arctic Heritage Center, Kotzebue visitor center"
+      }
+    ]
   },
   {
     "_id": "scenario_jul13_ideal",
@@ -159,7 +279,13 @@
     "tone": "ideal",
     "label": "Flight goes",
     "icon": "flight_takeoff",
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Grizzly_Bear_Katmai_%2830245278167%29.jpg", "credit": "Photo by Christoph Strassler / CC BY-SA 2.0", "caption": "Brown bear at Brooks Falls, Katmai National Park" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Grizzly_Bear_Katmai_%2830245278167%29.jpg",
+        "credit": "Photo by Christoph Strassler / CC BY-SA 2.0",
+        "caption": "Brown bear at Brooks Falls, Katmai National Park"
+      }
+    ]
   },
   {
     "_id": "scenario_jul13_alt",
@@ -167,7 +293,13 @@
     "tone": "alternate",
     "label": "Grounded",
     "icon": "cloud",
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg", "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0", "caption": "Drizzly, low-cloud day" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg",
+        "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0",
+        "caption": "Drizzly, low-cloud day"
+      }
+    ]
   },
   {
     "_id": "scenario_jul16_ideal",
@@ -176,7 +308,13 @@
     "label": "Free choice — fishing, hike, or flightseeing",
     "icon": "flight_takeoff",
     "followsScenarioDate": "2027-07-13",
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Grizzly_Bear_Katmai_%2830245278167%29.jpg", "credit": "Photo by Christoph Strassler / CC BY-SA 2.0", "caption": "Brown bear at Brooks Falls, Katmai National Park" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Grizzly_Bear_Katmai_%2830245278167%29.jpg",
+        "credit": "Photo by Christoph Strassler / CC BY-SA 2.0",
+        "caption": "Brown bear at Brooks Falls, Katmai National Park"
+      }
+    ]
   },
   {
     "_id": "scenario_jul16_alt",
@@ -185,6 +323,12 @@
     "label": "Katmai retry",
     "icon": "cloud",
     "followsScenarioDate": "2027-07-13",
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg", "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0", "caption": "Drizzly, low-cloud day" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg",
+        "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0",
+        "caption": "Drizzly, low-cloud day"
+      }
+    ]
   }
 ]

@@ -5,8 +5,18 @@
     "checkInAt": "2027-06-27T15:00",
     "checkOutAt": "2027-06-28T11:00",
     "status": "planning",
-    "lodging": { "placeId": "ChIJQ4enWi--zlYRFqykGD_hqSY", "name": "Talkeetna Alaskan Lodge", "roomType": null, "roomNumber": null, "campsite": null },
-    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "lodging": {
+      "placeId": "ChIJQ4enWi--zlYRFqykGD_hqSY",
+      "name": "Talkeetna Alaskan Lodge",
+      "roomType": null,
+      "roomNumber": null,
+      "campsite": null
+    },
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
     "packages": null,
     "images": []
   },
@@ -16,10 +26,26 @@
     "checkInAt": "2027-06-28T15:00",
     "checkOutAt": "2027-06-29T11:00",
     "status": "planning",
-    "lodging": { "placeId": "ChIJ_aR34k5FMlERqYeOQVWen5I", "name": "Westmark Fairbanks", "roomType": null, "roomNumber": null, "campsite": null },
-    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "lodging": {
+      "placeId": "ChIJ_aR34k5FMlERqYeOQVWen5I",
+      "name": "Westmark Fairbanks",
+      "roomType": null,
+      "roomNumber": null,
+      "campsite": null
+    },
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
     "packages": null,
-    "images": [ { "uri": "http://img1.wsimg.com/isteam/ip/4a011874-e82f-4945-b561-9350f89109a8/IMG_0252.jpeg", "credit": "Courtesy of Westmark Fairbanks Hotel", "caption": "Westmark Fairbanks Hotel" } ]
+    "images": [
+      {
+        "uri": "http://img1.wsimg.com/isteam/ip/4a011874-e82f-4945-b561-9350f89109a8/IMG_0252.jpeg",
+        "credit": "Courtesy of Westmark Fairbanks Hotel",
+        "caption": "Westmark Fairbanks Hotel"
+      }
+    ]
   },
   {
     "_id": "stay_coldfoot",
@@ -27,10 +53,26 @@
     "checkInAt": "2027-06-29T15:00",
     "checkOutAt": "2027-07-01T11:00",
     "status": "planning",
-    "lodging": { "placeId": "ChIJKXBYEtzAKFERMTb-h_NwAtE", "name": "Slate Creek Inn (Coldfoot Camp)", "roomType": null, "roomNumber": null, "campsite": null },
-    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "lodging": {
+      "placeId": "ChIJKXBYEtzAKFERMTb-h_NwAtE",
+      "name": "Slate Creek Inn (Coldfoot Camp)",
+      "roomType": null,
+      "roomNumber": null,
+      "campsite": null
+    },
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
     "packages": null,
-    "images": [ { "uri": "https://images.squarespace-cdn.com/content/v1/53c02418e4b0b3bb7d14b47f/41555e6c-d79d-48eb-85e9-f35682cdfc82/Coldfoot+Camp+Sign+s.jpg", "credit": "Courtesy of Coldfoot Camp", "caption": "The Coldfoot Camp sign on the Dalton Highway" } ]
+    "images": [
+      {
+        "uri": "https://images.squarespace-cdn.com/content/v1/53c02418e4b0b3bb7d14b47f/41555e6c-d79d-48eb-85e9-f35682cdfc82/Coldfoot+Camp+Sign+s.jpg",
+        "credit": "Courtesy of Coldfoot Camp",
+        "caption": "The Coldfoot Camp sign on the Dalton Highway"
+      }
+    ]
   },
   {
     "_id": "stay_westmark_fbx_2",
@@ -38,10 +80,26 @@
     "checkInAt": "2027-07-01T15:00",
     "checkOutAt": "2027-07-02T11:00",
     "status": "planning",
-    "lodging": { "placeId": "ChIJ_aR34k5FMlERqYeOQVWen5I", "name": "Westmark Fairbanks", "roomType": null, "roomNumber": null, "campsite": null },
-    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "lodging": {
+      "placeId": "ChIJ_aR34k5FMlERqYeOQVWen5I",
+      "name": "Westmark Fairbanks",
+      "roomType": null,
+      "roomNumber": null,
+      "campsite": null
+    },
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
     "packages": null,
-    "images": [ { "uri": "http://img1.wsimg.com/isteam/ip/4a011874-e82f-4945-b561-9350f89109a8/IMG_0252.jpeg", "credit": "Courtesy of Westmark Fairbanks Hotel", "caption": "Westmark Fairbanks Hotel" } ]
+    "images": [
+      {
+        "uri": "http://img1.wsimg.com/isteam/ip/4a011874-e82f-4945-b561-9350f89109a8/IMG_0252.jpeg",
+        "credit": "Courtesy of Westmark Fairbanks Hotel",
+        "caption": "Westmark Fairbanks Hotel"
+      }
+    ]
   },
   {
     "_id": "stay_copper_river",
@@ -49,10 +107,26 @@
     "checkInAt": "2027-07-02T15:00",
     "checkOutAt": "2027-07-03T11:00",
     "status": "planning",
-    "lodging": { "placeId": "ChIJmb_m9FyFtVYRza-EUEqwdfU", "name": "Copper River Princess Wilderness Lodge", "roomType": null, "roomNumber": null, "campsite": null },
-    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "lodging": {
+      "placeId": "ChIJmb_m9FyFtVYRza-EUEqwdfU",
+      "name": "Copper River Princess Wilderness Lodge",
+      "roomType": null,
+      "roomNumber": null,
+      "campsite": null
+    },
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
     "packages": null,
-    "images": [ { "uri": "https://www.princesslodges.com/wp-content/uploads/2023/08/cpl-1.jpg", "credit": "Courtesy of Copper River Princess Wilderness Lodge", "caption": "Copper River Princess Wilderness Lodge" } ]
+    "images": [
+      {
+        "uri": "https://www.princesslodges.com/wp-content/uploads/2023/08/cpl-1.jpg",
+        "credit": "Courtesy of Copper River Princess Wilderness Lodge",
+        "caption": "Copper River Princess Wilderness Lodge"
+      }
+    ]
   },
   {
     "_id": "stay_kennicott",
@@ -60,8 +134,18 @@
     "checkInAt": "2027-07-03T15:00",
     "checkOutAt": "2027-07-05T11:00",
     "status": "planning",
-    "lodging": { "placeId": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4", "name": "Kennicott Glacier Lodge", "roomType": null, "roomNumber": null, "campsite": null },
-    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "lodging": {
+      "placeId": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
+      "name": "Kennicott Glacier Lodge",
+      "roomType": null,
+      "roomNumber": null,
+      "campsite": null
+    },
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
     "packages": [
       {
         "_id": "pkg_kennicott_meals",
@@ -69,11 +153,20 @@
         "status": "planning",
         "cost": null,
         "confirmationNumber": null,
-        "benefits": [ "Breakfast in the lodge dining room", "Dinner in the lodge dining room" ],
+        "benefits": [
+          "Breakfast in the lodge dining room",
+          "Dinner in the lodge dining room"
+        ],
         "travelers": null
       }
     ],
-    "images": [ { "uri": "https://www.kennicottlodge.com/wp-content/uploads/2018/08/explore.jpg", "credit": "Courtesy of Kennicott Glacier Lodge", "caption": "Kennicott Glacier Lodge near the historic copper mill" } ]
+    "images": [
+      {
+        "uri": "https://www.kennicottlodge.com/wp-content/uploads/2018/08/explore.jpg",
+        "credit": "Courtesy of Kennicott Glacier Lodge",
+        "caption": "Kennicott Glacier Lodge near the historic copper mill"
+      }
+    ]
   },
   {
     "_id": "stay_anchorage_1",
@@ -81,8 +174,18 @@
     "checkInAt": "2027-07-05T15:00",
     "checkOutAt": "2027-07-06T11:00",
     "status": "planning",
-    "lodging": { "placeId": "ChIJoUUNNIG9yFYRT1rea_yflgI", "name": "Hotel Captain Cook", "roomType": null, "roomNumber": null, "campsite": null },
-    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "lodging": {
+      "placeId": "ChIJoUUNNIG9yFYRT1rea_yflgI",
+      "name": "Hotel Captain Cook",
+      "roomType": null,
+      "roomNumber": null,
+      "campsite": null
+    },
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
     "packages": null,
     "images": []
   },
@@ -92,8 +195,18 @@
     "checkInAt": "2027-07-06T11:00",
     "checkOutAt": "2027-07-09T11:00",
     "status": "planning",
-    "lodging": { "placeId": "ChIJo6lg1JGXyFYR5CruzmerxY8", "name": "Nullaġvik Hotel", "roomType": null, "roomNumber": null, "campsite": null },
-    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "lodging": {
+      "placeId": "ChIJo6lg1JGXyFYR5CruzmerxY8",
+      "name": "Nullaġvik Hotel",
+      "roomType": null,
+      "roomNumber": null,
+      "campsite": null
+    },
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
     "packages": null,
     "images": []
   },
@@ -103,8 +216,18 @@
     "checkInAt": "2027-07-09T15:00",
     "checkOutAt": "2027-07-12T11:00",
     "status": "planning",
-    "lodging": { "placeId": "ChIJoUUNNIG9yFYRT1rea_yflgI", "name": "Hotel Captain Cook", "roomType": null, "roomNumber": null, "campsite": null },
-    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "lodging": {
+      "placeId": "ChIJoUUNNIG9yFYRT1rea_yflgI",
+      "name": "Hotel Captain Cook",
+      "roomType": null,
+      "roomNumber": null,
+      "campsite": null
+    },
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
     "packages": null,
     "images": []
   },
@@ -121,9 +244,19 @@
       "roomNumber": null,
       "campsite": null
     },
-    "booking": { "status": "planning", "cost": null, "confirmationNumber": null },
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
     "packages": null,
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Brooks_Falls_Katmai_National_Park.jpg", "credit": "Photo by Richard A. Weaver / CC BY-SA 4.0", "caption": "Brown bear fishing for salmon at Brooks Falls" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Brooks_Falls_Katmai_National_Park.jpg",
+        "credit": "Photo by Richard A. Weaver / CC BY-SA 4.0",
+        "caption": "Brown bear fishing for salmon at Brooks Falls"
+      }
+    ]
   },
   {
     "_id": "stay_cruise",
@@ -141,7 +274,14 @@
       "deckGroup": "Upper",
       "shipZone": "Mid-Forward"
     },
-    "booking": { "status": "booked", "cost": { "amount": 9336.00, "currency": "USD" }, "confirmationNumber": "MWVV6Q" },
+    "booking": {
+      "status": "booked",
+      "cost": {
+        "amount": 9336.00,
+        "currency": "USD"
+      },
+      "confirmationNumber": "MWVV6Q"
+    },
     "packages": [
       {
         "_id": "pkg_princess_premier",
@@ -158,9 +298,18 @@
           "Unlimited professional photos",
           "Shore excursion credit"
         ],
-        "travelers": ["trav_brian", "trav_stacy"]
+        "travelers": [
+          "trav_brian",
+          "trav_stacy"
+        ]
       }
     ],
-    "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/2023_04_29b_Discovery_Princess_16_(52935882014).jpg", "credit": "Photo by Blake Handley / CC BY 2.0", "caption": "Discovery Princess docked at Ogden Point, Victoria BC" } ]
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/2023_04_29b_Discovery_Princess_16_(52935882014).jpg",
+        "credit": "Photo by Blake Handley / CC BY 2.0",
+        "caption": "Discovery Princess docked at Ogden Point, Victoria BC"
+      }
+    ]
   }
 ]
