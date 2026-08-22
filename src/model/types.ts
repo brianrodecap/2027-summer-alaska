@@ -4,6 +4,15 @@
 export type PlanStatus = 'planning' | 'active' | 'completed' | 'cancelled';
 export type BookingStatus = 'planning' | 'booked' | 'cancelled';
 
+// Trip and Leg carry no status of their own — it's computed by rolling up
+// the booking.status (and Package.status) of every leaf entity underneath
+// them (see tripModel.ts's legBookingProgress/tripBookingProgress): 'booked'
+// once every leaf with a booking is booked, 'unplanned' when none are,
+// 'partial' otherwise. A Leg with its own booking (a whole-leg bundle like a
+// cruise fare) is judged on that booking alone, rather than diluted by
+// unbooked odds and ends (shore excursions, included meals) underneath it.
+export type BookingProgress = 'booked' | 'partial' | 'unplanned';
+
 export interface Image {
   uri: string;
   credit: string | null;
@@ -47,21 +56,29 @@ export interface Trip {
   _id: string;
   name: string;
   summary?: string | null;
-  startDate: string;
-  endDate: string;
-  status: PlanStatus;
   travelers: Traveler[];
   images: Image[];
 }
 
+// A trip's date span isn't authored on Trip itself — it's computed as the
+// outer bound of its own Legs (see tripModel.ts's tripDateRange), the same
+// "computed, not duplicated" treatment as the Day view. null for a trip
+// with no Legs yet.
+export interface DateRange {
+  startDate: string;
+  endDate: string;
+}
+
+// No startDate/endDate — a Leg's own date span is computed as the outer
+// bound of whichever Stay/Transit/Activity documents carry its _id as their
+// legId (tripModel.ts's legDateRange), the same "computed, not duplicated"
+// treatment Trip's own span already gets from its Legs. A brand-new Leg with
+// nothing attached to it yet simply has no span until its first Stay/
+// Transit/Activity is added.
 export interface Leg {
   _id: string;
   tripId: string;
   name: string;
-  order: number;
-  startDate: string;
-  endDate: string;
-  status: PlanStatus;
   skeletonAuthority: 'self' | 'operator';
   booking?: Booking | null;
   images: Image[];
@@ -173,9 +190,19 @@ export interface Scenario {
   images: Image[];
 }
 
-export type RefEntityKind = 'trip' | 'leg' | 'stay' | 'transit' | 'route' | 'activity' | 'scenario' | 'package' | 'mealOption';
+export type RefEntityKind =
+  | 'trip'
+  | 'leg'
+  | 'stay'
+  | 'transit'
+  | 'route'
+  | 'activity'
+  | 'scenario'
+  | 'package'
+  | 'mealOption';
 
-export type Ref = { entity: RefEntityKind; id: string } | { date: string } | { dateRange: [string, string] };
+export type Ref =
+  { entity: RefEntityKind; id: string } | { date: string } | { dateRange: [string, string] };
 
 export type NoteKind = 'warning' | 'footnote' | 'info';
 
@@ -187,7 +214,8 @@ export interface Note {
   images: Image[];
 }
 
-export type DiningFormat = 'included' | 'package' | 'sit-down' | 'grab-and-go' | 'drivethru' | 'self-catered';
+export type DiningFormat =
+  'included' | 'package' | 'sit-down' | 'grab-and-go' | 'drivethru' | 'self-catered';
 
 // Candidate shape used only by Activity.options, while a meal choice is genuinely
 // undecided — deciding means promoting one candidate's 3 fields onto the Activity itself
@@ -243,6 +271,10 @@ export interface TripData {
 export interface TripsIndexEntry {
   slug: string;
   trip: Trip;
+  legs: Leg[];
+  stays: Stay[];
+  transits: Transit[];
+  activities: Activity[];
 }
 
 // ---------- enriched entities, as buildTripView produces them ----------
@@ -362,8 +394,15 @@ export interface Day {
 
 export interface LegSummary {
   leg: Leg;
+  // The leg's own computed span (tripModel.ts's legDateRange) — not derived
+  // from `days` below, since a boundary date shared with another leg is
+  // owned by whichever leg sorts first for day-list/header purposes, but
+  // still counts toward every leg touching it here.
+  dateRange: DateRange | null;
   days: Day[];
   notes: Note[];
+  bookingProgress: BookingProgress;
+  bookingPercent: number; // 0-100, see tripModel.ts's legBookingPercent — feeds BookingProgressBar
 }
 
 // ---------- budget ----------
@@ -422,12 +461,15 @@ export interface BudgetView {
 
 export interface TripView {
   trip: Trip;
+  dateRange: DateRange | null;
   days: Day[];
   legSummaries: LegSummary[];
   activitiesById: Map<string, EnrichedActivity>;
   scenariosById: Map<string, Scenario>;
   routesById: Map<string, Route>;
   budget: BudgetView;
+  bookingProgress: BookingProgress;
+  bookingPercent: number;
 }
 
 // ---------- live selections — what a React caller feeds back into resolveTransitRoute /

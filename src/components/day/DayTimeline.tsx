@@ -1,27 +1,18 @@
-import { Fragment, memo, type ReactElement } from 'react';
 import Timeline from '@mui/lab/Timeline';
-import TimelineItem from '@mui/lab/TimelineItem';
-import TimelineSeparator from '@mui/lab/TimelineSeparator';
-import TimelineDot from '@mui/lab/TimelineDot';
 import TimelineConnector from '@mui/lab/TimelineConnector';
 import TimelineContent from '@mui/lab/TimelineContent';
+import TimelineDot from '@mui/lab/TimelineDot';
+import TimelineItem from '@mui/lab/TimelineItem';
+import TimelineSeparator from '@mui/lab/TimelineSeparator';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
+import { Fragment, memo, type ReactElement } from 'react';
 
-import { formatTime, splitOutStayBoundaries, stayRelation } from '../../model/tripModel';
 import { filterSequenceItems } from '../../model/filters';
 import { firstImage } from '../../model/formatting';
 import { activeMealOptions, selectedMealOptionIndex } from '../../model/mealOptions';
-import { materialIcon } from '../shared/materialIcon';
-import { BookingChip } from '../shared/BookingChip';
-import { NotesCluster, splitNotes } from '../shared/Notes';
-import { RouteVariantTabs } from './RouteVariantTabs';
-import { RowSpeedDial } from './RowSpeedDial';
-import { ActivityRow, ActivityLeading } from './ActivityRow';
-import { ScenarioTabsSection } from './ScenarioTabsSection';
-import { useRouteToneSelection, useFilterSelection, useMealOptionSelection } from '../../state/TripSelectionsContext';
-import { useEdit } from '../../state/EditContext';
+import { formatTime, splitOutStayBoundaries, stayRelation } from '../../model/tripModel';
 import type {
   Day,
   EnrichedActivity,
@@ -35,6 +26,19 @@ import type {
   TransitBoundarySequenceItem,
   TransitStageSequenceItem,
 } from '../../model/types';
+import { useEdit } from '../../state/EditContext';
+import {
+  useFilterSelection,
+  useMealOptionSelection,
+  useRouteToneSelection,
+} from '../../state/TripSelectionsContext';
+import { BookingChip } from '../shared/BookingChip';
+import { renderMaterialIcon } from '../shared/materialIcon';
+import { NotesCluster, splitNotes } from '../shared/Notes';
+import { ActivityLeading, ActivityRow } from './ActivityRow';
+import { RouteVariantTabs } from './RouteVariantTabs';
+import { RowSpeedDial } from './RowSpeedDial';
+import { ScenarioTabsSection } from './ScenarioTabsSection';
 
 function activeRouteTone(transit: EnrichedTransit, routeTones: Map<string, string>): string | null {
   if (!transit.routeInfo) return null;
@@ -48,7 +52,10 @@ function activeRouteTone(transit: EnrichedTransit, routeTones: Map<string, strin
 // drive's estimated arrival live — is a documented, deliberately deferred
 // refinement; every variant's own stage/arrival times still reflect the
 // model's own default meal-format guess.)
-function resolvedArrivesAtFor(transit: EnrichedTransit, routeTones: Map<string, string>): string | null {
+function resolvedArrivesAtFor(
+  transit: EnrichedTransit,
+  routeTones: Map<string, string>,
+): string | null {
   const tone = activeRouteTone(transit, routeTones);
   if (!tone || !transit.routeInfo) return transit.arrivesAt;
   return transit.routeInfo.variants.find((v) => v.tone === tone)?.arrivesAt ?? transit.arrivesAt;
@@ -74,7 +81,6 @@ const StayNode = memo(function StayNode({
     stay.lodging?.bedConfiguration,
   ].filter(Boolean) as string[];
   const image = firstImage(stay);
-  const Icon = materialIcon('hotel');
   const { openEdit, deleteEntity } = useEdit();
   const { above, mid, below } = splitNotes(stay.notes);
   return (
@@ -84,7 +90,7 @@ const StayNode = memo(function StayNode({
           <Avatar src={image.uri} sx={{ width: 32, height: 32 }} />
         ) : (
           <TimelineDot color="primary">
-            <Icon fontSize="small" />
+            {renderMaterialIcon('hotel', { fontSize: 'small' })}
           </TimelineDot>
         )}
         {!isLast && <TimelineConnector />}
@@ -141,14 +147,19 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
   const time = isDepart ? transit.departsAt : resolvedArrivesAtFor(transit, routeTones);
   const modeIconName = transit.mode === 'flight' ? 'flight' : 'directions_car';
   const image = isDepart ? firstImage(transit) : null;
-  const Icon = materialIcon(modeIconName);
   const { openEdit, deleteEntity } = useEdit();
-  const { above, mid, below } = isDepart ? splitNotes(transit.notes) : { above: [], mid: [], below: [] };
+  const { above, mid, below } = isDepart
+    ? splitNotes(transit.notes)
+    : { above: [], mid: [], below: [] };
 
   const boundaryContent = (
     <Box sx={{ minWidth: 0 }}>
       <Typography variant="caption" color="text.secondary">
-        {time ? `${formatTime(time)} · ${isDepart ? 'Depart' : 'Arrive'}` : isDepart ? 'Depart' : 'Arrive'}
+        {time
+          ? `${formatTime(time)} · ${isDepart ? 'Depart' : 'Arrive'}`
+          : isDepart
+            ? 'Depart'
+            : 'Arrive'}
       </Typography>
       <Typography variant="subtitle1">{place}</Typography>
       {isDepart && <NotesCluster notes={mid} />}
@@ -168,7 +179,7 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
           <Avatar src={image.uri} sx={{ width: 32, height: 32 }} />
         ) : (
           <TimelineDot color={isDepart ? 'primary' : 'grey'}>
-            <Icon fontSize="small" />
+            {renderMaterialIcon(modeIconName, { fontSize: 'small' })}
           </TimelineDot>
         )}
         {!isLast && <TimelineConnector />}
@@ -199,17 +210,22 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
 // picks its overline word, same as Depart/Arrive above.
 const STAGE_KIND_LABEL: Record<string, string> = { waypoint: 'Waypoint', via: 'Via' };
 
-const TransitStageNode = memo(function TransitStageNode({ item, isLast }: { item: TransitStageSequenceItem; isLast: boolean }) {
+const TransitStageNode = memo(function TransitStageNode({
+  item,
+  isLast,
+}: {
+  item: TransitStageSequenceItem;
+  isLast: boolean;
+}) {
   const { routeTones } = useRouteToneSelection();
   const { transit, variant, stage } = item;
   const tone = activeRouteTone(transit, routeTones);
   if (variant.tone !== tone) return null; // a non-active variant's stages simply aren't rendered
-  const Icon = materialIcon('signpost');
   return (
     <TimelineItem>
       <TimelineSeparator>
         <TimelineDot variant="outlined" color="grey">
-          <Icon fontSize="small" />
+          {renderMaterialIcon('signpost', { fontSize: 'small' })}
         </TimelineDot>
         {!isLast && <TimelineConnector />}
       </TimelineSeparator>
@@ -294,12 +310,11 @@ const ScenarioTabsNode = memo(function ScenarioTabsNode({
   onOpenStay: (stay: EnrichedStay) => void;
   onOpenTransit: (transit: EnrichedTransit) => void;
 }) {
-  const Icon = materialIcon('alt_route');
   return (
     <TimelineItem>
       <TimelineSeparator>
         <TimelineDot variant="outlined" color="secondary">
-          <Icon fontSize="small" />
+          {renderMaterialIcon('alt_route', { fontSize: 'small' })}
         </TimelineDot>
         {!isLast && <TimelineConnector />}
       </TimelineSeparator>
@@ -334,7 +349,7 @@ export const DayTimeline = memo(function DayTimeline({
   onOpenTransit: (transit: EnrichedTransit) => void;
 }) {
   const { activeFilterTokens } = useFilterSelection();
-  const filtered = filterSequenceItems(sequence, day, activeFilterTokens);
+  const filtered = filterSequenceItems(sequence, activeFilterTokens);
 
   // Safe to run unconditionally at every level — a scenario track's own
   // sequence never contains a 'stay' item (Stay never branches), so this is
@@ -360,51 +375,69 @@ export const DayTimeline = memo(function DayTimeline({
   // flatten it to one timeline row per activity so the connector runs
   // through every image/icon on the day, not just past the section as a
   // whole (each activity gets its own dot, matching every other node type).
-  const nodes: { key: string; render: (isLast: boolean) => ReactElement }[] = flattened.flatMap((item, i) => {
-    if (item.type === 'stay') {
+  const nodes: { key: string; render: (isLast: boolean) => ReactElement }[] = flattened.flatMap(
+    (item, i) => {
+      if (item.type === 'stay') {
+        return [
+          {
+            key: `stay-${item.stay._id}-${i}`,
+            render: (isLast: boolean) => (
+              <StayNode item={item} date={day.date} isLast={isLast} onOpen={onOpenStay} />
+            ),
+          },
+        ];
+      }
+      if (item.type === 'transit-boundary') {
+        return [
+          {
+            key: `transit-${item.transit._id}-${item.phase}`,
+            render: (isLast: boolean) => (
+              <TransitBoundaryNode item={item} isLast={isLast} onOpen={onOpenTransit} />
+            ),
+          },
+        ];
+      }
+      if (item.type === 'transit-stage') {
+        return [
+          {
+            key: `stage-${item.transit._id}-${item.variant.tone}-${i}`,
+            render: (isLast: boolean) => <TransitStageNode item={item} isLast={isLast} />,
+          },
+        ];
+      }
+      if (item.type === 'section') {
+        return item.activities.map((activity) => ({
+          key: `activity-${activity._id}`,
+          render: (isLast: boolean) => (
+            <ActivityNode
+              activity={activity}
+              day={day}
+              isLast={isLast}
+              onOpenActivity={onOpenActivity}
+            />
+          ),
+        }));
+      }
+      // scenario-tabs
       return [
         {
-          key: `stay-${item.stay._id}-${i}`,
-          render: (isLast: boolean) => <StayNode item={item} date={day.date} isLast={isLast} onOpen={onOpenStay} />,
+          key: `scenario-tabs-${i}`,
+          render: (isLast: boolean) => (
+            <ScenarioTabsNode
+              day={day}
+              tracks={item.tracks ?? day.scenarioTracks}
+              topLevel={!item.tracks}
+              isLast={isLast}
+              daysByDate={daysByDate}
+              onOpenActivity={onOpenActivity}
+              onOpenStay={onOpenStay}
+              onOpenTransit={onOpenTransit}
+            />
+          ),
         },
       ];
-    }
-    if (item.type === 'transit-boundary') {
-      return [
-        {
-          key: `transit-${item.transit._id}-${item.phase}`,
-          render: (isLast: boolean) => <TransitBoundaryNode item={item} isLast={isLast} onOpen={onOpenTransit} />,
-        },
-      ];
-    }
-    if (item.type === 'transit-stage') {
-      return [{ key: `stage-${item.transit._id}-${item.variant.tone}-${i}`, render: (isLast: boolean) => <TransitStageNode item={item} isLast={isLast} /> }];
-    }
-    if (item.type === 'section') {
-      return item.activities.map((activity) => ({
-        key: `activity-${activity._id}`,
-        render: (isLast: boolean) => <ActivityNode activity={activity} day={day} isLast={isLast} onOpenActivity={onOpenActivity} />,
-      }));
-    }
-    // scenario-tabs
-    return [
-      {
-        key: `scenario-tabs-${i}`,
-        render: (isLast: boolean) => (
-          <ScenarioTabsNode
-            day={day}
-            tracks={item.tracks ?? day.scenarioTracks}
-            topLevel={!item.tracks}
-            isLast={isLast}
-            daysByDate={daysByDate}
-            onOpenActivity={onOpenActivity}
-            onOpenStay={onOpenStay}
-            onOpenTransit={onOpenTransit}
-          />
-        ),
-      },
-    ];
-  });
+    },
+  );
 
   return (
     <Timeline

@@ -5,11 +5,16 @@ import type { Day, ScenarioTrack } from '../../model/types';
 // wireScenarioFollowers "gated" branch: a follower tab whose own
 // requires-list doesn't include the followed day's active scenario id is
 // dropped outright, not just deselected.
-function visibleTracks(tracks: ScenarioTrack[], followedActiveScenarioId: string | null): ScenarioTrack[] {
+function visibleTracks(
+  tracks: ScenarioTrack[],
+  followedActiveScenarioId: string | null,
+): ScenarioTrack[] {
   const gated = tracks.some((t) => t.scenario.requiresScenarioId);
   if (!gated || !followedActiveScenarioId) return tracks;
   return tracks.filter(
-    (t) => !t.scenario.requiresScenarioId || t.scenario.requiresScenarioId.includes(followedActiveScenarioId),
+    (t) =>
+      !t.scenario.requiresScenarioId ||
+      t.scenario.requiresScenarioId.includes(followedActiveScenarioId),
   );
 }
 
@@ -36,7 +41,13 @@ export function resolveActiveTrack(
   if (followsDate) {
     const followedDay = daysByDate.get(followsDate);
     if (followedDay) {
-      const followedActive = resolveActiveTrack(followedDay, followedDay.scenarioTracks, daysByDate, scenarioTone, true);
+      const followedActive = resolveActiveTrack(
+        followedDay,
+        followedDay.scenarioTracks,
+        daysByDate,
+        scenarioTone,
+        true,
+      );
       if (followedActive) {
         followedActiveScenarioId = followedActive.scenario._id;
         followedTone = followedActive.scenario.tone;
@@ -69,6 +80,12 @@ export function visibleTracksFor(
   if (!followsDate) return tracks;
   const followedDay = daysByDate.get(followsDate);
   if (!followedDay) return tracks;
-  const followedActive = resolveActiveTrack(followedDay, followedDay.scenarioTracks, daysByDate, scenarioTone, true);
+  const followedActive = resolveActiveTrack(
+    followedDay,
+    followedDay.scenarioTracks,
+    daysByDate,
+    scenarioTone,
+    true,
+  );
   return visibleTracks(tracks, followedActive?.scenario._id ?? null);
 }

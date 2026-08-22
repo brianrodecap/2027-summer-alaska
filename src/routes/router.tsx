@@ -1,10 +1,10 @@
 import { createHashRouter } from 'react-router-dom';
 
-import { TripsHome } from './TripsHome';
-import { TripLayout } from './TripLayout';
-import { Overview } from './Overview';
-import { DaysView } from './DaysView';
 import { BudgetView } from './BudgetView';
+import { DaysView } from './DaysView';
+import { Overview } from './Overview';
+import { TripLayout } from './TripLayout';
+import { TripsHome } from './TripsHome';
 
 // A hash router, not BrowserRouter: GitHub Pages project pages have no
 // server-side rewrite, so a path-based router 404s on a deep link or hard

@@ -1,26 +1,33 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import useScrollTrigger from '@mui/material/useScrollTrigger';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import RouteIcon from '@mui/icons-material/Route';
+import Box from '@mui/material/Box';
+import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import useScrollTrigger from '@mui/material/useScrollTrigger';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 
-import { useTripData } from '../state/TripDataContext';
-import { useFilterSelection } from '../state/TripSelectionsContext';
-import { useEdit } from '../state/EditContext';
+import { ActivityDetailPanel } from '../components/activity/ActivityDetailPanel';
 import { DayBlock } from '../components/day/DayBlock';
 import { DayMapPanel } from '../components/day/DayMapPanel';
 import { FilterMenu } from '../components/day/FilterMenu';
-import { ActivityDetailPanel } from '../components/activity/ActivityDetailPanel';
 import { StayDetailPanel } from '../components/day/StayDetailPanel';
 import { TransitDetailPanel } from '../components/day/TransitDetailPanel';
-import { JumpToDayPicker } from '../components/pickers/JumpToDayPicker';
 import { RoutesDialog } from '../components/edit/RoutesDialog';
+import { JumpToDayPicker } from '../components/pickers/JumpToDayPicker';
 import { dayHasVisibleContent } from '../model/filters';
-import type { Day, EnrichedActivity, EnrichedMealOption, EnrichedStay, EnrichedTransit, Route } from '../model/types';
+import type {
+  Day,
+  EnrichedActivity,
+  EnrichedMealOption,
+  EnrichedStay,
+  EnrichedTransit,
+  Route,
+} from '../model/types';
+import { useEdit } from '../state/EditContext';
+import { useTripData } from '../state/TripDataContext';
+import { useFilterSelection } from '../state/TripSelectionsContext';
 
 export function DaysView() {
   const { view, data, setData } = useTripData();
@@ -29,7 +36,10 @@ export function DaysView() {
   const { slug, date } = useParams();
   const navigate = useNavigate();
   const [mapDay, setMapDay] = useState<Day | null>(null);
-  const [openActivity, setOpenActivity] = useState<{ activity: EnrichedActivity; selectedOption?: EnrichedMealOption } | null>(null);
+  const [openActivity, setOpenActivity] = useState<{
+    activity: EnrichedActivity;
+    selectedOption?: EnrichedMealOption;
+  } | null>(null);
   const [openStay, setOpenStay] = useState<EnrichedStay | null>(null);
   const [openTransit, setOpenTransit] = useState<EnrichedTransit | null>(null);
   const [datePickerOpen, setDatePickerOpen] = useState(false);
@@ -50,9 +60,12 @@ export function DaysView() {
     el?.scrollIntoView({ block: 'start' });
   }, [date, view]);
 
-  const handleOpenActivity = useCallback((activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => {
-    setOpenActivity({ activity, selectedOption });
-  }, []);
+  const handleOpenActivity = useCallback(
+    (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => {
+      setOpenActivity({ activity, selectedOption });
+    },
+    [],
+  );
 
   if (!view) return null;
 
@@ -73,16 +86,22 @@ export function DaysView() {
           transition: 'box-shadow 150ms',
         }}
       >
-        <IconButton aria-label="Jump to a day" onClick={() => setDatePickerOpen(true)}>
-          <CalendarMonthIcon />
-        </IconButton>
+        {view.dateRange && (
+          <IconButton aria-label="Jump to a day" onClick={() => setDatePickerOpen(true)}>
+            <CalendarMonthIcon />
+          </IconButton>
+        )}
         <FilterMenu legSummaries={view.legSummaries} />
         <IconButton aria-label="Manage routes" onClick={() => setRoutesOpen(true)}>
           <RouteIcon />
         </IconButton>
       </Box>
       {visibleDays.length === 0 ? (
-        <Typography variant="body1" color="text.secondary" sx={{ px: 3, py: 4, textAlign: 'center' }}>
+        <Typography
+          variant="body1"
+          color="text.secondary"
+          sx={{ px: 3, py: 4, textAlign: 'center' }}
+        >
           No days match the selected filters.
         </Typography>
       ) : (
@@ -144,14 +163,16 @@ export function DaysView() {
             : undefined
         }
       />
-      <JumpToDayPicker
-        open={datePickerOpen}
-        onClose={() => setDatePickerOpen(false)}
-        days={view.days}
-        tripStart={view.trip.startDate}
-        tripEnd={view.trip.endDate}
-        onSelectDay={(selectedDate) => navigate(`/${slug}/days/${selectedDate}`)}
-      />
+      {view.dateRange && (
+        <JumpToDayPicker
+          open={datePickerOpen}
+          onClose={() => setDatePickerOpen(false)}
+          days={view.days}
+          tripStart={view.dateRange.startDate}
+          tripEnd={view.dateRange.endDate}
+          onSelectDay={(selectedDate) => navigate(`/${slug}/days/${selectedDate}`)}
+        />
+      )}
       {data && (
         <RoutesDialog
           routes={data.routes}
@@ -169,7 +190,10 @@ export function DaysView() {
             )
           }
           onDelete={(id: string) =>
-            setData((prev) => ({ ...prev, routes: prev.routes.filter((r) => r._id !== id) }), ['routes'])
+            setData(
+              (prev) => ({ ...prev, routes: prev.routes.filter((r) => r._id !== id) }),
+              ['routes'],
+            )
           }
         />
       )}

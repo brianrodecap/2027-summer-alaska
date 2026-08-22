@@ -1,13 +1,22 @@
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
+import {
+  buildFilterGroups,
+  dayHasVisibleContent,
+  filterSequenceItems,
+  rowMatches,
+} from './filters';
 import { buildTripView } from './tripModel';
-import { buildFilterGroups, dayHasVisibleContent, filterSequenceItems, rowMatches } from './filters';
 import type { TripData } from './types';
 
-const dataDir = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../public/data/2027-summer-alaska');
+const dataDir = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../public/data/2027-summer-alaska',
+);
 
 function readJson(name: string) {
   return JSON.parse(readFileSync(path.join(dataDir, `${name}.json`), 'utf-8'));
@@ -56,16 +65,20 @@ describe('filters against the real trip data', () => {
     expect(dayHasVisibleContent(cruiseDay!, new Set(['leg:leg_cruise']))).toBe(true);
   });
 
-  it("filterSequenceItems drops a day's other-leg... (n/a within one day) and keeps every item when nothing is active", () => {
+  it('filterSequenceItems keeps every item when nothing is active', () => {
     const day = view.days[0];
-    expect(filterSequenceItems(day.sequence, day, new Set())).toBe(day.sequence); // identity short-circuit
+    expect(filterSequenceItems(day.sequence, new Set())).toBe(day.sequence); // identity short-circuit
   });
 
   it('filterSequenceItems narrows a section to just the still-matching activities, dropping the section once none match', () => {
-    const dayWithHighlight = view.days.find((d) => d.sequence.some((i) => i.type === 'section' && i.activities.some((a) => a.priority)));
+    const dayWithHighlight = view.days.find((d) =>
+      d.sequence.some((i) => i.type === 'section' && i.activities.some((a) => a.priority)),
+    );
     expect(dayWithHighlight).toBeDefined();
-    const filtered = filterSequenceItems(dayWithHighlight!.sequence, dayWithHighlight!, new Set(['attr:highlight']));
-    const survivingActivities = filtered.filter((i) => i.type === 'section').flatMap((i) => (i.type === 'section' ? i.activities : []));
+    const filtered = filterSequenceItems(dayWithHighlight!.sequence, new Set(['attr:highlight']));
+    const survivingActivities = filtered
+      .filter((i) => i.type === 'section')
+      .flatMap((i) => (i.type === 'section' ? i.activities : []));
     expect(survivingActivities.every((a) => a.priority)).toBe(true);
     expect(survivingActivities.length).toBeGreaterThan(0);
   });

@@ -1,17 +1,17 @@
-import { useMemo, useState } from 'react';
+import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
-import TextField from '@mui/material/TextField';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
-import Button from '@mui/material/Button';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { useMemo, useState } from 'react';
 
-import { RouteEditDialog } from './RouteEditDialog';
 import type { Route } from '../../model/types';
+import { RouteEditDialog } from './RouteEditDialog';
 
 function routeLabel(route: Route): string {
   return `${route.from.label} → ${route.to.label}`;
@@ -83,7 +83,15 @@ export function RoutesDialog({
         </DialogContent>
         <DialogActions sx={{ justifyContent: 'space-between', px: 3 }}>
           <Button
-            onClick={() => setEditing({ _id: nextRouteId(routes), from: { id: null, label: '' }, to: { id: null, label: '' }, variants: [], images: [] })}
+            onClick={() =>
+              setEditing({
+                _id: nextRouteId(routes),
+                from: { id: null, label: '' },
+                to: { id: null, label: '' },
+                variants: [],
+                images: [],
+              })
+            }
           >
             Add route
           </Button>

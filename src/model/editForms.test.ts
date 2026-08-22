@@ -1,12 +1,16 @@
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
 
 import { applyRouteForm, routeFormFrom } from './editForms';
 import type { Route } from './types';
 
-const routesPath = path.join(path.dirname(fileURLToPath(import.meta.url)), '../../public/data/routes.json');
+const routesPath = path.join(
+  path.dirname(fileURLToPath(import.meta.url)),
+  '../../public/data/routes.json',
+);
 
 function loadRealRoute(): Route {
   const routes: Route[] = JSON.parse(readFileSync(routesPath, 'utf-8'));
@@ -25,7 +29,13 @@ describe('Route edit form apply logic', () => {
   });
 
   it('rejects a route with no variants', () => {
-    const form: Route = { _id: 'x', from: { id: null, label: 'A' }, to: { id: null, label: 'B' }, variants: [], images: [] };
+    const form: Route = {
+      _id: 'x',
+      from: { id: null, label: 'A' },
+      to: { id: null, label: 'B' },
+      variants: [],
+      images: [],
+    };
     const message = applyRouteForm(structuredClone(form), form);
     expect(message).toMatch(/at least one variant/);
   });
@@ -39,7 +49,9 @@ describe('Route edit form apply logic', () => {
         {
           tone: 'direct',
           label: 'Direct',
-          places: [{ kind: 'waypoint', place: { id: null, label: 'Somewhere' }, durationMinutes: 10 }],
+          places: [
+            { kind: 'waypoint', place: { id: null, label: 'Somewhere' }, durationMinutes: 10 },
+          ],
           finalLegMinutes: 5,
         },
       ],

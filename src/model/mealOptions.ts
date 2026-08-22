@@ -3,8 +3,8 @@
 // still actually choosable today, and what to call whichever one's selected
 // — logic shared by the meal row and the activity detail panel, so it lives
 // here rather than inside either's own component file.
-import { stayRelation } from './tripModel';
 import { DINING_FORMAT_LABEL } from './formatting';
+import { stayRelation } from './tripModel';
 import type { Day, EnrichedMealOption, Ref } from './types';
 
 // Which Stay a MealOption's includedIn ref is actually about — a plain
@@ -32,7 +32,10 @@ function isIncludedOptionActive(day: Day, option: EnrichedMealOption): boolean {
 
 // activity.options is only ever set while a meal is genuinely undecided
 // among named candidates.
-export function activeMealOptions(activity: { options: EnrichedMealOption[] | null }, day: Day): EnrichedMealOption[] {
+export function activeMealOptions(
+  activity: { options: EnrichedMealOption[] | null },
+  day: Day,
+): EnrichedMealOption[] {
   return (activity.options ?? []).filter((option) => isIncludedOptionActive(day, option));
 }
 
@@ -45,7 +48,11 @@ export function mealOptionLabel(option: EnrichedMealOption): string {
 // activeMealOptions (e.g. an 'included' candidate that just went active
 // itself and displaced it) — shared by the meal row and the day-list note
 // menu, so both agree on which candidate "selected" means right now.
-export function selectedMealOptionIndex(options: EnrichedMealOption[], mealOptionIndex: Map<string, number>, activityId: string): number {
+export function selectedMealOptionIndex(
+  options: EnrichedMealOption[],
+  mealOptionIndex: Map<string, number>,
+  activityId: string,
+): number {
   const stored = mealOptionIndex.get(activityId);
   return stored !== undefined && stored < options.length ? stored : 0;
 }

@@ -1,17 +1,24 @@
-import { memo, useState } from 'react';
+import AddIcon from '@mui/icons-material/Add';
+import MapIcon from '@mui/icons-material/Map';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
-import AddIcon from '@mui/icons-material/Add';
-import MapIcon from '@mui/icons-material/Map';
+import { memo, useState } from 'react';
 
+import type {
+  Day,
+  EnrichedActivity,
+  EnrichedMealOption,
+  EnrichedStay,
+  EnrichedTransit,
+} from '../../model/types';
+import { type EditKind, useEdit } from '../../state/EditContext';
+import { ImportDocumentDialog } from '../edit/ImportDocumentDialog';
 import { NotesCluster } from '../shared/Notes';
 import { DayTimeline } from './DayTimeline';
-import { useEdit, type EditKind } from '../../state/EditContext';
-import type { Day, EnrichedActivity, EnrichedMealOption, EnrichedStay, EnrichedTransit } from '../../model/types';
 
 const ADD_MENU_ITEMS: { kind: EditKind; label: string }[] = [
   { kind: 'activity', label: 'Activity' },
@@ -25,14 +32,11 @@ const ADD_MENU_ITEMS: { kind: EditKind; label: string }[] = [
 function AddToDayButton({ day }: { day: Day }) {
   const { openCreate } = useEdit();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
   return (
     <>
-      <Button
-        startIcon={<AddIcon />}
-        onClick={(e) => setAnchorEl(e.currentTarget)}
-        sx={{ mt: 1 }}
-      >
+      <Button startIcon={<AddIcon />} onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ mt: 1 }}>
         Add to this day
       </Button>
       <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
@@ -47,7 +51,22 @@ function AddToDayButton({ day }: { day: Day }) {
             {item.label}
           </MenuItem>
         ))}
+        <MenuItem
+          onClick={() => {
+            setAnchorEl(null);
+            setImportOpen(true);
+          }}
+        >
+          From a document…
+        </MenuItem>
       </Menu>
+      {importOpen && (
+        <ImportDocumentDialog
+          legId={day.leg._id}
+          date={day.date}
+          onClose={() => setImportOpen(false)}
+        />
+      )}
     </>
   );
 }

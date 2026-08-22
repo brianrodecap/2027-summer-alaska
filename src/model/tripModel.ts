@@ -14,6 +14,8 @@
 import type {
   Activity,
   Booking,
+  BookingProgress,
+  BookingStatus,
   BudgetDayGroup,
   BudgetLegGroup,
   BudgetLineItem,
@@ -21,6 +23,7 @@ import type {
   BudgetTotals,
   BudgetTravelerGroup,
   BudgetView,
+  DateRange,
   Day,
   DaySelections,
   DiningFormat,
@@ -68,16 +71,27 @@ export async function loadTripData(slug: string): Promise<TripData> {
 }
 
 // public/data/trips.json lists only trip slugs (the folder names under
-// public/data/); everything displayed about a trip — name, dates, status — is
-// read from that trip's own trip.json, never duplicated into the index.
+// public/data/); everything displayed about a trip — name, dates — is read
+// from that trip's own trip.json (plus legs.json, for its computed date
+// range), never duplicated into the index. stays/transits/activities are
+// fetched too, purely so the trips list can show each trip's computed
+// booking status (tripBookingProgress) without a full loadTripData.
 export async function loadTripsIndex(): Promise<TripsIndexEntry[]> {
-  const manifest: { slug: string }[] = await fetch(`${import.meta.env.BASE_URL}data/trips.json`).then((r) => r.json());
+  const manifest: { slug: string }[] = await fetch(
+    `${import.meta.env.BASE_URL}data/trips.json`,
+  ).then((r) => r.json());
   return Promise.all(
-    manifest.map(({ slug }) =>
-      fetch(`${import.meta.env.BASE_URL}data/${slug}/trip.json`)
-        .then((r) => r.json())
-        .then((trip: Trip) => ({ slug, trip })),
-    ),
+    manifest.map(async ({ slug }) => {
+      const base = `${import.meta.env.BASE_URL}data/${slug}/`;
+      const [trip, legs, stays, transits, activities] = await Promise.all([
+        fetch(`${base}trip.json`).then((r) => r.json()),
+        fetch(`${base}legs.json`).then((r) => r.json()),
+        fetch(`${base}stays.json`).then((r) => r.json()),
+        fetch(`${base}transits.json`).then((r) => r.json()),
+        fetch(`${base}activities.json`).then((r) => r.json()),
+      ]);
+      return { slug, trip, legs, stays, transits, activities };
+    }),
   );
 }
 
@@ -86,8 +100,18 @@ export async function loadTripsIndex(): Promise<TripsIndexEntry[]> {
 const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const FULL_MONTHS = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 function dateOnly(iso: string): string {
@@ -118,18 +142,155 @@ function formatFullDate(dateStr: string): string {
   return `${FULL_MONTHS[m - 1]} ${d}`;
 }
 
-export function formatTripDateChip(trip: Trip, dayCount: number): string {
-  return `${formatFullDate(trip.startDate)} – ${formatFullDate(trip.endDate)}, ${trip.endDate.slice(0, 4)} · ${dayCount} days`;
+// Neither Trip nor Leg authors its own date span — each is computed as the
+// outer bound of whichever Stay/Transit/Activity documents actually fall
+// under it, same as everything else this file derives instead of
+// duplicating. null once there's nothing dated to bound.
+function collectEntityDates(stays: Stay[], transits: Transit[], activities: Activity[]): string[] {
+  const dates: string[] = [];
+  for (const s of stays) {
+    dates.push(dateOnly(s.checkInAt), dateOnly(s.checkOutAt));
+  }
+  for (const t of transits) {
+    dates.push(dateOnly(t.departsAt));
+    if (t.arrivesAt) dates.push(dateOnly(t.arrivesAt));
+  }
+  for (const a of activities) {
+    if (a.startAt) dates.push(dateOnly(a.startAt));
+    if (a.endAt) dates.push(dateOnly(a.endAt));
+    if (a.date) dates.push(a.date);
+  }
+  return dates;
 }
 
-// Lets the trips list show a day count from trip.json alone (start/end date),
-// without fetching and building that trip's full day-by-day view.
-export function tripDayCount(trip: Trip): number {
-  return dateRangeArray(trip.startDate, trip.endDate).length;
+export function tripDateRange(
+  stays: Stay[],
+  transits: Transit[],
+  activities: Activity[],
+): DateRange | null {
+  const dates = collectEntityDates(stays, transits, activities);
+  if (!dates.length) return null;
+  let startDate = dates[0];
+  let endDate = dates[0];
+  for (const d of dates) {
+    if (d < startDate) startDate = d;
+    if (d > endDate) endDate = d;
+  }
+  return { startDate, endDate };
+}
+
+// A single Leg's own span — the same outer-bound computation, narrowed to
+// just the entities pointing at this one legId.
+export function legDateRange(
+  legId: string,
+  stays: Stay[],
+  transits: Transit[],
+  activities: Activity[],
+): DateRange | null {
+  return tripDateRange(
+    stays.filter((s) => s.legId === legId),
+    transits.filter((t) => t.legId === legId),
+    activities.filter((a) => a.legId === legId),
+  );
+}
+
+export function formatTripDateChip(range: DateRange, dayCount: number): string {
+  return `${formatFullDate(range.startDate)} – ${formatFullDate(range.endDate)}, ${range.endDate.slice(0, 4)} · ${dayCount} days`;
+}
+
+// Lets the trips list show a day count from a computed range alone, without
+// building that trip's full day-by-day view.
+export function tripDayCount(range: DateRange): number {
+  return dateRangeArray(range.startDate, range.endDate).length;
+}
+
+// ---------- booking progress (Trip/Leg's own status, computed) ----------
+//
+// Trip and Leg carry no status field of their own (see BookingProgress in
+// types.ts) — it's rolled up from whatever leaf entities (Stay/Transit/
+// Activity, plus Stay.packages) actually carry a booking. A Leg bought as
+// one bundle (skeletonAuthority: 'operator', e.g. a cruise fare) is judged
+// on its own booking alone, rather than diluted by the unbooked odds and
+// ends (shore excursions, included meals) underneath it.
+
+// A single Leg's own "counted units": just its own booking when it has one
+// (an operator-bundled leg is one unit, booked or not), otherwise every
+// booking.status underneath it — one per Stay/Transit/Activity that has a
+// booking at all, plus one per Stay Package. Entities with no booking
+// (nothing to reserve — a free morning, an included meal) aren't counted:
+// they're neither "needs booking" nor "booked".
+function legBookingStatuses(
+  leg: Leg,
+  stays: Stay[],
+  transits: Transit[],
+  activities: Activity[],
+): BookingStatus[] {
+  if (leg.booking) return [leg.booking.status];
+  const legStays = stays.filter((s) => s.legId === leg._id);
+  return [
+    ...legStays.map((s) => s.booking?.status),
+    ...legStays.flatMap((s) => s.packages?.map((p) => p.status) ?? []),
+    ...transits.filter((t) => t.legId === leg._id).map((t) => t.booking?.status),
+    ...activities.filter((a) => a.legId === leg._id).map((a) => a.booking?.status),
+  ].filter((s): s is BookingStatus => s != null);
+}
+
+function summarizeBookingStatuses(statuses: BookingStatus[]): BookingProgress {
+  if (!statuses.length) return 'unplanned';
+  const bookedCount = statuses.filter((s) => s === 'booked').length;
+  if (bookedCount === statuses.length) return 'booked';
+  if (bookedCount === 0) return 'unplanned';
+  return 'partial';
+}
+
+// The gauge-friendly counterpart to summarizeBookingStatuses — what percent
+// of the same counted units are booked, 0 when there's nothing bookable yet.
+function percentBooked(statuses: BookingStatus[]): number {
+  if (!statuses.length) return 0;
+  const bookedCount = statuses.filter((s) => s === 'booked').length;
+  return Math.round((bookedCount / statuses.length) * 100);
+}
+
+export function legBookingProgress(
+  leg: Leg,
+  stays: Stay[],
+  transits: Transit[],
+  activities: Activity[],
+): BookingProgress {
+  return summarizeBookingStatuses(legBookingStatuses(leg, stays, transits, activities));
+}
+
+export function legBookingPercent(
+  leg: Leg,
+  stays: Stay[],
+  transits: Transit[],
+  activities: Activity[],
+): number {
+  return percentBooked(legBookingStatuses(leg, stays, transits, activities));
+}
+
+export function tripBookingProgress(
+  legs: Leg[],
+  stays: Stay[],
+  transits: Transit[],
+  activities: Activity[],
+): BookingProgress {
+  if (!legs.length) return 'unplanned';
+  return summarizeBookingStatuses(
+    legs.flatMap((leg) => legBookingStatuses(leg, stays, transits, activities)),
+  );
+}
+
+export function tripBookingPercent(
+  legs: Leg[],
+  stays: Stay[],
+  transits: Transit[],
+  activities: Activity[],
+): number {
+  return percentBooked(legs.flatMap((leg) => legBookingStatuses(leg, stays, transits, activities)));
 }
 
 export function formatTime(iso: string): string {
-  // eslint-disable-next-line prefer-const
   let [h, m] = iso.slice(11, 16).split(':').map(Number);
   const ampm = h >= 12 ? 'pm' : 'am';
   h = h % 12 || 12;
@@ -141,8 +302,11 @@ export function formatMoney(cost: Money | null | undefined): string | null {
   return cost.amount.toLocaleString('en-US', { style: 'currency', currency: cost.currency });
 }
 
-export function activityTimeLabel(activity: Pick<Activity, 'startAt' | 'endAt' | 'timeLabel'>): string {
-  if (activity.startAt) return formatTime(activity.startAt) + (activity.endAt ? `–${formatTime(activity.endAt)}` : '');
+export function activityTimeLabel(
+  activity: Pick<Activity, 'startAt' | 'endAt' | 'timeLabel'>,
+): string {
+  if (activity.startAt)
+    return formatTime(activity.startAt) + (activity.endAt ? `–${formatTime(activity.endAt)}` : '');
   if (activity.endAt) return `By ${formatTime(activity.endAt)}`;
   if (activity.timeLabel) return activity.timeLabel;
   return 'Time TBD';
@@ -200,7 +364,9 @@ function notesForDay(notes: Note[], date: string): Note[] {
 }
 
 function entityHasWarning(notes: Note[], entity: RefEntityKind, id: string): boolean {
-  return notes.some((n) => n.kind === 'warning' && n.concerns.some((r) => refMatchesEntity(r, entity, [id])));
+  return notes.some(
+    (n) => n.kind === 'warning' && n.concerns.some((r) => refMatchesEntity(r, entity, [id])),
+  );
 }
 
 // ---------- filter tags — the token vocabulary the trip page's filter nav
@@ -218,9 +384,9 @@ function entityHasWarning(notes: Note[], entity: RefEntityKind, id: string): boo
 // neither "Booked" nor "Needs booking" in the filter nav, even though the
 // leg itself is fully paid for. Decide whether/how a bundled leg's own
 // booking.status should roll down onto a child with no booking of its own —
-// `entity` is the Stay/Transit/Activity in question, `leg` is the Leg it
-// belongs to (day.leg), with its own optional `booking` — every call site
-// below already has both in hand.
+// `entity` is the Stay/Transit/Activity in question, with its own optional
+// `booking` and its own `legId` — every call site below already has it in
+// hand.
 //
 // This placeholder only ever looks at the entity's own booking, so the
 // feature works end to end while you decide the real rule.
@@ -230,11 +396,17 @@ function resolveBookingTag(entity: { booking?: Booking | null }): string | null 
   return null;
 }
 
-export function filterTagsFor(
-  entity: { booking?: Booking | null; priority?: string | null; hasWarningNote?: boolean; transitOverlapWarning?: string | null },
-  leg: Leg,
-): string[] {
-  const tags = [`leg:${leg._id}`];
+// The `leg:` tag always comes from the entity's own legId, not the day's
+// (day.leg) — on a same-day leg handoff, a day's sequence mixes entities
+// from more than one leg, and each still needs to filter under its own.
+export function filterTagsFor(entity: {
+  legId: string;
+  booking?: Booking | null;
+  priority?: string | null;
+  hasWarningNote?: boolean;
+  transitOverlapWarning?: string | null;
+}): string[] {
+  const tags = [`leg:${entity.legId}`];
   const bookingTag = resolveBookingTag(entity);
   if (bookingTag) tags.push(bookingTag);
   if (entity.priority) tags.push('attr:highlight');
@@ -352,7 +524,11 @@ interface KeyedActivity {
 }
 
 function resolveActivityKeys(activities: EnrichedActivity[], dayStart: string): KeyedActivity[] {
-  return activities.map((activity) => ({ type: 'activity', activity, key: activitySortKey(activity, dayStart) }));
+  return activities.map((activity) => ({
+    type: 'activity',
+    activity,
+    key: activitySortKey(activity, dayStart),
+  }));
 }
 
 function stayEventKey(stay: Stay, relation: StayRelation, dayStart: string): string {
@@ -422,12 +598,20 @@ const FALLBACK_MEAL_DURATION_MINUTES = 30;
 // picked yet; populated whenever a meal row's own tabs change, so a lunch
 // stop's picked format (sit-down vs. drive-thru) actually reaches the
 // drive-time walk below instead of only changing that row's own display.
-function activityEffectiveEndMs(activity: EnrichedActivity, formatOverrides?: Map<string, DiningFormat>): number {
+function activityEffectiveEndMs(
+  activity: EnrichedActivity,
+  formatOverrides?: Map<string, DiningFormat>,
+): number {
   if (activity.endAt) return wallClockMs(activity.endAt);
   const startMs = wallClockMs(activity.startAt as string);
   if (!activity.mealType) return startMs;
-  const format = formatOverrides?.get(activity._id) ?? activity.diningFormat ?? activity.options?.[0]?.diningFormat ?? null;
-  const minutes = (format && DEFAULT_MEAL_DURATION_MINUTES[format]) ?? FALLBACK_MEAL_DURATION_MINUTES;
+  const format =
+    formatOverrides?.get(activity._id) ??
+    activity.diningFormat ??
+    activity.options?.[0]?.diningFormat ??
+    null;
+  const minutes =
+    (format && DEFAULT_MEAL_DURATION_MINUTES[format]) ?? FALLBACK_MEAL_DURATION_MINUTES;
   return startMs + minutes * 60000;
 }
 
@@ -471,7 +655,12 @@ function stageTimesForVariant(
     while (remainingMs > 0) {
       const next = queue[0];
       const nextStartMs = next ? wallClockMs(next.startAt as string) : null;
-      if (next && nextStartMs !== null && nextStartMs >= clockMs && nextStartMs <= clockMs + remainingMs) {
+      if (
+        next &&
+        nextStartMs !== null &&
+        nextStartMs >= clockMs &&
+        nextStartMs <= clockMs + remainingMs
+      ) {
         const driveMs = nextStartMs - clockMs;
         remainingMs -= driveMs;
         clockMs = activityEffectiveEndMs(next, formatOverrides);
@@ -523,7 +712,12 @@ function transitSequenceItems(
   if (transit.routeInfo) {
     items.push(...routeStageItems(transit));
   }
-  items.push({ type: 'transit-boundary', transit, phase: 'arrive', key: transit.arrivesAt as string });
+  items.push({
+    type: 'transit-boundary',
+    transit,
+    phase: 'arrive',
+    key: transit.arrivesAt as string,
+  });
   return items;
 }
 
@@ -543,7 +737,9 @@ function transitItemsOnDate(
   date: string,
 ): (TransitBoundarySequenceItem | TransitStageSequenceItem)[] {
   const departDayStart = `${dateOnly(transit.departsAt)}T00:00`;
-  return transitSequenceItems(transit, departDayStart).filter((item) => dateOnly(item.key) === date);
+  return transitSequenceItems(transit, departDayStart).filter(
+    (item) => dateOnly(item.key) === date,
+  );
 }
 
 interface Keyed {
@@ -608,7 +804,9 @@ function buildSequence(
       const relation = stayRelation(stay, date);
       return { type: 'stay' as const, stay, relation, key: stayEventKey(stay, relation, dayStart) };
     }),
-    ...transitsForSequence.filter((t) => !t.scenarioId).flatMap((transit) => transitItemsOnDate(transit, date)),
+    ...transitsForSequence
+      .filter((t) => !t.scenarioId)
+      .flatMap((transit) => transitItemsOnDate(transit, date)),
     ...resolveActivityKeys(
       dayActivities.filter((a) => !a.scenarioId),
       dayStart,
@@ -645,9 +843,13 @@ function buildScenarioTracks(
   ]);
   let anchorKey: string | null = null;
 
-  function trackOwnItems(scenarioId: string): (TransitBoundarySequenceItem | TransitStageSequenceItem | KeyedActivity)[] {
+  function trackOwnItems(
+    scenarioId: string,
+  ): (TransitBoundarySequenceItem | TransitStageSequenceItem | KeyedActivity)[] {
     return [
-      ...transitsForSequence.filter((t) => t.scenarioId === scenarioId).flatMap((transit) => transitItemsOnDate(transit, date)),
+      ...transitsForSequence
+        .filter((t) => t.scenarioId === scenarioId)
+        .flatMap((transit) => transitItemsOnDate(transit, date)),
       ...resolveActivityKeys(
         dayActivities.filter((a) => a.scenarioId === scenarioId),
         dayStart,
@@ -656,7 +858,10 @@ function buildScenarioTracks(
   }
 
   function earliestKey(items: Keyed[]): string | null {
-    return items.reduce<string | null>((min, item) => (min === null || item.key < min ? item.key : min), null);
+    return items.reduce<string | null>(
+      (min, item) => (min === null || item.key < min ? item.key : min),
+      null,
+    );
   }
 
   // A *real* earliest key for one scenario's own content — unlike ownKey
@@ -669,8 +874,12 @@ function buildScenarioTracks(
   // actually been running since yesterday shouldn't out-rank a same-day 7am
   // event just because its clamped key reads as "start of day".
   function realOwnKey(scenarioId: string): string | null {
-    const transitKeys = transitsForSequence.filter((t) => t.scenarioId === scenarioId).map((t) => t.departsAt);
-    const activityKeys = dayActivities.filter((a) => a.scenarioId === scenarioId).map((a) => activitySortKey(a, dayStart));
+    const transitKeys = transitsForSequence
+      .filter((t) => t.scenarioId === scenarioId)
+      .map((t) => t.departsAt);
+    const activityKeys = dayActivities
+      .filter((a) => a.scenarioId === scenarioId)
+      .map((a) => activitySortKey(a, dayStart));
     return earliestKey([...transitKeys, ...activityKeys].map((key) => ({ key })));
   }
 
@@ -701,8 +910,14 @@ function buildScenarioTracks(
       // that's unanchored too.
       const childKey =
         earliestKey(
-          children.map((c) => c.realAnchorKey).filter((k): k is string => k !== null).map((key) => ({ key })),
-        ) ?? earliestKey(children.filter((c) => c.anchorKey !== null).map((c) => ({ key: c.anchorKey as string })));
+          children
+            .map((c) => c.realAnchorKey)
+            .filter((k): k is string => k !== null)
+            .map((key) => ({ key })),
+        ) ??
+        earliestKey(
+          children.filter((c) => c.anchorKey !== null).map((c) => ({ key: c.anchorKey as string })),
+        );
       sequenceItems.push({ type: 'scenario-tabs', key: childKey ?? dayStart, tracks: children });
     }
     return {
@@ -731,16 +946,24 @@ function truncateSummary(text: string): string {
 // scenario track — the "planned" one, same convention used throughout: ideal
 // if present, otherwise whichever track is there.
 function idealOrFirstTrack(day: Pick<Day, 'scenarioTracks'>): ScenarioTrack | null {
-  return day.scenarioTracks.find((t) => t.scenario.tone === 'ideal') ?? day.scenarioTracks[0] ?? null;
+  return (
+    day.scenarioTracks.find((t) => t.scenario.tone === 'ideal') ?? day.scenarioTracks[0] ?? null
+  );
 }
 
 function firstActivityIn(sequence: SequenceItem[]): EnrichedActivity | null {
-  return (sequence.find((i) => i.type === 'section') as SectionSequenceItem | undefined)?.activities[0] ?? null;
+  return (
+    (sequence.find((i) => i.type === 'section') as SectionSequenceItem | undefined)
+      ?.activities[0] ?? null
+  );
 }
 
-function deriveSummary(day: Pick<Day, 'scenarioTracks' | 'sequence' | 'stays' | 'location'>): string {
+function deriveSummary(
+  day: Pick<Day, 'scenarioTracks' | 'sequence' | 'stays' | 'location'>,
+): string {
   const idealTrack = idealOrFirstTrack(day);
-  const first = firstActivityIn(day.sequence) ?? (idealTrack && firstActivityIn(idealTrack.sequence));
+  const first =
+    firstActivityIn(day.sequence) ?? (idealTrack && firstActivityIn(idealTrack.sequence));
   if (first) return truncateSummary(first.text);
   if (day.stays[0]) return `Staying at ${day.stays[0].lodging?.name ?? day.location}`;
   return day.location;
@@ -757,7 +980,9 @@ function deriveSummary(day: Pick<Day, 'scenarioTracks' | 'sequence' | 'stays' | 
 const PRIORITY_RANK: Record<string, number> = { high: 3, medium: 2, low: 1 };
 
 function sectionActivities(sequence: SequenceItem[]): EnrichedActivity[] {
-  return (sequence.filter((i) => i.type === 'section') as SectionSequenceItem[]).flatMap((i) => i.activities);
+  return (sequence.filter((i) => i.type === 'section') as SectionSequenceItem[]).flatMap(
+    (i) => i.activities,
+  );
 }
 
 // Pulled from day.sequence (the fixed backbone) plus the planned scenario
@@ -805,7 +1030,9 @@ export function splitOutStayBoundaries(sequence: SequenceItem[]): {
   rest: SequenceItem[];
   checkIns: SequenceItem[];
 } {
-  const checkOuts = sequence.filter((item) => item.type === 'stay' && item.relation === 'Check out');
+  const checkOuts = sequence.filter(
+    (item) => item.type === 'stay' && item.relation === 'Check out',
+  );
   const checkIns = sequence.filter((item) => item.type === 'stay' && item.relation === 'Check in');
   const rest = sequence.filter((item) => !checkOuts.includes(item) && !checkIns.includes(item));
   return { checkOuts, rest, checkIns };
@@ -823,7 +1050,10 @@ export function splitOutStayBoundaries(sequence: SequenceItem[]): {
 // actually found a meal row for). Anything not in the map — a non-meal
 // activity, or a caller that skipped reading live state — falls back to the
 // first candidate that names a place, same as before this was made selectable.
-function resolveActivityPlace(activity: EnrichedActivity, mealPlaces?: Map<string, Place | null>): Place | null {
+function resolveActivityPlace(
+  activity: EnrichedActivity,
+  mealPlaces?: Map<string, Place | null>,
+): Place | null {
   if (activity.place) return activity.place;
   if (mealPlaces?.has(activity._id)) return mealPlaces.get(activity._id) ?? null;
   return activity.options?.find((o) => o.place)?.place ?? null;
@@ -833,7 +1063,10 @@ function resolveActivityPlace(activity: EnrichedActivity, mealPlaces?: Map<strin
 // overridable by a live scenario-tab selection (scenarioTone) a caller read
 // off live UI state — see dayMapStops/dayFullRouteStops below, both of which
 // want whichever branch the reader is actually looking at, not always the plan.
-function selectedTrack(day: Pick<Day, 'scenarioTracks'>, scenarioTone?: string): ScenarioTrack | null {
+function selectedTrack(
+  day: Pick<Day, 'scenarioTracks'>,
+  scenarioTone?: string,
+): ScenarioTrack | null {
   if (scenarioTone) {
     const track = day.scenarioTracks.find((t) => t.scenario.tone === scenarioTone);
     if (track) return track;
@@ -841,7 +1074,10 @@ function selectedTrack(day: Pick<Day, 'scenarioTracks'>, scenarioTone?: string):
   return idealOrFirstTrack(day);
 }
 
-function sequenceMapLabels(sequence: SequenceItem[], mealPlaces?: Map<string, Place | null>): string[] {
+function sequenceMapLabels(
+  sequence: SequenceItem[],
+  mealPlaces?: Map<string, Place | null>,
+): string[] {
   const labels: string[] = [];
   for (const item of sequence) {
     // A 'Staying' item (every night of a multi-night Stay that isn't the
@@ -917,7 +1153,8 @@ export function dayMapStops(day: Day, selections: DaySelections = {}): string[] 
 export function dayMapEmbedUrl(day: Day, selections: DaySelections = {}): string | null {
   const stops = dayMapStops(day, selections);
   if (!stops.length) return null;
-  if (stops.length === 1) return `https://maps.google.com/maps?q=${encodeURIComponent(stops[0])}&output=embed`;
+  if (stops.length === 1)
+    return `https://maps.google.com/maps?q=${encodeURIComponent(stops[0])}&output=embed`;
   const start = encodeURIComponent(stops[0]);
   const end = encodeURIComponent(stops[stops.length - 1]);
   return `https://maps.google.com/maps?saddr=${start}&daddr=${end}&output=embed`;
@@ -957,7 +1194,10 @@ interface RouteStop {
 // — null for the endpoints (a whole city, an unresolved via) that don't have
 // one, which still geocode fine by name alone.
 function routeStop(
-  placeLike: { label?: string; name?: string; id?: string | null; placeId?: string | null } | null | undefined,
+  placeLike:
+    | { label?: string; name?: string; id?: string | null; placeId?: string | null }
+    | null
+    | undefined,
   fallbackLabel?: string,
 ): RouteStop | null {
   const label = placeLike?.label ?? placeLike?.name ?? fallbackLabel ?? null;
@@ -1009,7 +1249,9 @@ function dayFullRouteStops(day: Day, selections: DaySelections = {}): TaggedRout
         // one link. Prefer whichever tone the reader actually has selected
         // (selections.routeTones); only fall back to routeInfo's own
         // default when the caller didn't pass one.
-        const tone = selections.routeTones?.get(item.transit._id) ?? (item.transit.routeInfo as ResolvedRouteInfo).selectedTone;
+        const tone =
+          selections.routeTones?.get(item.transit._id) ??
+          (item.transit.routeInfo as ResolvedRouteInfo).selectedTone;
         if (item.variant.tone !== tone) continue;
         const stop = routeStop({ id: item.stage.placeId, label: item.stage.label });
         if (stop) stops.push({ ...stop, tier: 'via', priorityRank: null });
@@ -1017,7 +1259,12 @@ function dayFullRouteStops(day: Day, selections: DaySelections = {}): TaggedRout
         for (const activity of item.activities) {
           const place = resolveActivityPlace(activity, selections.mealPlaces);
           const stop = routeStop(place ?? undefined);
-          if (stop) stops.push({ ...stop, tier: 'activity', priorityRank: (activity.priority && PRIORITY_RANK[activity.priority]) ?? 0 });
+          if (stop)
+            stops.push({
+              ...stop,
+              tier: 'activity',
+              priorityRank: (activity.priority && PRIORITY_RANK[activity.priority]) ?? 0,
+            });
         }
       }
     }
@@ -1063,7 +1310,12 @@ export function dayFullRouteUrl(day: Day, selections: DaySelections = {}): strin
   // section header comment above for why it can't just live inline).
   const candidates = stops.slice(1, -1).filter((stop) => stop.placeId);
   const waypoints = selectRouteWaypoints(candidates, MAX_ROUTE_WAYPOINTS);
-  const params = new URLSearchParams({ api: '1', origin: origin.label, destination: destination.label, travelmode: 'driving' });
+  const params = new URLSearchParams({
+    api: '1',
+    origin: origin.label,
+    destination: destination.label,
+    travelmode: 'driving',
+  });
   if (origin.placeId) params.set('origin_place_id', origin.placeId);
   if (destination.placeId) params.set('destination_place_id', destination.placeId);
   if (waypoints.length) {
@@ -1079,22 +1331,35 @@ export function dayFullRouteUrl(day: Day, selections: DaySelections = {}): strin
 function buildDay(
   date: string,
   legs: Leg[],
+  legDateRanges: Map<string, DateRange | null>,
   stays: EnrichedStay[],
   transits: EnrichedTransit[],
   activitiesByDate: Map<string, EnrichedActivity[]>,
   scenariosById: Map<string, Scenario>,
   notes: Note[],
 ): Day | null {
-  const leg = legs.find((l) => l.startDate <= date && date <= l.endDate);
+  // A date that falls inside two legs' computed ranges at once (e.g. a
+  // same-day handoff, one leg's checkout and the next leg's departure both
+  // landing on it) still renders every entity from every leg that claims the
+  // date — nothing here is dropped. Only the day's own *identity* (its
+  // `leg`/header, used for LegDialog's day list and default location)
+  // resolves to whichever leg sorts first in legs' own authored order —
+  // there's no boundary field left to disambiguate that with.
+  const legsForDate = legs.filter((l) => {
+    const range = legDateRanges.get(l._id);
+    return range && range.startDate <= date && date <= range.endDate;
+  });
+  const leg = legsForDate[0];
   if (!leg) return null;
+  const legIds = new Set(legsForDate.map((l) => l._id));
 
   const dayStart = `${date}T00:00`;
   const dayEnd = `${addDaysStr(date, 1)}T00:00`;
 
-  const dayStays = stays.filter((s) => s.legId === leg._id && stayOverlapsDay(s, dayStart, dayEnd));
-  const legTransits = transits.filter((t) => t.legId === leg._id);
+  const dayStays = stays.filter((s) => legIds.has(s.legId) && stayOverlapsDay(s, dayStart, dayEnd));
+  const legTransits = transits.filter((t) => legIds.has(t.legId));
   const dayTransits = legTransits.filter((t) => transitDepartsOnDay(t, date));
-  const dayActivities = (activitiesByDate.get(date) ?? []).filter((a) => a.legId === leg._id);
+  const dayActivities = (activitiesByDate.get(date) ?? []).filter((a) => legIds.has(a.legId));
 
   // A Transit that departed yesterday but rolls past midnight (see
   // transitItemsOnDate) still owes today's sequence its own post-midnight
@@ -1111,13 +1376,19 @@ function buildDay(
   // this day on the way out) is skipped in favor of wherever the day actually
   // ends up — the incoming stay, or the one already in progress.
   const primaryStay =
-    dayStays.find((s) => !(dateOnly(s.checkOutAt) === date && dateOnly(s.checkInAt) !== date)) ?? dayStays[0] ?? null;
+    dayStays.find((s) => !(dateOnly(s.checkOutAt) === date && dateOnly(s.checkInAt) !== date)) ??
+    dayStays[0] ??
+    null;
   // Looked up against every one of the leg's Transits, not just dayTransits —
   // a day with nothing else to name itself after still needs to know one
   // arrived here, even though (per transitItemsOnDate) the Arrive boundary
   // itself now also renders inline in today's sequence.
   const arrivingTransit = legTransits.find((t) => t.arrivesAt && dateOnly(t.arrivesAt) === date);
-  const location = primaryStay?.lodging?.name ?? arrivingTransit?.to?.label ?? dayTransits[0]?.from?.label ?? leg.name;
+  const location =
+    primaryStay?.lodging?.name ??
+    arrivingTransit?.to?.label ??
+    dayTransits[0]?.from?.label ??
+    leg.name;
 
   const { tracks: scenarioTracks, anchorKey: scenarioAnchorKey } = buildScenarioTracks(
     transitsForSequence,
@@ -1135,7 +1406,14 @@ function buildDay(
     location,
     stays: dayStays,
     transits: dayTransits,
-    sequence: buildSequence(dayStays, transitsForSequence, dayActivities, date, dayStart, scenarioAnchorKey),
+    sequence: buildSequence(
+      dayStays,
+      transitsForSequence,
+      dayActivities,
+      date,
+      dayStart,
+      scenarioAnchorKey,
+    ),
     scenarioTracks,
     notes: notesForDay(notes, date),
     summary: '',
@@ -1232,14 +1510,22 @@ function validateRoutes(routes: Route[]): void {
     for (const variant of route.variants ?? []) {
       for (const place of variant.places ?? []) {
         const where = `${route._id} (${variant.tone}) place ${place.place?.label ?? place.label ?? '?'}`;
-        if (!PLACE_KINDS.has(place.kind)) problems.push(`${where}: kind must be 'waypoint' or 'via', got ${JSON.stringify(place.kind)}`);
-        if (!place.place?.id && !place.coordinates) problems.push(`${where}: no resolvable place.id or coordinates`);
+        if (!PLACE_KINDS.has(place.kind))
+          problems.push(
+            `${where}: kind must be 'waypoint' or 'via', got ${JSON.stringify(place.kind)}`,
+          );
+        if (!place.place?.id && !place.coordinates)
+          problems.push(`${where}: no resolvable place.id or coordinates`);
         if (typeof place.durationMinutes !== 'number' || place.durationMinutes < 0) {
-          problems.push(`${where}: durationMinutes must be a non-negative number, got ${JSON.stringify(place.durationMinutes)}`);
+          problems.push(
+            `${where}: durationMinutes must be a non-negative number, got ${JSON.stringify(place.durationMinutes)}`,
+          );
         }
       }
       if (typeof variant.finalLegMinutes !== 'number' || variant.finalLegMinutes < 0) {
-        problems.push(`${route._id} (${variant.tone}): finalLegMinutes must be a non-negative number, got ${JSON.stringify(variant.finalLegMinutes)}`);
+        problems.push(
+          `${route._id} (${variant.tone}): finalLegMinutes must be a non-negative number, got ${JSON.stringify(variant.finalLegMinutes)}`,
+        );
       }
     }
   }
@@ -1273,12 +1559,20 @@ export function resolveTransitRoute(
   const inTransit = inTransitActivities(transit, activities);
   const variants: ResolvedRouteVariant[] = route.variants.map((v) => {
     const { stages, arrivesAt } = stageTimesForVariant(v, transit, inTransit, live.formatOverrides);
-    return { tone: v.tone, label: `${v.tone[0].toUpperCase()}${v.tone.slice(1)}`, stages, arrivesAt };
+    return {
+      tone: v.tone,
+      label: `${v.tone[0].toUpperCase()}${v.tone.slice(1)}`,
+      stages,
+      arrivesAt,
+    };
   });
   if (!variants.length) return null;
   const requestedTone = live.routeVariant ?? transit.routeVariant;
-  const selectedTone = variants.some((v) => v.tone === requestedTone) ? (requestedTone as string) : variants[0].tone;
-  const resolvedArrivesAt = (variants.find((v) => v.tone === selectedTone) as ResolvedRouteVariant).arrivesAt;
+  const selectedTone = variants.some((v) => v.tone === requestedTone)
+    ? (requestedTone as string)
+    : variants[0].tone;
+  const resolvedArrivesAt = (variants.find((v) => v.tone === selectedTone) as ResolvedRouteVariant)
+    .arrivesAt;
   return { variants, selectedTone, resolvedArrivesAt };
 }
 
@@ -1307,7 +1601,10 @@ function todayDateStr(): string {
 //  - 'unplanned' — not booked, no cost guess either — nothing to sum, just
 //                  a count of "still needs a number."
 // A cancelled booking, or no booking at all, contributes nothing (null).
-export function bookingBucket(booking: Booking | null | undefined, today: string): BudgetRow['bucket'] | null {
+export function bookingBucket(
+  booking: Booking | null | undefined,
+  today: string,
+): BudgetRow['bucket'] | null {
   if (!booking || booking.status === 'cancelled') return null;
   if (booking.status === 'booked') {
     return booking.finalPaymentDueAt && booking.finalPaymentDueAt > today ? 'pending' : 'spent';
@@ -1319,13 +1616,25 @@ function emptyBudgetTotals(): BudgetTotals {
   return { spent: 0, pending: 0, estimated: 0, unplannedCount: 0, currency: null };
 }
 
-function addToBudgetTotals(totals: BudgetTotals, bucket: BudgetRow['bucket'], cost: Money | null): void {
+// A 'spent'/'pending' bucket normally carries a cost — but data-model.html
+// itself documents booking: { status: 'booked', cost: null, ... } as valid
+// (stay_talkeetna): a confirmed reservation whose price isn't tracked, either
+// because it's genuinely free/uncosted or because dedupeMirroredBookings
+// (above) couldn't resolve which sibling booking it belongs to. Either way
+// there's no dollar figure to add — the reservation still shows up as its
+// own row, just contributing nothing to the money totals.
+function addToBudgetTotals(
+  totals: BudgetTotals,
+  bucket: BudgetRow['bucket'],
+  cost: Money | null,
+): void {
   if (bucket === 'unplanned') {
     totals.unplannedCount += 1;
     return;
   }
-  totals[bucket] += (cost as Money).amount;
-  totals.currency = totals.currency ?? (cost as Money).currency;
+  if (!cost) return;
+  totals[bucket] += cost.amount;
+  totals.currency = totals.currency ?? cost.currency;
 }
 
 // Every Leg/Stay/Transit/Activity that carries a booking, flattened to one
@@ -1335,10 +1644,23 @@ function addToBudgetTotals(totals: BudgetTotals, bucket: BudgetRow['bucket'], co
 // `null` for a Leg's own bundled booking (the cruise fare), since a
 // week-long bundle has no single day it belongs to; the by-day grouping
 // below simply skips those, and the Leg grouping is where they show up.
-function bookingLineItems(legs: Leg[], stays: EnrichedStay[], transits: EnrichedTransit[], activities: EnrichedActivity[]): BudgetLineItem[] {
+function bookingLineItems(
+  legs: Leg[],
+  stays: EnrichedStay[],
+  transits: EnrichedTransit[],
+  activities: EnrichedActivity[],
+): BudgetLineItem[] {
   const items: BudgetLineItem[] = [];
   for (const leg of legs) {
-    if (leg.booking) items.push({ entity: 'leg', id: leg._id, legId: leg._id, label: leg.name, date: null, booking: leg.booking });
+    if (leg.booking)
+      items.push({
+        entity: 'leg',
+        id: leg._id,
+        legId: leg._id,
+        label: leg.name,
+        date: null,
+        booking: leg.booking,
+      });
   }
   for (const stay of stays) {
     if (stay.booking) {
@@ -1366,7 +1688,14 @@ function bookingLineItems(legs: Leg[], stays: EnrichedStay[], transits: Enriched
   }
   for (const activity of activities) {
     if (activity.booking) {
-      items.push({ entity: 'activity', id: activity._id, legId: activity.legId, label: activity.text, date: activity.date, booking: activity.booking });
+      items.push({
+        entity: 'activity',
+        id: activity._id,
+        legId: activity.legId,
+        label: activity.text,
+        date: activity.date,
+        booking: activity.booking,
+      });
     }
   }
   return dedupeMirroredBookings(items);
@@ -1380,11 +1709,37 @@ function bookingLineItems(legs: Leg[], stays: EnrichedStay[], transits: Enriched
 // within the same Leg is the signal a mirror actually happened; the Leg's
 // own entry wins (it alone carries the deposit/final-payment schedule),
 // and the mirrored child is dropped from the budget entirely.
+// Two sibling bookings (e.g. a round-trip's outbound and return Transit) can
+// also share one confirmationNumber and one combined cost the same way a Leg
+// and its mirrored child do above — the round trip's total lands on one
+// flight's booking.cost, and the other's is left null rather than repeating
+// (and so double-counting) the same fare. The null-cost sibling is dropped
+// here too, rather than showing as a confusing $0 row alongside the priced
+// one — but only when a priced sibling actually exists to attribute the fare
+// to; a group where every booking.cost is null (a still-unpriced pair) is
+// left alone for addToBudgetTotals's own null-cost handling.
 function dedupeMirroredBookings(items: BudgetLineItem[]): BudgetLineItem[] {
   const legConfirmations = new Set(
-    items.filter((i) => i.entity === 'leg' && i.booking.confirmationNumber).map((i) => `${i.legId}::${i.booking.confirmationNumber}`),
+    items
+      .filter((i) => i.entity === 'leg' && i.booking.confirmationNumber)
+      .map((i) => `${i.legId}::${i.booking.confirmationNumber}`),
   );
-  return items.filter((i) => i.entity === 'leg' || !legConfirmations.has(`${i.legId}::${i.booking.confirmationNumber}`));
+  const afterLegDedupe = items.filter(
+    (i) =>
+      i.entity === 'leg' || !legConfirmations.has(`${i.legId}::${i.booking.confirmationNumber}`),
+  );
+
+  const pricedConfirmations = new Set(
+    afterLegDedupe
+      .filter((i) => i.booking.confirmationNumber && i.booking.cost)
+      .map((i) => `${i.legId}::${i.booking.confirmationNumber}`),
+  );
+  return afterLegDedupe.filter(
+    (i) =>
+      i.booking.cost ||
+      !i.booking.confirmationNumber ||
+      !pricedConfirmations.has(`${i.legId}::${i.booking.confirmationNumber}`),
+  );
 }
 
 function bucketedRows(items: BudgetLineItem[], today: string): BudgetRow[] {
@@ -1428,7 +1783,9 @@ function groupBudgetByDay(days: Day[], rows: BudgetRow[]): BudgetDayGroup[] {
 // (marked in the UI as inferred, not authored), rather than leaving those
 // costs out of the by-traveler view entirely.
 function groupBudgetByTraveler(travelers: Traveler[], rows: BudgetRow[]): BudgetTravelerGroup[] {
-  const totalsByName = new Map<string, BudgetTotals>(travelers.map((t) => [t.name, emptyBudgetTotals()]));
+  const totalsByName = new Map<string, BudgetTotals>(
+    travelers.map((t) => [t.name, emptyBudgetTotals()]),
+  );
   for (const row of rows) {
     if (row.bucket === 'unplanned') continue;
     if (row.booking.passengers?.length) {
@@ -1438,8 +1795,12 @@ function groupBudgetByTraveler(travelers: Traveler[], rows: BudgetRow[]): Budget
       }
     } else {
       const share = travelers.length || 1;
-      const cost = { amount: (row.booking.cost as Money).amount / share, currency: (row.booking.cost as Money).currency };
-      for (const t of travelers) addToBudgetTotals(totalsByName.get(t.name) as BudgetTotals, row.bucket, cost);
+      const cost = {
+        amount: (row.booking.cost as Money).amount / share,
+        currency: (row.booking.cost as Money).currency,
+      };
+      for (const t of travelers)
+        addToBudgetTotals(totalsByName.get(t.name) as BudgetTotals, row.bucket, cost);
     }
   }
   return [...totalsByName.entries()].map(([name, totals]) => ({ name, totals }));
@@ -1511,7 +1872,10 @@ function resolveMealTravelers(
   return names.length ? names : everyone;
 }
 
-function resolveExcursionTravelers(tripTravelers: Traveler[], travelerIds: string[] | null | undefined): string[] | null {
+function resolveExcursionTravelers(
+  tripTravelers: Traveler[],
+  travelerIds: string[] | null | undefined,
+): string[] | null {
   if (!travelerIds?.length) return null;
   const byId = travelersById(tripTravelers);
   const names = travelerIds.map((id) => byId.get(id)).filter((n): n is string => Boolean(n));
@@ -1542,13 +1906,11 @@ export function buildTripView(data: TripData): TripView {
         ? resolveMealTravelers(trip.travelers, a.includedIn, packagesById)
         : resolveExcursionTravelers(trip.travelers, a.travelers),
       options: a.options
-        ? a.options.map(
-            (o): EnrichedMealOption => ({
-              ...o,
-              travelers: resolveMealTravelers(trip.travelers, o.includedIn, packagesById),
-              notes: notesForEntity(notes, 'mealOption', o._id),
-            }),
-          )
+        ? a.options.map((o): EnrichedMealOption => ({
+            ...o,
+            travelers: resolveMealTravelers(trip.travelers, o.includedIn, packagesById),
+            notes: notesForEntity(notes, 'mealOption', o._id),
+          }))
         : a.options,
     };
   });
@@ -1582,23 +1944,81 @@ export function buildTripView(data: TripData): TripView {
     (activitiesByDate.get(a.date) as EnrichedActivity[]).push(a);
   }
 
-  const days = dateRangeArray(trip.startDate, trip.endDate)
-    .map((date) => buildDay(date, legs, enrichedStays, routedTransits, activitiesByDate, scenariosById, notes))
+  const legDateRanges = new Map(
+    legs.map(
+      (leg) =>
+        [
+          leg._id,
+          legDateRange(leg._id, enrichedStays, routedTransits, enrichedActivities),
+        ] as const,
+    ),
+  );
+  const dateRange = tripDateRange(enrichedStays, routedTransits, enrichedActivities);
+  const days = (dateRange ? dateRangeArray(dateRange.startDate, dateRange.endDate) : [])
+    .map((date) =>
+      buildDay(
+        date,
+        legs,
+        legDateRanges,
+        enrichedStays,
+        routedTransits,
+        activitiesByDate,
+        scenariosById,
+        notes,
+      ),
+    )
     .filter((d): d is Day => d !== null);
 
-  const legSummaries: LegSummary[] = legs.map((leg) => ({
+  // Legs carry no authored sequence of their own — display order is the
+  // computed legDateRanges start date, undated legs (nothing attached yet)
+  // sorted last. This only reorders the UI-facing lists below; buildDay's
+  // own overlapping-range tie-break above still walks the raw legs array.
+  const sortedLegs = [...legs].sort((a, b) => {
+    const aStart = legDateRanges.get(a._id)?.startDate;
+    const bStart = legDateRanges.get(b._id)?.startDate;
+    if (aStart && bStart) return aStart.localeCompare(bStart);
+    if (aStart) return -1;
+    if (bStart) return 1;
+    return 0;
+  });
+
+  const legSummaries: LegSummary[] = sortedLegs.map((leg) => ({
     leg,
+    dateRange: legDateRanges.get(leg._id) ?? null,
     days: days.filter((d) => d.leg._id === leg._id),
     notes: notesForEntity(notes, 'leg', leg._id),
+    bookingProgress: legBookingProgress(leg, stays, transits, activities),
+    bookingPercent: legBookingPercent(leg, stays, transits, activities),
   }));
 
-  const budget = buildBudgetView(trip, legs, days, enrichedStays, routedTransits, enrichedActivities);
+  const budget = buildBudgetView(
+    trip,
+    sortedLegs,
+    days,
+    enrichedStays,
+    routedTransits,
+    enrichedActivities,
+  );
 
   const activitiesById = new Map(enrichedActivities.map((a) => [a._id, a]));
+
+  const bookingProgress = tripBookingProgress(legs, stays, transits, activities);
+  const bookingPercent = tripBookingPercent(legs, stays, transits, activities);
 
   // routesById is exposed alongside the rest of the computed view so a live
   // recompute (TripSelectionsContext-driven) can call resolveTransitRoute
   // again later, the same way buildTripView itself just did above — see
   // that function's own note on `live`.
-  return { trip, days, legSummaries, activitiesById, scenariosById, routesById, budget };
+  return {
+    trip,
+    dateRange,
+    days,
+    legSummaries,
+    activitiesById,
+    scenariosById,
+    routesById,
+    budget,
+    bookingProgress,
+    bookingPercent,
+  };
 }

@@ -1,29 +1,29 @@
-import { useState } from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import { useState } from 'react';
 
+import {
+  activityFormFrom,
+  type ActivityFormState,
+  applyActivityForm,
+  applyStayForm,
+  applyTransitForm,
+  stayFormFrom,
+  type StayFormState,
+  transitFormFrom,
+  type TransitFormState,
+} from '../../model/editForms';
+import type { Activity, Route, Stay, Transit, Traveler } from '../../model/types';
+import type { EditKind } from '../../state/EditContext';
+import type { CollectionName } from '../../state/TripDataContext';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { ActivityEditForm } from './ActivityEditForm';
 import { StayEditForm } from './StayEditForm';
 import { TransitEditForm } from './TransitEditForm';
-import {
-  activityFormFrom,
-  applyActivityForm,
-  stayFormFrom,
-  applyStayForm,
-  transitFormFrom,
-  applyTransitForm,
-  type ActivityFormState,
-  type StayFormState,
-  type TransitFormState,
-} from '../../model/editForms';
-import type { EditKind } from '../../state/EditContext';
-import type { CollectionName } from '../../state/TripDataContext';
-import type { Activity, Route, Stay, Transit, Traveler } from '../../model/types';
 
 const EDIT_ENTITY_LABEL: Record<EditKind, string> = {
   activity: 'Edit activity',
@@ -71,19 +71,37 @@ export function EditDialog(props: EditDialogProps) {
   return <EditDialogBody {...props} entity={entity} key={entity._id} />;
 }
 
-function EditDialogBody({ kind, entity, isNew, stays, tripTravelers, routes, onClose, onSave, onDelete }: EditDialogProps & { entity: Entity }) {
+function EditDialogBody({
+  kind,
+  entity,
+  isNew,
+  stays,
+  tripTravelers,
+  routes,
+  onClose,
+  onSave,
+  onDelete,
+}: EditDialogProps & { entity: Entity }) {
   const [error, setError] = useState<string | null>(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [activityForm, setActivityForm] = useState<ActivityFormState | null>(kind === 'activity' ? activityFormFrom(entity as Activity) : null);
-  const [stayForm, setStayForm] = useState<StayFormState | null>(kind === 'stay' ? stayFormFrom(entity as Stay) : null);
-  const [transitForm, setTransitForm] = useState<TransitFormState | null>(kind === 'transit' ? transitFormFrom(entity as Transit) : null);
+  const [activityForm, setActivityForm] = useState<ActivityFormState | null>(
+    kind === 'activity' ? activityFormFrom(entity as Activity) : null,
+  );
+  const [stayForm, setStayForm] = useState<StayFormState | null>(
+    kind === 'stay' ? stayFormFrom(entity as Stay) : null,
+  );
+  const [transitForm, setTransitForm] = useState<TransitFormState | null>(
+    kind === 'transit' ? transitFormFrom(entity as Transit) : null,
+  );
 
   const handleSave = () => {
     const clone = structuredClone(entity) as Entity;
     let message: string | null = null;
-    if (kind === 'activity' && activityForm) message = applyActivityForm(clone as Activity, activityForm);
+    if (kind === 'activity' && activityForm)
+      message = applyActivityForm(clone as Activity, activityForm);
     else if (kind === 'stay' && stayForm) message = applyStayForm(clone as Stay, stayForm);
-    else if (kind === 'transit' && transitForm) message = applyTransitForm(clone as Transit, transitForm);
+    else if (kind === 'transit' && transitForm)
+      message = applyTransitForm(clone as Transit, transitForm);
     if (message) {
       setError(message);
       return;
@@ -101,10 +119,17 @@ function EditDialogBody({ kind, entity, isNew, stays, tripTravelers, routes, onC
           </Alert>
         )}
         {kind === 'activity' && activityForm && (
-          <ActivityEditForm form={activityForm} onChange={setActivityForm} stays={stays} tripTravelers={tripTravelers} />
+          <ActivityEditForm
+            form={activityForm}
+            onChange={setActivityForm}
+            stays={stays}
+            tripTravelers={tripTravelers}
+          />
         )}
         {kind === 'stay' && stayForm && <StayEditForm form={stayForm} onChange={setStayForm} />}
-        {kind === 'transit' && transitForm && <TransitEditForm form={transitForm} onChange={setTransitForm} routes={routes} />}
+        {kind === 'transit' && transitForm && (
+          <TransitEditForm form={transitForm} onChange={setTransitForm} routes={routes} />
+        )}
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between', px: 3 }}>
         {isNew ? (

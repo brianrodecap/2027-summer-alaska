@@ -1,14 +1,21 @@
-import { useState } from 'react';
 import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
 import Chip from '@mui/material/Chip';
+import Stack from '@mui/material/Stack';
+import { useState } from 'react';
 
-import { materialIcon } from '../shared/materialIcon';
-import { NotesCluster } from '../shared/Notes';
+import type {
+  Day,
+  EnrichedActivity,
+  EnrichedMealOption,
+  EnrichedStay,
+  EnrichedTransit,
+  ScenarioTrack,
+} from '../../model/types';
 import { useScenarioSelection } from '../../state/TripSelectionsContext';
-import { resolveActiveTrack, visibleTracksFor } from './scenarioSelection';
+import { renderMaterialIcon } from '../shared/materialIcon';
+import { NotesCluster } from '../shared/Notes';
 import { DayTimeline } from './DayTimeline';
-import type { Day, EnrichedActivity, EnrichedMealOption, EnrichedStay, EnrichedTransit, ScenarioTrack } from '../../model/types';
+import { resolveActiveTrack, visibleTracksFor } from './scenarioSelection';
 
 // A branching day's scenarios each become one chip; the chip group picks
 // which branch's own timeline shows below. Each scenario's notes render once
@@ -55,13 +62,12 @@ export function ScenarioTabsSection({
     <Box sx={{ my: 1 }}>
       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
         {visible.map((t, i) => {
-          const Icon = materialIcon(t.scenario.icon);
           const active = i === activeIndex;
           return (
             <Chip
               key={t.scenario._id}
               label={t.scenario.label}
-              icon={<Icon fontSize="small" />}
+              icon={renderMaterialIcon(t.scenario.icon, { fontSize: 'small' })}
               color={active ? (t.scenario.tone === 'ideal' ? 'primary' : 'error') : 'default'}
               variant={active ? 'filled' : 'outlined'}
               onClick={() => handleSelect(i)}

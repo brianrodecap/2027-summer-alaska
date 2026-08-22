@@ -1,28 +1,28 @@
-import type { ReactNode } from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import IconButton from '@mui/material/IconButton';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import CloseIcon from '@mui/icons-material/Close';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import Accordion from '@mui/material/Accordion';
+import AccordionDetails from '@mui/material/AccordionDetails';
+import AccordionSummary from '@mui/material/AccordionSummary';
+import Box from '@mui/material/Box';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
+import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import Accordion from '@mui/material/Accordion';
-import AccordionSummary from '@mui/material/AccordionSummary';
-import AccordionDetails from '@mui/material/AccordionDetails';
-import Typography from '@mui/material/Typography';
-import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import type { ReactNode } from 'react';
 
-import { formatMoney } from '../../model/tripModel';
 import { firstImage } from '../../model/formatting';
+import { formatDateLabel, formatMoney, tripDayCount } from '../../model/tripModel';
+import type { Booking, Day, LegSummary } from '../../model/types';
 import { BookingChip } from '../shared/BookingChip';
 import { NotesCluster } from '../shared/Notes';
 import { groupDaysByLocation } from './legDayGroups';
-import type { Booking, Day, LegSummary } from '../../model/types';
 
 function DayRow({ day, onSelectDay }: { day: Day; onSelectDay: (date: string) => void }) {
   return (
@@ -33,7 +33,13 @@ function DayRow({ day, onSelectDay }: { day: Day; onSelectDay: (date: string) =>
   );
 }
 
-function DayGroup({ group, onSelectDay }: { group: { location: string; days: Day[] }; onSelectDay: (date: string) => void }) {
+function DayGroup({
+  group,
+  onSelectDay,
+}: {
+  group: { location: string; days: Day[] };
+  onSelectDay: (date: string) => void;
+}) {
   const range = `${group.days[0].dateLabel} – ${group.days[group.days.length - 1].dateLabel}`;
   return (
     <Accordion disableGutters elevation={0} sx={{ '&:before': { display: 'none' } }}>
@@ -90,8 +96,12 @@ function LegBooking({ booking }: { booking: Booking }) {
   return (
     <Stack spacing={0.5} sx={{ my: 1, alignItems: 'flex-start' }}>
       <BookingChip booking={booking} />
-      {booking.depositPaidAt && <Typography variant="body2">Deposit paid {booking.depositPaidAt}</Typography>}
-      {booking.finalPaymentDueAt && <Typography variant="body2">Final payment due {booking.finalPaymentDueAt}</Typography>}
+      {booking.depositPaidAt && (
+        <Typography variant="body2">Deposit paid {booking.depositPaidAt}</Typography>
+      )}
+      {booking.finalPaymentDueAt && (
+        <Typography variant="body2">Final payment due {booking.finalPaymentDueAt}</Typography>
+      )}
       {booking.passengers?.length ? (
         <Box component="ul" sx={{ pl: 2, m: 0 }}>
           {booking.passengers.map((p) => (
@@ -117,8 +127,9 @@ export function LegDialog({
   onSelectDay: (date: string) => void;
 }) {
   if (!summary) return null;
-  const { leg, days, notes } = summary;
+  const { leg, dateRange, days, notes } = summary;
   const image = firstImage(leg);
+  const dayCount = dateRange ? tripDayCount(dateRange) : 0;
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -139,13 +150,17 @@ export function LegDialog({
           />
         )}
         <Typography variant="body2" color="text.secondary">
-          {leg.startDate} – {leg.endDate} · {days.length} days · {leg.status}
+          {dateRange
+            ? `${formatDateLabel(dateRange.startDate)} – ${formatDateLabel(dateRange.endDate)} · `
+            : ''}
+          {dayCount} days
         </Typography>
         {leg.booking ? (
           <LegBooking booking={leg.booking} />
         ) : (
           <Typography variant="body2" color="text.secondary" sx={{ my: 1 }}>
-            No single reservation for this leg — booked piece by piece as its Stays/Transits/Activities.
+            No single reservation for this leg — booked piece by piece as its
+            Stays/Transits/Activities.
           </Typography>
         )}
         <NotesCluster notes={notes} expanded />

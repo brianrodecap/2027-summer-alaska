@@ -1,13 +1,13 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
-import { formatTime } from '../../model/tripModel';
 import { firstImage } from '../../model/formatting';
-import { materialIcon } from '../shared/materialIcon';
-import { DetailSideSheet } from '../shared/DetailSideSheet';
-import { BookingChip } from '../shared/BookingChip';
-import { NotesCluster } from '../shared/Notes';
+import { formatTime } from '../../model/tripModel';
 import type { EnrichedStay } from '../../model/types';
+import { BookingChip } from '../shared/BookingChip';
+import { DetailSideSheet } from '../shared/DetailSideSheet';
+import { renderMaterialIcon } from '../shared/materialIcon';
+import { NotesCluster } from '../shared/Notes';
 
 // A Stay row's own tap target — mirrors ActivityDetailPanel's side sheet
 // (title/icon, the same detail already visible inline in the timeline row,
@@ -27,7 +27,6 @@ export function StayDetailPanel({
   if (!stay) return null;
 
   const image = firstImage(stay);
-  const Icon = materialIcon('hotel');
   const detailBits = [
     stay.lodging?.roomType,
     stay.lodging?.roomNumber && `Room/cabin ${stay.lodging.roomNumber}`,
@@ -36,9 +35,21 @@ export function StayDetailPanel({
   ].filter(Boolean) as string[];
 
   return (
-    <DetailSideSheet open={open} onClose={onClose} onEdit={onEdit} title={stay.lodging?.name ?? 'Lodging still open'} titleIcon={<Icon color="primary" />}>
+    <DetailSideSheet
+      open={open}
+      onClose={onClose}
+      onEdit={onEdit}
+      title={stay.lodging?.name ?? 'Lodging still open'}
+      titleIcon={renderMaterialIcon('hotel', { color: 'primary' })}
+    >
       {image && (
-        <Box component="img" src={image.uri} alt={image.caption ?? ''} title={image.credit ?? ''} sx={{ width: '100%', borderRadius: 2, mb: 2 }} />
+        <Box
+          component="img"
+          src={image.uri}
+          alt={image.caption ?? ''}
+          title={image.credit ?? ''}
+          sx={{ width: '100%', borderRadius: 2, mb: 2 }}
+        />
       )}
       <Typography variant="body1">
         {formatTime(stay.checkInAt)} in · {formatTime(stay.checkOutAt)} out

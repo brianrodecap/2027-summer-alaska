@@ -1,5 +1,5 @@
-import Stack from '@mui/material/Stack';
 import Chip from '@mui/material/Chip';
+import Stack from '@mui/material/Stack';
 
 // Who's actually part of a day-list row — a meal's resolved attendees, or an
 // excursion's own explicitly authored partial roster (see

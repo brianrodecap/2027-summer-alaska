@@ -1,20 +1,27 @@
+import AddIcon from '@mui/icons-material/Add';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import DeleteIcon from '@mui/icons-material/Delete';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
+import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
-import IconButton from '@mui/material/IconButton';
-import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import DeleteIcon from '@mui/icons-material/Delete';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import AddIcon from '@mui/icons-material/Add';
 
-import { PlacePickerField } from './PlacePickerField';
 import { DINING_FORMAT_LABEL } from '../../model/formatting';
 import type { DiningFormat, MealOption, Ref, Stay } from '../../model/types';
+import { PlacePickerField } from './PlacePickerField';
 
-const MEAL_OPTION_DINING_FORMAT_VALUES: DiningFormat[] = ['included', 'package', 'sit-down', 'grab-and-go', 'drivethru', 'self-catered'];
+const MEAL_OPTION_DINING_FORMAT_VALUES: DiningFormat[] = [
+  'included',
+  'package',
+  'sit-down',
+  'grab-and-go',
+  'drivethru',
+  'self-catered',
+];
 
 // includedIn points at either a whole Stay's base rate or one specific
 // Package nested inside a Stay — flattened here into a single select whose
@@ -22,7 +29,10 @@ const MEAL_OPTION_DINING_FORMAT_VALUES: DiningFormat[] = ['included', 'package',
 function includedInOptions(stays: Stay[]): { value: string; label: string }[] {
   const options = [{ value: '', label: 'Not included/covered' }];
   for (const stay of stays) {
-    options.push({ value: `stay:${stay._id}`, label: `Included with ${stay.lodging?.name ?? stay._id}` });
+    options.push({
+      value: `stay:${stay._id}`,
+      label: `Included with ${stay.lodging?.name ?? stay._id}`,
+    });
     for (const pkg of stay.packages ?? []) {
       options.push({ value: `package:${pkg._id}`, label: `Package: ${pkg.name}` });
     }
@@ -64,7 +74,16 @@ function MealOptionRow({
   onMoveDown: () => void;
 }) {
   return (
-    <Box sx={{ border: 1, borderColor: 'divider', borderRadius: 2, p: 2, mb: 1.5, position: 'relative' }}>
+    <Box
+      sx={{
+        border: 1,
+        borderColor: 'divider',
+        borderRadius: 2,
+        p: 2,
+        mb: 1.5,
+        position: 'relative',
+      }}
+    >
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 1 }}>
         <TextField
           select
@@ -87,7 +106,10 @@ function MealOptionRow({
         </IconButton>
       </Stack>
       <Stack spacing={1.5}>
-        <PlacePickerField place={option.place} onChange={(place) => onChange({ ...option, place })} />
+        <PlacePickerField
+          place={option.place}
+          onChange={(place) => onChange({ ...option, place })}
+        />
         <TextField
           select
           label="Included in"
@@ -101,7 +123,12 @@ function MealOptionRow({
           ))}
         </TextField>
       </Stack>
-      <IconButton size="small" aria-label="Remove this candidate" onClick={onRemove} sx={{ position: 'absolute', bottom: 8, right: 8 }}>
+      <IconButton
+        size="small"
+        aria-label="Remove this candidate"
+        onClick={onRemove}
+        sx={{ position: 'absolute', bottom: 8, right: 8 }}
+      >
         <DeleteIcon fontSize="small" />
       </IconButton>
     </Box>
@@ -111,8 +138,17 @@ function MealOptionRow({
 // Leave empty to keep the single decided place/dining format; add a few to
 // leave this meal undecided among them instead — options and the decided
 // fields are mutually exclusive (see editForms.ts's applyActivityForm).
-export function MealOptionList({ options, stays, onChange }: { options: MealOption[]; stays: Stay[]; onChange: (options: MealOption[]) => void }) {
-  const update = (i: number, option: MealOption) => onChange(options.map((o, idx) => (idx === i ? option : o)));
+export function MealOptionList({
+  options,
+  stays,
+  onChange,
+}: {
+  options: MealOption[];
+  stays: Stay[];
+  onChange: (options: MealOption[]) => void;
+}) {
+  const update = (i: number, option: MealOption) =>
+    onChange(options.map((o, idx) => (idx === i ? option : o)));
   const remove = (i: number) => onChange(options.filter((_, idx) => idx !== i));
   const moveUp = (i: number) => {
     if (i === 0) return;
@@ -130,8 +166,8 @@ export function MealOptionList({ options, stays, onChange }: { options: MealOpti
   return (
     <Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        Meal candidates — leave empty to keep the single decided place/dining format above; add a few to leave this meal undecided among them
-        instead.
+        Meal candidates — leave empty to keep the single decided place/dining format above; add a
+        few to leave this meal undecided among them instead.
       </Typography>
       {options.map((option, i) => (
         <MealOptionRow

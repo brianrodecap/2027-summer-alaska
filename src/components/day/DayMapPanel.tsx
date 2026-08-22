@@ -1,23 +1,30 @@
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import IconButton from '@mui/material/IconButton';
 import CloseIcon from '@mui/icons-material/Close';
 import Box from '@mui/material/Box';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 
-import { dayFullRouteUrl, dayMapEmbedUrl } from '../../model/tripModel';
 import { activeMealOptions } from '../../model/mealOptions';
-import { useScenarioSelection, useRouteToneSelection, useMealOptionSelection } from '../../state/TripSelectionsContext';
+import { dayFullRouteUrl, dayMapEmbedUrl } from '../../model/tripModel';
 import type { Day, Place, SequenceItem } from '../../model/types';
+import {
+  useMealOptionSelection,
+  useRouteToneSelection,
+  useScenarioSelection,
+} from '../../state/TripSelectionsContext';
 
 // Only activities the reader has actually switched away from the model's
 // default candidate get an entry here — dayMapStops/dayFullRouteUrl already
 // fall back to the first place-bearing option on their own for anything
 // left out of this map, same as the model's own "planned by default"
 // convention.
-function collectMealPlaces(day: Day, mealOptionIndex: Map<string, number>): Map<string, Place | null> {
+function collectMealPlaces(
+  day: Day,
+  mealOptionIndex: Map<string, number>,
+): Map<string, Place | null> {
   const result = new Map<string, Place | null>();
   const walk = (sequence: SequenceItem[]) => {
     for (const item of sequence) {
@@ -39,7 +46,15 @@ function collectMealPlaces(day: Day, mealOptionIndex: Map<string, number>): Map<
 
 // dayMapEmbedUrl is null when the day has nothing resolvable to map yet
 // (e.g. a still-unplanned day with no places named anywhere).
-export function DayMapPanel({ day, open, onClose }: { day: Day | null; open: boolean; onClose: () => void }) {
+export function DayMapPanel({
+  day,
+  open,
+  onClose,
+}: {
+  day: Day | null;
+  open: boolean;
+  onClose: () => void;
+}) {
   const { scenarioTone } = useScenarioSelection();
   const { routeTones } = useRouteToneSelection();
   const { mealOptionIndex } = useMealOptionSelection();

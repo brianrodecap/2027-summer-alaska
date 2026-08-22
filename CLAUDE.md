@@ -27,7 +27,7 @@ The site is a **read-only, drill-down presentation of a document-database-shaped
 
 A private `data/2027-summer-alaska/attachments/` at the **repo root** (gitignored) holds the real booking PDFs those JSON files were hydrated from — never move that into `public/`, since anything there is served publicly by GitHub Pages.
 
-The filter nav (booking/highlight/attention/leg filters over the day list, `src/model/filters.ts` + `src/components/day/FilterMenu.tsx`) and the standalone Routes-management dialog (`src/components/edit/RoutesDialog.tsx` + `RouteEditDialog.tsx` + `RouteEditForm.tsx`, for creating/editing `Route` reference documents directly — `TransitEditForm` still only *selects* an existing route) have both been ported from `docs/js/filters.js` / the Route-editing half of `docs/js/edit.js`; both live as icon buttons in `DaysView`'s own sticky app bar, alongside "Jump to a day".
+The filter nav (booking/highlight/attention/leg filters over the day list, `src/model/filters.ts` + `src/components/day/FilterMenu.tsx`) and the standalone Routes-management dialog (`src/components/edit/RoutesDialog.tsx` + `RouteEditDialog.tsx` + `RouteEditForm.tsx`, for creating/editing `Route` reference documents directly — `TransitEditForm` still only _selects_ an existing route) have both been ported from `docs/js/filters.js` / the Route-editing half of `docs/js/edit.js`; both live as icon buttons in `DaysView`'s own sticky app bar, alongside "Jump to a day".
 
 **Legacy files pending deletion:** `docs/index.html`, `docs/js/*.js`, `docs/styles.css` are the original buildless Material Web Components app, kept only until the GitHub Pages source is flipped to "GitHub Actions" (Settings → Pages) and the new build is confirmed live — delete them once that cutover is done.
 
@@ -36,7 +36,7 @@ The filter nav (booking/highlight/attention/leg filters over the day list, `src/
 - `npm install` once, then `npm run dev` for a local dev server (Vite, with HMR), `npm run build` to typecheck (`tsc -b`) and produce `dist/`, `npm run preview` to serve that build locally, `npm test` (or `npx vitest run`) for the unit tests over `tripModel.ts`.
 - Node isn't necessarily on `PATH` in every shell on this machine — if `node`/`npm` aren't found, `source ~/.nvm/nvm.sh` first.
 - Pushing to `main` triggers `.github/workflows/deploy.yml`, which builds and publishes to GitHub Pages — there is no staging/preview environment. The repo's Settings → Pages source must be set to "GitHub Actions" (not "Deploy from a branch") for this to take effect.
-- `vite.config.ts`'s `base: '/2027-summer-alaska/'` must match the repo name exactly (case-sensitive) — this is a GitHub Pages *project* page (`https://<owner>.github.io/2027-summer-alaska/`), not a user/org page. `npm run preview` does not reproduce this sub-path the same way the real deployed URL does; smoke-test against the live URL after a deploy, not just local preview.
+- `vite.config.ts`'s `base: '/2027-summer-alaska/'` must match the repo name exactly (case-sensitive) — this is a GitHub Pages _project_ page (`https://<owner>.github.io/2027-summer-alaska/`), not a user/org page. `npm run preview` does not reproduce this sub-path the same way the real deployed URL does; smoke-test against the live URL after a deploy, not just local preview.
 - Roboto Serif is loaded from Google Fonts via a `<link>` tag in `index.html`'s `<head>` — no local font files. Icons come from `@mui/icons-material` (real React components, not a font/ligature icon set).
 
 ## Content structure — adding or editing content

@@ -1,5 +1,5 @@
-import Chip from '@mui/material/Chip';
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import Chip from '@mui/material/Chip';
 
 import { formatMoney } from '../../model/tripModel';
 import type { Booking, BookingStatus } from '../../model/types';
@@ -19,5 +19,13 @@ export function BookingChip({ booking }: { booking: Booking | null | undefined }
   if (cost) bits.push(cost);
   if (booking.confirmationNumber) bits.push(`Conf# ${booking.confirmationNumber}`);
   const label = `${booking.status[0].toUpperCase()}${booking.status.slice(1)}${bits.length ? ` · ${bits.join(' · ')}` : ''}`;
-  return <Chip size="small" icon={<ConfirmationNumberIcon />} label={label} color={STATUS_COLOR[booking.status]} sx={{ alignSelf: 'flex-start' }} />;
+  return (
+    <Chip
+      size="small"
+      icon={<ConfirmationNumberIcon />}
+      label={label}
+      color={STATUS_COLOR[booking.status]}
+      sx={{ alignSelf: 'flex-start' }}
+    />
+  );
 }

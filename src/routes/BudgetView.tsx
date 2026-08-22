@@ -1,10 +1,10 @@
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import Divider from '@mui/material/Divider';
+import Typography from '@mui/material/Typography';
 
-import { useTripData } from '../state/TripDataContext';
-import { BudgetStats } from '../components/budget/BudgetStats';
 import { BudgetBreakdowns } from '../components/budget/BudgetBreakdowns';
+import { BudgetStats } from '../components/budget/BudgetStats';
+import { useTripData } from '../state/TripDataContext';
 
 // The Budget page's own top section — the same big stat cards the Overview
 // teaser links from, plus the one-time explainer of what each bucket means,
@@ -17,7 +17,8 @@ export function BudgetView() {
   return (
     <Box sx={{ px: 3, pb: 4 }}>
       <Typography variant="body1" sx={{ mb: 2 }}>
-        Spent and pending are what's actually booked; estimated and unplanned are still just the plan.
+        Spent and pending are what's actually booked; estimated and unplanned are still just the
+        plan.
         {budget.today && ` Pending balances are whatever's still due as of ${budget.today}.`}
       </Typography>
       <BudgetStats totals={budget.totals} variant="cards" />

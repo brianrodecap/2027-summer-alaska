@@ -11,17 +11,8 @@
       {
         "tone": "direct",
         "label": "Direct — via the (New) Glenn Highway and Parks Highway",
-        "places": [
-          {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJCyuT6-QdyVYRUN2N53uoJr4",
-              "label": "Palmer"
-            },
-            "durationMinutes": 50
-          }
-        ],
-        "finalLegMinutes": 100
+        "places": [],
+        "finalLegMinutes": 123
       },
       {
         "tone": "scenic",
@@ -242,13 +233,13 @@
           {
             "kind": "waypoint",
             "place": {
-              "id": "ChIJvxsddoaXMlERUCqo_qABWtk",
-              "label": "Nenana"
+              "id": "ChIJhXnkIkq0MlERbxl8lVwyH-s",
+              "label": "Tatlanika Gift Shop and Campground"
             },
-            "durationMinutes": 90
+            "durationMinutes": 44
           }
         ],
-        "finalLegMinutes": 75
+        "finalLegMinutes": 88
       }
     ],
     "images": [
@@ -271,25 +262,8 @@
       {
         "tone": "direct",
         "label": "Only practical route — the Richardson Highway",
-        "places": [
-          {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJIaw7oi-KNFERtQYZ2zBPMZA",
-              "label": "Delta Junction"
-            },
-            "durationMinutes": 105
-          },
-          {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJibeE-E15tVYRXwpMcJNVSMU",
-              "label": "Gakona"
-            },
-            "durationMinutes": 95
-          }
-        ],
-        "finalLegMinutes": 130
+        "places": [],
+        "finalLegMinutes": 275
       }
     ],
     "images": [

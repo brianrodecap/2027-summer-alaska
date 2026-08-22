@@ -1,17 +1,25 @@
+import Checkbox from '@mui/material/Checkbox';
+import Divider from '@mui/material/Divider';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import MenuItem from '@mui/material/MenuItem';
-import FormControlLabel from '@mui/material/FormControlLabel';
-import Checkbox from '@mui/material/Checkbox';
 import Typography from '@mui/material/Typography';
-import Divider from '@mui/material/Divider';
 
-import { DateTimeFieldPair } from './DateTimeFieldPair';
-import { PlacePickerField } from './PlacePickerField';
-import { MealOptionList } from './MealOptionList';
-import { BookingFields } from './BookingFields';
 import type { ActivityFormState } from '../../model/editForms';
-import type { DiningFormat, MealType, PlanStatus, Priority, Stay, TimeLabel, Traveler } from '../../model/types';
+import type {
+  DiningFormat,
+  MealType,
+  PlanStatus,
+  Priority,
+  Stay,
+  TimeLabel,
+  Traveler,
+} from '../../model/types';
+import { BookingFields } from './BookingFields';
+import { DateTimeFieldPair } from './DateTimeFieldPair';
+import { MealOptionList } from './MealOptionList';
+import { PlacePickerField } from './PlacePickerField';
 
 const STATUS_OPTIONS: { value: PlanStatus; label: string }[] = [
   { value: 'planning', label: 'Planning' },
@@ -107,22 +115,42 @@ export function ActivityEditForm({
         </>
       )}
 
-      <TextField label="Description" value={form.text} onChange={(e) => onChange({ ...form, text: e.target.value })} required />
-      <TextField select label="Status" value={form.status} onChange={(e) => onChange({ ...form, status: e.target.value as PlanStatus })}>
+      <TextField
+        label="Description"
+        value={form.text}
+        onChange={(e) => onChange({ ...form, text: e.target.value })}
+        required
+      />
+      <TextField
+        select
+        label="Status"
+        value={form.status}
+        onChange={(e) => onChange({ ...form, status: e.target.value as PlanStatus })}
+      >
         {STATUS_OPTIONS.map((o) => (
           <MenuItem key={o.value} value={o.value}>
             {o.label}
           </MenuItem>
         ))}
       </TextField>
-      <TextField select label="Priority" value={form.priority} onChange={(e) => onChange({ ...form, priority: e.target.value as Priority | '' })}>
+      <TextField
+        select
+        label="Priority"
+        value={form.priority}
+        onChange={(e) => onChange({ ...form, priority: e.target.value as Priority | '' })}
+      >
         {PRIORITY_OPTIONS.map((o) => (
           <MenuItem key={o.value} value={o.value}>
             {o.label}
           </MenuItem>
         ))}
       </TextField>
-      <TextField select label="Meal type" value={form.mealType} onChange={(e) => onChange({ ...form, mealType: e.target.value as MealType | '' })}>
+      <TextField
+        select
+        label="Meal type"
+        value={form.mealType}
+        onChange={(e) => onChange({ ...form, mealType: e.target.value as MealType | '' })}
+      >
         {MEAL_TYPE_OPTIONS.map((o) => (
           <MenuItem key={o.value} value={o.value}>
             {o.label}
@@ -145,7 +173,11 @@ export function ActivityEditForm({
       )}
 
       <Divider />
-      <MealOptionList options={form.options} stays={stays} onChange={(options) => onChange({ ...form, options })} />
+      <MealOptionList
+        options={form.options}
+        stays={stays}
+        onChange={(options) => onChange({ ...form, options })}
+      />
 
       {tripTravelers.length > 0 && (
         <>
@@ -163,7 +195,9 @@ export function ActivityEditForm({
                     onChange={(e) =>
                       onChange({
                         ...form,
-                        travelerIds: e.target.checked ? [...form.travelerIds, t.id] : form.travelerIds.filter((id) => id !== t.id),
+                        travelerIds: e.target.checked
+                          ? [...form.travelerIds, t.id]
+                          : form.travelerIds.filter((id) => id !== t.id),
                       })
                     }
                   />

@@ -1,13 +1,13 @@
-import { useState } from 'react';
 import Autocomplete from '@mui/material/Autocomplete';
-import TextField from '@mui/material/TextField';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { useState } from 'react';
 
-import { usePlaceSearch } from './usePlaceSearch';
 import type { PlaceSearchResult } from '../../model/places';
 import type { Place } from '../../model/types';
+import { usePlaceSearch } from './usePlaceSearch';
 
 // A place's Name field doubles as its own type-ahead search box, since
 // nobody actually knows a Google Place ID by heart — MUI's Autocomplete
@@ -89,7 +89,13 @@ export function PlacePickerField({
         label="Google Place ID"
         size="small"
         value={place?.id ?? ''}
-        onChange={(e) => onChange({ id: e.target.value || null, label: place?.label ?? inputValue, images: place?.images })}
+        onChange={(e) =>
+          onChange({
+            id: e.target.value || null,
+            label: place?.label ?? inputValue,
+            images: place?.images,
+          })
+        }
       />
     </Stack>
   );

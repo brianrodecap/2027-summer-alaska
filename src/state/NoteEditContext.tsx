@@ -1,10 +1,12 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, type ReactNode, useContext, useState } from 'react';
 
-import { useTripData } from './TripDataContext';
 import { NoteEditDialog } from '../components/notes/NoteEditDialog';
 import type { Note, NoteKind, RefEntityKind } from '../model/types';
+import { useTripData } from './TripDataContext';
 
-export type NoteTarget = { mode: 'create'; entity: RefEntityKind; id: string; kind: NoteKind } | { mode: 'edit'; note: Note };
+export type NoteTarget =
+  | { mode: 'create'; entity: RefEntityKind; id: string; kind: NoteKind }
+  | { mode: 'edit'; note: Note };
 
 interface NoteEditContextValue {
   openNoteCreate: (entity: RefEntityKind, id: string, kind: NoteKind) => void;
@@ -22,20 +24,30 @@ export function NoteEditProvider({ children }: { children: ReactNode }) {
   const { data, setData } = useTripData();
   const [target, setTarget] = useState<NoteTarget | null>(null);
 
-  const openNoteCreate = (entity: RefEntityKind, id: string, kind: NoteKind) => setTarget({ mode: 'create', entity, id, kind });
+  const openNoteCreate = (entity: RefEntityKind, id: string, kind: NoteKind) =>
+    setTarget({ mode: 'create', entity, id, kind });
   const openNoteEdit = (note: Note) => setTarget({ mode: 'edit', note });
   const closeNoteEdit = () => setTarget(null);
 
   const handleSave = (kind: NoteKind, text: string) => {
     if (!target) return;
-    setData((prev) => {
-      if (target.mode === 'create') {
-        const note: Note = { _id: crypto.randomUUID(), kind, text, concerns: [{ entity: target.entity, id: target.id }], images: [] };
-        return { ...prev, notes: [...prev.notes, note] };
-      }
-      const id = target.note._id;
-      return { ...prev, notes: prev.notes.map((n) => (n._id === id ? { ...n, kind, text } : n)) };
-    }, ['notes']);
+    setData(
+      (prev) => {
+        if (target.mode === 'create') {
+          const note: Note = {
+            _id: crypto.randomUUID(),
+            kind,
+            text,
+            concerns: [{ entity: target.entity, id: target.id }],
+            images: [],
+          };
+          return { ...prev, notes: [...prev.notes, note] };
+        }
+        const id = target.note._id;
+        return { ...prev, notes: prev.notes.map((n) => (n._id === id ? { ...n, kind, text } : n)) };
+      },
+      ['notes'],
+    );
     closeNoteEdit();
   };
 
@@ -50,7 +62,12 @@ export function NoteEditProvider({ children }: { children: ReactNode }) {
     <NoteEditContext.Provider value={{ openNoteCreate, openNoteEdit }}>
       {children}
       {target && data && (
-        <NoteEditDialog target={target} onClose={closeNoteEdit} onSave={handleSave} onDelete={target.mode === 'edit' ? handleDelete : undefined} />
+        <NoteEditDialog
+          target={target}
+          onClose={closeNoteEdit}
+          onSave={handleSave}
+          onDelete={target.mode === 'edit' ? handleDelete : undefined}
+        />
       )}
     </NoteEditContext.Provider>
   );

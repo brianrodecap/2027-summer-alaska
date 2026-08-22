@@ -1,54 +1,58 @@
 <title>Alaska Trip Data Model</title>
 <style>
   :root {
-    --bg: #EDF2F1;
-    --surface: #FFFFFF;
-    --surface-2: #F5F8F7;
-    --ink: #16232A;
-    --ink-muted: #55676D;
-    --border: #D7E0DE;
-    --accent: #0E7490;
-    --accent-2: #A6650B;
-    --accent-3: #6B6478;
-    --code-bg: #F2F6F5;
-    --shadow: 0 1px 2px rgba(15,35,40,.06), 0 6px 20px rgba(15,35,40,.05);
+    --bg: #edf2f1;
+    --surface: #ffffff;
+    --surface-2: #f5f8f7;
+    --ink: #16232a;
+    --ink-muted: #55676d;
+    --border: #d7e0de;
+    --accent: #0e7490;
+    --accent-2: #a6650b;
+    --accent-3: #6b6478;
+    --code-bg: #f2f6f5;
+    --shadow: 0 1px 2px rgba(15, 35, 40, 0.06), 0 6px 20px rgba(15, 35, 40, 0.05);
 
-    --font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-    --font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-    --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Menlo, Consolas, monospace;
+    --font-display: 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+    --font-body:
+      -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-mono:
+      ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Menlo, Consolas, monospace;
   }
 
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg: #0F1A1E;
-      --surface: #16262B;
-      --surface-2: #1B2C31;
-      --ink: #E7EEEC;
-      --ink-muted: #93A9A8;
-      --border: #2A3C40;
-      --accent: #4FD1DB;
-      --accent-2: #E0A339;
-      --accent-3: #A79EB8;
-      --code-bg: #10201F;
-      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    :root:not([data-theme='light']) {
+      --bg: #0f1a1e;
+      --surface: #16262b;
+      --surface-2: #1b2c31;
+      --ink: #e7eeec;
+      --ink-muted: #93a9a8;
+      --border: #2a3c40;
+      --accent: #4fd1db;
+      --accent-2: #e0a339;
+      --accent-3: #a79eb8;
+      --code-bg: #10201f;
+      --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
     }
   }
 
-  :root[data-theme="dark"] {
-    --bg: #0F1A1E;
-    --surface: #16262B;
-    --surface-2: #1B2C31;
-    --ink: #E7EEEC;
-    --ink-muted: #93A9A8;
-    --border: #2A3C40;
-    --accent: #4FD1DB;
-    --accent-2: #E0A339;
-    --accent-3: #A79EB8;
-    --code-bg: #10201F;
-    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  :root[data-theme='dark'] {
+    --bg: #0f1a1e;
+    --surface: #16262b;
+    --surface-2: #1b2c31;
+    --ink: #e7eeec;
+    --ink-muted: #93a9a8;
+    --border: #2a3c40;
+    --accent: #4fd1db;
+    --accent-2: #e0a339;
+    --accent-3: #a79eb8;
+    --code-bg: #10201f;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 10px 30px rgba(0, 0, 0, 0.35);
   }
 
-  * { box-sizing: border-box; }
+  * {
+    box-sizing: border-box;
+  }
 
   body {
     background: var(--bg);
@@ -60,24 +64,43 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; animation: none !important; }
+    * {
+      transition: none !important;
+      animation: none !important;
+    }
   }
 
-  a { color: var(--accent); }
-  a:focus-visible, button:focus-visible, .index a:focus-visible {
+  a {
+    color: var(--accent);
+  }
+  a:focus-visible,
+  button:focus-visible,
+  .index a:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 3px;
     border-radius: 2px;
   }
 
-  .page { max-width: 1180px; margin: 0 auto; padding: 0 clamp(1.25rem, 4vw, 3rem) 6rem; }
+  .page {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 clamp(1.25rem, 4vw, 3rem) 6rem;
+  }
 
   /* ---------- hero ---------- */
   .hero {
     padding: clamp(3rem, 8vw, 5rem) 0 3rem;
     background:
-      radial-gradient(60% 55% at 12% 0%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 70%),
-      radial-gradient(50% 60% at 92% 10%, color-mix(in srgb, var(--accent-2) 8%, transparent), transparent 70%);
+      radial-gradient(
+        60% 55% at 12% 0%,
+        color-mix(in srgb, var(--accent) 10%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        50% 60% at 92% 10%,
+        color-mix(in srgb, var(--accent-2) 8%, transparent),
+        transparent 70%
+      );
     border-bottom: 1px solid var(--border);
     margin: 0 calc(-1 * clamp(1.25rem, 4vw, 3rem));
     padding-left: clamp(1.25rem, 4vw, 3rem);
@@ -107,19 +130,58 @@
     color: var(--ink-muted);
     margin: 0 0 1.75rem;
   }
-  .legend { display: flex; flex-wrap: wrap; gap: 1.25rem; }
-  .legend-item { display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--ink-muted); }
-  .dot { width: 0.6rem; height: 0.6rem; border-radius: 50%; flex: none; }
-  .dot.owned { background: var(--accent); }
-  .dot.reference { background: var(--accent-2); }
-  .dot.computed { border: 1.5px dashed var(--accent-3); background: transparent; }
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--ink-muted);
+  }
+  .dot {
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 50%;
+    flex: none;
+  }
+  .dot.owned {
+    background: var(--accent);
+  }
+  .dot.reference {
+    background: var(--accent-2);
+  }
+  .dot.computed {
+    border: 1.5px dashed var(--accent-3);
+    background: transparent;
+  }
 
   /* ---------- layout ---------- */
-  .layout { display: grid; grid-template-columns: 220px minmax(0,1fr); gap: clamp(2rem, 5vw, 4rem); padding-top: 3rem; }
-  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+  .layout {
+    display: grid;
+    grid-template-columns: 220px minmax(0, 1fr);
+    gap: clamp(2rem, 5vw, 4rem);
+    padding-top: 3rem;
+  }
+  @media (max-width: 860px) {
+    .layout {
+      grid-template-columns: 1fr;
+    }
+  }
 
-  .index { position: sticky; top: 1.5rem; align-self: start; }
-  @media (max-width: 860px) { .index { position: static; } }
+  .index {
+    position: sticky;
+    top: 1.5rem;
+    align-self: start;
+  }
+  @media (max-width: 860px) {
+    .index {
+      position: static;
+    }
+  }
   .index h3 {
     font-family: var(--font-mono);
     font-size: 0.7rem;
@@ -128,8 +190,17 @@
     color: var(--ink-muted);
     margin: 1.4rem 0 0.5rem;
   }
-  .index h3:first-child { margin-top: 0; }
-  .index ul { list-style: none; margin: 0 0 0.25rem; padding: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+  .index h3:first-child {
+    margin-top: 0;
+  }
+  .index ul {
+    list-style: none;
+    margin: 0 0 0.25rem;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
   .index a {
     color: var(--ink);
     text-decoration: none;
@@ -139,10 +210,22 @@
     padding: 0.15rem 0;
     border-radius: 4px;
   }
-  .index a:hover { color: var(--accent); }
-  .index .n { font-family: var(--font-mono); color: var(--ink-muted); font-variant-numeric: tabular-nums; font-size: 0.8rem; }
+  .index a:hover {
+    color: var(--accent);
+  }
+  .index .n {
+    font-family: var(--font-mono);
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.8rem;
+  }
 
-  main.content { min-width: 0; display: flex; flex-direction: column; gap: 3.25rem; }
+  main.content {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3.25rem;
+  }
 
   section h2.section-title {
     font-family: var(--font-display);
@@ -151,7 +234,11 @@
   }
 
   /* ---------- principles ---------- */
-  .principles { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 1rem; }
+  .principles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 1rem;
+  }
   .principle {
     background: var(--surface);
     border: 1px solid var(--border);
@@ -165,16 +252,48 @@
     color: var(--accent);
     letter-spacing: 0.06em;
   }
-  .principle h4 { margin: 0.35rem 0 0.4rem; font-size: 1rem; }
-  .principle p { margin: 0; color: var(--ink-muted); font-size: 0.92rem; }
+  .principle h4 {
+    margin: 0.35rem 0 0.4rem;
+    font-size: 1rem;
+  }
+  .principle p {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 0.92rem;
+  }
 
   /* ---------- ladder ---------- */
-  .ladder-block { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.5rem; box-shadow: var(--shadow); }
-  .ladder-row { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.25rem; }
-  .ladder-row:last-child { margin-bottom: 0; }
-  .ladder-label { font-size: 0.82rem; color: var(--ink-muted); }
-  .ladder-label strong { color: var(--ink); }
-  .pills { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; font-family: var(--font-mono); font-size: 0.82rem; }
+  .ladder-block {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+  }
+  .ladder-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .ladder-row:last-child {
+    margin-bottom: 0;
+  }
+  .ladder-label {
+    font-size: 0.82rem;
+    color: var(--ink-muted);
+  }
+  .ladder-label strong {
+    color: var(--ink);
+  }
+  .pills {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+  }
   .pill {
     padding: 0.28rem 0.65rem;
     border-radius: 999px;
@@ -182,9 +301,17 @@
     background: var(--surface-2);
     white-space: nowrap;
   }
-  .pill.active { border-color: var(--accent); color: var(--accent); }
-  .arrow { color: var(--ink-muted); }
-  .pill.branch { border-style: dashed; color: var(--ink-muted); }
+  .pill.active {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .arrow {
+    color: var(--ink-muted);
+  }
+  .pill.branch {
+    border-style: dashed;
+    color: var(--ink-muted);
+  }
 
   /* ---------- entity cards ---------- */
   .entity {
@@ -195,7 +322,12 @@
     box-shadow: var(--shadow);
     scroll-margin-top: 1.25rem;
   }
-  .entity-head { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.1rem; }
+  .entity-head {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1.1rem;
+  }
   .entity-num {
     font-family: var(--font-mono);
     font-size: 0.95rem;
@@ -213,11 +345,30 @@
     border-radius: 999px;
     margin-bottom: 0.5rem;
   }
-  .badge-owned { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
-  .badge-reference { background: color-mix(in srgb, var(--accent-2) 16%, transparent); color: var(--accent-2); }
-  .badge-computed { background: transparent; color: var(--accent-3); border: 1px dashed var(--accent-3); }
-  .entity h2 { font-family: var(--font-display); font-size: 1.35rem; margin: 0 0 0.3rem; }
-  .entity-purpose { margin: 0; color: var(--ink-muted); font-size: 0.95rem; max-width: 60ch; }
+  .badge-owned {
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    color: var(--accent);
+  }
+  .badge-reference {
+    background: color-mix(in srgb, var(--accent-2) 16%, transparent);
+    color: var(--accent-2);
+  }
+  .badge-computed {
+    background: transparent;
+    color: var(--accent-3);
+    border: 1px dashed var(--accent-3);
+  }
+  .entity h2 {
+    font-family: var(--font-display);
+    font-size: 1.35rem;
+    margin: 0 0 0.3rem;
+  }
+  .entity-purpose {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 0.95rem;
+    max-width: 60ch;
+  }
 
   pre.schema {
     background: var(--code-bg);
@@ -228,8 +379,12 @@
     overflow-x: auto;
     margin: 0 0 1rem;
   }
-  .entity[data-kind="reference"] pre.schema { border-left-color: var(--accent-2); }
-  .entity[data-kind="computed"] pre.schema { border-left-color: var(--accent-3); }
+  .entity[data-kind='reference'] pre.schema {
+    border-left-color: var(--accent-2);
+  }
+  .entity[data-kind='computed'] pre.schema {
+    border-left-color: var(--accent-3);
+  }
   pre.schema code {
     font-family: var(--font-mono);
     font-size: 0.83rem;
@@ -237,15 +392,40 @@
     color: var(--ink);
     white-space: pre;
   }
-  .schema-label { font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-muted); margin: 0 0 0.4rem; letter-spacing: 0.04em; }
+  .schema-label {
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    color: var(--ink-muted);
+    margin: 0 0 0.4rem;
+    letter-spacing: 0.04em;
+  }
 
-  ul.rationale { margin: 0; padding-left: 1.15rem; display: flex; flex-direction: column; gap: 0.4rem; }
-  ul.rationale li { font-size: 0.92rem; color: var(--ink-muted); }
-  ul.rationale li strong { color: var(--ink); }
-  ul.rationale li em.call { font-style: normal; color: var(--accent); font-size: 0.82rem; }
+  ul.rationale {
+    margin: 0;
+    padding-left: 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  ul.rationale li {
+    font-size: 0.92rem;
+    color: var(--ink-muted);
+  }
+  ul.rationale li strong {
+    color: var(--ink);
+  }
+  ul.rationale li em.call {
+    font-style: normal;
+    color: var(--accent);
+    font-size: 0.82rem;
+  }
 
   /* ---------- open threads ---------- */
-  .threads { display: flex; flex-direction: column; gap: 0.75rem; }
+  .threads {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
   .thread {
     display: flex;
     gap: 0.85rem;
@@ -254,10 +434,23 @@
     border-radius: 10px;
     padding: 1rem 1.2rem;
   }
-  .thread .mark { color: var(--accent-3); font-family: var(--font-mono); font-size: 0.85rem; }
-  .thread p { margin: 0; font-size: 0.93rem; }
-  .thread p strong { display: block; margin-bottom: 0.15rem; color: var(--ink); }
-  .thread p span { color: var(--ink-muted); }
+  .thread .mark {
+    color: var(--accent-3);
+    font-family: var(--font-mono);
+    font-size: 0.85rem;
+  }
+  .thread p {
+    margin: 0;
+    font-size: 0.93rem;
+  }
+  .thread p strong {
+    display: block;
+    margin-bottom: 0.15rem;
+    color: var(--ink);
+  }
+  .thread p span {
+    color: var(--ink-muted);
+  }
 
   footer.doc-footer {
     margin-top: 4rem;
@@ -274,11 +467,22 @@
   <header class="hero">
     <span class="eyebrow">Document-database reference · Alaska 2027</span>
     <h1>Alaska Trip Data Model</h1>
-    <p class="dek">Nine entities and one deliberately unstored view, worked out from the itinerary site's real content — what belongs to the trip, what's borrowed from elsewhere, and what's never persisted at all.</p>
+    <p class="dek">
+      Nine entities and one deliberately unstored view, worked out from the itinerary site's real
+      content — what belongs to the trip, what's borrowed from elsewhere, and what's never persisted
+      at all.
+    </p>
     <div class="legend">
-      <span class="legend-item"><span class="dot owned"></span> Trip-owned — exists only because this trip exists</span>
-      <span class="legend-item"><span class="dot reference"></span> Reference data — reusable, trip merely points at it</span>
-      <span class="legend-item"><span class="dot computed"></span> Computed view — never stored, assembled on read</span>
+      <span class="legend-item"
+        ><span class="dot owned"></span> Trip-owned — exists only because this trip exists</span
+      >
+      <span class="legend-item"
+        ><span class="dot reference"></span> Reference data — reusable, trip merely points at
+        it</span
+      >
+      <span class="legend-item"
+        ><span class="dot computed"></span> Computed view — never stored, assembled on read</span
+      >
     </div>
   </header>
 
@@ -286,31 +490,57 @@
     <nav class="index" aria-label="Entity index">
       <h3>Orientation</h3>
       <ul>
-        <li><a href="#principles"><span class="n">·</span> Guiding principles</a></li>
-        <li><a href="#ladder"><span class="n">·</span> Status ladders</a></li>
+        <li>
+          <a href="#principles"><span class="n">·</span> Guiding principles</a>
+        </li>
+        <li>
+          <a href="#ladder"><span class="n">·</span> Status ladders</a>
+        </li>
       </ul>
       <h3>Trip-owned</h3>
       <ul>
-        <li><a href="#trip"><span class="n">01</span> Trip</a></li>
-        <li><a href="#leg"><span class="n">02</span> Leg</a></li>
-        <li><a href="#stay"><span class="n">03</span> Stay</a></li>
-        <li><a href="#transit"><span class="n">04</span> Transit</a></li>
-        <li><a href="#activity"><span class="n">07</span> Activity</a></li>
-        <li><a href="#scenario"><span class="n">08</span> Scenario</a></li>
-        <li><a href="#note"><span class="n">09</span> Note</a></li>
+        <li>
+          <a href="#trip"><span class="n">01</span> Trip</a>
+        </li>
+        <li>
+          <a href="#leg"><span class="n">02</span> Leg</a>
+        </li>
+        <li>
+          <a href="#stay"><span class="n">03</span> Stay</a>
+        </li>
+        <li>
+          <a href="#transit"><span class="n">04</span> Transit</a>
+        </li>
+        <li>
+          <a href="#activity"><span class="n">07</span> Activity</a>
+        </li>
+        <li>
+          <a href="#scenario"><span class="n">08</span> Scenario</a>
+        </li>
+        <li>
+          <a href="#note"><span class="n">09</span> Note</a>
+        </li>
       </ul>
       <h3>Reference data</h3>
       <ul>
-        <li><a href="#route"><span class="n">05</span> Route</a></li>
-        <li><a href="#place"><span class="n">06</span> Place</a></li>
+        <li>
+          <a href="#route"><span class="n">05</span> Route</a>
+        </li>
+        <li>
+          <a href="#place"><span class="n">06</span> Place</a>
+        </li>
       </ul>
       <h3>Computed</h3>
       <ul>
-        <li><a href="#day"><span class="n">·</span> Day</a></li>
+        <li>
+          <a href="#day"><span class="n">·</span> Day</a>
+        </li>
       </ul>
       <h3>Closing</h3>
       <ul>
-        <li><a href="#open-threads"><span class="n">·</span> Open threads</a></li>
+        <li>
+          <a href="#open-threads"><span class="n">·</span> Open threads</a>
+        </li>
       </ul>
     </nav>
 
@@ -321,35 +551,69 @@
           <div class="principle">
             <span class="p-num">01</span>
             <h4>Owned vs. referenced</h4>
-            <p>Most entities exist only because this trip exists. Two don't — <strong>Place</strong> and <strong>Route</strong> are reusable knowledge a trip merely points at.</p>
+            <p>
+              Most entities exist only because this trip exists. Two don't —
+              <strong>Place</strong> and <strong>Route</strong> are reusable knowledge a trip merely
+              points at.
+            </p>
           </div>
           <div class="principle">
             <span class="p-num">02</span>
             <h4>Declare your own bounds</h4>
-            <p>Every trip-owned entity states its own date or time range and points <em>up</em> to its parent by id. Nothing stores a list of its children, and nothing stores a back-reference either.</p>
+            <p>
+              Every trip-owned entity states its own date or time range and points <em>up</em> to
+              its parent by id. Nothing stores a list of its children, and nothing stores a
+              back-reference either.
+            </p>
           </div>
           <div class="principle">
             <span class="p-num">03</span>
             <h4>Derive, don't store</h4>
-            <p>Anything computable from stored facts stays uncomputed until read: a day's contents are a query, a layover is a gap between two Transits, sort order comes from a timestamp when one exists.</p>
+            <p>
+              Anything computable from stored facts stays uncomputed until read: a day's contents
+              are a query, a layover is a gap between two Transits, sort order comes from a
+              timestamp when one exists.
+            </p>
           </div>
           <div class="principle">
             <span class="p-num">04</span>
             <h4>Plan status and booking status are independent</h4>
-            <p>Every trip-owned entity tracks whether it's happening at all (planning/active/completed/cancelled) regardless of money. A separate, optional <code>booking</code> tracks only the reservation itself — present solely when a purchase applies.</p>
+            <p>
+              Stay, Transit, and Activity each track whether they're happening at all
+              (planning/active/completed/cancelled) regardless of money. A separate, optional
+              <code>booking</code> tracks only the reservation itself — present solely when a
+              purchase applies. Trip and Leg carry neither field of their own: a Trip/Leg's booking
+              progress is instead computed by rolling up whatever leaf entities underneath it
+              actually have a booking (tripModel.ts's
+              <code>legBookingProgress</code>/<code>tripBookingProgress</code>) — see Status
+              ladders, below.
+            </p>
           </div>
           <div class="principle">
             <span class="p-num">05</span>
             <h4>Ref generalizes annotation</h4>
-            <p>Notes attach to whatever they concern through a small polymorphic <code>Ref</code> — an entity, a date, or a range — instead of living inside the thing they annotate.</p>
+            <p>
+              Notes attach to whatever they concern through a small polymorphic <code>Ref</code> —
+              an entity, a date, or a range — instead of living inside the thing they annotate.
+            </p>
           </div>
           <div class="principle">
             <span class="p-num">06</span>
             <h4>Every entity carries its own images list</h4>
-            <p>A flat <code>images: Image[]</code> on every entity — including <code>Place</code>, since the live Google Places lookup this site uses deliberately excludes photos. A list, not a single field, so hand-sourced reference photos and personal photos taken on the trip itself can coexist later without a schema change. Deliberately <em>not</em> derived through a Place reference: an Activity or Stay can carry photos different from its Place's, and entities with no Place at all (Trip, Leg, Scenario, Note) still get a home for their own.</p>
+            <p>
+              A flat <code>images: Image[]</code> on every entity — including <code>Place</code>,
+              since the live Google Places lookup this site uses deliberately excludes photos. A
+              list, not a single field, so hand-sourced reference photos and personal photos taken
+              on the trip itself can coexist later without a schema change. Deliberately
+              <em>not</em> derived through a Place reference: an Activity or Stay can carry photos
+              different from its Place's, and entities with no Place at all (Trip, Leg, Scenario,
+              Note) still get a home for their own.
+            </p>
           </div>
         </div>
-        <p class="schema-label" style="margin-top: 1rem;">The Image shape, used by every entity's <code>images</code> list</p>
+        <p class="schema-label" style="margin-top: 1rem">
+          The Image shape, used by every entity's <code>images</code> list
+        </p>
         <pre class="schema"><code>type Image = {
   uri: string,             // Wikimedia Commons Special:FilePath link, an official
                             // site's own photo, or (later) a personal upload
@@ -364,7 +628,11 @@
         <h2 class="section-title">Status ladders</h2>
         <div class="ladder-block">
           <div class="ladder-row">
-            <div class="ladder-label"><strong>Plan status</strong> — <code>status</code> on every trip-owned entity (Trip, Leg, Stay, Transit, Activity). Is this part of the plan happening at all — independent of whether anything was purchased.</div>
+            <div class="ladder-label">
+              <strong>Plan status</strong> — <code>status</code> on Stay, Transit, and Activity. Is
+              this part of the plan happening at all — independent of whether anything was
+              purchased.
+            </div>
             <div class="pills">
               <span class="pill active">planning</span><span class="arrow">→</span>
               <span class="pill active">active</span><span class="arrow">→</span>
@@ -373,14 +641,42 @@
             </div>
           </div>
           <div class="ladder-row">
-            <div class="ladder-label"><strong>Booking status</strong> — inside an optional <code>booking</code> on Leg, Stay, Transit, and Activity, present only when a reservation actually applies. Independent of plan status: a cancelled <em>booking</em> doesn't mean the stay itself is cancelled — you might rebook it elsewhere. A <code>Package</code> (see Stay) reuses this exact ladder for the same reason — whether the add-on itself has been purchased is independent of whether the Stay it belongs to is booked.</div>
+            <div class="ladder-label">
+              <strong>Booking status</strong> — inside an optional <code>booking</code> on Leg,
+              Stay, Transit, and Activity, present only when a reservation actually applies.
+              Independent of plan status: a cancelled <em>booking</em> doesn't mean the stay itself
+              is cancelled — you might rebook it elsewhere. A <code>Package</code> (see Stay) reuses
+              this exact ladder for the same reason — whether the add-on itself has been purchased
+              is independent of whether the Stay it belongs to is booked.
+            </div>
             <div class="pills">
               <span class="pill active">planning</span><span class="arrow">→</span>
               <span class="pill active">booked</span>
               <span class="arrow">/</span><span class="pill branch">cancelled</span>
             </div>
           </div>
-          <p style="margin: 1rem 0 0; font-size: 0.88rem; color: var(--ink-muted);">Example: a free, unreserved campsite you decide to skip is <code>status: 'cancelled'</code> with no <code>booking</code> at all. A hotel room the hotel cancels on you — while you're still figuring out where else to stay — is <code>booking.status: 'cancelled'</code> while the <code>Stay</code> itself stays <code>status: 'planning'</code>. Collapsing these into one field loses that distinction.</p>
+          <div class="ladder-row">
+            <div class="ladder-label">
+              <strong>Booking progress</strong> — computed for Trip and Leg (tripModel.ts's
+              <code>tripBookingProgress</code>/<code>legBookingProgress</code>), never stored. Rolls
+              up the booking status of whatever leaf entities sit underneath: every
+              Stay/Transit/Activity/Package booking (or, for a Leg bought as one bundle like the
+              cruise fare, that Leg's own <code>booking</code> alone, judged without being diluted
+              by the unbooked odds and ends inside it).
+            </div>
+            <div class="pills">
+              <span class="pill branch">unplanned</span><span class="arrow">/</span>
+              <span class="pill active">partial</span><span class="arrow">/</span>
+              <span class="pill active">booked</span>
+            </div>
+          </div>
+          <p style="margin: 1rem 0 0; font-size: 0.88rem; color: var(--ink-muted)">
+            Example: a free, unreserved campsite you decide to skip is
+            <code>status: 'cancelled'</code> with no <code>booking</code> at all. A hotel room the
+            hotel cancels on you — while you're still figuring out where else to stay — is
+            <code>booking.status: 'cancelled'</code> while the <code>Stay</code> itself stays
+            <code>status: 'planning'</code>. Collapsing these into one field loses that distinction.
+          </p>
         </div>
       </section>
 
@@ -391,26 +687,65 @@
           <div>
             <span class="badge badge-owned">Trip-owned</span>
             <h2>Trip</h2>
-            <p class="entity-purpose">The whole vacation. Root of everything else; nothing points up from here.</p>
+            <p class="entity-purpose">
+              The whole vacation. Root of everything else; nothing points up from here.
+            </p>
           </div>
         </div>
         <pre class="schema"><code>{
   _id: 'trip_alaska_2027',
   name: 'Alaska National Parks Vacation + Cruise',
   summary: 'A road-and-fly trip through interior and Arctic Alaska — Denali, …',
-  startDate: '2027-06-26',
-  endDate:   '2027-07-24',
-  status: 'planning',        // planning | active | completed | cancelled
   travelers: [ { id: 'trav_brian', name: 'Brian Rodecap', age: 51 } ],
   images: [],             // hero image, per Guiding principle 06
 }</code></pre>
         <ul class="rationale">
-          <li><strong>startDate/endDate are declared independently</strong> of its Legs — an unbooked gap, like the open Lake Clark/Katmai block, shouldn't shrink the trip's apparent length just because nothing inside it is finalized yet.</li>
-          <li><strong>No booking.</strong> A trip isn't itself a purchase — it's booked through what's inside it. Same reason its status ladder skips "booked" entirely.</li>
-          <li><strong>travelers gained <code>age</code></strong> once the cruise line's own booking confirmation supplied it per passenger — still just a lightweight embedded list, not the fuller per-traveler identity floated in Open threads.</li>
-          <li><strong>travelers[].id gives each traveler a stable handle to link against</strong> — added once <code>Package.travelers</code> (see Stay) needed to reference specific travelers the same way every other cross-entity pointer on this page does: by id, not by restating <code>name</code> and hoping it never drifts. Still a small, additive step rather than the fuller per-traveler identity floated in Open threads — <code>id</code> exists to be pointed at, nothing more.</li>
-          <li><strong><code>name</code> is the display title</strong> shown as both the trip's hero headline and its card headline on the multi-trip landing screen — not a short internal slug. The folder name under <code>docs/data/</code> (e.g. <code>2027-summer-alaska</code>) is the actual stable identifier every URL and cross-trip reference uses; <code>name</code> is free to read well instead.</li>
-          <li><strong><code>summary</code> is optional</strong>, one paragraph, rendered as-is on the trip's Overview tab — added once a second trip made it clear this couldn't stay hardcoded page copy.</li>
+          <li>
+            <strong>No startDate/endDate.</strong> A trip's date span is computed as the outer bound
+            of every Stay/Transit/Activity across all its Legs (tripModel.ts's
+            <code>tripDateRange</code>) rather than authored here — same "computed, not duplicated"
+            treatment as the Day view itself, and the same computation each individual Leg's own
+            span (<code>legDateRange</code>) narrows to just its own entities. A trip with nothing
+            dated yet simply has no span until its first entity is added. (An earlier version of
+            this schema authored startDate/endDate directly on Trip, specifically so an unbooked gap
+            wouldn't shrink the trip's apparent length; that tradeoff was deliberately given up in
+            favor of one source of truth for a span that its entities already carry.)
+          </li>
+          <li>
+            <strong>No status, and no booking.</strong> A trip isn't itself a purchase — it's booked
+            through what's inside it, so it has no reservation of its own to carry a
+            <code>status</code>/<code>booking</code> pair for. Its own booking progress is a
+            computed rollup instead (<code>tripBookingProgress</code>) — see Status ladders, above.
+            (This schema originally authored <code>status: PlanStatus</code> directly on Trip,
+            alongside Leg; both were removed once the trips list needed a "how booked is this trip"
+            readout and hand-tracking that fact separately from the bookings already on
+            Stay/Transit/Activity/Leg risked drifting out of sync with them.)
+          </li>
+          <li>
+            <strong>travelers gained <code>age</code></strong> once the cruise line's own booking
+            confirmation supplied it per passenger — still just a lightweight embedded list, not the
+            fuller per-traveler identity floated in Open threads.
+          </li>
+          <li>
+            <strong>travelers[].id gives each traveler a stable handle to link against</strong> —
+            added once <code>Package.travelers</code> (see Stay) needed to reference specific
+            travelers the same way every other cross-entity pointer on this page does: by id, not by
+            restating <code>name</code> and hoping it never drifts. Still a small, additive step
+            rather than the fuller per-traveler identity floated in Open threads —
+            <code>id</code> exists to be pointed at, nothing more.
+          </li>
+          <li>
+            <strong><code>name</code> is the display title</strong> shown as both the trip's hero
+            headline and its card headline on the multi-trip landing screen — not a short internal
+            slug. The folder name under <code>docs/data/</code> (e.g.
+            <code>2027-summer-alaska</code>) is the actual stable identifier every URL and
+            cross-trip reference uses; <code>name</code> is free to read well instead.
+          </li>
+          <li>
+            <strong><code>summary</code> is optional</strong>, one paragraph, rendered as-is on the
+            trip's Overview tab — added once a second trip made it clear this couldn't stay
+            hardcoded page copy.
+          </li>
         </ul>
       </article>
 
@@ -421,17 +756,16 @@
           <div>
             <span class="badge badge-owned">Trip-owned</span>
             <h2>Leg</h2>
-            <p class="entity-purpose">One contiguous, differently-shaped chunk of the trip — the road/fly parks portion vs. the cruise.</p>
+            <p class="entity-purpose">
+              One contiguous, differently-shaped chunk of the trip — the road/fly parks portion vs.
+              the cruise.
+            </p>
           </div>
         </div>
         <pre class="schema"><code>{
   _id: 'leg_cruise',
   tripId: 'trip_alaska_2027',
   name: '7-night cruise',
-  order: 2,
-  startDate: '2027-07-17',
-  endDate:   '2027-07-24',
-  status: 'active',                // planning | active | completed | cancelled
   skeletonAuthority: 'operator',   // self | operator
   booking: {                       // optional — only when the whole leg is one bundle
     status: 'booked',
@@ -446,9 +780,45 @@
   images: [],
 }</code></pre>
         <ul class="rationale">
-          <li><strong>skeletonAuthority</strong> describes only the leg's date↔location skeleton — who decided "Jul 19 = Juneau." It says nothing about how flexible the excursions and meals inside that day are; that's ordinary Activity territory regardless of which leg it's in.</li>
-          <li><strong>status and booking are independent</strong>, same as on every other trip-owned entity: <code>status</code> tracks whether this leg of the plan is happening at all; <code>booking</code> exists only because the cruise happens to be bought as one bundled fare. The parks leg has no single purchase, so it carries only its lifecycle status.</li>
-          <li><strong>depositPaidAt/finalPaymentDueAt/passengers extend the shared booking shape</strong> — added once the cruise line's actual booking confirmation supplied dates and a per-passenger fare split that a single <code>cost</code> number couldn't hold. Populated only where the source data has them (here, and mirrored on <code>stay_cruise.booking</code> for cost/confirmationNumber); every other booking on this page still uses the plain three-field shape. Ties into the "Booking as a formal type" open thread below.</li>
+          <li>
+            <strong>No startDate/endDate.</strong> A Leg's date span is computed as the outer bound
+            of whichever Stay/Transit/Activity documents carry its <code>_id</code> as their
+            <code>legId</code> (tripModel.ts's <code>legDateRange</code>) rather than authored here
+            — same treatment Trip's own span already gets from its Legs. A Leg with nothing attached
+            to it yet simply has no span until its first Stay/Transit/Activity is added.
+          </li>
+          <li>
+            <strong>No order.</strong> This schema originally authored an explicit
+            <code>order: number</code> so the Overview's Leg cards had a display sequence. Removed
+            once that same computed date span made it redundant: legs now display sorted by their
+            computed <code>legDateRange</code> start date (undated legs last), so there's nothing
+            left for a hand-authored sequence number to break sync with.
+          </li>
+          <li>
+            <strong>skeletonAuthority</strong> describes only the leg's date↔location skeleton — who
+            decided "Jul 19 = Juneau." It says nothing about how flexible the excursions and meals
+            inside that day are; that's ordinary Activity territory regardless of which leg it's in.
+          </li>
+          <li>
+            <strong>No status.</strong> A Leg's booking progress is a computed rollup
+            (<code>legBookingProgress</code>), not an authored field — see Status ladders, above.
+            <code>booking</code> stays a real, optional field (unlike Trip, which has none at all):
+            it exists only because the cruise happens to be bought as one bundled fare, and when
+            present it's judged alone rather than averaged with the Stays/Transits/Activities
+            underneath it. The parks leg has no single purchase, so its own progress is rolled up
+            from those instead.
+          </li>
+          <li>
+            <strong
+              >depositPaidAt/finalPaymentDueAt/passengers extend the shared booking shape</strong
+            >
+            — added once the cruise line's actual booking confirmation supplied dates and a
+            per-passenger fare split that a single <code>cost</code> number couldn't hold. Populated
+            only where the source data has them (here, and mirrored on
+            <code>stay_cruise.booking</code> for cost/confirmationNumber); every other booking on
+            this page still uses the plain three-field shape. Ties into the "Booking as a formal
+            type" open thread below.
+          </li>
         </ul>
       </article>
 
@@ -459,7 +829,9 @@
           <div>
             <span class="badge badge-owned">Trip-owned</span>
             <h2>Stay</h2>
-            <p class="entity-purpose">One lodging reservation — a contiguous span with real check-in and check-out times.</p>
+            <p class="entity-purpose">
+              One lodging reservation — a contiguous span with real check-in and check-out times.
+            </p>
           </div>
         </div>
         <p class="schema-label">Booked</p>
@@ -476,7 +848,9 @@
   booking: { status: 'booked', cost: null, confirmationNumber: null },
   images: [],
 }</code></pre>
-        <p class="schema-label">Booked — cruise cabin (roomType/roomNumber stretched to fit a berth, not a room)</p>
+        <p class="schema-label">
+          Booked — cruise cabin (roomType/roomNumber stretched to fit a berth, not a room)
+        </p>
         <pre class="schema"><code>{
   _id: 'stay_cruise',
   legId: 'leg_cruise',
@@ -555,7 +929,10 @@
   booking: null,               // first-come, first-served — nothing to reserve
   images: [],
 }</code></pre>
-        <p class="schema-label">Booked — reserved campsite (a real, paid reservation — tested against a different trip's actual Recreation.gov booking, not migrated into this repo's data; see Open threads)</p>
+        <p class="schema-label">
+          Booked — reserved campsite (a real, paid reservation — tested against a different trip's
+          actual Recreation.gov booking, not migrated into this repo's data; see Open threads)
+        </p>
         <pre class="schema"><code>{
   _id: 'stay_example_scorpion',
   legId: 'leg_example',
@@ -570,7 +947,11 @@
   booking: { status: 'booked', cost: { amount: 15.00, currency: 'USD' }, confirmationNumber: '0878703196-1' },
   images: [],
 }</code></pre>
-        <p class="schema-label">Booked — through a third-party travel agent (a real hotel reservation — tested against a different trip's actual Capital One Travel booking, not migrated into this repo's data; see Open threads)</p>
+        <p class="schema-label">
+          Booked — through a third-party travel agent (a real hotel reservation — tested against a
+          different trip's actual Capital One Travel booking, not migrated into this repo's data;
+          see Open threads)
+        </p>
         <pre class="schema"><code>{
   _id: 'stay_example_pacific',
   legId: 'leg_example',
@@ -598,18 +979,124 @@
   images: [],
 }</code></pre>
         <ul class="rationale">
-          <li><strong>checkInAt/checkOutAt are real timestamps</strong>, not dates — check-in is 3pm, checkout is 11am, rarely midnight.</li>
-          <li><strong>lodging mirrors the Place reference pattern</strong> (external id + label) plus type-specific detail a Google Place can't carry — room type and campsite are facts about the reservation, not the physical property. A free-text <code>checkInInstructions</code> field briefly lived here too, then moved out to a <code>Note</code> concerning the Stay — the same "facts get one home, referenced everywhere else" reasoning <code>Package.note</code> follows below, once description text stopped being a special case just because it happened to live on a specific field.</li>
-          <li><strong>status and booking are independent</strong>, not one field. Most stays have both moving together, but not always — a free roadside camp never gets a <code>booking</code> at all, and a hotel that cancels your reservation doesn't retroactively cancel the <em>stay</em> if you plan to rebook elsewhere.</li>
-          <li><strong>bedConfiguration/deckGroup/shipZone extend <code>lodging</code></strong> for the cruise cabin — the same "type-specific detail a Google Place can't carry" reasoning that already justifies <code>roomType</code>/<code>roomNumber</code>/<code>campsite</code>, just for a berth instead of a hotel room. Populated only on <code>stay_cruise</code>; no hotel or campsite Stay needs them.</li>
-          <li><strong>partySize/equipment/vehicleCount extend <code>lodging</code></strong> the same way, surfaced by testing against a real paid campsite reservation: federal campgrounds book against occupancy, equipment type, and vehicle count as hard constraints on the reservation itself, not incidental detail. Populated only where a campsite is actually reserved — a hotel <code>Stay</code> has no use for them.</li>
-          <li><strong>What that test confirmed rather than changed</strong>: the reservation's cancel-by-date/refund-amount schedule ($5 refund through Jun 20, $0 after) maps cleanly onto a <code>Note</code> concerning the <code>Stay</code>, exactly like the cruise's cancellation schedule — no new field needed. And the order-level id (<code>0878703196</code>) versus this specific reservation's id (the <code>-1</code> suffix) is the same bundle-booking-vs-item-booking split <code>leg_cruise</code>/<code>stay_cruise</code> already use, one level down.</li>
-          <li><strong>bookedThrough extends <code>booking</code></strong>, surfaced by testing against a real Capital One Travel hotel reservation whose only confirmation number belongs to the booking agent, not the hotel itself. Originally added as a flat name string with <code>confirmationNumber</code> left ambiguous ("whichever code manages the reservation") — promoted to <code>{ name, confirmationNumber }</code> once the flight test (see Transit) proved a booking can carry <em>two</em> live codes at once, a vendor one and an agent one, that a single field can't hold. <code>confirmationNumber</code> now consistently means the vendor's own code, <code>null</code> when none was ever given, as here.</li>
-          <li><strong>cost stays the flat amount actually charged</strong>, not a line-item breakdown — that same reservation's room/taxes/travel-credit split collapses to one number the same way a cruise fare or a campsite fee already does. No shape change; "derive, don't store" holds.</li>
-          <li><strong>Payment method (masked card number, expiry) was deliberately left out</strong>, same reasoning as the Princess Captain's Circle numbers and on-file phone in the cruise test: an account identifier with no itinerary value, not worth the exposure in a public repo.</li>
-          <li><strong>packages holds optional paid add-ons</strong> — a purchase distinct from both the base <code>booking</code> (which pays for the Stay itself) and an Activity's <code>diningFormat: 'included'</code> (bundled into the base rate at no extra decision). Princess Plus/Premier and a hotel's optional meal plan are the same shape: a single purchase, made once at the Stay level, that then covers many individual Activities. Surfaced by the Kennicott Glacier Lodge and Discovery Princess data — a meal previously modeled as <code>diningFormat: 'included'</code> with a note explaining it only counted "if the package is purchased" was really a distinct, not-yet-decided fact being smuggled into free text. <code>Activity.diningFormat: 'package'</code> plus an <code>includedIn</code> pointing at <code>{ entity: 'package', id }</code> (see Activity) makes that fact structured instead: every Activity the package would cover references the one <code>Package</code>, so its purchase status lives in exactly one place rather than being repeated — and potentially drifting — per meal.</li>
-          <li><strong>packages[].travelers scopes a package to whichever travelers actually bought it</strong> — surfaced once Princess Premier turned out to cover only 2 of this trip's 4 travelers, a fact that had briefly been smuggled into <code>note</code> as free text the same way the purchase-vs-included distinction above once was. <code>null</code> is the common case (a package everyone on the booking gets, e.g. a hotel's whole-room meal plan); a named subset means every other Trip.traveler is on the Stay's own standard inclusions instead for anything that package would otherwise cover. Points at <code>Trip.travelers[].id</code>, not <code>name</code> — every other cross-entity pointer on this page (<code>legId</code>, <code>routeId</code>, every <code>Ref</code>) links by id, and a name is exactly the field someone might reasonably edit later (a nickname, a legal-name correction) without meaning to break a package's coverage list. The trip page's day-list rows read this (via each Activity/MealOption's resolved traveler list — see trip-model.js's <code>resolveMealTravelers</code>, which turns the ids back into display names, and only resolves anything at all when <code>diningFormat</code> is <code>'package'</code> — a plain <code>'included'</code> meal, or any à-la-carte format, renders no chip, since nobody's coverage was ever gated on it) to show who's actually covered by a given <em>purchased</em> meal choice, not just whether one exists. Its non-meal sibling is Activity's own <code>travelers</code> (see below) — a package scopes who a <em>purchase</em> covers, while an excursion's own <code>travelers</code> scopes who's doing that <em>activity</em>, and the two are read by different rules precisely because a meal and an excursion answer "who's involved" differently.</li>
-          <li><strong><code>Package</code> no longer carries its own <code>note</code> field</strong> — that free-text caveat has the exact same shape as a <code>MealOption</code>'s note (below): a fact worth recording, but not one this entity's own fields have a slot for. Both moved to a <code>Note</code> concerning <code>{ entity: 'package', id }</code>/<code>{ entity: 'mealOption', id }</code> instead of staying inline, so the note gets the same kind (warning/info/footnote), the same edit/delete lifecycle, and the same drill-down placement every other annotation on this page already gets — rather than being a one-off string field that only this one entity happened to have.</li>
+          <li>
+            <strong>checkInAt/checkOutAt are real timestamps</strong>, not dates — check-in is 3pm,
+            checkout is 11am, rarely midnight.
+          </li>
+          <li>
+            <strong>lodging mirrors the Place reference pattern</strong> (external id + label) plus
+            type-specific detail a Google Place can't carry — room type and campsite are facts about
+            the reservation, not the physical property. A free-text
+            <code>checkInInstructions</code> field briefly lived here too, then moved out to a
+            <code>Note</code> concerning the Stay — the same "facts get one home, referenced
+            everywhere else" reasoning <code>Package.note</code> follows below, once description
+            text stopped being a special case just because it happened to live on a specific field.
+          </li>
+          <li>
+            <strong>status and booking are independent</strong>, not one field. Most stays have both
+            moving together, but not always — a free roadside camp never gets a
+            <code>booking</code> at all, and a hotel that cancels your reservation doesn't
+            retroactively cancel the <em>stay</em> if you plan to rebook elsewhere.
+          </li>
+          <li>
+            <strong>bedConfiguration/deckGroup/shipZone extend <code>lodging</code></strong> for the
+            cruise cabin — the same "type-specific detail a Google Place can't carry" reasoning that
+            already justifies <code>roomType</code>/<code>roomNumber</code>/<code>campsite</code>,
+            just for a berth instead of a hotel room. Populated only on <code>stay_cruise</code>; no
+            hotel or campsite Stay needs them.
+          </li>
+          <li>
+            <strong>partySize/equipment/vehicleCount extend <code>lodging</code></strong> the same
+            way, surfaced by testing against a real paid campsite reservation: federal campgrounds
+            book against occupancy, equipment type, and vehicle count as hard constraints on the
+            reservation itself, not incidental detail. Populated only where a campsite is actually
+            reserved — a hotel <code>Stay</code> has no use for them.
+          </li>
+          <li>
+            <strong>What that test confirmed rather than changed</strong>: the reservation's
+            cancel-by-date/refund-amount schedule ($5 refund through Jun 20, $0 after) maps cleanly
+            onto a <code>Note</code> concerning the <code>Stay</code>, exactly like the cruise's
+            cancellation schedule — no new field needed. And the order-level id
+            (<code>0878703196</code>) versus this specific reservation's id (the
+            <code>-1</code> suffix) is the same bundle-booking-vs-item-booking split
+            <code>leg_cruise</code>/<code>stay_cruise</code> already use, one level down.
+          </li>
+          <li>
+            <strong>bookedThrough extends <code>booking</code></strong
+            >, surfaced by testing against a real Capital One Travel hotel reservation whose only
+            confirmation number belongs to the booking agent, not the hotel itself. Originally added
+            as a flat name string with <code>confirmationNumber</code> left ambiguous ("whichever
+            code manages the reservation") — promoted to
+            <code>{ name, confirmationNumber }</code> once the flight test (see Transit) proved a
+            booking can carry <em>two</em> live codes at once, a vendor one and an agent one, that a
+            single field can't hold. <code>confirmationNumber</code> now consistently means the
+            vendor's own code, <code>null</code> when none was ever given, as here.
+          </li>
+          <li>
+            <strong>cost stays the flat amount actually charged</strong>, not a line-item breakdown
+            — that same reservation's room/taxes/travel-credit split collapses to one number the
+            same way a cruise fare or a campsite fee already does. No shape change; "derive, don't
+            store" holds.
+          </li>
+          <li>
+            <strong>Payment method (masked card number, expiry) was deliberately left out</strong>,
+            same reasoning as the Princess Captain's Circle numbers and on-file phone in the cruise
+            test: an account identifier with no itinerary value, not worth the exposure in a public
+            repo.
+          </li>
+          <li>
+            <strong>packages holds optional paid add-ons</strong> — a purchase distinct from both
+            the base <code>booking</code> (which pays for the Stay itself) and an Activity's
+            <code>diningFormat: 'included'</code> (bundled into the base rate at no extra decision).
+            Princess Plus/Premier and a hotel's optional meal plan are the same shape: a single
+            purchase, made once at the Stay level, that then covers many individual Activities.
+            Surfaced by the Kennicott Glacier Lodge and Discovery Princess data — a meal previously
+            modeled as <code>diningFormat: 'included'</code> with a note explaining it only counted
+            "if the package is purchased" was really a distinct, not-yet-decided fact being smuggled
+            into free text. <code>Activity.diningFormat: 'package'</code> plus an
+            <code>includedIn</code> pointing at <code>{ entity: 'package', id }</code> (see
+            Activity) makes that fact structured instead: every Activity the package would cover
+            references the one <code>Package</code>, so its purchase status lives in exactly one
+            place rather than being repeated — and potentially drifting — per meal.
+          </li>
+          <li>
+            <strong
+              >packages[].travelers scopes a package to whichever travelers actually bought
+              it</strong
+            >
+            — surfaced once Princess Premier turned out to cover only 2 of this trip's 4 travelers,
+            a fact that had briefly been smuggled into <code>note</code> as free text the same way
+            the purchase-vs-included distinction above once was. <code>null</code> is the common
+            case (a package everyone on the booking gets, e.g. a hotel's whole-room meal plan); a
+            named subset means every other Trip.traveler is on the Stay's own standard inclusions
+            instead for anything that package would otherwise cover. Points at
+            <code>Trip.travelers[].id</code>, not <code>name</code> — every other cross-entity
+            pointer on this page (<code>legId</code>, <code>routeId</code>, every <code>Ref</code>)
+            links by id, and a name is exactly the field someone might reasonably edit later (a
+            nickname, a legal-name correction) without meaning to break a package's coverage list.
+            The trip page's day-list rows read this (via each Activity/MealOption's resolved
+            traveler list — see trip-model.js's <code>resolveMealTravelers</code>, which turns the
+            ids back into display names, and only resolves anything at all when
+            <code>diningFormat</code> is <code>'package'</code> — a plain
+            <code>'included'</code> meal, or any à-la-carte format, renders no chip, since nobody's
+            coverage was ever gated on it) to show who's actually covered by a given
+            <em>purchased</em> meal choice, not just whether one exists. Its non-meal sibling is
+            Activity's own <code>travelers</code> (see below) — a package scopes who a
+            <em>purchase</em> covers, while an excursion's own <code>travelers</code> scopes who's
+            doing that <em>activity</em>, and the two are read by different rules precisely because
+            a meal and an excursion answer "who's involved" differently.
+          </li>
+          <li>
+            <strong><code>Package</code> no longer carries its own <code>note</code> field</strong>
+            — that free-text caveat has the exact same shape as a <code>MealOption</code>'s note
+            (below): a fact worth recording, but not one this entity's own fields have a slot for.
+            Both moved to a <code>Note</code> concerning
+            <code>{ entity: 'package', id }</code>/<code>{ entity: 'mealOption', id }</code> instead
+            of staying inline, so the note gets the same kind (warning/info/footnote), the same
+            edit/delete lifecycle, and the same drill-down placement every other annotation on this
+            page already gets — rather than being a one-off string field that only this one entity
+            happened to have.
+          </li>
         </ul>
       </article>
 
@@ -644,7 +1131,11 @@
   booking: null,           // own car, no reservation — status still tracks the plan
   images: [],
 }</code></pre>
-        <p class="schema-label">Booked — ferry, one of two one-way sailings under a shared order (tested against a real Catalina Express reservation for a different trip — not migrated into this repo's data; the return sailing is a second, identically-shaped Transit)</p>
+        <p class="schema-label">
+          Booked — ferry, one of two one-way sailings under a shared order (tested against a real
+          Catalina Express reservation for a different trip — not migrated into this repo's data;
+          the return sailing is a second, identically-shaped Transit)
+        </p>
         <pre class="schema"><code>{
   _id: 'transit_example_catalina_out',
   legId: 'leg_example',
@@ -672,7 +1163,11 @@
   },
   images: [],
 }</code></pre>
-        <p class="schema-label">Booked — flight, through a travel agent with two live confirmation codes at once (tested against a real Delta/Capital One Travel booking for a different trip — not migrated into this repo's data)</p>
+        <p class="schema-label">
+          Booked — flight, through a travel agent with two live confirmation codes at once (tested
+          against a real Delta/Capital One Travel booking for a different trip — not migrated into
+          this repo's data)
+        </p>
         <pre class="schema"><code>{
   _id: 'transit_example_bos_lax',
   legId: 'leg_example',
@@ -709,20 +1204,110 @@
   images: [],
 }</code></pre>
         <ul class="rationale">
-          <li><strong>Deliberately atomic.</strong> A multi-hop journey — walk to a bus stop, bus to the ferry — is several Transits sharing one <code>journeyId</code>, not one Transit with internal segments.</li>
-          <li><strong>Layovers are never stored.</strong> They're the gap between one Transit's <code>arrivesAt</code> and the next one's <code>departsAt</code> within the same <code>journeyId</code>.</li>
-          <li><strong>routeId/routeVariant</strong> record which reusable Route this specific movement followed, and which of that route's named alternatives was actually chosen.</li>
-          <li><strong>arrivesAt is null whenever routeId is set — a routed drive's arrival is never an authored fact.</strong> A fixed "definitive" arrival stopped making sense once a real stop along the way (a lunch break with no fixed duration of its own) could push the true arrival later than whatever anyone might guess at authoring time, and once every reader of it derives from the walk anyway, there's nothing left for an authored value to do but go stale — so it's left blank and the computed view (trip-model.js's <code>resolveTransitRoute</code>) walks the Route's own place chain plus <code>finalLegMinutes</code> forward from <code>departsAt</code> instead, folding in any real Activity reached along the way. This walk isn't only run once at page load, either: <code>app.js</code>'s <code>recomputeRoutedTransits</code> re-runs it live, right in the browser, whenever a route-variant tab or an in-transit meal's own option tab changes, so a picked route or a picked lunch format actually moves the displayed arrival instead of only changing its own row. A mode with a genuine external schedule (a flight's ticketed landing time, a ferry's posted arrival), or a Transit with no <code>routeId</code> at all, is the one case <code>arrivesAt</code> stays real and authored — there's no walk to prefer it over.</li>
-          <li><strong>booking stays null for a drive in your own car</strong> — there's nothing to reserve, ever — while <code>status</code> still tracks whether this leg of movement is planned, underway, done, or scrapped.</li>
-          <li><strong>scenarioId closes a gap the first migration pass surfaced</strong>: a drive-back whose departure time itself depends on which weather branch happened (e.g. a backup-flight day) couldn't be recorded at all without it — <code>Activity</code> could reference a <code>Scenario</code>, but <code>Transit</code> had no way to. It's the same reference used on <code>Activity</code>, reused here rather than inventing a second mechanism.</li>
-          <li><strong>from/to gained placeId</strong>, matching Route's shape exactly — surfaced by testing against a real ferry reservation whose two terminals are genuinely resolvable points, unlike the regional labels ('Anchorage', 'Whittier') the original example used. Null for any endpoint that's really a whole city or a highway junction rather than one place; populated wherever a Transit's endpoint actually is one. The flight test confirms it unchanged — an airport is exactly the kind of single resolvable point the field was built for.</li>
-          <li><strong>passengers[] needed no new field at all</strong> to cover the ferry. Transit shares Leg's <code>booking</code> shape by convention, and the per-passenger fare split already added there for the cruise covers a multi-traveler sailing exactly as designed — the first confirmation that extension isn't cruise-specific.</li>
-          <li><strong>mode: 'ferry'/'flight' are just values</strong>, not a schema change — <code>mode</code> was always a free string, not a closed enum; drive, flight, and ferry all read the same way.</li>
-          <li><strong>The cancellation terms (ferry's tiered per-ticket fees; the flight's "cancel by 11:59pm ET the next business day or it's non-refundable" and per-passenger, airline-set change fees) map onto a <code>Note</code> concerning the Transit</strong> — the first populated test of <code>transit</code> in <code>Ref</code>'s entity union, which existed in the type already but had no real example until the ferry.</li>
-          <li><strong>Order FPLZAS vs. each sailing's own booking number</strong> is the same bundle-vs-item split already confirmed on the campsite reservation — only the per-sailing <code>confirmationNumber</code> is stored; the order-level code is discussed here in prose, never a field.</li>
-          <li><strong>carrier/flightNumber are new, mode-specific fields on Transit itself</strong> — not <code>booking</code>, since which specific flight actually moved you is a fact about the movement, independent of whether or how it was booked (you could know a flight number without ever reserving through this record). Same "detail the shared shape can't carry" reasoning that already justifies Stay's <code>bedConfiguration</code>/<code>campsite</code>, just on Transit and gated by <code>mode</code> instead of a lodging type.</li>
-          <li><strong>passengers[].ticketNumber/seat extend the per-passenger entry</strong> — a flight, unlike the ferry, hands each passenger their own e-ticket number and (when selected) a seat assignment. Both optional, populated only when actually known.</li>
-          <li><strong>bookedThrough's promotion to an object (see Stay) gets its first real payoff here</strong>: Delta's own PNR lands in <code>confirmationNumber</code>, Capital One's separate order code lands in <code>bookedThrough.confirmationNumber</code> — exactly the two-live-codes case that forced the shape change in the first place.</li>
+          <li>
+            <strong>Deliberately atomic.</strong> A multi-hop journey — walk to a bus stop, bus to
+            the ferry — is several Transits sharing one <code>journeyId</code>, not one Transit with
+            internal segments.
+          </li>
+          <li>
+            <strong>Layovers are never stored.</strong> They're the gap between one Transit's
+            <code>arrivesAt</code> and the next one's <code>departsAt</code> within the same
+            <code>journeyId</code>.
+          </li>
+          <li>
+            <strong>routeId/routeVariant</strong> record which reusable Route this specific movement
+            followed, and which of that route's named alternatives was actually chosen.
+          </li>
+          <li>
+            <strong
+              >arrivesAt is null whenever routeId is set — a routed drive's arrival is never an
+              authored fact.</strong
+            >
+            A fixed "definitive" arrival stopped making sense once a real stop along the way (a
+            lunch break with no fixed duration of its own) could push the true arrival later than
+            whatever anyone might guess at authoring time, and once every reader of it derives from
+            the walk anyway, there's nothing left for an authored value to do but go stale — so it's
+            left blank and the computed view (trip-model.js's <code>resolveTransitRoute</code>)
+            walks the Route's own place chain plus <code>finalLegMinutes</code> forward from
+            <code>departsAt</code> instead, folding in any real Activity reached along the way. This
+            walk isn't only run once at page load, either: <code>app.js</code>'s
+            <code>recomputeRoutedTransits</code> re-runs it live, right in the browser, whenever a
+            route-variant tab or an in-transit meal's own option tab changes, so a picked route or a
+            picked lunch format actually moves the displayed arrival instead of only changing its
+            own row. A mode with a genuine external schedule (a flight's ticketed landing time, a
+            ferry's posted arrival), or a Transit with no <code>routeId</code> at all, is the one
+            case <code>arrivesAt</code> stays real and authored — there's no walk to prefer it over.
+          </li>
+          <li>
+            <strong>booking stays null for a drive in your own car</strong> — there's nothing to
+            reserve, ever — while <code>status</code> still tracks whether this leg of movement is
+            planned, underway, done, or scrapped.
+          </li>
+          <li>
+            <strong>scenarioId closes a gap the first migration pass surfaced</strong>: a drive-back
+            whose departure time itself depends on which weather branch happened (e.g. a
+            backup-flight day) couldn't be recorded at all without it — <code>Activity</code> could
+            reference a <code>Scenario</code>, but <code>Transit</code> had no way to. It's the same
+            reference used on <code>Activity</code>, reused here rather than inventing a second
+            mechanism.
+          </li>
+          <li>
+            <strong>from/to gained placeId</strong>, matching Route's shape exactly — surfaced by
+            testing against a real ferry reservation whose two terminals are genuinely resolvable
+            points, unlike the regional labels ('Anchorage', 'Whittier') the original example used.
+            Null for any endpoint that's really a whole city or a highway junction rather than one
+            place; populated wherever a Transit's endpoint actually is one. The flight test confirms
+            it unchanged — an airport is exactly the kind of single resolvable point the field was
+            built for.
+          </li>
+          <li>
+            <strong>passengers[] needed no new field at all</strong> to cover the ferry. Transit
+            shares Leg's <code>booking</code> shape by convention, and the per-passenger fare split
+            already added there for the cruise covers a multi-traveler sailing exactly as designed —
+            the first confirmation that extension isn't cruise-specific.
+          </li>
+          <li>
+            <strong>mode: 'ferry'/'flight' are just values</strong>, not a schema change —
+            <code>mode</code> was always a free string, not a closed enum; drive, flight, and ferry
+            all read the same way.
+          </li>
+          <li>
+            <strong
+              >The cancellation terms (ferry's tiered per-ticket fees; the flight's "cancel by
+              11:59pm ET the next business day or it's non-refundable" and per-passenger,
+              airline-set change fees) map onto a <code>Note</code> concerning the Transit</strong
+            >
+            — the first populated test of <code>transit</code> in <code>Ref</code>'s entity union,
+            which existed in the type already but had no real example until the ferry.
+          </li>
+          <li>
+            <strong>Order FPLZAS vs. each sailing's own booking number</strong> is the same
+            bundle-vs-item split already confirmed on the campsite reservation — only the
+            per-sailing <code>confirmationNumber</code> is stored; the order-level code is discussed
+            here in prose, never a field.
+          </li>
+          <li>
+            <strong>carrier/flightNumber are new, mode-specific fields on Transit itself</strong> —
+            not <code>booking</code>, since which specific flight actually moved you is a fact about
+            the movement, independent of whether or how it was booked (you could know a flight
+            number without ever reserving through this record). Same "detail the shared shape can't
+            carry" reasoning that already justifies Stay's
+            <code>bedConfiguration</code>/<code>campsite</code>, just on Transit and gated by
+            <code>mode</code> instead of a lodging type.
+          </li>
+          <li>
+            <strong>passengers[].ticketNumber/seat extend the per-passenger entry</strong> — a
+            flight, unlike the ferry, hands each passenger their own e-ticket number and (when
+            selected) a seat assignment. Both optional, populated only when actually known.
+          </li>
+          <li>
+            <strong
+              >bookedThrough's promotion to an object (see Stay) gets its first real payoff
+              here</strong
+            >: Delta's own PNR lands in <code>confirmationNumber</code>, Capital One's separate
+            order code lands in <code>bookedThrough.confirmationNumber</code> — exactly the
+            two-live-codes case that forced the shape change in the first place.
+          </li>
         </ul>
       </article>
 
@@ -733,7 +1318,10 @@
           <div>
             <span class="badge badge-reference">Reference data</span>
             <h2>Route</h2>
-            <p class="entity-purpose">Reusable geography — a way of getting from A to B, independent of any one trip's dates.</p>
+            <p class="entity-purpose">
+              Reusable geography — a way of getting from A to B, independent of any one trip's
+              dates.
+            </p>
           </div>
         </div>
         <pre class="schema"><code>{
@@ -756,12 +1344,84 @@
   images: [],
 }</code></pre>
         <ul class="rationale">
-          <li><strong>No tripId, no dates, no booking.</strong> The same trip, or a different trip entirely, can reference this route again.</li>
-          <li><strong>variants[].tone has its own vocabulary</strong> — <code>scenic</code>/<code>direct</code>, deliberately not reusing Scenario's <code>ideal</code>/<code>alternate</code>. A route choice isn't a go/no-go safety branch.</li>
-          <li><strong>variants[].places is an ordered sequence of places, not a bag of "vias."</strong> Each entry resolves to a real geo-point — a rule, not a convenience — and a Place ID is always tried first. <code>coordinates: { lat, lng }</code>, sitting alongside a plain <code>label</code> instead of <code>place</code>, is the fallback for the rare point Google's Places index genuinely has no entry for. What a place entry may never do is carry only a bare text <code>label</code> with neither. That used to be allowed ("places are loosely typed") until a computed map (the trip page's day-list map button, docs/js/trip-model.js's <code>dayMapEmbedUrl</code>) fed a bare label like 'Palmer' to Google's geocoder with no state/region qualifier and got a same-named town in a different state back — silently routing an Anchorage–Talkeetna drive through the Lower 48. A resolved Place ID or explicit coordinates can't be ambiguous the way free text can, which is the whole point of requiring one or the other.</li>
-          <li><strong>Every place entry also carries a <code>kind</code>: <code>'waypoint'</code> (a stop) or <code>'via'</code> (no stop).</strong> A plain named highway ('Glenn Highway', 'Richardson Highway', 'George Parks Highway') turns out to have its own resolvable Google Place — but it's one fixed point for the entire, often 100+ mile road, not "wherever this particular route happens to be on it." This trip's data originally used those whole-highway Places as entries on <em>multiple</em> Route documents covering different real stretches of the same highway (e.g. 'Glenn Highway' as a stand-in for both the Anchorage–Palmer stretch and the Glennallen stretch, 150 miles apart) — since it's the same Place ID both times, the Directions URL link (<code>dayFullRouteUrl</code>) sent drivers on a real, absurd multi-hour detour toward whichever stretch the point actually sat on. The fix: a place entry is now either a <strong>waypoint</strong> — a real, individually-resolvable stop worth calling out (a town, a pass, a viewpoint) that's also safe to hand to Google's Directions API as a routing waypoint — or a <strong>via</strong> — a point that exists specifically to steer Directions off its default path onto the intended road (a fork, a cutoff, a side road) without stopping there, and still resolves to one real geo-point of its own rather than the whole highway's. A bare "you are now on Highway X" entry, with no distinct point and no steering purpose, isn't either — that information already lives in the variant's own <code>label</code>, so it was simply dropped rather than kept as a third kind.</li>
-          <li><strong>places[].durationMinutes is the drive time from whichever place (or Depart) came before it</strong> — geography, same as the rest of Route, so it stays reusable across trips instead of being a discrete clock time that's only ever true for one specific departure. A trip's computed Day (trip-model.js's <code>stageTimesForVariant</code>) turns that into an actual estimated time by walking it forward from a specific Transit's <code>departsAt</code>, nudged later by any real Activity — a lunch stop, say — actually reached along the way. Superseded the earlier <code>waypoints[]</code> idea (a separate list of suggested stops with no timing at all): once every place already carries a real duration, a stop worth calling out is just an ordinary waypoint entry with a <code>note</code>, not a second parallel array — <code>kind</code> now carries the "is this really just a stop" distinction that array split used to.</li>
-          <li><strong>variants[].finalLegMinutes completes the chain places[] leaves open.</strong> A place entry only ever carries the drive time <em>to</em> itself — nothing represents the remaining drive from the last named stop to the route's actual destination, so without this field a walked arrival would always land short of where the movement really ends. Surfaced once a routed Transit's arrival stopped being trusted from its own authored field (see Transit's <code>arrivesAt</code> rationale, above): the place chain plus this one closing number is what lets <code>stageTimesForVariant</code> walk all the way to a real arrival instead of stopping at the last place and clamping to a guess. Same status as every other duration on this page — geography, reusable across trips, never a discrete clock time.</li>
+          <li>
+            <strong>No tripId, no dates, no booking.</strong> The same trip, or a different trip
+            entirely, can reference this route again.
+          </li>
+          <li>
+            <strong>variants[].tone has its own vocabulary</strong> —
+            <code>scenic</code>/<code>direct</code>, deliberately not reusing Scenario's
+            <code>ideal</code>/<code>alternate</code>. A route choice isn't a go/no-go safety
+            branch.
+          </li>
+          <li>
+            <strong
+              >variants[].places is an ordered sequence of places, not a bag of "vias."</strong
+            >
+            Each entry resolves to a real geo-point — a rule, not a convenience — and a Place ID is
+            always tried first. <code>coordinates: { lat, lng }</code>, sitting alongside a plain
+            <code>label</code> instead of <code>place</code>, is the fallback for the rare point
+            Google's Places index genuinely has no entry for. What a place entry may never do is
+            carry only a bare text <code>label</code> with neither. That used to be allowed ("places
+            are loosely typed") until a computed map (the trip page's day-list map button,
+            docs/js/trip-model.js's <code>dayMapEmbedUrl</code>) fed a bare label like 'Palmer' to
+            Google's geocoder with no state/region qualifier and got a same-named town in a
+            different state back — silently routing an Anchorage–Talkeetna drive through the Lower
+            48. A resolved Place ID or explicit coordinates can't be ambiguous the way free text
+            can, which is the whole point of requiring one or the other.
+          </li>
+          <li>
+            <strong
+              >Every place entry also carries a <code>kind</code>: <code>'waypoint'</code> (a stop)
+              or <code>'via'</code> (no stop).</strong
+            >
+            A plain named highway ('Glenn Highway', 'Richardson Highway', 'George Parks Highway')
+            turns out to have its own resolvable Google Place — but it's one fixed point for the
+            entire, often 100+ mile road, not "wherever this particular route happens to be on it."
+            This trip's data originally used those whole-highway Places as entries on
+            <em>multiple</em> Route documents covering different real stretches of the same highway
+            (e.g. 'Glenn Highway' as a stand-in for both the Anchorage–Palmer stretch and the
+            Glennallen stretch, 150 miles apart) — since it's the same Place ID both times, the
+            Directions URL link (<code>dayFullRouteUrl</code>) sent drivers on a real, absurd
+            multi-hour detour toward whichever stretch the point actually sat on. The fix: a place
+            entry is now either a <strong>waypoint</strong> — a real, individually-resolvable stop
+            worth calling out (a town, a pass, a viewpoint) that's also safe to hand to Google's
+            Directions API as a routing waypoint — or a <strong>via</strong> — a point that exists
+            specifically to steer Directions off its default path onto the intended road (a fork, a
+            cutoff, a side road) without stopping there, and still resolves to one real geo-point of
+            its own rather than the whole highway's. A bare "you are now on Highway X" entry, with
+            no distinct point and no steering purpose, isn't either — that information already lives
+            in the variant's own <code>label</code>, so it was simply dropped rather than kept as a
+            third kind.
+          </li>
+          <li>
+            <strong
+              >places[].durationMinutes is the drive time from whichever place (or Depart) came
+              before it</strong
+            >
+            — geography, same as the rest of Route, so it stays reusable across trips instead of
+            being a discrete clock time that's only ever true for one specific departure. A trip's
+            computed Day (trip-model.js's <code>stageTimesForVariant</code>) turns that into an
+            actual estimated time by walking it forward from a specific Transit's
+            <code>departsAt</code>, nudged later by any real Activity — a lunch stop, say — actually
+            reached along the way. Superseded the earlier <code>waypoints[]</code> idea (a separate
+            list of suggested stops with no timing at all): once every place already carries a real
+            duration, a stop worth calling out is just an ordinary waypoint entry with a
+            <code>note</code>, not a second parallel array — <code>kind</code> now carries the "is
+            this really just a stop" distinction that array split used to.
+          </li>
+          <li>
+            <strong>variants[].finalLegMinutes completes the chain places[] leaves open.</strong> A
+            place entry only ever carries the drive time <em>to</em> itself — nothing represents the
+            remaining drive from the last named stop to the route's actual destination, so without
+            this field a walked arrival would always land short of where the movement really ends.
+            Surfaced once a routed Transit's arrival stopped being trusted from its own authored
+            field (see Transit's <code>arrivesAt</code> rationale, above): the place chain plus this
+            one closing number is what lets <code>stageTimesForVariant</code> walk all the way to a
+            real arrival instead of stopping at the last place and clamping to a guess. Same status
+            as every other duration on this page — geography, reusable across trips, never a
+            discrete clock time.
+          </li>
         </ul>
       </article>
 
@@ -772,17 +1432,55 @@
           <div>
             <span class="badge badge-reference">Reference data</span>
             <h2>Place</h2>
-            <p class="entity-purpose">A real-world point, resolved live rather than duplicated. Pre-existing in the current site — the pattern everything else in this model was built to match.</p>
+            <p class="entity-purpose">
+              A real-world point, resolved live rather than duplicated. Pre-existing in the current
+              site — the pattern everything else in this model was built to match.
+            </p>
           </div>
         </div>
-        <pre class="schema"><code>{ id: 'ChIJS63CqrW_zlYRNQYObIK7Szk', label: 'Flying Squirrel Bakery Cafe', images: [] }</code></pre>
-        <p class="schema-label">Named, but with no static geolocation to resolve — a restaurant aboard a moving cruise ship</p>
+        <pre
+          class="schema"
+        ><code>{ id: 'ChIJS63CqrW_zlYRNQYObIK7Szk', label: 'Flying Squirrel Bakery Cafe', images: [] }</code></pre>
+        <p class="schema-label">
+          Named, but with no static geolocation to resolve — a restaurant aboard a moving cruise
+          ship
+        </p>
         <pre class="schema"><code>{ id: null, label: 'Crown Grill', images: [] }</code></pre>
         <ul class="rationale">
-          <li><strong>id is a pinned Google Place ID</strong> — hours, address, and website are fetched live, never stored redundantly.</li>
-          <li><strong>Reused everywhere a real point is needed</strong>: Activity's <code>place</code>, Stay's <code>lodging</code>, Route's <code>from</code>/<code>to</code>/<code>places[].place</code>, and (as of the ferry test) Transit's <code>from</code>/<code>to</code> all share this exact shape.</li>
-          <li><strong>images is the one field the live lookup can't fill in</strong> — the Places API call this site makes deliberately skips the Enterprise+Atmosphere fields (photos, rating, reviews) to avoid that pricing tier, so a stored, hand-picked photo is the only way a Place gets one at all. It's independent of whatever <code>images</code> an Activity or Stay that references this Place carries on itself — a restaurant's storefront photo and a specific dish photo for a meal there are different pictures.</li>
-          <li><strong>id can be null</strong> — the same allowance <code>Stay.lodging.placeId</code> already makes for a named-but-unresolved location (a roadside pullout with no formal address), just generalized to every field that reuses this shape. Surfaced by two of this trip's own MealOption candidates: a cruise-ship specialty restaurant (Sabatini's, Crown Grill) has no static geolocation to resolve at all — the venue's location is relative to the ship, not the earth, the same reason <code>stay_cruise.lodging.placeId</code> is itself <code>null</code> — while a Ketchikan shore restaurant (Alaska Fish House, Annabelle's) has a real, resolvable address that just hasn't been looked up yet. Both read identically as <code>id: null</code>; the presentation tier renders <code>label</code> either way and simply skips the live Places lookup panel when <code>id</code> is absent (see <code>places.js</code>) rather than showing a loading state that can only ever resolve to "unavailable." Distinct from <code>place: null</code> itself, which still means no resolvable venue at all — self-catered, included with no venue to name, or genuinely not yet named.</li>
+          <li>
+            <strong>id is a pinned Google Place ID</strong> — hours, address, and website are
+            fetched live, never stored redundantly.
+          </li>
+          <li>
+            <strong>Reused everywhere a real point is needed</strong>: Activity's
+            <code>place</code>, Stay's <code>lodging</code>, Route's
+            <code>from</code>/<code>to</code>/<code>places[].place</code>, and (as of the ferry
+            test) Transit's <code>from</code>/<code>to</code> all share this exact shape.
+          </li>
+          <li>
+            <strong>images is the one field the live lookup can't fill in</strong> — the Places API
+            call this site makes deliberately skips the Enterprise+Atmosphere fields (photos,
+            rating, reviews) to avoid that pricing tier, so a stored, hand-picked photo is the only
+            way a Place gets one at all. It's independent of whatever <code>images</code> an
+            Activity or Stay that references this Place carries on itself — a restaurant's
+            storefront photo and a specific dish photo for a meal there are different pictures.
+          </li>
+          <li>
+            <strong>id can be null</strong> — the same allowance
+            <code>Stay.lodging.placeId</code> already makes for a named-but-unresolved location (a
+            roadside pullout with no formal address), just generalized to every field that reuses
+            this shape. Surfaced by two of this trip's own MealOption candidates: a cruise-ship
+            specialty restaurant (Sabatini's, Crown Grill) has no static geolocation to resolve at
+            all — the venue's location is relative to the ship, not the earth, the same reason
+            <code>stay_cruise.lodging.placeId</code> is itself <code>null</code> — while a Ketchikan
+            shore restaurant (Alaska Fish House, Annabelle's) has a real, resolvable address that
+            just hasn't been looked up yet. Both read identically as <code>id: null</code>; the
+            presentation tier renders <code>label</code> either way and simply skips the live Places
+            lookup panel when <code>id</code> is absent (see <code>places.js</code>) rather than
+            showing a loading state that can only ever resolve to "unavailable." Distinct from
+            <code>place: null</code> itself, which still means no resolvable venue at all —
+            self-catered, included with no venue to name, or genuinely not yet named.
+          </li>
         </ul>
       </article>
 
@@ -793,7 +1491,10 @@
           <div>
             <span class="badge badge-computed">Computed view — not stored</span>
             <h2>Day</h2>
-            <p class="entity-purpose">No collection, no <code>_id</code>. What's happening on a given date is assembled at read time, not authored.</p>
+            <p class="entity-purpose">
+              No collection, no <code>_id</code>. What's happening on a given date is assembled at
+              read time, not authored.
+            </p>
           </div>
         </div>
         <p class="schema-label">Assembled by, for a given date</p>
@@ -803,9 +1504,26 @@ find Activity where startAt falls within that window, on this Leg
 find Note  where concerns overlaps the date, the Leg, or any of the above
 location := active Stay's lodging, or the relevant Transit's from/to</code></pre>
         <ul class="rationale">
-          <li><strong>Nothing here has its own identity.</strong> Nobody books "July 5th" — every other entity on this page is a real thing in the world with a confirmation number, a ticket, or a geography. A day is a lens for grouping things that already have their own.</li>
-          <li><strong>A Transit belongs to the day it departs, not every day it touches.</strong> An overnight sail or drive spans two calendar dates — but it's one trip event with one clock-time to sort by, and showing it a second time on the arrival day duplicated it in the timeline for no new information. <code>location</code> still falls back to an arriving Transit's destination on a day named after it (see <code>arrivingTransit</code> in <code>trip-model.js</code>'s <code>buildDay</code>), even though the Transit itself only renders on the day it left.</li>
-          <li><strong>Still essential to the presentation tier</strong> — and to how a human or an AI planning agent addresses the plan ("plan flightseeing on June 30") — just never as stored schema. The date is the handle; this query is what turns it into the structured entities that actually get touched.</li>
+          <li>
+            <strong>Nothing here has its own identity.</strong> Nobody books "July 5th" — every
+            other entity on this page is a real thing in the world with a confirmation number, a
+            ticket, or a geography. A day is a lens for grouping things that already have their own.
+          </li>
+          <li>
+            <strong>A Transit belongs to the day it departs, not every day it touches.</strong> An
+            overnight sail or drive spans two calendar dates — but it's one trip event with one
+            clock-time to sort by, and showing it a second time on the arrival day duplicated it in
+            the timeline for no new information. <code>location</code> still falls back to an
+            arriving Transit's destination on a day named after it (see
+            <code>arrivingTransit</code> in <code>trip-model.js</code>'s <code>buildDay</code>),
+            even though the Transit itself only renders on the day it left.
+          </li>
+          <li>
+            <strong>Still essential to the presentation tier</strong> — and to how a human or an AI
+            planning agent addresses the plan ("plan flightseeing on June 30") — just never as
+            stored schema. The date is the handle; this query is what turns it into the structured
+            entities that actually get touched.
+          </li>
         </ul>
       </article>
 
@@ -816,7 +1534,9 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
           <div>
             <span class="badge badge-owned">Trip-owned</span>
             <h2>Activity</h2>
-            <p class="entity-purpose">One thing that happens — a meal, a tour, a stroll, a reservation.</p>
+            <p class="entity-purpose">
+              One thing that happens — a meal, a tour, a stroll, a reservation.
+            </p>
           </div>
         </div>
         <pre class="schema"><code>{
@@ -860,7 +1580,10 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
                             // known to be fewer than the whole party — see below
   images: [],
 }</code></pre>
-        <p class="schema-label">An excursion only some travelers are doing (illustrative — no excursion in this trip's own data has a partial roster authored yet)</p>
+        <p class="schema-label">
+          An excursion only some travelers are doing (illustrative — no excursion in this trip's own
+          data has a partial roster authored yet)
+        </p>
         <pre class="schema"><code>{
   _id: 'act_example_zipline',
   legId: 'leg_cruise',
@@ -902,7 +1625,9 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   options: null,
   images: [],
 }</code></pre>
-        <p class="schema-label">A meal, covered by an optional purchased Package rather than the base rate</p>
+        <p class="schema-label">
+          A meal, covered by an optional purchased Package rather than the base rate
+        </p>
         <pre class="schema"><code>{
   _id: 'act_jul22_dinner_opt2',
   legId: 'leg_cruise',
@@ -966,16 +1691,116 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
                               // rule as Activity.includedIn, just scoped to this one candidate
 }</code></pre>
         <ul class="rationale">
-          <li><strong>startAt/endAt are set only when actually known.</strong> timeLabel exists for the honestly-vague cases — "Afternoon" — instead of inventing false precision; see Activity's own timeLabel note above for its closed vocabulary and sort-anchor mapping.</li>
-          <li><strong>booking is absent for most activities</strong> — a casual stroll never needs one — while <code>status</code> is always present, tracking the activity's own plan independent of whether it's reserved.</li>
-          <li><strong>mealType/diningFormat/includedIn are two independent axes plus a pointer, not one field</strong> — which meal slot (or snack) this is, versus how the food actually happens, versus what's paying for it. Collapsing them (e.g. a single <code>mealType: 'included-breakfast'</code>) would combinatorially explode the same way the model already avoids elsewhere (see Transit's <code>mode</code> rationale). A meal running late and becoming a drivethru instead needs no special structure to support — it's just editing <code>diningFormat</code>/<code>place</code> on an ordinary <code>status: 'planning'</code> Activity, the same flexibility every other field on this page already has.</li>
-          <li><strong>An activity can be a meal without ever setting <code>place</code>.</strong> "Packed lunch" or "snacks from the cooler" is <code>mealType: 'snack'</code>/<code>'lunch'</code>, <code>diningFormat: 'self-catered'</code>, and no resolvable Place at all — same reasoning as Transit's <code>from</code>/<code>to</code> staying null for a whole city rather than forcing a point that doesn't exist.</li>
-          <li><strong>includedIn reuses Note's <code>Ref</code> type</strong> rather than inventing a second polymorphic pointer — a bundled meal points at whichever Stay, Leg, or Activity's booking actually covers it, so cost and confirmation number stay owned by that one booking instead of being duplicated onto the meal itself. Set when <code>diningFormat</code> is <code>'included'</code> (points at a <code>{ entity: 'stay', ... }</code>, etc. — the base rate itself) or <code>'package'</code> (points at a <code>{ entity: 'package', ... }</code> — see Stay); every other format leaves it <code>null</code>.</li>
-          <li><strong>'included' and 'package' are deliberately separate <code>diningFormat</code> values</strong>, not one "covered somehow" flag — <code>'included'</code> means the base rate already pays for it, no separate decision required; <code>'package'</code> means it's covered only if a specific optional add-on gets purchased, and that purchase has its own <code>planning</code>/<code>booked</code>/<code>cancelled</code> status independent of the Stay. Collapsing them would either lose that distinction or force a not-yet-decided purchase to read as already-included.</li>
-          <li><strong>options is the one genuinely new mechanism here</strong>, added once "which of these three places for breakfast" turned out not to fit the single-value fields at all — the three candidates can each have a <em>different</em> <code>diningFormat</code> (included / sit-down / grab-and-go), so the choice has to live per-candidate, not on the Activity itself. It mirrors <code>Stay.lodging: null</code>'s "nothing chosen yet" — just extended to hold the actual named candidates instead of only recording that a decision is pending. <code>diningFormat</code>/<code>place</code>/<code>includedIn</code> stay <code>null</code> on the Activity the whole time <code>options</code> is set; deciding means picking one candidate, copying its three fields up onto the Activity itself, and clearing <code>options</code> back to <code>null</code> — the array never holds the decided state, only the open one.</li>
-          <li><strong>MealOption carries its own <code>_id</code></strong> even though it's an embedded array element, not a trip-owned collection — the one exception on this page to "only trip-owned entities get an id." A candidate's own free-text caveat (what used to be an inline <code>note</code> field) reads exactly like every other annotation on this page, so it became a <code>Note</code> like the rest, and a <code>Note</code> needs something stable to point <code>concerns</code> at — a bare array index would silently repoint at a different candidate the moment <code>options</code> gets reordered. <code>_id</code> survives reordering; it doesn't survive the candidate being promoted (<code>options</code> clearing to <code>null</code> once one's picked) — same as deleting any other entity a Note concerns, any Note still pointing at that id just has nothing left to render against.</li>
-          <li><strong>priority is an enumerated rank, not a boolean</strong> — matching every other significance-style field on this page (<code>status</code>, <code>mealType</code>, <code>diningFormat</code>) rather than a loose <code>highlight: true/false</code>. Null for nearly everything; set only on the handful of activities worth calling out. It's what the computed Day's title reads to decide whether to name a day after its headline activity — "Denali Flightseeing" — instead of falling back to wherever that night's Stay is. When a day has several activities tied at the same top priority, the title joins their <code>text</code> with " &amp; ", in sequence order. Deliberately generic rather than single-purpose: any future "what matters today" or trip-highlights view can read the same field without a new one being invented.</li>
-          <li><strong>travelers is an excursion's own, directly authored roster</strong> — <code>Trip.travelers[].id</code>, the same link <code>Package.travelers</code> uses. It exists for exactly one case: an activity someone plans or books individually, where not every traveler is necessarily doing it — a shore excursion one family member skips, say. It's deliberately <em>not</em> read on a meal (<code>mealType</code> set) — a meal's real attendees are already derivable from <code>diningFormat</code>/<code>includedIn</code> against whichever <code>Package</code> backs it (trip-model.js's <code>resolveMealTravelers</code>), and authoring a second, competing traveler list on the same Activity would just invite the two to drift. Null is the default on every activity today, meaning either everyone's doing it or it just isn't decided yet — a day watching scenery go by from the ship, for instance, isn't an excursion at all and was never a candidate for this field, regardless of whether every traveler happens to be there.</li>
+          <li>
+            <strong>startAt/endAt are set only when actually known.</strong> timeLabel exists for
+            the honestly-vague cases — "Afternoon" — instead of inventing false precision; see
+            Activity's own timeLabel note above for its closed vocabulary and sort-anchor mapping.
+          </li>
+          <li>
+            <strong>booking is absent for most activities</strong> — a casual stroll never needs one
+            — while <code>status</code> is always present, tracking the activity's own plan
+            independent of whether it's reserved.
+          </li>
+          <li>
+            <strong
+              >mealType/diningFormat/includedIn are two independent axes plus a pointer, not one
+              field</strong
+            >
+            — which meal slot (or snack) this is, versus how the food actually happens, versus
+            what's paying for it. Collapsing them (e.g. a single
+            <code>mealType: 'included-breakfast'</code>) would combinatorially explode the same way
+            the model already avoids elsewhere (see Transit's <code>mode</code> rationale). A meal
+            running late and becoming a drivethru instead needs no special structure to support —
+            it's just editing <code>diningFormat</code>/<code>place</code> on an ordinary
+            <code>status: 'planning'</code> Activity, the same flexibility every other field on this
+            page already has.
+          </li>
+          <li>
+            <strong>An activity can be a meal without ever setting <code>place</code>.</strong>
+            "Packed lunch" or "snacks from the cooler" is
+            <code>mealType: 'snack'</code>/<code>'lunch'</code>,
+            <code>diningFormat: 'self-catered'</code>, and no resolvable Place at all — same
+            reasoning as Transit's <code>from</code>/<code>to</code> staying null for a whole city
+            rather than forcing a point that doesn't exist.
+          </li>
+          <li>
+            <strong>includedIn reuses Note's <code>Ref</code> type</strong> rather than inventing a
+            second polymorphic pointer — a bundled meal points at whichever Stay, Leg, or Activity's
+            booking actually covers it, so cost and confirmation number stay owned by that one
+            booking instead of being duplicated onto the meal itself. Set when
+            <code>diningFormat</code> is <code>'included'</code> (points at a
+            <code>{ entity: 'stay', ... }</code>, etc. — the base rate itself) or
+            <code>'package'</code> (points at a <code>{ entity: 'package', ... }</code> — see Stay);
+            every other format leaves it <code>null</code>.
+          </li>
+          <li>
+            <strong
+              >'included' and 'package' are deliberately separate
+              <code>diningFormat</code> values</strong
+            >, not one "covered somehow" flag — <code>'included'</code> means the base rate already
+            pays for it, no separate decision required; <code>'package'</code> means it's covered
+            only if a specific optional add-on gets purchased, and that purchase has its own
+            <code>planning</code>/<code>booked</code>/<code>cancelled</code> status independent of
+            the Stay. Collapsing them would either lose that distinction or force a not-yet-decided
+            purchase to read as already-included.
+          </li>
+          <li>
+            <strong>options is the one genuinely new mechanism here</strong>, added once "which of
+            these three places for breakfast" turned out not to fit the single-value fields at all —
+            the three candidates can each have a <em>different</em>
+            <code>diningFormat</code> (included / sit-down / grab-and-go), so the choice has to live
+            per-candidate, not on the Activity itself. It mirrors <code>Stay.lodging: null</code>'s
+            "nothing chosen yet" — just extended to hold the actual named candidates instead of only
+            recording that a decision is pending. <code>diningFormat</code>/<code>place</code>/<code
+              >includedIn</code
+            >
+            stay <code>null</code> on the Activity the whole time <code>options</code> is set;
+            deciding means picking one candidate, copying its three fields up onto the Activity
+            itself, and clearing <code>options</code> back to <code>null</code> — the array never
+            holds the decided state, only the open one.
+          </li>
+          <li>
+            <strong>MealOption carries its own <code>_id</code></strong> even though it's an
+            embedded array element, not a trip-owned collection — the one exception on this page to
+            "only trip-owned entities get an id." A candidate's own free-text caveat (what used to
+            be an inline <code>note</code> field) reads exactly like every other annotation on this
+            page, so it became a <code>Note</code> like the rest, and a <code>Note</code> needs
+            something stable to point <code>concerns</code> at — a bare array index would silently
+            repoint at a different candidate the moment <code>options</code> gets reordered.
+            <code>_id</code> survives reordering; it doesn't survive the candidate being promoted
+            (<code>options</code> clearing to <code>null</code> once one's picked) — same as
+            deleting any other entity a Note concerns, any Note still pointing at that id just has
+            nothing left to render against.
+          </li>
+          <li>
+            <strong>priority is an enumerated rank, not a boolean</strong> — matching every other
+            significance-style field on this page (<code>status</code>, <code>mealType</code>,
+            <code>diningFormat</code>) rather than a loose <code>highlight: true/false</code>. Null
+            for nearly everything; set only on the handful of activities worth calling out. It's
+            what the computed Day's title reads to decide whether to name a day after its headline
+            activity — "Denali Flightseeing" — instead of falling back to wherever that night's Stay
+            is. When a day has several activities tied at the same top priority, the title joins
+            their <code>text</code> with " &amp; ", in sequence order. Deliberately generic rather
+            than single-purpose: any future "what matters today" or trip-highlights view can read
+            the same field without a new one being invented.
+          </li>
+          <li>
+            <strong>travelers is an excursion's own, directly authored roster</strong> —
+            <code>Trip.travelers[].id</code>, the same link <code>Package.travelers</code> uses. It
+            exists for exactly one case: an activity someone plans or books individually, where not
+            every traveler is necessarily doing it — a shore excursion one family member skips, say.
+            It's deliberately <em>not</em> read on a meal (<code>mealType</code> set) — a meal's
+            real attendees are already derivable from <code>diningFormat</code>/<code
+              >includedIn</code
+            >
+            against whichever <code>Package</code> backs it (trip-model.js's
+            <code>resolveMealTravelers</code>), and authoring a second, competing traveler list on
+            the same Activity would just invite the two to drift. Null is the default on every
+            activity today, meaning either everyone's doing it or it just isn't decided yet — a day
+            watching scenery go by from the ship, for instance, isn't an excursion at all and was
+            never a candidate for this field, regardless of whether every traveler happens to be
+            there.
+          </li>
         </ul>
       </article>
 
@@ -986,7 +1811,10 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
           <div>
             <span class="badge badge-owned">Trip-owned</span>
             <h2>Scenario</h2>
-            <p class="entity-purpose">Names one branch of a weather-dependent contingency plan — replaces the old per-day "variants" array.</p>
+            <p class="entity-purpose">
+              Names one branch of a weather-dependent contingency plan — replaces the old per-day
+              "variants" array.
+            </p>
           </div>
         </div>
         <pre class="schema"><code>{ _id: 'scenario_denali_ideal', legId: 'leg_parks',
@@ -1003,9 +1831,24 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
                                        // always defaulting to the first branch
   images: [] }</code></pre>
         <ul class="rationale">
-          <li><strong>Declared once, referenced by many.</strong> Every Activity or Transit that belongs to it points back via <code>scenarioId</code>, instead of repeating label/icon/tone on each item the way the old <code>Day.variants[].items</code> did.</li>
-          <li><strong>No scenarioId, no branch.</strong> An Activity with nothing set is just a fixed-plan item — the same behavior as a single-variant day skipping its chip today.</li>
-          <li><strong>followsScenarioDate replaces spelling the condition out in the label.</strong> Jul 1's backup-attempt day used to be labeled "If June 30's flight went (relaxed drive-back day)" / "...was weathered out (last-chance backup day)" — accurate but too long to read as a tab. Naming the day it depends on lets the label shrink to just the day's own character ("Relaxed drive-back day"), while the presentation tier (day-render.js's <code>wireScenarioFollowers</code>) does the conditional part: Jul 1's tabs default to, and stay synced with, whichever tone is currently active on Jun 30.</li>
+          <li>
+            <strong>Declared once, referenced by many.</strong> Every Activity or Transit that
+            belongs to it points back via <code>scenarioId</code>, instead of repeating
+            label/icon/tone on each item the way the old <code>Day.variants[].items</code> did.
+          </li>
+          <li>
+            <strong>No scenarioId, no branch.</strong> An Activity with nothing set is just a
+            fixed-plan item — the same behavior as a single-variant day skipping its chip today.
+          </li>
+          <li>
+            <strong>followsScenarioDate replaces spelling the condition out in the label.</strong>
+            Jul 1's backup-attempt day used to be labeled "If June 30's flight went (relaxed
+            drive-back day)" / "...was weathered out (last-chance backup day)" — accurate but too
+            long to read as a tab. Naming the day it depends on lets the label shrink to just the
+            day's own character ("Relaxed drive-back day"), while the presentation tier
+            (day-render.js's <code>wireScenarioFollowers</code>) does the conditional part: Jul 1's
+            tabs default to, and stay synced with, whichever tone is currently active on Jun 30.
+          </li>
         </ul>
       </article>
 
@@ -1016,7 +1859,10 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
           <div>
             <span class="badge badge-owned">Trip-owned</span>
             <h2>Note</h2>
-            <p class="entity-purpose">Unifies the current site's two separate systems — inline warning callouts and hand-numbered footnotes — into one entity.</p>
+            <p class="entity-purpose">
+              Unifies the current site's two separate systems — inline warning callouts and
+              hand-numbered footnotes — into one entity.
+            </p>
           </div>
         </div>
         <pre class="schema"><code>{ _id: 'note_gates_buffer', kind: 'warning',
@@ -1035,10 +1881,35 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   | { date }
   | { dateRange: [start, end] }</code></pre>
         <ul class="rationale">
-          <li><strong>kind replaces the old stored icon.</strong> The presentation tier maps <code>kind</code> ('warning' | 'footnote' | 'info') to icon and prominence itself.</li>
-          <li><strong>Footnote numbers are never stored.</strong> They're assigned at render time, in the order notes are encountered on a given page — removing the exact hand-sync burden the current site's footnote system requires today.</li>
-          <li><strong>concerns is reserved for annotation, not structure.</strong> Note today, a future Journal/actual-experience entry later, would reuse it — the strongly-typed foreign keys elsewhere (<code>Stay.legId</code>, <code>Transit.routeId</code>) stay exactly as they are, since those are structural, not annotative.</li>
-          <li><strong><code>entity: 'mealOption'</code> is the one <code>Ref</code> kind that's conditional, not just placed.</strong> Every other entity kind's notes always render wherever that entity itself shows up; a <code>mealOption</code> note only renders while its specific candidate is the one currently selected among its Activity's <code>options</code> — switching candidates in the UI swaps which of that Activity's notes are visible, same as switching a Scenario's ideal/alternate tab swaps which day's notes show. The Activity's own notes (<code>entity: 'activity'</code>) are unaffected either way, since they're about the meal choice as a whole rather than any one candidate.</li>
+          <li>
+            <strong>kind replaces the old stored icon.</strong> The presentation tier maps
+            <code>kind</code> ('warning' | 'footnote' | 'info') to icon and prominence itself.
+          </li>
+          <li>
+            <strong>Footnote numbers are never stored.</strong> They're assigned at render time, in
+            the order notes are encountered on a given page — removing the exact hand-sync burden
+            the current site's footnote system requires today.
+          </li>
+          <li>
+            <strong>concerns is reserved for annotation, not structure.</strong> Note today, a
+            future Journal/actual-experience entry later, would reuse it — the strongly-typed
+            foreign keys elsewhere (<code>Stay.legId</code>, <code>Transit.routeId</code>) stay
+            exactly as they are, since those are structural, not annotative.
+          </li>
+          <li>
+            <strong
+              ><code>entity: 'mealOption'</code> is the one <code>Ref</code> kind that's
+              conditional, not just placed.</strong
+            >
+            Every other entity kind's notes always render wherever that entity itself shows up; a
+            <code>mealOption</code> note only renders while its specific candidate is the one
+            currently selected among its Activity's <code>options</code> — switching candidates in
+            the UI swaps which of that Activity's notes are visible, same as switching a Scenario's
+            ideal/alternate tab swaps which day's notes show. The Activity's own notes (<code
+              >entity: 'activity'</code
+            >) are unaffected either way, since they're about the meal choice as a whole rather than
+            any one candidate.
+          </li>
         </ul>
       </article>
 
@@ -1047,19 +1918,65 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
         <div class="threads">
           <div class="thread">
             <span class="mark">→</span>
-            <p><strong>Planned vs. actual</strong><span>Status ladders are settled, but the mechanism for recording what really happened — a skipped activity, a rebooked flight — hasn't been designed. Ref/concerns is the likely vehicle: a future Journal entry pointing at whatever it's about, the same way Note does now.</span></p>
+            <p>
+              <strong>Planned vs. actual</strong
+              ><span
+                >Status ladders are settled, but the mechanism for recording what really happened —
+                a skipped activity, a rebooked flight — hasn't been designed. Ref/concerns is the
+                likely vehicle: a future Journal entry pointing at whatever it's about, the same way
+                Note does now.</span
+              >
+            </p>
           </div>
           <div class="thread">
             <span class="mark">→</span>
-            <p><strong>Trip.travelers</strong><span>Gained a stable <code>id</code> once <code>Package.travelers</code> needed something to link against, but is otherwise still just a lightweight embedded list. Undesigned: whether travelers need a fuller identity (for a multi-user "real app"), or an <code>id</code> is as far as this ever needs to go.</span></p>
+            <p>
+              <strong>Trip.travelers</strong
+              ><span
+                >Gained a stable <code>id</code> once <code>Package.travelers</code> needed
+                something to link against, but is otherwise still just a lightweight embedded list.
+                Undesigned: whether travelers need a fuller identity (for a multi-user "real app"),
+                or an <code>id</code> is as far as this ever needs to go.</span
+              >
+            </p>
           </div>
           <div class="thread">
             <span class="mark">→</span>
-            <p><strong>Booking as a formal type</strong><span>Treated here as a shape repeated by convention across Leg, Stay, Transit, and Activity. In a real schema language this would likely become one named, shared type rather than four copies of the same core fields — increasingly true now that per-entity tests keep adding their own optional extensions to it (<code>depositPaidAt</code>/<code>passengers</code> on Leg, <code>bookedThrough</code> on Stay), the ferry test showed <code>passengers</code> itself is already reusable as-is on Transit, and the flight test forced <code>bookedThrough</code> from a flat string into its own <code>{ name, confirmationNumber }</code> shape once a real booking needed two live confirmation codes at once.</span></p>
+            <p>
+              <strong>Booking as a formal type</strong
+              ><span
+                >Treated here as a shape repeated by convention across Leg, Stay, Transit, and
+                Activity. In a real schema language this would likely become one named, shared type
+                rather than four copies of the same core fields — increasingly true now that
+                per-entity tests keep adding their own optional extensions to it
+                (<code>depositPaidAt</code>/<code>passengers</code> on Leg,
+                <code>bookedThrough</code> on Stay), the ferry test showed
+                <code>passengers</code> itself is already reusable as-is on Transit, and the flight
+                test forced <code>bookedThrough</code> from a flat string into its own
+                <code>{ name, confirmationNumber }</code> shape once a real booking needed two live
+                confirmation codes at once.</span
+              >
+            </p>
           </div>
           <div class="thread">
             <span class="mark">→</span>
-            <p><strong>Place beyond Google</strong><span>Tested against a real Recreation.gov campsite reservation for a different trip (Channel Islands National Park — parsed to pressure-test this schema, deliberately not migrated in as that trip's data). <code>Place.id</code> currently assumes a Google Place ID, but a federal campground has its own resolvable id (<code>recreation.gov/camping/campsites/4924</code>) with no Google equivalent worth resolving against instead. Undesigned: whether <code>Place</code> gains a <code>source</code> discriminator so every embed site (Activity's <code>place</code>, Stay's <code>lodging</code>, Route's <code>from</code>/<code>to</code>/<code>waypoints</code>) can say which system an id belongs to, or a non-Google point stays out of <code>Place</code> entirely and lives as inline text the way <code>Route</code>'s <code>places</code> already allows for a named-but-unresolved point.</span></p>
+            <p>
+              <strong>Place beyond Google</strong
+              ><span
+                >Tested against a real Recreation.gov campsite reservation for a different trip
+                (Channel Islands National Park — parsed to pressure-test this schema, deliberately
+                not migrated in as that trip's data). <code>Place.id</code> currently assumes a
+                Google Place ID, but a federal campground has its own resolvable id
+                (<code>recreation.gov/camping/campsites/4924</code>) with no Google equivalent worth
+                resolving against instead. Undesigned: whether <code>Place</code> gains a
+                <code>source</code> discriminator so every embed site (Activity's
+                <code>place</code>, Stay's <code>lodging</code>, Route's
+                <code>from</code>/<code>to</code>/<code>waypoints</code>) can say which system an id
+                belongs to, or a non-Google point stays out of <code>Place</code> entirely and lives
+                as inline text the way <code>Route</code>'s <code>places</code> already allows for a
+                named-but-unresolved point.</span
+              >
+            </p>
           </div>
         </div>
       </section>

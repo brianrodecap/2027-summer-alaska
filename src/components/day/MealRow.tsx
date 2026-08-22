@@ -1,21 +1,24 @@
-import ButtonBase from '@mui/material/ButtonBase';
+import TimelineDot from '@mui/lab/TimelineDot';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Stack from '@mui/material/Stack';
+import ButtonBase from '@mui/material/ButtonBase';
 import Chip from '@mui/material/Chip';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import TimelineDot from '@mui/lab/TimelineDot';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 
-import { firstImage, timeAndMealTypeLabel, DINING_FORMAT_LABEL } from '../../model/formatting';
-import { activeMealOptions, mealOptionLabel, selectedMealOptionIndex } from '../../model/mealOptions';
-import { materialIcon, DINING_FORMAT_ICON } from '../shared/materialIcon';
-import { useMealOptionSelection } from '../../state/TripSelectionsContext';
-import { TravelerChips } from '../shared/TravelerChips';
-import { TransitOverlapWarning } from '../shared/TransitOverlapWarning';
-import { LinkifiedText } from '../shared/LinkifiedText';
-import { NotesCluster, splitNotes } from '../shared/Notes';
+import { DINING_FORMAT_LABEL, firstImage, timeAndMealTypeLabel } from '../../model/formatting';
+import {
+  activeMealOptions,
+  mealOptionLabel,
+  selectedMealOptionIndex,
+} from '../../model/mealOptions';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
+import { useMealOptionSelection } from '../../state/TripSelectionsContext';
+import { LinkifiedText } from '../shared/LinkifiedText';
+import { DINING_FORMAT_ICON, renderMaterialIcon } from '../shared/materialIcon';
+import { NotesCluster, splitNotes } from '../shared/Notes';
+import { TransitOverlapWarning } from '../shared/TransitOverlapWarning';
+import { TravelerChips } from '../shared/TravelerChips';
 
 // Which candidate is "active" for a meal Activity — shared by the row's own
 // content and the timeline dot beside it, so both stay in sync as the user
@@ -32,13 +35,14 @@ function useMealSelection(activity: EnrichedActivity, day: Day) {
 // column, for whichever candidate is currently selected.
 export function MealRowLeading({ activity, day }: { activity: EnrichedActivity; day: Day }) {
   const { selected } = useMealSelection(activity, day);
-  const Icon = materialIcon(selected ? DINING_FORMAT_ICON[selected.diningFormat] : 'event');
   const image = selected ? firstImage(selected.place) : null;
   return image ? (
     <Avatar src={image.uri} sx={{ width: 32, height: 32 }} />
   ) : (
     <TimelineDot color="primary">
-      <Icon fontSize="small" />
+      {renderMaterialIcon(selected ? DINING_FORMAT_ICON[selected.diningFormat] : 'event', {
+        fontSize: 'small',
+      })}
     </TimelineDot>
   );
 }
@@ -66,7 +70,11 @@ export function MealRow({
 }) {
   const { selectMealOption } = useMealOptionSelection();
   const { options, index, selected } = useMealSelection(activity, day);
-  const { above: optionAbove, mid: optionMid, below: optionBelow } = splitNotes(selected?.notes ?? []);
+  const {
+    above: optionAbove,
+    mid: optionMid,
+    below: optionBelow,
+  } = splitNotes(selected?.notes ?? []);
 
   return (
     <Box sx={{ minWidth: 0 }}>
@@ -79,24 +87,26 @@ export function MealRow({
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
             {timeAndMealTypeLabel(activity)}
           </Typography>
-          <Typography variant="body1">{selected ? mealOptionLabel(selected) : <LinkifiedText text={activity.text} />}</Typography>
+          <Typography variant="body1">
+            {selected ? mealOptionLabel(selected) : <LinkifiedText text={activity.text} />}
+          </Typography>
           <NotesCluster notes={midNotes} />
           <NotesCluster notes={optionMid} />
           <TravelerChips names={selected?.travelers} />
           <TransitOverlapWarning activity={activity} />
         </Box>
-        <ChevronRightIcon color="action" sx={{ mt: 0.5 }} />
       </ButtonBase>
       {options.length > 1 && (
         <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
           {options.map((option, i) => {
-            const OptionIcon = materialIcon(DINING_FORMAT_ICON[option.diningFormat]);
             const active = i === index;
             return (
               <Chip
                 key={i}
                 label={DINING_FORMAT_LABEL[option.diningFormat]}
-                icon={<OptionIcon fontSize="small" />}
+                icon={renderMaterialIcon(DINING_FORMAT_ICON[option.diningFormat], {
+                  fontSize: 'small',
+                })}
                 color={active ? 'primary' : 'default'}
                 variant={active ? 'filled' : 'outlined'}
                 onClick={() => selectMealOption(activity._id, i)}

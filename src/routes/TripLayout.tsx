@@ -1,20 +1,20 @@
-import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import Chip from '@mui/material/Chip';
-import Stack from '@mui/material/Stack';
-import CircularProgress from '@mui/material/CircularProgress';
-import Alert from '@mui/material/Alert';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DownloadIcon from '@mui/icons-material/Download';
+import Alert from '@mui/material/Alert';
+import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
+import CircularProgress from '@mui/material/CircularProgress';
+import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
 
-import { TripDataProvider, useTripData } from '../state/TripDataContext';
-import { TripSelectionsProvider } from '../state/TripSelectionsContext';
+import { exportEdits } from '../model/exportEdits';
+import { formatTripDateChip, tripDayCount } from '../model/tripModel';
 import { EditProvider } from '../state/EditContext';
 import { NoteEditProvider } from '../state/NoteEditContext';
-import { formatTripDateChip, tripDayCount } from '../model/tripModel';
-import { exportEdits } from '../model/exportEdits';
+import { TripDataProvider, useTripData } from '../state/TripDataContext';
+import { TripSelectionsProvider } from '../state/TripSelectionsContext';
 
 function TripHero() {
   const navigate = useNavigate();
@@ -81,14 +81,16 @@ function TripHero() {
         )}
       </Stack>
       <Stack direction="row" spacing={1} sx={{ ml: 6 }}>
-        <Chip
-          label={formatTripDateChip(trip, tripDayCount(trip))}
-          component={Link}
-          to={`/${slug}/days`}
-          clickable
-          sx={heroImage ? { color: 'inherit', borderColor: 'rgba(255,255,255,0.7)' } : undefined}
-          variant={heroImage ? 'outlined' : 'filled'}
-        />
+        {view.dateRange && (
+          <Chip
+            label={formatTripDateChip(view.dateRange, tripDayCount(view.dateRange))}
+            component={Link}
+            to={`/${slug}/days`}
+            clickable
+            sx={heroImage ? { color: 'inherit', borderColor: 'rgba(255,255,255,0.7)' } : undefined}
+            variant={heroImage ? 'outlined' : 'filled'}
+          />
+        )}
         <Chip
           label="Budget"
           component={Link}

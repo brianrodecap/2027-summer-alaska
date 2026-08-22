@@ -4,10 +4,15 @@
 // entity passed in (the caller passes a clone — see EditContext) and
 // returns null on success or a message to show inline, exactly like the
 // original.
-import { bookingFormValueFrom, readBookingFormValue, type BookingFormValue } from '../components/edit/BookingFields';
+import {
+  type BookingFormValue,
+  bookingFormValueFrom,
+  readBookingFormValue,
+} from '../components/edit/BookingFields';
 import type {
   Activity,
   DiningFormat,
+  Leg,
   MealOption,
   MealType,
   Place,
@@ -17,6 +22,7 @@ import type {
   Stay,
   TimeLabel,
   Transit,
+  Trip,
 } from './types';
 
 // ---------- blank entities, for the day list's own "Add" button ----------
@@ -134,7 +140,8 @@ export function activityFormFrom(activity: Activity): ActivityFormState {
 export function applyActivityForm(activity: Activity, form: ActivityFormState): string | null {
   const text = form.text.trim();
   if (!text) return 'Needs a description.';
-  const startAt = form.startsDate && form.startsTime ? `${form.startsDate}T${form.startsTime}` : null;
+  const startAt =
+    form.startsDate && form.startsTime ? `${form.startsDate}T${form.startsTime}` : null;
   const endAt = form.endsDate && form.endsTime ? `${form.endsDate}T${form.endsTime}` : null;
   activity.text = text;
   activity.status = form.status;
@@ -195,8 +202,10 @@ export function stayFormFrom(stay: Stay): StayFormState {
 }
 
 export function applyStayForm(stay: Stay, form: StayFormState): string | null {
-  const checkInAt = form.checkInDate && form.checkInTime ? `${form.checkInDate}T${form.checkInTime}` : null;
-  const checkOutAt = form.checkOutDate && form.checkOutTime ? `${form.checkOutDate}T${form.checkOutTime}` : null;
+  const checkInAt =
+    form.checkInDate && form.checkInTime ? `${form.checkInDate}T${form.checkInTime}` : null;
+  const checkOutAt =
+    form.checkOutDate && form.checkOutTime ? `${form.checkOutDate}T${form.checkOutTime}` : null;
   if (!checkInAt || !checkOutAt) return 'Needs both check-in and check-out times.';
   stay.checkInAt = checkInAt;
   stay.checkOutAt = checkOutAt;
@@ -238,9 +247,15 @@ export function transitFormFrom(transit: Transit): TransitFormState {
 // simply stays null in the data rather than carrying a guess nothing ever
 // reads. Only a Transit with no route picked still needs a real one.
 export function applyTransitForm(transit: Transit, form: TransitFormState): string | null {
-  const departsAt = form.departsDate && form.departsTime ? `${form.departsDate}T${form.departsTime}` : null;
-  const arrivesAt = form.routeId ? null : form.arrivesDate && form.arrivesTime ? `${form.arrivesDate}T${form.arrivesTime}` : null;
-  if (!departsAt || (!form.routeId && !arrivesAt)) return 'Needs both a departure and arrival time.';
+  const departsAt =
+    form.departsDate && form.departsTime ? `${form.departsDate}T${form.departsTime}` : null;
+  const arrivesAt = form.routeId
+    ? null
+    : form.arrivesDate && form.arrivesTime
+      ? `${form.arrivesDate}T${form.arrivesTime}`
+      : null;
+  if (!departsAt || (!form.routeId && !arrivesAt))
+    return 'Needs both a departure and arrival time.';
   transit.departsAt = departsAt;
   transit.arrivesAt = arrivesAt;
   transit.from.label = form.fromLabel.trim() || transit.from.label;
@@ -290,4 +305,84 @@ export function applyRouteForm(route: Route, form: Route): string | null {
   route.to = { ...form.to, label: toLabel };
   route.variants = form.variants;
   return null;
+}
+
+// ---------- Trip (the trips list's own Add/Edit trip dialog) ----------
+//
+// Trip carries no startDate/endDate of its own — tripModel.ts's
+// tripDateRange computes the trip's span from its own Legs instead, so
+// there's nothing date-related for this form to own. applyTripForm covers
+// both create and edit: pass the existing Trip as `base` to update it in
+// place (preserving its _id/travelers/images), or null to build a fresh one.
+
+export interface TripFormState {
+  name: string;
+  slug: string;
+  summary: string;
+}
+
+export function blankTripForm(): TripFormState {
+  return { name: '', slug: '', summary: '' };
+}
+
+export function tripFormFrom(trip: Trip, slug: string): TripFormState {
+  return { name: trip.name, slug, summary: trip.summary ?? '' };
+}
+
+export function applyTripForm(
+  base: Trip | null,
+  form: TripFormState,
+  existingSlugs: string[],
+): { slug: string; trip: Trip } | string {
+  const name = form.name.trim();
+  if (!name) return 'Needs a name.';
+  const slug = form.slug.trim();
+  if (!slug) return 'Needs a slug.';
+  if (existingSlugs.includes(slug)) return 'That slug is already used by another trip.';
+  const trip: Trip = {
+    _id: base?._id ?? crypto.randomUUID(),
+    name,
+    summary: form.summary.trim() || null,
+    travelers: base?.travelers ?? [],
+    images: base?.images ?? [],
+  };
+  return { slug, trip };
+}
+
+// ---------- Leg (Overview's own "Add leg" dialog) ----------
+//
+// A brand-new trip starts with zero Legs, and buildTripView only produces a
+// Day for dates that fall inside one (see buildDay in tripModel.ts) — so
+// until a first Leg exists, there's nothing for the day list's own "Add to
+// this day" button to attach to, and no computed trip date range either
+// (tripModel.ts's tripDateRange). Mirrors applyTripForm's shape: builds and
+// returns a finished Leg rather than mutating one in place, since Add leg
+// (like Add trip) only ever creates, never edits an existing Leg.
+//
+// No startDate/endDate/status here either — a Leg's own span is computed
+// from whatever Stay/Transit/Activity ends up pointing at it (tripModel.ts's
+// legDateRange), so a freshly created Leg simply has no span (and shows up
+// with none) until its first entity is added.
+
+export interface LegFormState {
+  name: string;
+  skeletonAuthority: Leg['skeletonAuthority'];
+}
+
+export function blankLegForm(): LegFormState {
+  return { name: '', skeletonAuthority: 'self' };
+}
+
+export function applyLegForm(form: LegFormState, tripId: string): { leg: Leg } | string {
+  const name = form.name.trim();
+  if (!name) return 'Needs a name.';
+  const leg: Leg = {
+    _id: crypto.randomUUID(),
+    tripId,
+    name,
+    skeletonAuthority: form.skeletonAuthority,
+    booking: null,
+    images: [],
+  };
+  return { leg };
 }

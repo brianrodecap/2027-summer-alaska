@@ -1,19 +1,18 @@
-import type { ReactNode } from 'react';
 import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
+import Typography from '@mui/material/Typography';
+import type { ReactNode } from 'react';
 
 import { formatMoney } from '../../model/tripModel';
-import { materialIcon } from '../shared/materialIcon';
-import { BudgetStats } from './BudgetStats';
-import { BUDGET_BUCKET_ICON, BUDGET_BUCKET_LABEL } from './budgetLabels';
 import type { BudgetRow, BudgetTotals } from '../../model/types';
+import { renderMaterialIcon } from '../shared/materialIcon';
+import { BUDGET_BUCKET_ICON, BUDGET_BUCKET_LABEL } from './budgetLabels';
+import { BudgetStats } from './BudgetStats';
 
 function BudgetRowItem({ row }: { row: BudgetRow }) {
-  const Icon = materialIcon(BUDGET_BUCKET_ICON[row.bucket]);
   const amount = row.bucket === 'unplanned' ? 'Not yet costed' : formatMoney(row.booking.cost);
   return (
     <ListItem
@@ -24,14 +23,24 @@ function BudgetRowItem({ row }: { row: BudgetRow }) {
       }
     >
       <ListItemIcon sx={{ minWidth: 36 }}>
-        <Icon fontSize="small" />
+        {renderMaterialIcon(BUDGET_BUCKET_ICON[row.bucket], { fontSize: 'small' })}
       </ListItemIcon>
       <ListItemText primary={row.label} secondary={BUDGET_BUCKET_LABEL[row.bucket]} />
     </ListItem>
   );
 }
 
-export function BudgetGroup({ headline, meta, totals, rows }: { headline: ReactNode; meta?: ReactNode; totals: BudgetTotals; rows: BudgetRow[] }) {
+export function BudgetGroup({
+  headline,
+  meta,
+  totals,
+  rows,
+}: {
+  headline: ReactNode;
+  meta?: ReactNode;
+  totals: BudgetTotals;
+  rows: BudgetRow[];
+}) {
   return (
     <Box sx={{ mb: 3 }}>
       <Typography variant="subtitle1">{headline}</Typography>

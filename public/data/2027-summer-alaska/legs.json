@@ -3,10 +3,6 @@
     "_id": "leg_parks",
     "tripId": "trip_alaska_2027",
     "name": "National parks (road & fly)",
-    "order": 1,
-    "startDate": "2027-06-26",
-    "endDate": "2027-07-16",
-    "status": "planning",
     "skeletonAuthority": "self",
     "booking": null,
     "images": [
@@ -21,10 +17,6 @@
     "_id": "leg_cruise",
     "tripId": "trip_alaska_2027",
     "name": "7-night cruise (Discovery Princess, Whittier to Vancouver)",
-    "order": 2,
-    "startDate": "2027-07-17",
-    "endDate": "2027-07-24",
-    "status": "planning",
     "skeletonAuthority": "operator",
     "booking": {
       "status": "booked",

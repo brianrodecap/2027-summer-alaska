@@ -1,4 +1,4 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, type ReactNode, useContext, useMemo, useState } from 'react';
 
 // Replaces the old vanilla-JS app's "read live tab state off the DOM" pattern
 // (readDaySelections/recomputeRoutedTransits) with real React state. Every
@@ -57,7 +57,8 @@ export function TripSelectionsProvider({ children }: { children: ReactNode }) {
   const routeToneValue = useMemo<RouteToneSelectionValue>(
     () => ({
       routeTones,
-      selectRouteTone: (transitId, tone) => setRouteTones((prev) => new Map(prev).set(transitId, tone)),
+      selectRouteTone: (transitId, tone) =>
+        setRouteTones((prev) => new Map(prev).set(transitId, tone)),
     }),
     [routeTones],
   );
@@ -65,7 +66,8 @@ export function TripSelectionsProvider({ children }: { children: ReactNode }) {
   const mealOptionValue = useMemo<MealOptionSelectionValue>(
     () => ({
       mealOptionIndex,
-      selectMealOption: (activityId, index) => setMealOptionIndex((prev) => new Map(prev).set(activityId, index)),
+      selectMealOption: (activityId, index) =>
+        setMealOptionIndex((prev) => new Map(prev).set(activityId, index)),
     }),
     [mealOptionIndex],
   );
@@ -89,7 +91,9 @@ export function TripSelectionsProvider({ children }: { children: ReactNode }) {
     <ScenarioSelectionContext.Provider value={scenarioValue}>
       <RouteToneSelectionContext.Provider value={routeToneValue}>
         <MealOptionSelectionContext.Provider value={mealOptionValue}>
-          <FilterSelectionContext.Provider value={filterValue}>{children}</FilterSelectionContext.Provider>
+          <FilterSelectionContext.Provider value={filterValue}>
+            {children}
+          </FilterSelectionContext.Provider>
         </MealOptionSelectionContext.Provider>
       </RouteToneSelectionContext.Provider>
     </ScenarioSelectionContext.Provider>

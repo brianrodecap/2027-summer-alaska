@@ -8,3 +8,6 @@ node_modules/
 dist/
 *.local
 *.tsbuildinfo
+
+# Plaintext API key file found sitting in the working tree — never commit it.
+/trippin-api-key.txt

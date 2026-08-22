@@ -1,13 +1,13 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
-import { formatTime } from '../../model/tripModel';
 import { firstImage } from '../../model/formatting';
-import { materialIcon } from '../shared/materialIcon';
-import { DetailSideSheet } from '../shared/DetailSideSheet';
-import { BookingChip } from '../shared/BookingChip';
-import { NotesCluster } from '../shared/Notes';
+import { formatTime } from '../../model/tripModel';
 import type { EnrichedTransit } from '../../model/types';
+import { BookingChip } from '../shared/BookingChip';
+import { DetailSideSheet } from '../shared/DetailSideSheet';
+import { renderMaterialIcon } from '../shared/materialIcon';
+import { NotesCluster } from '../shared/Notes';
 
 // A Transit row's own tap target, opened from its Depart row — mirrors
 // ActivityDetailPanel/StayDetailPanel's side sheet. A Transit's notes are
@@ -28,7 +28,6 @@ export function TransitDetailPanel({
   if (!transit) return null;
 
   const image = firstImage(transit);
-  const Icon = materialIcon(transit.mode === 'flight' ? 'flight' : 'directions_car');
 
   return (
     <DetailSideSheet
@@ -36,13 +35,22 @@ export function TransitDetailPanel({
       onClose={onClose}
       onEdit={onEdit}
       title={`${transit.from.label} → ${transit.to.label}`}
-      titleIcon={<Icon color="primary" />}
+      titleIcon={renderMaterialIcon(transit.mode === 'flight' ? 'flight' : 'directions_car', {
+        color: 'primary',
+      })}
     >
       {image && (
-        <Box component="img" src={image.uri} alt={image.caption ?? ''} title={image.credit ?? ''} sx={{ width: '100%', borderRadius: 2, mb: 2 }} />
+        <Box
+          component="img"
+          src={image.uri}
+          alt={image.caption ?? ''}
+          title={image.credit ?? ''}
+          sx={{ width: '100%', borderRadius: 2, mb: 2 }}
+        />
       )}
       <Typography variant="body1">
-        {formatTime(transit.departsAt)} depart · {transit.arrivesAt ? `${formatTime(transit.arrivesAt)} arrive` : 'arrival time TBD'}
+        {formatTime(transit.departsAt)} depart ·{' '}
+        {transit.arrivesAt ? `${formatTime(transit.arrivesAt)} arrive` : 'arrival time TBD'}
       </Typography>
       {transit.booking && (
         <Box sx={{ mt: 1.5 }}>

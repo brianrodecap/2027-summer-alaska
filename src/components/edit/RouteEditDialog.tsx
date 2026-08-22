@@ -1,15 +1,15 @@
-import { useState } from 'react';
-import Dialog from '@mui/material/Dialog';
-import DialogTitle from '@mui/material/DialogTitle';
-import DialogContent from '@mui/material/DialogContent';
-import DialogActions from '@mui/material/DialogActions';
-import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
+import Button from '@mui/material/Button';
+import Dialog from '@mui/material/Dialog';
+import DialogActions from '@mui/material/DialogActions';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import { useState } from 'react';
 
+import { applyRouteForm, routeFormFrom } from '../../model/editForms';
+import type { Route } from '../../model/types';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { RouteEditForm } from './RouteEditForm';
-import { routeFormFrom, applyRouteForm } from '../../model/editForms';
-import type { Route } from '../../model/types';
 
 // The chrome around RouteEditForm — mirrors EditDialog's own Save/Cancel/
 // Delete shape, but stands apart from EditContext/EditDialog since a Route
@@ -55,7 +55,9 @@ export function RouteEditDialog({
         <RouteEditForm form={form} onChange={setForm} />
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between', px: 3 }}>
-        {isNew ? <span /> : (
+        {isNew ? (
+          <span />
+        ) : (
           <Button color="error" onClick={() => setConfirmingDelete(true)}>
             Delete
           </Button>

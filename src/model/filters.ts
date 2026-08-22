@@ -42,7 +42,11 @@ const GROUP_DEFS: FilterGroup[] = [
 // The Leg group is the only one built from live trip data rather than a
 // fixed vocabulary — one option per Leg, in the trip's own leg order.
 export function buildFilterGroups(legSummaries: LegSummary[]): FilterGroup[] {
-  const legOptions = legSummaries.map((s) => ({ token: `leg:${s.leg._id}`, label: s.leg.name, icon: 'route' }));
+  const legOptions = legSummaries.map((s) => ({
+    token: `leg:${s.leg._id}`,
+    label: s.leg.name,
+    icon: 'route',
+  }));
   return [...GROUP_DEFS, { id: 'leg', label: 'Leg', options: legOptions }];
 }
 
@@ -73,20 +77,23 @@ export function rowMatches(tags: string[], activeTokens: Set<string>): boolean {
 // left. A scenario-tabs item is always kept as-is: it recurses into its own
 // nested DayTimeline render, which re-applies this same filter to that
 // track's own sequence.
-export function filterSequenceItems(sequence: SequenceItem[], day: Day, activeTokens: Set<string>): SequenceItem[] {
+export function filterSequenceItems(
+  sequence: SequenceItem[],
+  activeTokens: Set<string>,
+): SequenceItem[] {
   if (!activeTokens.size) return sequence;
   const result: SequenceItem[] = [];
   for (const item of sequence) {
     if (item.type === 'stay') {
-      if (rowMatches(filterTagsFor(item.stay, day.leg), activeTokens)) result.push(item);
+      if (rowMatches(filterTagsFor(item.stay), activeTokens)) result.push(item);
       continue;
     }
     if (item.type === 'transit-boundary' || item.type === 'transit-stage') {
-      if (rowMatches(filterTagsFor(item.transit, day.leg), activeTokens)) result.push(item);
+      if (rowMatches(filterTagsFor(item.transit), activeTokens)) result.push(item);
       continue;
     }
     if (item.type === 'section') {
-      const activities = item.activities.filter((a) => rowMatches(filterTagsFor(a, day.leg), activeTokens));
+      const activities = item.activities.filter((a) => rowMatches(filterTagsFor(a), activeTokens));
       if (activities.length) result.push({ ...item, activities });
       continue;
     }
@@ -95,11 +102,20 @@ export function filterSequenceItems(sequence: SequenceItem[], day: Day, activeTo
   return result;
 }
 
-function sequenceHasVisibleContent(sequence: SequenceItem[], day: Day, activeTokens: Set<string>): boolean {
+function sequenceHasVisibleContent(
+  sequence: SequenceItem[],
+  day: Day,
+  activeTokens: Set<string>,
+): boolean {
   for (const item of sequence) {
-    if (item.type === 'stay' && rowMatches(filterTagsFor(item.stay, day.leg), activeTokens)) return true;
-    if (item.type === 'transit-boundary' && rowMatches(filterTagsFor(item.transit, day.leg), activeTokens)) return true;
-    if (item.type === 'section' && item.activities.some((a) => rowMatches(filterTagsFor(a, day.leg), activeTokens))) return true;
+    if (item.type === 'stay' && rowMatches(filterTagsFor(item.stay), activeTokens)) return true;
+    if (item.type === 'transit-boundary' && rowMatches(filterTagsFor(item.transit), activeTokens))
+      return true;
+    if (
+      item.type === 'section' &&
+      item.activities.some((a) => rowMatches(filterTagsFor(a), activeTokens))
+    )
+      return true;
     if (item.type === 'scenario-tabs') {
       const tracks = item.tracks ?? day.scenarioTracks;
       if (tracks.some((t) => sequenceHasVisibleContent(t.sequence, day, activeTokens))) return true;

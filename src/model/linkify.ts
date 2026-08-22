@@ -10,7 +10,10 @@ export type LinkifySegment = { text: string; href: string | null };
 // services), not be a general-purpose URL parser.
 const BARE_TLDS = ['com', 'org', 'net', 'gov', 'edu', 'io'];
 
-const URL_RE = new RegExp(`https?://\\S+|www\\.\\S+|\\b[a-zA-Z0-9][a-zA-Z0-9-]*\\.(?:${BARE_TLDS.join('|')})(?:/\\S*)?`, 'gi');
+const URL_RE = new RegExp(
+  `https?://\\S+|www\\.\\S+|\\b[a-zA-Z0-9][a-zA-Z0-9-]*\\.(?:${BARE_TLDS.join('|')})(?:/\\S*)?`,
+  'gi',
+);
 
 // Trailing sentence punctuation/closing brackets a URL match's trailing \S+
 // can accidentally swallow — stripped back onto the plain-text segment that

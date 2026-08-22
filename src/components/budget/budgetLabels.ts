@@ -20,8 +20,12 @@ export const BUDGET_BUCKETS: BudgetBucket[] = ['spent', 'pending', 'estimated', 
 // 'unplanned' has no dollar amount at all (that's the point of the bucket —
 // see tripModel.ts's bookingBucket) so it renders as a count instead of a
 // currency figure.
-export function formatBudgetBucketAmount(totals: BudgetTotals, bucket: BudgetBucket): string | null {
-  if (bucket === 'unplanned') return totals.unplannedCount ? `${totals.unplannedCount} not yet costed` : null;
+export function formatBudgetBucketAmount(
+  totals: BudgetTotals,
+  bucket: BudgetBucket,
+): string | null {
+  if (bucket === 'unplanned')
+    return totals.unplannedCount ? `${totals.unplannedCount} not yet costed` : null;
   if (!totals[bucket]) return null;
   return formatMoney({ amount: totals[bucket], currency: totals.currency ?? 'USD' });
 }

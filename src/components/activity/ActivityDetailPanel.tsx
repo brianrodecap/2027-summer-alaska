@@ -1,17 +1,20 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
-import { firstImage, DINING_FORMAT_LABEL } from '../../model/formatting';
+import { DINING_FORMAT_LABEL, firstImage } from '../../model/formatting';
 import { mealOptionLabel } from '../../model/mealOptions';
-import { materialIcon, DEFAULT_PLACE_ICON, DINING_FORMAT_ICON } from '../shared/materialIcon';
-import { DetailSideSheet } from '../shared/DetailSideSheet';
-import { BookingChip } from '../shared/BookingChip';
-import { NotesCluster, splitNotes } from '../shared/Notes';
-import { LinkifiedText } from '../shared/LinkifiedText';
-import { PlacePanel } from './PlacePanel';
 import type { EnrichedActivity, EnrichedMealOption, Place } from '../../model/types';
+import { BookingChip } from '../shared/BookingChip';
+import { DetailSideSheet } from '../shared/DetailSideSheet';
+import { LinkifiedText } from '../shared/LinkifiedText';
+import { DEFAULT_PLACE_ICON, DINING_FORMAT_ICON, renderMaterialIcon } from '../shared/materialIcon';
+import { NotesCluster, splitNotes } from '../shared/Notes';
+import { PlacePanel } from './PlacePanel';
 
-function selectedPlace(activity: EnrichedActivity, selectedOption?: EnrichedMealOption): Place | null {
+function selectedPlace(
+  activity: EnrichedActivity,
+  selectedOption?: EnrichedMealOption,
+): Place | null {
   return selectedOption ? selectedOption.place : activity.place;
 }
 
@@ -55,14 +58,20 @@ export function ActivityDetailPanel({
 
   const place = selectedPlace(activity, selectedOption);
   const image = firstImage(activity) ?? (place ? firstImage(place) : null);
-  const TitleIcon = selectedOption ? materialIcon(DINING_FORMAT_ICON[selectedOption.diningFormat]) : materialIcon(DEFAULT_PLACE_ICON);
+  const titleIconName = selectedOption
+    ? DINING_FORMAT_ICON[selectedOption.diningFormat]
+    : DEFAULT_PLACE_ICON;
   // The side sheet has no trailing chip row to keep `mid` (info) notes above
   // of — unlike the day-list row this opened from, it just wants every
   // non-footnote note up top, same as before `mid` existed as its own slot.
   // A selected candidate's own notes (see EnrichedMealOption.notes) join the
   // Activity's — this sheet is that one candidate's own detail view, so both
   // are "about what's showing here" the same way the day-list row treats them.
-  const { above, mid, below: footnotes } = splitNotes([...(activity.notes ?? []), ...(selectedOption?.notes ?? [])]);
+  const {
+    above,
+    mid,
+    below: footnotes,
+  } = splitNotes([...(activity.notes ?? []), ...(selectedOption?.notes ?? [])]);
   const aboveNotes = [...above, ...mid];
 
   return (
@@ -71,7 +80,7 @@ export function ActivityDetailPanel({
       onClose={onClose}
       onEdit={onEdit}
       title={place ? place.label : activity.text}
-      titleIcon={place ? <TitleIcon color="primary" /> : undefined}
+      titleIcon={place ? renderMaterialIcon(titleIconName, { color: 'primary' }) : undefined}
     >
       {image && (
         <Box

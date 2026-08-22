@@ -1,14 +1,14 @@
-import { useState } from 'react';
-import Box from '@mui/material/Box';
-import Tabs from '@mui/material/Tabs';
-import Tab from '@mui/material/Tab';
-import Typography from '@mui/material/Typography';
-import RouteIcon from '@mui/icons-material/Route';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import GroupIcon from '@mui/icons-material/Group';
+import RouteIcon from '@mui/icons-material/Route';
+import Box from '@mui/material/Box';
+import Tab from '@mui/material/Tab';
+import Tabs from '@mui/material/Tabs';
+import Typography from '@mui/material/Typography';
+import { useState } from 'react';
 
-import { BudgetGroup } from './BudgetGroup';
 import type { BudgetView } from '../../model/types';
+import { BudgetGroup } from './BudgetGroup';
 
 function ByLegPanel({ byLeg }: { byLeg: BudgetView['byLeg'] }) {
   if (!byLeg.length) {
@@ -41,7 +41,13 @@ function ByDayPanel({ byDay }: { byDay: BudgetView['byDay'] }) {
         Leg-level bundles (like the cruise fare) aren't tied to one day — see the By Leg tab.
       </Typography>
       {byDay.map((g) => (
-        <BudgetGroup key={g.day.date} headline={g.day.dateLabel} meta={g.day.title} totals={g.totals} rows={g.rows} />
+        <BudgetGroup
+          key={g.day.date}
+          headline={g.day.dateLabel}
+          meta={g.day.title}
+          totals={g.totals}
+          rows={g.rows}
+        />
       ))}
     </>
   );
@@ -51,7 +57,8 @@ function ByTravelerPanel({ byTraveler }: { byTraveler: BudgetView['byTraveler'] 
   return (
     <>
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-        A cost with no per-passenger fare split is divided evenly across every traveler — an inferred share, not an authored one.
+        A cost with no per-passenger fare split is divided evenly across every traveler — an
+        inferred share, not an authored one.
       </Typography>
       {byTraveler.map((g) => (
         <BudgetGroup key={g.name} headline={g.name} totals={g.totals} rows={[]} />

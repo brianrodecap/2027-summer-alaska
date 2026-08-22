@@ -1,50 +1,50 @@
-import type { ComponentType } from 'react';
-import type { SvgIconProps } from '@mui/material/SvgIcon';
-import HotelIcon from '@mui/icons-material/Hotel';
-import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
-import FlightIcon from '@mui/icons-material/Flight';
-import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
-import CloudIcon from '@mui/icons-material/Cloud';
-import RedeemIcon from '@mui/icons-material/Redeem';
-import LocalOfferIcon from '@mui/icons-material/LocalOffer';
-import RestaurantIcon from '@mui/icons-material/Restaurant';
-import TakeoutDiningIcon from '@mui/icons-material/TakeoutDining';
-import KitchenIcon from '@mui/icons-material/Kitchen';
-import SignpostIcon from '@mui/icons-material/Signpost';
-import EventIcon from '@mui/icons-material/Event';
-import PlaceIcon from '@mui/icons-material/Place';
-import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
-import LandscapeIcon from '@mui/icons-material/Landscape';
-import RouteIcon from '@mui/icons-material/Route';
 import AltRouteIcon from '@mui/icons-material/AltRoute';
-import HelpOutlineIcon from '@mui/icons-material/Help';
-import MuseumIcon from '@mui/icons-material/Museum';
-import PaletteIcon from '@mui/icons-material/Palette';
 import AttractionsIcon from '@mui/icons-material/Attractions';
-import InfoIcon from '@mui/icons-material/Info';
-import ParkIcon from '@mui/icons-material/Park';
-import HikingIcon from '@mui/icons-material/Hiking';
-import CabinIcon from '@mui/icons-material/Cabin';
-import RvHookupIcon from '@mui/icons-material/RvHookup';
-import LocalCafeIcon from '@mui/icons-material/LocalCafe';
 import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
-import LocalBarIcon from '@mui/icons-material/LocalBar';
-import SportsBarIcon from '@mui/icons-material/SportsBar';
-import LocalGroceryStoreIcon from '@mui/icons-material/LocalGroceryStore';
-import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
-import PetsIcon from '@mui/icons-material/Pets';
-import WaterIcon from '@mui/icons-material/Water';
-import TerrainIcon from '@mui/icons-material/Terrain';
-import StorefrontIcon from '@mui/icons-material/Storefront';
-import ScheduleIcon from '@mui/icons-material/Schedule';
-import PaidIcon from '@mui/icons-material/Paid';
-import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
-import GroupIcon from '@mui/icons-material/Group';
+import CabinIcon from '@mui/icons-material/Cabin';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import StarIcon from '@mui/icons-material/Star';
-import WarningIcon from '@mui/icons-material/Warning';
+import CloudIcon from '@mui/icons-material/Cloud';
+import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import EventIcon from '@mui/icons-material/Event';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import FlightIcon from '@mui/icons-material/Flight';
+import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
+import GroupIcon from '@mui/icons-material/Group';
+import HelpOutlineIcon from '@mui/icons-material/Help';
+import HikingIcon from '@mui/icons-material/Hiking';
+import HotelIcon from '@mui/icons-material/Hotel';
+import InfoIcon from '@mui/icons-material/Info';
+import KitchenIcon from '@mui/icons-material/Kitchen';
+import LandscapeIcon from '@mui/icons-material/Landscape';
+import LocalBarIcon from '@mui/icons-material/LocalBar';
+import LocalCafeIcon from '@mui/icons-material/LocalCafe';
+import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
+import LocalGroceryStoreIcon from '@mui/icons-material/LocalGroceryStore';
+import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import MuseumIcon from '@mui/icons-material/Museum';
+import PaidIcon from '@mui/icons-material/Paid';
+import PaletteIcon from '@mui/icons-material/Palette';
+import ParkIcon from '@mui/icons-material/Park';
+import PetsIcon from '@mui/icons-material/Pets';
+import PlaceIcon from '@mui/icons-material/Place';
+import RedeemIcon from '@mui/icons-material/Redeem';
+import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
+import RestaurantIcon from '@mui/icons-material/Restaurant';
+import RouteIcon from '@mui/icons-material/Route';
+import RvHookupIcon from '@mui/icons-material/RvHookup';
+import ScheduleIcon from '@mui/icons-material/Schedule';
+import SignpostIcon from '@mui/icons-material/Signpost';
+import SportsBarIcon from '@mui/icons-material/SportsBar';
+import StarIcon from '@mui/icons-material/Star';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import TakeoutDiningIcon from '@mui/icons-material/TakeoutDining';
+import TerrainIcon from '@mui/icons-material/Terrain';
+import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
+import WarningIcon from '@mui/icons-material/Warning';
+import WaterIcon from '@mui/icons-material/Water';
+import type { SvgIconProps } from '@mui/material/SvgIcon';
+import type { ComponentType, ReactElement } from 'react';
 
 import type { DiningFormat } from '../../model/types';
 
@@ -136,6 +136,21 @@ export const PLACE_TYPE_ICON: Record<string, string> = {
 
 export function materialIcon(name: string | null | undefined): IconComponent {
   return (name && ICONS[name]) || HelpOutlineIcon;
+}
+
+// Picking an icon *component* based on render-time data (a name string that
+// varies by row/scenario/dining format) and then rendering it as a JSX tag
+// (`<Icon .../>`) trips react-hooks/static-components — React can't tell the
+// selection is a stable lookup rather than a component freshly defined on
+// every render. Returning the built element from a plain (lowercase, non-
+// component) function sidesteps that: callers never hold onto an icon
+// component reference themselves.
+export function renderMaterialIcon(
+  name: string | null | undefined,
+  props?: SvgIconProps,
+): ReactElement {
+  const Icon = materialIcon(name);
+  return <Icon {...props} />;
 }
 
 export const DEFAULT_PLACE_ICON = 'place';

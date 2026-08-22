@@ -1,15 +1,15 @@
-import Box from '@mui/material/Box';
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import Link from '@mui/material/Link';
-import CircularProgress from '@mui/material/CircularProgress';
-import PlaceIcon from '@mui/icons-material/Place';
-import ScheduleIcon from '@mui/icons-material/Schedule';
 import LanguageIcon from '@mui/icons-material/Language';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import PlaceIcon from '@mui/icons-material/Place';
+import ScheduleIcon from '@mui/icons-material/Schedule';
+import Box from '@mui/material/Box';
+import CircularProgress from '@mui/material/CircularProgress';
+import Link from '@mui/material/Link';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 
-import { usePlaceDetails } from './usePlaceDetails';
 import type { Place } from '../../model/types';
+import { usePlaceDetails } from './usePlaceDetails';
 
 // Fallback shown when the API key isn't configured yet or a lookup fails —
 // still gives a working outbound link so the feature degrades rather than
@@ -26,11 +26,13 @@ function placeSearchUrl(place: Place): string {
 // deliberately Enterprise-tier-only field mask — no photos/rating/reviews
 // (see model/places.ts).
 export function PlacePanel({ place }: { place: Place }) {
-  // A named-but-unresolved place (place.id: null — a shipboard restaurant
-  // with no static geolocation, say) has nothing to fetch at all.
-  if (!place.id) return null;
-
   const { details, loading, failed, configured } = usePlaceDetails(place.id);
+
+  // A named-but-unresolved place (place.id: null — a shipboard restaurant
+  // with no static geolocation, say) has nothing to fetch at all — the hook
+  // above still gets called every render (rules-of-hooks), it just reports
+  // loading: false and nothing to show.
+  if (!place.id) return null;
 
   if (loading) {
     return (
@@ -44,7 +46,9 @@ export function PlacePanel({ place }: { place: Place }) {
     return (
       <Stack spacing={1} sx={{ mt: 1 }}>
         <Typography variant="body2" color="text.secondary">
-          {configured ? 'Live details unavailable right now.' : 'Add a Places API key to enable live details.'}
+          {configured
+            ? 'Live details unavailable right now.'
+            : 'Add a Places API key to enable live details.'}
         </Typography>
         <Link href={placeSearchUrl(place)} target="_blank" rel="noopener">
           Search Google Maps
@@ -65,7 +69,9 @@ export function PlacePanel({ place }: { place: Place }) {
         <Stack direction="row" spacing={1}>
           <ScheduleIcon fontSize="small" color="action" />
           <Box>
-            <Typography variant="body2">{details.regularOpeningHours.openNow ? 'Open now' : 'Closed now'}</Typography>
+            <Typography variant="body2">
+              {details.regularOpeningHours.openNow ? 'Open now' : 'Closed now'}
+            </Typography>
             {details.regularOpeningHours.weekdayDescriptions?.map((line) => (
               <Typography key={line} variant="caption" color="text.secondary" component="div">
                 {line}
@@ -76,12 +82,22 @@ export function PlacePanel({ place }: { place: Place }) {
       )}
       <Stack direction="row" spacing={2}>
         {details.websiteUri && (
-          <Link href={details.websiteUri} target="_blank" rel="noopener" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Link
+            href={details.websiteUri}
+            target="_blank"
+            rel="noopener"
+            sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+          >
             <LanguageIcon fontSize="small" /> Website
           </Link>
         )}
         {details.googleMapsUri && (
-          <Link href={details.googleMapsUri} target="_blank" rel="noopener" sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Link
+            href={details.googleMapsUri}
+            target="_blank"
+            rel="noopener"
+            sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}
+          >
             <OpenInNewIcon fontSize="small" /> View on Google Maps
           </Link>
         )}

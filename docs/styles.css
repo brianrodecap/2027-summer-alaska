@@ -50,12 +50,18 @@
   max-width: 100%;
 }
 
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
-html { scroll-behavior: smooth; }
+html {
+  scroll-behavior: smooth;
+}
 
 @media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
+  html {
+    scroll-behavior: auto;
+  }
 }
 
 body {
@@ -89,7 +95,7 @@ body {
 }
 
 .hero-image::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.45), rgba(0, 0, 0, 0.68));
@@ -157,7 +163,9 @@ main {
   padding: 2.5rem 1.25rem 4rem;
 }
 
-section { margin-bottom: 3rem; }
+section {
+  margin-bottom: 3rem;
+}
 
 section > h2 {
   margin: 0 0 0.5rem;
@@ -754,16 +762,22 @@ sup a {
 }
 
 .date-picker-cell.in-range::before {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0.15rem 0;
   z-index: -1;
   background: var(--md-sys-color-secondary-container);
 }
 
-.date-picker-cell.range-start::before { border-radius: var(--md-sys-shape-corner-full) 0 0 var(--md-sys-shape-corner-full); }
-.date-picker-cell.range-end::before { border-radius: 0 var(--md-sys-shape-corner-full) var(--md-sys-shape-corner-full) 0; }
-.date-picker-cell.range-start.range-end::before { border-radius: var(--md-sys-shape-corner-full); }
+.date-picker-cell.range-start::before {
+  border-radius: var(--md-sys-shape-corner-full) 0 0 var(--md-sys-shape-corner-full);
+}
+.date-picker-cell.range-end::before {
+  border-radius: 0 var(--md-sys-shape-corner-full) var(--md-sys-shape-corner-full) 0;
+}
+.date-picker-cell.range-start.range-end::before {
+  border-radius: var(--md-sys-shape-corner-full);
+}
 
 .date-picker-cell.outside-month,
 .date-picker-cell:disabled {
@@ -772,7 +786,7 @@ sup a {
 }
 
 .date-picker-cell:not(:disabled):hover::after {
-  content: "";
+  content: '';
   position: absolute;
   inset: 0.1rem;
   z-index: -1;
@@ -1370,10 +1384,18 @@ md-icon-button[hidden] {
   color: var(--md-sys-color-on-surface-variant);
 }
 
-.budget-stat-spent md-icon { color: var(--md-sys-color-primary); }
-.budget-stat-pending md-icon { color: var(--md-sys-color-tertiary); }
-.budget-stat-estimated md-icon { color: var(--md-sys-color-secondary); }
-.budget-stat-unplanned md-icon { color: var(--md-sys-color-on-surface-variant); }
+.budget-stat-spent md-icon {
+  color: var(--md-sys-color-primary);
+}
+.budget-stat-pending md-icon {
+  color: var(--md-sys-color-tertiary);
+}
+.budget-stat-estimated md-icon {
+  color: var(--md-sys-color-secondary);
+}
+.budget-stat-unplanned md-icon {
+  color: var(--md-sys-color-on-surface-variant);
+}
 
 .budget-totals-row {
   display: flex;
@@ -1396,10 +1418,22 @@ md-icon-button[hidden] {
   height: 1rem;
 }
 
-.budget-chip-spent { background: var(--md-sys-color-primary-container); color: var(--md-sys-color-on-primary-container); }
-.budget-chip-pending { background: var(--md-sys-color-tertiary-container); color: var(--md-sys-color-on-tertiary-container); }
-.budget-chip-estimated { background: var(--md-sys-color-secondary-container); color: var(--md-sys-color-on-secondary-container); }
-.budget-chip-unplanned { background: var(--md-sys-color-surface-container-high); color: var(--md-sys-color-on-surface-variant); }
+.budget-chip-spent {
+  background: var(--md-sys-color-primary-container);
+  color: var(--md-sys-color-on-primary-container);
+}
+.budget-chip-pending {
+  background: var(--md-sys-color-tertiary-container);
+  color: var(--md-sys-color-on-tertiary-container);
+}
+.budget-chip-estimated {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.budget-chip-unplanned {
+  background: var(--md-sys-color-surface-container-high);
+  color: var(--md-sys-color-on-surface-variant);
+}
 
 .budget-note {
   color: var(--md-sys-color-on-surface-variant);
@@ -1515,12 +1549,25 @@ footer {
 }
 
 @media (max-width: 600px) {
-  .hero { padding: 2.25rem 1rem; }
-  main { padding: 1.75rem 1rem 3rem; }
-  .day-surface { padding: 1.1rem; }
-  .day-block-header { padding: 0.7rem 1rem; }
-  .day-block-body { padding: 0.25rem 1rem 1.5rem; }
-  detail-side-sheet .panel { width: 100vw; border-radius: 0; }
+  .hero {
+    padding: 2.25rem 1rem;
+  }
+  main {
+    padding: 1.75rem 1rem 3rem;
+  }
+  .day-surface {
+    padding: 1.1rem;
+  }
+  .day-block-header {
+    padding: 0.7rem 1rem;
+  }
+  .day-block-body {
+    padding: 0.25rem 1rem 1.5rem;
+  }
+  detail-side-sheet .panel {
+    width: 100vw;
+    border-radius: 0;
+  }
 
   /* Full-screen the dialogs with real scrollable content on small viewports
      (the Leg dialog and the edit popup — the date picker's compact grid

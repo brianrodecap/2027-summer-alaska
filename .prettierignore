@@ -1,0 +1,4 @@
+dist
+docs/js
+public/data
+package-lock.json

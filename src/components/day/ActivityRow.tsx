@@ -1,19 +1,18 @@
-import ButtonBase from '@mui/material/ButtonBase';
+import TimelineDot from '@mui/lab/TimelineDot';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
+import ButtonBase from '@mui/material/ButtonBase';
 import Typography from '@mui/material/Typography';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import TimelineDot from '@mui/lab/TimelineDot';
 
 import { firstImage, timeAndMealTypeLabel } from '../../model/formatting';
-import { materialIcon, DEFAULT_PLACE_ICON, DINING_FORMAT_ICON } from '../shared/materialIcon';
-import { BookingChip } from '../shared/BookingChip';
-import { TravelerChips } from '../shared/TravelerChips';
-import { TransitOverlapWarning } from '../shared/TransitOverlapWarning';
-import { LinkifiedText } from '../shared/LinkifiedText';
-import { NotesCluster } from '../shared/Notes';
-import { MealRow, MealRowLeading } from './MealRow';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
+import { BookingChip } from '../shared/BookingChip';
+import { LinkifiedText } from '../shared/LinkifiedText';
+import { DEFAULT_PLACE_ICON, DINING_FORMAT_ICON, renderMaterialIcon } from '../shared/materialIcon';
+import { NotesCluster } from '../shared/Notes';
+import { TransitOverlapWarning } from '../shared/TransitOverlapWarning';
+import { TravelerChips } from '../shared/TravelerChips';
+import { MealRow, MealRowLeading } from './MealRow';
 
 // Activities don't carry an explicit category field — a committed meal's
 // diningFormat is the only synchronous signal richer than "does this
@@ -31,12 +30,11 @@ export function ActivityLeading({ activity, day }: { activity: EnrichedActivity;
   if (activity.options?.length) return <MealRowLeading activity={activity} day={day} />;
 
   const image = firstImage(activity) ?? firstImage(activity.place);
-  const Icon = materialIcon(activityRowIconName(activity));
   return image ? (
     <Avatar src={image.uri} sx={{ width: 32, height: 32 }} />
   ) : (
     <TimelineDot color="primary">
-      <Icon fontSize="small" />
+      {renderMaterialIcon(activityRowIconName(activity), { fontSize: 'small' })}
     </TimelineDot>
   );
 }
@@ -52,7 +50,8 @@ export function ActivityRow({
   onOpen: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
   midNotes?: Note[];
 }) {
-  if (activity.options?.length) return <MealRow activity={activity} day={day} onOpen={onOpen} midNotes={midNotes} />;
+  if (activity.options?.length)
+    return <MealRow activity={activity} day={day} onOpen={onOpen} midNotes={midNotes} />;
 
   return (
     <ButtonBase
@@ -75,7 +74,6 @@ export function ActivityRow({
         )}
         <TransitOverlapWarning activity={activity} />
       </Box>
-      <ChevronRightIcon color="action" sx={{ flexShrink: 0, mt: 0.5 }} />
     </ButtonBase>
   );
 }

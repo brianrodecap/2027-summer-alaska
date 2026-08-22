@@ -1,9 +1,9 @@
-import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import Checkbox from '@mui/material/Checkbox';
-import TextField from '@mui/material/TextField';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import MenuItem from '@mui/material/MenuItem';
+import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 
 import type { Booking, BookingStatus } from '../../model/types';
 
@@ -25,14 +25,25 @@ const BOOKING_STATUS_OPTIONS: { value: BookingStatus; label: string }[] = [
 // fields underneath render pre-filled with a blank/planning default even
 // when there's no booking yet, letting this form both edit an existing
 // booking and add a brand new one.
-export function BookingFields({ value, onChange }: { value: BookingFormValue; onChange: (value: BookingFormValue) => void }) {
+export function BookingFields({
+  value,
+  onChange,
+}: {
+  value: BookingFormValue;
+  onChange: (value: BookingFormValue) => void;
+}) {
   return (
     <Stack spacing={1.5}>
       <Typography variant="overline" color="text.secondary">
         Booking
       </Typography>
       <FormControlLabel
-        control={<Checkbox checked={value.hasBooking} onChange={(e) => onChange({ ...value, hasBooking: e.target.checked })} />}
+        control={
+          <Checkbox
+            checked={value.hasBooking}
+            onChange={(e) => onChange({ ...value, hasBooking: e.target.checked })}
+          />
+        }
         label="Has a booking / reservation"
       />
       <TextField
@@ -75,11 +86,16 @@ export function bookingFormValueFrom(booking: Booking | null | undefined): Booki
   };
 }
 
-export function readBookingFormValue(value: BookingFormValue, currentBooking: Booking | null | undefined): Booking | null {
+export function readBookingFormValue(
+  value: BookingFormValue,
+  currentBooking: Booking | null | undefined,
+): Booking | null {
   if (!value.hasBooking) return null;
   return {
     status: value.status,
     confirmationNumber: value.confirmationNumber || null,
-    cost: value.costAmount ? { amount: Number(value.costAmount), currency: currentBooking?.cost?.currency ?? 'USD' } : null,
+    cost: value.costAmount
+      ? { amount: Number(value.costAmount), currency: currentBooking?.cost?.currency ?? 'USD' }
+      : null,
   };
 }

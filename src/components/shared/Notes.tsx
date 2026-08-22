@@ -1,16 +1,16 @@
-import { useState, type MouseEvent } from 'react';
-import Stack from '@mui/material/Stack';
-import Alert from '@mui/material/Alert';
-import IconButton from '@mui/material/IconButton';
-import Typography from '@mui/material/Typography';
-import WarningIcon from '@mui/icons-material/Warning';
+import EditIcon from '@mui/icons-material/Edit';
 import InfoIcon from '@mui/icons-material/Info';
 import NotesIcon from '@mui/icons-material/Notes';
-import EditIcon from '@mui/icons-material/Edit';
+import WarningIcon from '@mui/icons-material/Warning';
+import Alert from '@mui/material/Alert';
+import IconButton from '@mui/material/IconButton';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import { type MouseEvent, useState } from 'react';
 
+import type { Note, NoteKind } from '../../model/types';
 import { useNoteEdit } from '../../state/NoteEditContext';
 import { LinkifiedText } from './LinkifiedText';
-import type { Note, NoteKind } from '../../model/types';
 
 const NOTE_ICON: Record<NoteKind, typeof WarningIcon> = {
   warning: WarningIcon,
@@ -18,7 +18,10 @@ const NOTE_ICON: Record<NoteKind, typeof WarningIcon> = {
   footnote: NotesIcon,
 };
 
-const ALERT_SEVERITY: Partial<Record<NoteKind, 'warning' | 'info'>> = { warning: 'warning', info: 'info' };
+const ALERT_SEVERITY: Partial<Record<NoteKind, 'warning' | 'info'>> = {
+  warning: 'warning',
+  info: 'info',
+};
 
 const KIND_ORDER: Record<NoteKind, number> = { warning: 0, info: 1, footnote: 2 };
 
@@ -130,7 +133,11 @@ function NoteChip({ note, expanded }: { note: Note; expanded: boolean }) {
       direction="row"
       spacing={1}
       onClick={toggle}
-      sx={{ alignItems: 'flex-start', cursor: clickable ? 'pointer' : 'default', color: 'text.secondary' }}
+      sx={{
+        alignItems: 'flex-start',
+        cursor: clickable ? 'pointer' : 'default',
+        color: 'text.secondary',
+      }}
     >
       <Icon fontSize="small" sx={{ mt: '2px', flexShrink: 0 }} />
       <Typography variant="caption" color="inherit" sx={{ flexGrow: 1, ...textSx }}>
@@ -146,7 +153,13 @@ function NoteChip({ note, expanded }: { note: Note; expanded: boolean }) {
 // the reader's full attention and a screen's worth of room, vs. the compact
 // day-list rendering where the clamp keeps a long footnote from dominating
 // the row it's attached to.
-export function NotesCluster({ notes, expanded = false }: { notes: Note[] | null | undefined; expanded?: boolean }) {
+export function NotesCluster({
+  notes,
+  expanded = false,
+}: {
+  notes: Note[] | null | undefined;
+  expanded?: boolean;
+}) {
   if (!notes?.length) return null;
   return (
     <Stack spacing={0.5} sx={{ my: 0.5 }}>

@@ -14,7 +14,10 @@ const FIELD_MASK = 'routes.duration';
 // route between the two points (e.g. one endpoint is a ferry-only island).
 // Throws on a request/auth failure, same as places.ts's own fetchPlace/
 // searchPlaces, so the caller's existing try/catch handles both alike.
-export async function lookupDriveMinutes(originPlaceId: string, destinationPlaceId: string): Promise<number | null> {
+export async function lookupDriveMinutes(
+  originPlaceId: string,
+  destinationPlaceId: string,
+): Promise<number | null> {
   const res = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
     method: 'POST',
     headers: {

@@ -1,15 +1,25 @@
+import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import Divider from '@mui/material/Divider';
 
-import { DateTimeFieldPair } from './DateTimeFieldPair';
-import { BookingFields } from './BookingFields';
 import type { StayFormState } from '../../model/editForms';
+import { BookingFields } from './BookingFields';
+import { DateTimeFieldPair } from './DateTimeFieldPair';
 
-export function StayEditForm({ form, onChange }: { form: StayFormState; onChange: (form: StayFormState) => void }) {
+export function StayEditForm({
+  form,
+  onChange,
+}: {
+  form: StayFormState;
+  onChange: (form: StayFormState) => void;
+}) {
   return (
     <Stack spacing={2}>
-      <TextField label="Lodging name" value={form.lodgingName} onChange={(e) => onChange({ ...form, lodgingName: e.target.value })} />
+      <TextField
+        label="Lodging name"
+        value={form.lodgingName}
+        onChange={(e) => onChange({ ...form, lodgingName: e.target.value })}
+      />
       <DateTimeFieldPair
         dateLabel="Check-in date"
         timeLabel="Check-in time"

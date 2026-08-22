@@ -33,7 +33,13 @@ export interface PlaceSearchResult {
 
 // No "places." prefix here (unlike Text Search) — Place Details returns a
 // single Place object, not a list.
-const FIELD_MASK = ['formattedAddress', 'regularOpeningHours', 'websiteUri', 'googleMapsUri', 'primaryType'].join(',');
+const FIELD_MASK = [
+  'formattedAddress',
+  'regularOpeningHours',
+  'websiteUri',
+  'googleMapsUri',
+  'primaryType',
+].join(',');
 
 // Keyed by place id, caching the in-flight/resolved promise so the same place
 // is never fetched twice in one page session (activities can repeat across
@@ -81,7 +87,11 @@ export async function searchPlaces(query: string): Promise<PlaceSearchResult[]> 
   if (!res.ok) throw new Error(`Places API error ${res.status}`);
   const { places } = await res.json();
   return (places ?? []).map(
-    (p: { id: string; displayName?: { text?: string }; formattedAddress?: string }): PlaceSearchResult => ({
+    (p: {
+      id: string;
+      displayName?: { text?: string };
+      formattedAddress?: string;
+    }): PlaceSearchResult => ({
       id: p.id,
       label: p.displayName?.text ?? '',
       address: p.formattedAddress ?? '',

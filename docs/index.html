@@ -1,178 +1,186 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Trip Planner</title>
-<meta name="description" content="Day-by-day itineraries for upcoming trips.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Roboto+Serif:wght@400;500;700&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
-<!-- Pinned, not "latest" (esm.run's unversioned @material/web/ alias) — an
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trip Planner</title>
+    <meta name="description" content="Day-by-day itineraries for upcoming trips." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto+Serif:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined"
+      rel="stylesheet"
+    />
+    <!-- Pinned, not "latest" (esm.run's unversioned @material/web/ alias) — an
      unpinned CDN resolution can silently change which release loads between
      one page load and the next (a stale cached module vs. a freshly-fetched
      newer one), which is a correctness risk on its own even without a
      concrete failure observed from it yet. Bump this version deliberately
      when upgrading, not implicitly. -->
-<script type="importmap">
-  { "imports": { "@material/web/": "https://esm.run/@material/web@2.5.0/" } }
-</script>
-<script type="module" src="js/app.js"></script>
-<link rel="stylesheet" href="styles.css">
-</head>
-<body class="md-typescale-body-medium">
+    <script type="importmap">
+      { "imports": { "@material/web/": "https://esm.run/@material/web@2.5.0/" } }
+    </script>
+    <script type="module" src="js/app.js"></script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body class="md-typescale-body-medium">
+    <section id="trips-home">
+      <header class="hero">
+        <div class="hero-frame">
+          <p class="eyebrow md-typescale-label-large">Trip Planner</p>
+          <h1 class="md-typescale-display-small">Your Trips</h1>
+        </div>
+      </header>
+      <main>
+        <div class="list-wrap">
+          <md-elevation></md-elevation>
+          <md-list id="trips-list"></md-list>
+        </div>
+      </main>
+    </section>
 
-<section id="trips-home">
-  <header class="hero">
-    <div class="hero-frame">
-      <p class="eyebrow md-typescale-label-large">Trip Planner</p>
-      <h1 class="md-typescale-display-small">Your Trips</h1>
-    </div>
-  </header>
-  <main>
-    <div class="list-wrap">
-      <md-elevation></md-elevation>
-      <md-list id="trips-list"></md-list>
-    </div>
-  </main>
-</section>
+    <div id="trip-page" hidden>
+      <header class="hero" id="trip-hero">
+        <div class="hero-image" id="trip-hero-image" hidden></div>
+        <div class="hero-frame">
+          <md-icon-button id="hero-back" aria-label="Back">
+            <md-icon>arrow_back</md-icon>
+          </md-icon-button>
+          <p class="eyebrow md-typescale-label-large">Field Itinerary</p>
+          <h1 class="md-typescale-display-small" id="trip-title"></h1>
+          <md-chip-set>
+            <md-suggestion-chip id="trip-date-chip">
+              <md-icon slot="icon">calendar_month</md-icon>
+            </md-suggestion-chip>
+            <md-suggestion-chip id="trip-budget-chip" label="Budget">
+              <md-icon slot="icon">payments</md-icon>
+            </md-suggestion-chip>
+          </md-chip-set>
+        </div>
+      </header>
 
-<div id="trip-page" hidden>
+      <main>
+        <section id="overview">
+          <p class="lead md-typescale-body-large" id="trip-summary"></p>
 
-<header class="hero" id="trip-hero">
-  <div class="hero-image" id="trip-hero-image" hidden></div>
-  <div class="hero-frame">
-    <md-icon-button id="hero-back" aria-label="Back">
-      <md-icon>arrow_back</md-icon>
-    </md-icon-button>
-    <p class="eyebrow md-typescale-label-large">Field Itinerary</p>
-    <h1 class="md-typescale-display-small" id="trip-title"></h1>
-    <md-chip-set>
-      <md-suggestion-chip id="trip-date-chip">
-        <md-icon slot="icon">calendar_month</md-icon>
-      </md-suggestion-chip>
-      <md-suggestion-chip id="trip-budget-chip" label="Budget">
-        <md-icon slot="icon">payments</md-icon>
-      </md-suggestion-chip>
-    </md-chip-set>
-  </div>
-</header>
+          <div id="budget-strip-mount"></div>
 
-<main>
+          <div class="legs-grid" id="legs-grid"></div>
+        </section>
 
-<section id="overview">
-  <p class="lead md-typescale-body-large" id="trip-summary"></p>
-
-  <div id="budget-strip-mount"></div>
-
-  <div class="legs-grid" id="legs-grid"></div>
-</section>
-
-<!-- A sibling of #overview, not nested inside it: position: sticky only
+        <!-- A sibling of #overview, not nested inside it: position: sticky only
      sticks for as long as its own parent's box is on screen, and #overview's
      box ends right after the legs grid — nowhere near long enough to float
      across the whole day list below. <main> spans the entire page, so
      anchoring here is what lets it float the whole way. -->
-<div id="days-view" hidden>
-  <div class="app-bar" id="app-bar">
-    <md-icon-button id="date-picker-open" aria-label="Jump to a day">
-      <md-icon>calendar_month</md-icon>
-    </md-icon-button>
-    <md-icon-button id="filter-menu-open" aria-label="Filters">
-      <md-icon>filter_list</md-icon>
-    </md-icon-button>
-    <md-menu id="filter-menu" anchor="filter-menu-open"></md-menu>
-    <md-icon-button id="routes-manage-open" aria-label="Manage routes">
-      <md-icon>alt_route</md-icon>
-    </md-icon-button>
-    <md-icon-button id="export-edits" aria-label="Download edited files" hidden>
-      <md-icon>download</md-icon>
-    </md-icon-button>
-  </div>
+        <div id="days-view" hidden>
+          <div class="app-bar" id="app-bar">
+            <md-icon-button id="date-picker-open" aria-label="Jump to a day">
+              <md-icon>calendar_month</md-icon>
+            </md-icon-button>
+            <md-icon-button id="filter-menu-open" aria-label="Filters">
+              <md-icon>filter_list</md-icon>
+            </md-icon-button>
+            <md-menu id="filter-menu" anchor="filter-menu-open"></md-menu>
+            <md-icon-button id="routes-manage-open" aria-label="Manage routes">
+              <md-icon>alt_route</md-icon>
+            </md-icon-button>
+            <md-icon-button id="export-edits" aria-label="Download edited files" hidden>
+              <md-icon>download</md-icon>
+            </md-icon-button>
+          </div>
 
-  <section id="day-list"></section>
-  <p class="md-typescale-body-large" id="day-list-empty" hidden>No days match the selected filters.</p>
-</div>
+          <section id="day-list"></section>
+          <p class="md-typescale-body-large" id="day-list-empty" hidden>
+            No days match the selected filters.
+          </p>
+        </div>
 
-<div id="budget-view" hidden>
-  <section id="budget-summary"></section>
-  <section id="budget-breakdowns"></section>
-</div>
+        <div id="budget-view" hidden>
+          <section id="budget-summary"></section>
+          <section id="budget-breakdowns"></section>
+        </div>
+      </main>
+    </div>
 
-</main>
+    <md-dialog id="leg-dialog">
+      <div slot="headline" class="dialog-headline">
+        <span id="leg-dialog-title"></span>
+        <md-icon-button id="leg-dialog-close" aria-label="Close">
+          <md-icon>close</md-icon>
+        </md-icon-button>
+      </div>
+      <div slot="content" id="leg-dialog-body"></div>
+    </md-dialog>
 
-</div>
+    <md-dialog id="date-picker-dialog">
+      <div slot="headline" class="dialog-headline">
+        <span id="date-picker-dialog-title">Jump to a day</span>
+        <md-icon-button id="date-picker-close" aria-label="Close">
+          <md-icon>close</md-icon>
+        </md-icon-button>
+      </div>
+      <div slot="content" id="date-picker-body" class="date-picker"></div>
+    </md-dialog>
 
-<md-dialog id="leg-dialog">
-  <div slot="headline" class="dialog-headline">
-    <span id="leg-dialog-title"></span>
-    <md-icon-button id="leg-dialog-close" aria-label="Close">
-      <md-icon>close</md-icon>
-    </md-icon-button>
-  </div>
-  <div slot="content" id="leg-dialog-body"></div>
-</md-dialog>
+    <md-dialog id="time-picker-dialog">
+      <div slot="headline" class="dialog-headline">
+        <span id="time-picker-dialog-title">Enter time</span>
+      </div>
+      <div slot="content" id="time-picker-body"></div>
+      <div slot="actions">
+        <md-text-button id="time-picker-cancel">Cancel</md-text-button>
+        <md-filled-button id="time-picker-ok">OK</md-filled-button>
+      </div>
+    </md-dialog>
 
-<md-dialog id="date-picker-dialog">
-  <div slot="headline" class="dialog-headline">
-    <span id="date-picker-dialog-title">Jump to a day</span>
-    <md-icon-button id="date-picker-close" aria-label="Close">
-      <md-icon>close</md-icon>
-    </md-icon-button>
-  </div>
-  <div slot="content" id="date-picker-body" class="date-picker"></div>
-</md-dialog>
+    <md-dialog id="routes-dialog">
+      <div slot="headline" class="dialog-headline">
+        <span>Routes</span>
+        <md-icon-button id="routes-dialog-close" aria-label="Close">
+          <md-icon>close</md-icon>
+        </md-icon-button>
+      </div>
+      <div slot="content" id="routes-dialog-content">
+        <md-outlined-text-field
+          class="edit-field"
+          id="routes-search"
+          label="Search routes"
+          value=""
+        >
+          <md-icon slot="leading-icon">search</md-icon>
+        </md-outlined-text-field>
+        <div id="routes-dialog-body" class="routes-list"></div>
+      </div>
+      <div slot="actions">
+        <md-text-button id="routes-add">Add route</md-text-button>
+      </div>
+    </md-dialog>
 
-<md-dialog id="time-picker-dialog">
-  <div slot="headline" class="dialog-headline">
-    <span id="time-picker-dialog-title">Enter time</span>
-  </div>
-  <div slot="content" id="time-picker-body"></div>
-  <div slot="actions">
-    <md-text-button id="time-picker-cancel">Cancel</md-text-button>
-    <md-filled-button id="time-picker-ok">OK</md-filled-button>
-  </div>
-</md-dialog>
+    <md-dialog id="edit-dialog">
+      <div slot="headline" class="dialog-headline">
+        <span id="edit-dialog-title"></span>
+      </div>
+      <div slot="content" id="edit-dialog-content">
+        <p class="edit-dialog-error md-typescale-body-medium" id="edit-dialog-error" hidden></p>
+        <div id="edit-dialog-body"></div>
+      </div>
+      <div slot="actions">
+        <md-text-button id="edit-dialog-delete">Delete</md-text-button>
+        <md-text-button id="edit-dialog-cancel">Cancel</md-text-button>
+        <md-filled-button id="edit-dialog-save">Save</md-filled-button>
+      </div>
+    </md-dialog>
 
-<md-dialog id="routes-dialog">
-  <div slot="headline" class="dialog-headline">
-    <span>Routes</span>
-    <md-icon-button id="routes-dialog-close" aria-label="Close">
-      <md-icon>close</md-icon>
-    </md-icon-button>
-  </div>
-  <div slot="content" id="routes-dialog-content">
-    <md-outlined-text-field class="edit-field" id="routes-search" label="Search routes" value="">
-      <md-icon slot="leading-icon">search</md-icon>
-    </md-outlined-text-field>
-    <div id="routes-dialog-body" class="routes-list"></div>
-  </div>
-  <div slot="actions">
-    <md-text-button id="routes-add">Add route</md-text-button>
-  </div>
-</md-dialog>
+    <detail-side-sheet></detail-side-sheet>
 
-<md-dialog id="edit-dialog">
-  <div slot="headline" class="dialog-headline">
-    <span id="edit-dialog-title"></span>
-  </div>
-  <div slot="content" id="edit-dialog-content">
-    <p class="edit-dialog-error md-typescale-body-medium" id="edit-dialog-error" hidden></p>
-    <div id="edit-dialog-body"></div>
-  </div>
-  <div slot="actions">
-    <md-text-button id="edit-dialog-delete">Delete</md-text-button>
-    <md-text-button id="edit-dialog-cancel">Cancel</md-text-button>
-    <md-filled-button id="edit-dialog-save">Save</md-filled-button>
-  </div>
-</md-dialog>
-
-<detail-side-sheet></detail-side-sheet>
-
-<footer class="md-typescale-body-small">
-  Baseline itinerary, subject to change. Built from the trip-planning notes for reference on the go.
-</footer>
-
-</body>
+    <footer class="md-typescale-body-small">
+      Baseline itinerary, subject to change. Built from the trip-planning notes for reference on the
+      go.
+    </footer>
+  </body>
 </html>

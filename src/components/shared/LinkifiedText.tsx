@@ -1,5 +1,5 @@
-import { Fragment } from 'react';
 import Link from '@mui/material/Link';
+import { Fragment } from 'react';
 
 import { linkifySegments } from '../../model/linkify';
 
