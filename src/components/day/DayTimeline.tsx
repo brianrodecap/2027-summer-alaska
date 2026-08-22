@@ -37,7 +37,7 @@ import { renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster, splitNotes } from '../shared/Notes';
 import { ActivityLeading, ActivityRow } from './ActivityRow';
 import { RouteVariantTabs } from './RouteVariantTabs';
-import { RowSpeedDial } from './RowSpeedDial';
+import { RowMenu } from './RowMenu';
 import { ScenarioTabsSection } from './ScenarioTabsSection';
 
 function activeRouteTone(transit: EnrichedTransit, routeTones: Map<string, string>): string | null {
@@ -97,14 +97,11 @@ const StayNode = memo(function StayNode({
       </TimelineSeparator>
       <TimelineContent sx={{ pb: 3 }}>
         <NotesCluster notes={above} />
-        <Box sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => onOpen(stay)}>
-          <RowSpeedDial
-            entity="stay"
-            id={stay._id}
-            onEdit={() => openEdit('stay', stay._id)}
-            onDelete={() => deleteEntity('stay', stay._id)}
-          />
-          <Box sx={{ minWidth: 0 }}>
+        <Box
+          sx={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer' }}
+          onClick={() => onOpen(stay)}
+        >
+          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
             <Typography variant="caption" color="text.secondary">
               {stayRelation(stay, date)}
             </Typography>
@@ -124,6 +121,12 @@ const StayNode = memo(function StayNode({
               </Box>
             )}
           </Box>
+          <RowMenu
+            entity="stay"
+            id={stay._id}
+            onEdit={() => openEdit('stay', stay._id)}
+            onDelete={() => deleteEntity('stay', stay._id)}
+          />
         </Box>
         <NotesCluster notes={below} />
       </TimelineContent>
@@ -153,7 +156,7 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
     : { above: [], mid: [], below: [] };
 
   const boundaryContent = (
-    <Box sx={{ minWidth: 0 }}>
+    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
       <Typography variant="caption" color="text.secondary">
         {time
           ? `${formatTime(time)} · ${isDepart ? 'Depart' : 'Arrive'}`
@@ -187,14 +190,17 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
       <TimelineContent sx={{ pb: 3 }}>
         {isDepart && <NotesCluster notes={above} />}
         {isDepart ? (
-          <Box sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => onOpen(transit)}>
-            <RowSpeedDial
+          <Box
+            sx={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer' }}
+            onClick={() => onOpen(transit)}
+          >
+            {boundaryContent}
+            <RowMenu
               entity="transit"
               id={transit._id}
               onEdit={() => openEdit('transit', transit._id)}
               onDelete={() => deleteEntity('transit', transit._id)}
             />
-            {boundaryContent}
           </Box>
         ) : (
           boundaryContent
@@ -276,14 +282,14 @@ const ActivityNode = memo(function ActivityNode({
       </TimelineSeparator>
       <TimelineContent sx={{ pb: 3, px: 2, pt: 0 }}>
         <NotesCluster notes={above} />
-        <Box sx={{ position: 'relative' }}>
-          <RowSpeedDial
+        <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
+          <ActivityRow activity={activity} day={day} onOpen={onOpenActivity} midNotes={mid} />
+          <RowMenu
             entity={noteTarget.entity}
             id={noteTarget.id}
             onEdit={() => openEdit('activity', activity._id)}
             onDelete={() => deleteEntity('activity', activity._id)}
           />
-          <ActivityRow activity={activity} day={day} onOpen={onOpenActivity} midNotes={mid} />
         </Box>
         <NotesCluster notes={below} />
       </TimelineContent>

@@ -56,7 +56,14 @@ export function ActivityRow({
   return (
     <ButtonBase
       onClick={() => onOpen(activity)}
-      sx={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: 1 }}
+      sx={{
+        flexGrow: 1,
+        minWidth: 0,
+        textAlign: 'left',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: 1,
+      }}
     >
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
         <Typography variant="caption" color="text.secondary">

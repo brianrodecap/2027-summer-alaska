@@ -77,7 +77,7 @@ export function MealRow({
   } = splitNotes(selected?.notes ?? []);
 
   return (
-    <Box sx={{ minWidth: 0 }}>
+    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
       <NotesCluster notes={optionAbove} />
       <ButtonBase
         onClick={() => onOpen(activity, selected ?? undefined)}
