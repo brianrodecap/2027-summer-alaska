@@ -10,7 +10,7 @@ import FilterListIcon from '@mui/icons-material/FilterList';
 
 import { buildFilterGroups } from '../../model/filters';
 import { materialIcon } from '../shared/materialIcon';
-import { useTripSelections } from '../../state/TripSelectionsContext';
+import { useFilterSelection } from '../../state/TripSelectionsContext';
 import type { LegSummary } from '../../model/types';
 
 // The day list's own filter nav — an icon button opening a checklist menu
@@ -19,7 +19,7 @@ import type { LegSummary } from '../../model/types';
 // closes on an explicit onClose, so picking several rows in one visit just
 // works), matching the old app's "keep-open" menu items.
 export function FilterMenu({ legSummaries }: { legSummaries: LegSummary[] }) {
-  const { activeFilterTokens, toggleFilterToken, clearFilterTokens } = useTripSelections();
+  const { activeFilterTokens, toggleFilterToken, clearFilterTokens } = useFilterSelection();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const groups = buildFilterGroups(legSummaries);
 

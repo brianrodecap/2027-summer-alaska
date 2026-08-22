@@ -48,17 +48,12 @@ export function StayDetailPanel({
           {detailBits.join(' · ')}
         </Typography>
       )}
-      {stay.lodging?.checkInInstructions && (
-        <Typography variant="body2" color="text.secondary">
-          {stay.lodging.checkInInstructions}
-        </Typography>
-      )}
       {stay.booking && (
         <Box sx={{ mt: 1.5 }}>
           <BookingChip booking={stay.booking} />
         </Box>
       )}
-      <NotesCluster notes={stay.notes} />
+      <NotesCluster notes={stay.notes} expanded />
     </DetailSideSheet>
   );
 }

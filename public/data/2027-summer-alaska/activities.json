@@ -71,30 +71,30 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jun26_3_opt0",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJ14LWxYC9yFYRkKKOyOoSric",
           "label": "Humpy’s Great Alaskan Alehouse",
           "images": []
         },
-        "includedIn": null,
-        "note": "Downtown — kitchen typically runs toward midnight; a real sit-down meal if we’re not too wiped out."
+        "includedIn": null
       },
       {
+        "_id": "act_jun26_3_opt1",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJd8fPpV6WyFYRJuE6eGv25vQ",
           "label": "Denny’s Restaurant",
           "images": []
         },
-        "includedIn": null,
-        "note": "Near the airport — open 24 hours, so it’s there no matter how late we actually land."
+        "includedIn": null
       },
       {
+        "_id": "act_jun26_3_opt2",
         "diningFormat": "drivethru",
         "place": null,
-        "includedIn": null,
-        "note": "Whatever drive-thru is open on the way out of town, if we’d rather just get moving toward Talkeetna."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -118,15 +118,16 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jun27_ideal_1_opt0",
         "diningFormat": "included",
         "place": null,
         "includedIn": {
           "entity": "stay",
           "id": "stay_talkeetna"
-        },
-        "note": "If breakfast turns out to be included in the room rate — worth confirming at booking."
+        }
       },
       {
+        "_id": "act_jun27_ideal_1_opt1",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJS63CqrW_zlYRNQYObIK7Szk",
@@ -137,10 +138,10 @@
             }
           ]
         },
-        "includedIn": null,
-        "note": null
+        "includedIn": null
       },
       {
+        "_id": "act_jun27_ideal_1_opt2",
         "diningFormat": "grab-and-go",
         "place": {
           "id": "ChIJI6KxxIyVzlYRGhaQQYdhhss",
@@ -153,8 +154,7 @@
             }
           ]
         },
-        "includedIn": null,
-        "note": "Coffee and a pastry to go, if we want to get moving faster."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -472,25 +472,26 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jun27_alt_1_opt0",
         "diningFormat": "included",
         "place": null,
         "includedIn": {
           "entity": "stay",
           "id": "stay_talkeetna"
-        },
-        "note": "If breakfast turns out to be included in the room rate — worth confirming at booking."
+        }
       },
       {
+        "_id": "act_jun27_alt_1_opt1",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJS63CqrW_zlYRNQYObIK7Szk",
           "label": "Flying Squirrel Bakery Cafe",
           "images": []
         },
-        "includedIn": null,
-        "note": null
+        "includedIn": null
       },
       {
+        "_id": "act_jun27_alt_1_opt2",
         "diningFormat": "grab-and-go",
         "place": {
           "id": "ChIJn7ypqvKVzlYRxjwrM2rNi20",
@@ -503,8 +504,7 @@
             }
           ]
         },
-        "includedIn": null,
-        "note": "Coffee and a pastry from Nagley’s General Store, if we want to get moving faster."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -737,29 +737,29 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jun28_breakfast_opt0",
         "diningFormat": "included",
         "place": null,
         "includedIn": {
           "entity": "stay",
           "id": "stay_talkeetna"
-        },
-        "note": "If the lodge's breakfast service opens early enough for a 6:30am departure — worth confirming at check-in."
+        }
       },
       {
+        "_id": "act_jun28_breakfast_opt1",
         "diningFormat": "grab-and-go",
         "place": {
           "id": "ChIJI6KxxIyVzlYRGhaQQYdhhss",
           "label": "Conscious Coffee",
           "images": []
         },
-        "includedIn": null,
-        "note": "Coffee and a pastry to go, if the lodge isn't open yet."
+        "includedIn": null
       },
       {
+        "_id": "act_jun28_breakfast_opt2",
         "diningFormat": "self-catered",
         "place": null,
-        "includedIn": null,
-        "note": "Snacks from the car, eaten on the drive to the Denali entrance."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -997,19 +997,19 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jun29_breakfast_opt0",
         "diningFormat": "included",
         "place": null,
         "includedIn": {
           "entity": "stay",
           "id": "stay_westmark_fbx_1"
-        },
-        "note": "If breakfast is included at the Westmark — worth confirming at booking."
+        }
       },
       {
+        "_id": "act_jun29_breakfast_opt1",
         "diningFormat": "grab-and-go",
         "place": null,
-        "includedIn": null,
-        "note": "Quick coffee and something portable, given the 7am departure for Coldfoot."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -1093,20 +1093,20 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jun29_lunch_opt0",
         "diningFormat": "grab-and-go",
         "place": {
           "id": "ChIJCSqfQ1VLKVER9FZigu88Qtg",
           "label": "The Hotspot Cafe",
           "images": []
         },
-        "includedIn": null,
-        "note": "A roadside stop between the Yukon River and Coldfoot — burgers and milkshakes."
+        "includedIn": null
       },
       {
+        "_id": "act_jun29_lunch_opt1",
         "diningFormat": "self-catered",
         "place": null,
-        "includedIn": null,
-        "note": "Packed food eaten in the car, to keep moving toward the 1pm Coldfoot arrival."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -1753,20 +1753,20 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul1_ideal_lunch_opt0",
         "diningFormat": "grab-and-go",
         "place": {
           "id": "ChIJCSqfQ1VLKVER9FZigu88Qtg",
           "label": "The Hotspot Cafe",
           "images": []
         },
-        "includedIn": null,
-        "note": "Between Coldfoot and the Yukon River."
+        "includedIn": null
       },
       {
+        "_id": "act_jul1_ideal_lunch_opt1",
         "diningFormat": "self-catered",
         "place": null,
-        "includedIn": null,
-        "note": "Packed food eaten in the car — this is the relaxed version of the day, so no rush either way."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -2142,23 +2142,23 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul2_breakfast_opt0",
         "diningFormat": "included",
         "place": null,
         "includedIn": {
           "entity": "stay",
           "id": "stay_westmark_fbx_2"
-        },
-        "note": "If breakfast is included at the Westmark — worth confirming at booking."
+        }
       },
       {
+        "_id": "act_jul2_breakfast_opt1",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJ8ebVISVFMlER9pLnqbLpNZM",
           "label": "The Cookie Jar",
           "images": []
         },
-        "includedIn": null,
-        "note": "A longtime Fairbanks institution for a big sit-down breakfast, if there's time before the 9am departure."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -2286,6 +2286,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul2_6_opt0",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJW2f02GyXtVYRU5Mj6e3eLic",
@@ -2298,14 +2299,13 @@
             }
           ]
         },
-        "includedIn": null,
-        "note": "The lodge's main dining room."
+        "includedIn": null
       },
       {
+        "_id": "act_jul2_6_opt1",
         "diningFormat": "sit-down",
         "place": null,
-        "includedIn": null,
-        "note": "More casual, also at the lodge."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -2389,20 +2389,20 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul3_lunch_opt0",
         "diningFormat": "grab-and-go",
         "place": {
           "id": "ChIJna2oB3aEs1YRg9AANGrlbnE",
           "label": "The Potato",
           "images": []
         },
-        "includedIn": null,
-        "note": "A McCarthy staple that started as a food truck; the potato-head burrito is the signature order."
+        "includedIn": null
       },
       {
+        "_id": "act_jul3_lunch_opt1",
         "diningFormat": "self-catered",
         "place": null,
-        "includedIn": null,
-        "note": "Skip it and eat something packed, if the footbridge crossing runs long and the shuttle's waiting."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -2516,6 +2516,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul3_7_opt0",
         "diningFormat": "package",
         "place": {
           "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
@@ -2531,18 +2532,17 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_kennicott_meals"
-        },
-        "note": "At the lodge, if the meal package gets booked."
+        }
       },
       {
+        "_id": "act_jul3_7_opt1",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJFY-zlXGFs1YRhZ9_0rBMPTI",
           "label": "McCarthy Lodge Resort",
           "images": []
         },
-        "includedIn": null,
-        "note": "A walk into McCarthy for a change of scenery."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -2566,6 +2566,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul4_1_opt0",
         "diningFormat": "package",
         "place": {
           "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
@@ -2581,14 +2582,13 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_kennicott_meals"
-        },
-        "note": "At the lodge, if the meal package gets booked."
+        }
       },
       {
+        "_id": "act_jul4_1_opt1",
         "diningFormat": "self-catered",
         "place": null,
-        "includedIn": null,
-        "note": "Packed food, if skipping the meal package — on-site alternatives (Meatza Wagon food truck, McCarthy) are limited this early."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -2706,6 +2706,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul4_5_opt0",
         "diningFormat": "package",
         "place": {
           "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
@@ -2721,18 +2722,17 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_kennicott_meals"
-        },
-        "note": "At the lodge."
+        }
       },
       {
+        "_id": "act_jul4_5_opt1",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJFY-zlXGFs1YRhZ9_0rBMPTI",
           "label": "McCarthy Lodge Resort",
           "images": []
         },
-        "includedIn": null,
-        "note": "A walk into McCarthy for a change of scenery."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -2756,6 +2756,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul5_1_opt0",
         "diningFormat": "package",
         "place": {
           "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
@@ -2771,14 +2772,13 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_kennicott_meals"
-        },
-        "note": "At the lodge, if the meal package gets booked."
+        }
       },
       {
+        "_id": "act_jul5_1_opt1",
         "diningFormat": "self-catered",
         "place": null,
-        "includedIn": null,
-        "note": "Packed food, if skipping the meal package — checkout is 11am, so this is a quick one either way."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -2953,20 +2953,20 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul6_breakfast_opt0",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJQcnnU4G9yFYRRfrr7uDX1Rs",
           "label": "Snow City Cafe",
           "images": []
         },
-        "includedIn": null,
-        "note": "If there's time before the 8:40am flight — a downtown Anchorage institution."
+        "includedIn": null
       },
       {
+        "_id": "act_jul6_breakfast_opt1",
         "diningFormat": "grab-and-go",
         "place": null,
-        "includedIn": null,
-        "note": "Coffee at the airport, if the morning's tighter than planned."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -3044,24 +3044,24 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul6_lunch_opt0",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJ5Zp8oFYXzVARlNVi2f7GvyQ",
           "label": "Empress Chinese Restaurant",
           "images": []
         },
-        "includedIn": null,
-        "note": "A longstanding Kotzebue spot."
+        "includedIn": null
       },
       {
+        "_id": "act_jul6_lunch_opt1",
         "diningFormat": "grab-and-go",
         "place": {
           "id": "ChIJHxwWQVIXzVARXZHgjj-LZwU",
           "label": "Bison Store & Restaurant",
           "images": []
         },
-        "includedIn": null,
-        "note": "Bison Store & Restaurant, if we'd rather keep it quick before the flightseeing check-in."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -3591,24 +3591,24 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul9_dinner_opt0",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJ3wBgzrmXyFYRbIyKWCfhB9c",
           "label": "Moose's Tooth Pub & Pizzeria",
           "images": []
         },
-        "includedIn": null,
-        "note": "An Anchorage classic, worth the wait."
+        "includedIn": null
       },
       {
+        "_id": "act_jul9_dinner_opt1",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJoUUNNIG9yFYRT1rea_yflgI",
           "label": "Hotel Captain Cook",
           "images": []
         },
-        "includedIn": null,
-        "note": "Something quick near the hotel instead, given a 6:40pm landing after a long travel day."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -3632,20 +3632,20 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul10_breakfast_opt0",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJQcnnU4G9yFYRRfrr7uDX1Rs",
           "label": "Snow City Cafe",
           "images": []
         },
-        "includedIn": null,
-        "note": "Opens at 6am, so it's possible before the 7am departure if we move fast."
+        "includedIn": null
       },
       {
+        "_id": "act_jul10_breakfast_opt1",
         "diningFormat": "grab-and-go",
         "place": null,
-        "includedIn": null,
-        "note": "Coffee and something portable from the hotel, to be safe."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -3751,24 +3751,24 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul10_dinner_opt0",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJSUdVzGOcx1YR2p9uwkBAhww",
           "label": "Seward Brewing Company",
           "images": []
         },
-        "includedIn": null,
-        "note": "Right before the drive back — but it's a tight 45 minutes after the boat tour docks."
+        "includedIn": null
       },
       {
+        "_id": "act_jul10_dinner_opt1",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJ3wBgzrmXyFYRbIyKWCfhB9c",
           "label": "Moose's Tooth Pub & Pizzeria",
           "images": []
         },
-        "includedIn": null,
-        "note": "Back in Anchorage instead, once we're off the road around 8:30pm."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -3932,23 +3932,23 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul12_breakfast_opt0",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJQcnnU4G9yFYRRfrr7uDX1Rs",
           "label": "Snow City Cafe",
           "images": []
         },
-        "includedIn": null,
-        "note": "With checkout not until 11am there's no rush."
+        "includedIn": null
       },
       {
+        "_id": "act_jul12_breakfast_opt1",
         "diningFormat": "included",
         "place": null,
         "includedIn": {
           "entity": "stay",
           "id": "stay_anchorage_2"
-        },
-        "note": "Or just breakfast at the Hotel Captain Cook before checking out."
+        }
       }
     ],
     "travelers": null,
@@ -4674,30 +4674,30 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul17_lunch_opt0",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJ3wBgzrmXyFYRbIyKWCfhB9c",
           "label": "Moose's Tooth Pub & Pizzeria",
           "images": []
         },
-        "includedIn": null,
-        "note": "In Anchorage, before hitting the road."
+        "includedIn": null
       },
       {
+        "_id": "act_jul17_lunch_opt1",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJ_yDfgQ-YyFYRsOJ565MqoZ4",
           "label": "The Bake Shop",
           "images": []
         },
-        "includedIn": null,
-        "note": "Push it to a stop in Girdwood along the way — sourdough pancakes or a sandwich."
+        "includedIn": null
       },
       {
+        "_id": "act_jul17_lunch_opt2",
         "diningFormat": "grab-and-go",
         "place": null,
-        "includedIn": null,
-        "note": "Something quick, to leave more buffer before the tunnel and the 3:30pm boarding window."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -4745,6 +4745,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul17_dinner_opt0",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -4754,10 +4755,10 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": "Traditional first-night formality."
+        }
       },
       {
+        "_id": "act_jul17_dinner_opt1",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -4767,10 +4768,10 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": "Low-key after a long travel day."
+        }
       },
       {
+        "_id": "act_jul17_dinner_opt2",
         "diningFormat": "package",
         "place": {
           "id": null,
@@ -4780,8 +4781,7 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        },
-        "note": "Princess's Italian trattoria."
+        }
       }
     ],
     "travelers": null,
@@ -4805,6 +4805,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul18_breakfast_opt0",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -4814,10 +4815,10 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": null
+        }
       },
       {
+        "_id": "act_jul18_breakfast_opt1",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -4827,8 +4828,7 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": null
+        }
       }
     ],
     "travelers": null,
@@ -4852,6 +4852,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul18_lunch_opt0",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -4861,10 +4862,10 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": null
+        }
       },
       {
+        "_id": "act_jul18_lunch_opt1",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -4874,8 +4875,7 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": null
+        }
       }
     ],
     "travelers": null,
@@ -4929,6 +4929,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul18_dinner_opt0",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -4938,10 +4939,10 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": "Timed to catch the glacier views."
+        }
       },
       {
+        "_id": "act_jul18_dinner_opt1",
         "diningFormat": "package",
         "place": {
           "id": null,
@@ -4951,8 +4952,7 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        },
-        "note": "The steakhouse."
+        }
       }
     ],
     "travelers": null,
@@ -4976,6 +4976,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul19_breakfast_opt0",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -4985,10 +4986,10 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": null
+        }
       },
       {
+        "_id": "act_jul19_breakfast_opt1",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -4998,8 +4999,7 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": null
+        }
       }
     ],
     "travelers": null,
@@ -5080,6 +5080,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul19_dinner_opt0",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -5089,10 +5090,10 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": null
+        }
       },
       {
+        "_id": "act_jul19_dinner_opt1",
         "diningFormat": "package",
         "place": {
           "id": null,
@@ -5102,8 +5103,7 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        },
-        "note": null
+        }
       }
     ],
     "travelers": null,
@@ -5240,26 +5240,27 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul20_lunch_opt0",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJ1U12nHVxAVQRIb4IT-DflHY",
           "label": "The Cookhouse",
           "images": []
         },
-        "includedIn": null,
-        "note": "Historic waterfront dining, halibut fish-and-chips."
+        "includedIn": null
       },
       {
+        "_id": "act_jul20_lunch_opt1",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJtwYD87xxAVQRb7yqV9Vw3zE",
           "label": "Duck Point Smokehouse",
           "images": []
         },
-        "includedIn": null,
-        "note": "For house-smoked salmon and a beach view."
+        "includedIn": null
       },
       {
+        "_id": "act_jul20_lunch_opt2",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -5269,8 +5270,7 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": "Back onboard, if we'd rather not linger in port."
+        }
       }
     ],
     "travelers": null,
@@ -5294,6 +5294,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul20_dinner_opt0",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -5303,10 +5304,10 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": null
+        }
       },
       {
+        "_id": "act_jul20_dinner_opt1",
         "diningFormat": "package",
         "place": {
           "id": null,
@@ -5316,8 +5317,7 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        },
-        "note": null
+        }
       }
     ],
     "travelers": null,
@@ -5435,24 +5435,24 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul21_lunch_opt0",
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJAc3KfHjfAFQR-OoxNY_1kR0",
           "label": "Tracy's King Crab Shack",
           "images": []
         },
-        "includedIn": null,
-        "note": "A two-minute walk from the dock."
+        "includedIn": null
       },
       {
+        "_id": "act_jul21_lunch_opt1",
         "diningFormat": "grab-and-go",
         "place": {
           "id": "ChIJS0pWh4LfAFQRgXq8CZxSCHU",
           "label": "Deckhand Dave's Fish Tacos",
           "images": []
         },
-        "includedIn": null,
-        "note": "If we'd rather eat on the move before the tramway."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -5504,6 +5504,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul21_dinner_opt0",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -5513,10 +5514,10 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": null
+        }
       },
       {
+        "_id": "act_jul21_dinner_opt1",
         "diningFormat": "package",
         "place": {
           "id": null,
@@ -5526,8 +5527,7 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        },
-        "note": null
+        }
       }
     ],
     "travelers": null,
@@ -5602,24 +5602,24 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul22_lunch_opt0",
         "diningFormat": "sit-down",
         "place": {
           "id": null,
           "label": "Alaska Fish House at Salmon Landing",
           "images": []
         },
-        "includedIn": null,
-        "note": "Busy at peak lunch hours but the line moves fast."
+        "includedIn": null
       },
       {
+        "_id": "act_jul22_lunch_opt1",
         "diningFormat": "sit-down",
         "place": {
           "id": null,
           "label": "Annabelle's Famous Keg and Chowder House on Front Street",
           "images": []
         },
-        "includedIn": null,
-        "note": "A quieter alternative."
+        "includedIn": null
       }
     ],
     "travelers": null,
@@ -5677,6 +5677,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul22_dinner_opt0",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -5686,10 +5687,10 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": null
+        }
       },
       {
+        "_id": "act_jul22_dinner_opt1",
         "diningFormat": "package",
         "place": {
           "id": null,
@@ -5699,8 +5700,7 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        },
-        "note": null
+        }
       }
     ],
     "travelers": null,
@@ -5751,6 +5751,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul23_breakfast_opt0",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -5760,10 +5761,10 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": null
+        }
       },
       {
+        "_id": "act_jul23_breakfast_opt1",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -5773,8 +5774,7 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": null
+        }
       }
     ],
     "travelers": null,
@@ -5798,6 +5798,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul23_lunch_opt0",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -5807,10 +5808,10 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": null
+        }
       },
       {
+        "_id": "act_jul23_lunch_opt1",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -5820,8 +5821,7 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": null
+        }
       }
     ],
     "travelers": null,
@@ -5845,6 +5845,7 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul23_dinner_opt0",
         "diningFormat": "included",
         "place": {
           "id": null,
@@ -5854,10 +5855,10 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "note": "A proper send-off."
+        }
       },
       {
+        "_id": "act_jul23_dinner_opt1",
         "diningFormat": "package",
         "place": {
           "id": null,
@@ -5867,10 +5868,10 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        },
-        "note": null
+        }
       },
       {
+        "_id": "act_jul23_dinner_opt2",
         "diningFormat": "package",
         "place": {
           "id": null,
@@ -5880,8 +5881,7 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        },
-        "note": null
+        }
       }
     ],
     "travelers": null,

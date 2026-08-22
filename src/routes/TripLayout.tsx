@@ -37,25 +37,66 @@ function TripHero() {
   }
 
   const { trip } = view;
+  const heroImage = trip.images[0];
 
   return (
-    <Box component="header" sx={{ px: 3, pt: 3, pb: 2 }}>
+    <Box
+      component="header"
+      title={heroImage?.credit ?? undefined}
+      sx={{
+        position: 'relative',
+        px: 3,
+        pt: 3,
+        pb: 2,
+        overflow: 'hidden',
+        ...(heroImage
+          ? {
+              color: '#fff',
+              backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.68)), url("${heroImage.uri}")`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            }
+          : { bgcolor: 'primary.container', color: 'primary.onContainer' }),
+      }}
+    >
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
-        <IconButton aria-label="Back to trips" onClick={() => navigate('/')}>
+        <IconButton
+          aria-label="Back to trips"
+          onClick={() => navigate('/')}
+          sx={heroImage ? { color: 'inherit' } : undefined}
+        >
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
           {trip.name}
         </Typography>
         {dirtyCollections.size > 0 && (
-          <IconButton aria-label="Export edits" onClick={() => exportEdits(data, dirtyCollections)}>
+          <IconButton
+            aria-label="Export edits"
+            onClick={() => exportEdits(data, dirtyCollections)}
+            sx={heroImage ? { color: 'inherit' } : undefined}
+          >
             <DownloadIcon />
           </IconButton>
         )}
       </Stack>
       <Stack direction="row" spacing={1} sx={{ ml: 6 }}>
-        <Chip label={formatTripDateChip(trip, tripDayCount(trip))} component={Link} to={`/${slug}/days`} clickable />
-        <Chip label="Budget" component={Link} to={`/${slug}/budget`} clickable />
+        <Chip
+          label={formatTripDateChip(trip, tripDayCount(trip))}
+          component={Link}
+          to={`/${slug}/days`}
+          clickable
+          sx={heroImage ? { color: 'inherit', borderColor: 'rgba(255,255,255,0.7)' } : undefined}
+          variant={heroImage ? 'outlined' : 'filled'}
+        />
+        <Chip
+          label="Budget"
+          component={Link}
+          to={`/${slug}/budget`}
+          clickable
+          sx={heroImage ? { color: 'inherit', borderColor: 'rgba(255,255,255,0.7)' } : undefined}
+          variant={heroImage ? 'outlined' : 'filled'}
+        />
       </Stack>
     </Box>
   );

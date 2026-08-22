@@ -82,7 +82,6 @@ export interface Lodging {
   roomType?: string | null;
   roomNumber?: string | null;
   campsite?: string | null;
-  checkInInstructions?: string | null;
   // cruise-cabin-only extensions
   bedConfiguration?: string;
   deckGroup?: string;
@@ -101,7 +100,6 @@ export interface Package {
   confirmationNumber: string | null;
   benefits: string[] | null;
   travelers: string[] | null; // Trip.travelers[].id; null = whole party
-  note: string | null;
 }
 
 export interface Stay {
@@ -175,7 +173,7 @@ export interface Scenario {
   images: Image[];
 }
 
-export type RefEntityKind = 'trip' | 'leg' | 'stay' | 'transit' | 'route' | 'activity' | 'scenario' | 'package';
+export type RefEntityKind = 'trip' | 'leg' | 'stay' | 'transit' | 'route' | 'activity' | 'scenario' | 'package' | 'mealOption';
 
 export type Ref = { entity: RefEntityKind; id: string } | { date: string } | { dateRange: [string, string] };
 
@@ -193,12 +191,14 @@ export type DiningFormat = 'included' | 'package' | 'sit-down' | 'grab-and-go' |
 
 // Candidate shape used only by Activity.options, while a meal choice is genuinely
 // undecided — deciding means promoting one candidate's 3 fields onto the Activity itself
-// and clearing options back to null; the array never holds decided state.
+// and clearing options back to null; the array never holds decided state. Still carries
+// its own `_id` (a `mealOption` Ref target), since a Note can concern one specific
+// candidate rather than the Activity as a whole — see notesForEntity in tripModel.ts.
 export interface MealOption {
+  _id: string;
   diningFormat: DiningFormat;
   place: Place | null;
   includedIn: Ref | null;
-  note: string | null;
 }
 
 export type TimeLabel = 'All day' | 'Morning' | 'Afternoon' | 'Evening' | (string & {});
@@ -249,6 +249,7 @@ export interface TripsIndexEntry {
 
 export interface EnrichedMealOption extends Omit<MealOption, never> {
   travelers: string[] | null; // resolved display names, not ids
+  notes: Note[]; // this candidate's own notes, not the Activity's — only shown while it's the selected option
 }
 
 export interface EnrichedActivity extends Omit<Activity, 'options' | 'travelers'> {

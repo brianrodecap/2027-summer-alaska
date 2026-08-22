@@ -5,7 +5,7 @@ import Chip from '@mui/material/Chip';
 
 import { materialIcon } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
-import { useTripSelections } from '../../state/TripSelectionsContext';
+import { useScenarioSelection } from '../../state/TripSelectionsContext';
 import { resolveActiveTrack, visibleTracksFor } from './scenarioSelection';
 import { DayTimeline } from './DayTimeline';
 import type { Day, EnrichedActivity, EnrichedMealOption, EnrichedStay, EnrichedTransit, ScenarioTrack } from '../../model/types';
@@ -31,7 +31,7 @@ export function ScenarioTabsSection({
   onOpenStay: (stay: EnrichedStay) => void;
   onOpenTransit: (transit: EnrichedTransit) => void;
 }) {
-  const { scenarioTone, selectScenario } = useTripSelections();
+  const { scenarioTone, selectScenario } = useScenarioSelection();
   const [localIndex, setLocalIndex] = useState(0);
 
   if (!tracks.length) return null;

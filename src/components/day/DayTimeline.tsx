@@ -1,4 +1,4 @@
-import { Fragment, useState, type ReactElement } from 'react';
+import { Fragment, memo, type ReactElement } from 'react';
 import Timeline from '@mui/lab/Timeline';
 import TimelineItem from '@mui/lab/TimelineItem';
 import TimelineSeparator from '@mui/lab/TimelineSeparator';
@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography';
 import { formatTime, splitOutStayBoundaries, stayRelation } from '../../model/tripModel';
 import { filterSequenceItems } from '../../model/filters';
 import { firstImage } from '../../model/formatting';
+import { activeMealOptions, selectedMealOptionIndex } from '../../model/mealOptions';
 import { materialIcon } from '../shared/materialIcon';
 import { BookingChip } from '../shared/BookingChip';
 import { NotesCluster, splitNotes } from '../shared/Notes';
@@ -19,15 +20,15 @@ import { RouteVariantTabs } from './RouteVariantTabs';
 import { RowSpeedDial } from './RowSpeedDial';
 import { ActivityRow, ActivityLeading } from './ActivityRow';
 import { ScenarioTabsSection } from './ScenarioTabsSection';
-import { useTripSelections } from '../../state/TripSelectionsContext';
+import { useRouteToneSelection, useFilterSelection, useMealOptionSelection } from '../../state/TripSelectionsContext';
 import { useEdit } from '../../state/EditContext';
-import { useLongPress } from '../../hooks/useLongPress';
 import type {
   Day,
   EnrichedActivity,
   EnrichedMealOption,
   EnrichedStay,
   EnrichedTransit,
+  RefEntityKind,
   ScenarioTrack,
   SequenceItem,
   StaySequenceItem,
@@ -53,7 +54,7 @@ function resolvedArrivesAtFor(transit: EnrichedTransit, routeTones: Map<string, 
   return transit.routeInfo.variants.find((v) => v.tone === tone)?.arrivesAt ?? transit.arrivesAt;
 }
 
-function StayNode({
+const StayNode = memo(function StayNode({
   item,
   date,
   isLast,
@@ -74,10 +75,8 @@ function StayNode({
   ].filter(Boolean) as string[];
   const image = firstImage(stay);
   const Icon = materialIcon('hotel');
-  const { openEdit } = useEdit();
-  const [dialOpen, setDialOpen] = useState(false);
-  const longPress = useLongPress<HTMLDivElement>(() => setDialOpen(true));
-  const { above, below } = splitNotes(stay.notes);
+  const { openEdit, deleteEntity } = useEdit();
+  const { above, mid, below } = splitNotes(stay.notes);
   return (
     <TimelineItem>
       <TimelineSeparator>
@@ -92,15 +91,13 @@ function StayNode({
       </TimelineSeparator>
       <TimelineContent sx={{ pb: 3 }}>
         <NotesCluster notes={above} />
-        <Box sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => onOpen(stay)} {...longPress}>
-          {dialOpen && (
-            <RowSpeedDial
-              entity="stay"
-              id={stay._id}
-              onEdit={() => openEdit('stay', stay._id)}
-              onClose={() => setDialOpen(false)}
-            />
-          )}
+        <Box sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => onOpen(stay)}>
+          <RowSpeedDial
+            entity="stay"
+            id={stay._id}
+            onEdit={() => openEdit('stay', stay._id)}
+            onDelete={() => deleteEntity('stay', stay._id)}
+          />
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="caption" color="text.secondary">
               {stayRelation(stay, date)}
@@ -114,11 +111,7 @@ function StayNode({
                 {detailBits.join(' · ')}
               </Typography>
             )}
-            {stay.lodging?.checkInInstructions && (
-              <Typography variant="body2" color="text.secondary">
-                {stay.lodging.checkInInstructions}
-              </Typography>
-            )}
+            <NotesCluster notes={mid} />
             {stay.booking && (
               <Box sx={{ mt: 0.5 }}>
                 <BookingChip booking={stay.booking} />
@@ -130,9 +123,9 @@ function StayNode({
       </TimelineContent>
     </TimelineItem>
   );
-}
+});
 
-function TransitBoundaryNode({
+const TransitBoundaryNode = memo(function TransitBoundaryNode({
   item,
   isLast,
   onOpen,
@@ -141,7 +134,7 @@ function TransitBoundaryNode({
   isLast: boolean;
   onOpen: (transit: EnrichedTransit) => void;
 }) {
-  const { routeTones } = useTripSelections();
+  const { routeTones } = useRouteToneSelection();
   const { transit, phase } = item;
   const isDepart = phase === 'depart';
   const place = isDepart ? transit.from.label : transit.to.label;
@@ -149,10 +142,8 @@ function TransitBoundaryNode({
   const modeIconName = transit.mode === 'flight' ? 'flight' : 'directions_car';
   const image = isDepart ? firstImage(transit) : null;
   const Icon = materialIcon(modeIconName);
-  const { openEdit } = useEdit();
-  const [dialOpen, setDialOpen] = useState(false);
-  const longPress = useLongPress<HTMLDivElement>(() => setDialOpen(true));
-  const { above, below } = isDepart ? splitNotes(transit.notes) : { above: [], below: [] };
+  const { openEdit, deleteEntity } = useEdit();
+  const { above, mid, below } = isDepart ? splitNotes(transit.notes) : { above: [], mid: [], below: [] };
 
   const boundaryContent = (
     <Box sx={{ minWidth: 0 }}>
@@ -160,6 +151,7 @@ function TransitBoundaryNode({
         {time ? `${formatTime(time)} · ${isDepart ? 'Depart' : 'Arrive'}` : isDepart ? 'Depart' : 'Arrive'}
       </Typography>
       <Typography variant="subtitle1">{place}</Typography>
+      {isDepart && <NotesCluster notes={mid} />}
       {isDepart && transit.booking && (
         <Box sx={{ mt: 0.5 }}>
           <BookingChip booking={transit.booking} />
@@ -184,15 +176,13 @@ function TransitBoundaryNode({
       <TimelineContent sx={{ pb: 3 }}>
         {isDepart && <NotesCluster notes={above} />}
         {isDepart ? (
-          <Box sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => onOpen(transit)} {...longPress}>
-            {dialOpen && (
-              <RowSpeedDial
-                entity="transit"
-                id={transit._id}
-                onEdit={() => openEdit('transit', transit._id)}
-                onClose={() => setDialOpen(false)}
-              />
-            )}
+          <Box sx={{ position: 'relative', cursor: 'pointer' }} onClick={() => onOpen(transit)}>
+            <RowSpeedDial
+              entity="transit"
+              id={transit._id}
+              onEdit={() => openEdit('transit', transit._id)}
+              onDelete={() => deleteEntity('transit', transit._id)}
+            />
             {boundaryContent}
           </Box>
         ) : (
@@ -202,15 +192,15 @@ function TransitBoundaryNode({
       </TimelineContent>
     </TimelineItem>
   );
-}
+});
 
 // A stage's kind ('waypoint' — a real, callable-out stop — or 'via' — a
 // point that exists only to steer routing onto the intended road, no stop)
 // picks its overline word, same as Depart/Arrive above.
 const STAGE_KIND_LABEL: Record<string, string> = { waypoint: 'Waypoint', via: 'Via' };
 
-function TransitStageNode({ item, isLast }: { item: TransitStageSequenceItem; isLast: boolean }) {
-  const { routeTones } = useTripSelections();
+const TransitStageNode = memo(function TransitStageNode({ item, isLast }: { item: TransitStageSequenceItem; isLast: boolean }) {
+  const { routeTones } = useRouteToneSelection();
   const { transit, variant, stage } = item;
   const tone = activeRouteTone(transit, routeTones);
   if (variant.tone !== tone) return null; // a non-active variant's stages simply aren't rendered
@@ -233,9 +223,9 @@ function TransitStageNode({ item, isLast }: { item: TransitStageSequenceItem; is
       </TimelineContent>
     </TimelineItem>
   );
-}
+});
 
-function ActivityNode({
+const ActivityNode = memo(function ActivityNode({
   activity,
   day,
   isLast,
@@ -246,13 +236,21 @@ function ActivityNode({
   isLast: boolean;
   onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
 }) {
-  const { openEdit } = useEdit();
-  const [dialOpen, setDialOpen] = useState(false);
-  // A meal's own MealRow already fans into per-option tabs — long-press
-  // there is a later refinement, not wired up yet.
-  const isMeal = Boolean(activity.options?.length);
-  const longPress = useLongPress<HTMLDivElement>(() => setDialOpen(true));
-  const { above, below } = splitNotes(activity.notes);
+  const { openEdit, deleteEntity } = useEdit();
+  const { mealOptionIndex } = useMealOptionSelection();
+  const { above, mid, below } = splitNotes(activity.notes);
+
+  // A meal row's "add note" actions target whichever candidate is currently
+  // selected, not the Activity as a whole — see EnrichedMealOption.notes and
+  // mealOptions.ts's selectedMealOptionIndex. onEdit/onDelete below still act
+  // on the Activity itself (there's no separate delete for a candidate; that
+  // goes through ActivityEditForm's MealOptionList instead).
+  let noteTarget: { entity: RefEntityKind; id: string } = { entity: 'activity', id: activity._id };
+  if (activity.options?.length) {
+    const options = activeMealOptions(activity, day);
+    const selected = options[selectedMealOptionIndex(options, mealOptionIndex, activity._id)];
+    if (selected) noteTarget = { entity: 'mealOption', id: selected._id };
+  }
 
   return (
     <TimelineItem>
@@ -262,24 +260,22 @@ function ActivityNode({
       </TimelineSeparator>
       <TimelineContent sx={{ pb: 3, px: 2, pt: 0 }}>
         <NotesCluster notes={above} />
-        <Box sx={{ position: 'relative' }} {...(isMeal ? {} : longPress)}>
-          {dialOpen && (
-            <RowSpeedDial
-              entity="activity"
-              id={activity._id}
-              onEdit={() => openEdit('activity', activity._id)}
-              onClose={() => setDialOpen(false)}
-            />
-          )}
-          <ActivityRow activity={activity} day={day} onOpen={onOpenActivity} />
+        <Box sx={{ position: 'relative' }}>
+          <RowSpeedDial
+            entity={noteTarget.entity}
+            id={noteTarget.id}
+            onEdit={() => openEdit('activity', activity._id)}
+            onDelete={() => deleteEntity('activity', activity._id)}
+          />
+          <ActivityRow activity={activity} day={day} onOpen={onOpenActivity} midNotes={mid} />
         </Box>
         <NotesCluster notes={below} />
       </TimelineContent>
     </TimelineItem>
   );
-}
+});
 
-function ScenarioTabsNode({
+const ScenarioTabsNode = memo(function ScenarioTabsNode({
   day,
   tracks,
   topLevel,
@@ -320,9 +316,9 @@ function ScenarioTabsNode({
       </TimelineContent>
     </TimelineItem>
   );
-}
+});
 
-export function DayTimeline({
+export const DayTimeline = memo(function DayTimeline({
   day,
   sequence,
   daysByDate,
@@ -337,7 +333,7 @@ export function DayTimeline({
   onOpenStay: (stay: EnrichedStay) => void;
   onOpenTransit: (transit: EnrichedTransit) => void;
 }) {
-  const { activeFilterTokens } = useTripSelections();
+  const { activeFilterTokens } = useFilterSelection();
   const filtered = filterSequenceItems(sequence, day, activeFilterTokens);
 
   // Safe to run unconditionally at every level — a scenario track's own
@@ -427,4 +423,4 @@ export function DayTimeline({
       ))}
     </Timeline>
   );
-}
+});

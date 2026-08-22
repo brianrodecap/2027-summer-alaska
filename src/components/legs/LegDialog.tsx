@@ -148,7 +148,7 @@ export function LegDialog({
             No single reservation for this leg — booked piece by piece as its Stays/Transits/Activities.
           </Typography>
         )}
-        <NotesCluster notes={notes} />
+        <NotesCluster notes={notes} expanded />
         <Divider sx={{ my: 1 }} />
         <LegDayList days={days} onSelectDay={onSelectDay} />
       </DialogContent>

@@ -39,3 +39,13 @@ export function activeMealOptions(activity: { options: EnrichedMealOption[] | nu
 export function mealOptionLabel(option: EnrichedMealOption): string {
   return option.place ? option.place.label : DINING_FORMAT_LABEL[option.diningFormat];
 }
+
+// The stored per-activity index (TripSelectionsContext's mealOptionIndex map)
+// clamps back to 0 once a candidate it pointed at drops out of
+// activeMealOptions (e.g. an 'included' candidate that just went active
+// itself and displaced it) — shared by the meal row and the day-list note
+// menu, so both agree on which candidate "selected" means right now.
+export function selectedMealOptionIndex(options: EnrichedMealOption[], mealOptionIndex: Map<string, number>, activityId: string): number {
+  const stored = mealOptionIndex.get(activityId);
+  return stored !== undefined && stored < options.length ? stored : 0;
+}

@@ -472,7 +472,6 @@
   lodging: {
     placeId: 'ChIJ...', name: 'Talkeetna Alaskan Lodge',
     roomType: null, roomNumber: null, campsite: null,
-    checkInInstructions: null,
   },
   booking: { status: 'booked', cost: null, confirmationNumber: null },
   images: [],
@@ -487,7 +486,6 @@
   lodging: {
     placeId: null, name: 'Discovery Princess (cabin)',
     roomType: 'Balcony (Cat. BC)', roomNumber: 'L232', campsite: null,
-    checkInInstructions: null,
     bedConfiguration: 'Convertible twins',   // added: cruise-specific,
     deckGroup: 'Upper', shipZone: 'Mid-Forward', // no hotel Stay needs these
   },
@@ -512,7 +510,6 @@
                                  // trip's 4 travelers (Trip.travelers[].id,
                                  // not name) — the other 2 are on the
                                  // cabin's standard, non-Premier fare
-      note: null,
     },
   ],
   images: [],
@@ -537,8 +534,6 @@
                                  // 4 travelers) means every other traveler is
                                  // on the Stay's own standard, non-package
                                  // inclusions instead
-  note: string | null,         // free-text caveat/context, e.g. why it's worth
-                                 // booking, distinct from the itemized benefits
 }</code></pre>
         <p class="schema-label">Still open — nowhere chosen yet</p>
         <pre class="schema"><code>{
@@ -570,7 +565,6 @@
   lodging: {
     placeId: null, name: 'Santa Cruz Scorpion Campground',
     roomType: null, roomNumber: null, campsite: '022, Lower Loop',
-    checkInInstructions: null,
     partySize: 4, equipment: 'Tent', vehicleCount: 0,  // added: booking-time
   },                                                     // constraints a paid
   booking: { status: 'booked', cost: { amount: 15.00, currency: 'USD' }, confirmationNumber: '0878703196-1' },
@@ -586,8 +580,10 @@
   lodging: {
     placeId: null, name: 'Hotel Pacific, Monterey CA',
     roomType: 'Junior, 2 Double', roomNumber: null, campsite: null,
-    checkInInstructions: 'No check-in after 1:00am without advance notice; 18+ to check in.',
   },
+  // "No check-in after 1:00am without advance notice; 18+ to check in." is a
+  // Note (kind: 'info') concerning { entity: 'stay', id: 'stay_example_pacific' }
+  // now, not an inline field — see the Note entity, below.
   booking: {
     status: 'booked',
     cost: { amount: 531.70, currency: 'USD' },  // amount actually charged —
@@ -603,7 +599,7 @@
 }</code></pre>
         <ul class="rationale">
           <li><strong>checkInAt/checkOutAt are real timestamps</strong>, not dates — check-in is 3pm, checkout is 11am, rarely midnight.</li>
-          <li><strong>lodging mirrors the Place reference pattern</strong> (external id + label) plus type-specific detail a Google Place can't carry — room type, campsite, check-in instructions are facts about the reservation, not the physical property.</li>
+          <li><strong>lodging mirrors the Place reference pattern</strong> (external id + label) plus type-specific detail a Google Place can't carry — room type and campsite are facts about the reservation, not the physical property. A free-text <code>checkInInstructions</code> field briefly lived here too, then moved out to a <code>Note</code> concerning the Stay — the same "facts get one home, referenced everywhere else" reasoning <code>Package.note</code> follows below, once description text stopped being a special case just because it happened to live on a specific field.</li>
           <li><strong>status and booking are independent</strong>, not one field. Most stays have both moving together, but not always — a free roadside camp never gets a <code>booking</code> at all, and a hotel that cancels your reservation doesn't retroactively cancel the <em>stay</em> if you plan to rebook elsewhere.</li>
           <li><strong>bedConfiguration/deckGroup/shipZone extend <code>lodging</code></strong> for the cruise cabin — the same "type-specific detail a Google Place can't carry" reasoning that already justifies <code>roomType</code>/<code>roomNumber</code>/<code>campsite</code>, just for a berth instead of a hotel room. Populated only on <code>stay_cruise</code>; no hotel or campsite Stay needs them.</li>
           <li><strong>partySize/equipment/vehicleCount extend <code>lodging</code></strong> the same way, surfaced by testing against a real paid campsite reservation: federal campgrounds book against occupancy, equipment type, and vehicle count as hard constraints on the reservation itself, not incidental detail. Populated only where a campsite is actually reserved — a hotel <code>Stay</code> has no use for them.</li>
@@ -613,6 +609,7 @@
           <li><strong>Payment method (masked card number, expiry) was deliberately left out</strong>, same reasoning as the Princess Captain's Circle numbers and on-file phone in the cruise test: an account identifier with no itinerary value, not worth the exposure in a public repo.</li>
           <li><strong>packages holds optional paid add-ons</strong> — a purchase distinct from both the base <code>booking</code> (which pays for the Stay itself) and an Activity's <code>diningFormat: 'included'</code> (bundled into the base rate at no extra decision). Princess Plus/Premier and a hotel's optional meal plan are the same shape: a single purchase, made once at the Stay level, that then covers many individual Activities. Surfaced by the Kennicott Glacier Lodge and Discovery Princess data — a meal previously modeled as <code>diningFormat: 'included'</code> with a note explaining it only counted "if the package is purchased" was really a distinct, not-yet-decided fact being smuggled into free text. <code>Activity.diningFormat: 'package'</code> plus an <code>includedIn</code> pointing at <code>{ entity: 'package', id }</code> (see Activity) makes that fact structured instead: every Activity the package would cover references the one <code>Package</code>, so its purchase status lives in exactly one place rather than being repeated — and potentially drifting — per meal.</li>
           <li><strong>packages[].travelers scopes a package to whichever travelers actually bought it</strong> — surfaced once Princess Premier turned out to cover only 2 of this trip's 4 travelers, a fact that had briefly been smuggled into <code>note</code> as free text the same way the purchase-vs-included distinction above once was. <code>null</code> is the common case (a package everyone on the booking gets, e.g. a hotel's whole-room meal plan); a named subset means every other Trip.traveler is on the Stay's own standard inclusions instead for anything that package would otherwise cover. Points at <code>Trip.travelers[].id</code>, not <code>name</code> — every other cross-entity pointer on this page (<code>legId</code>, <code>routeId</code>, every <code>Ref</code>) links by id, and a name is exactly the field someone might reasonably edit later (a nickname, a legal-name correction) without meaning to break a package's coverage list. The trip page's day-list rows read this (via each Activity/MealOption's resolved traveler list — see trip-model.js's <code>resolveMealTravelers</code>, which turns the ids back into display names, and only resolves anything at all when <code>diningFormat</code> is <code>'package'</code> — a plain <code>'included'</code> meal, or any à-la-carte format, renders no chip, since nobody's coverage was ever gated on it) to show who's actually covered by a given <em>purchased</em> meal choice, not just whether one exists. Its non-meal sibling is Activity's own <code>travelers</code> (see below) — a package scopes who a <em>purchase</em> covers, while an excursion's own <code>travelers</code> scopes who's doing that <em>activity</em>, and the two are read by different rules precisely because a meal and an excursion answer "who's involved" differently.</li>
+          <li><strong><code>Package</code> no longer carries its own <code>note</code> field</strong> — that free-text caveat has the exact same shape as a <code>MealOption</code>'s note (below): a fact worth recording, but not one this entity's own fields have a slot for. Both moved to a <code>Note</code> concerning <code>{ entity: 'package', id }</code>/<code>{ entity: 'mealOption', id }</code> instead of staying inline, so the note gets the same kind (warning/info/footnote), the same edit/delete lifecycle, and the same drill-down placement every other annotation on this page already gets — rather than being a one-off string field that only this one entity happened to have.</li>
         </ul>
       </article>
 
@@ -943,25 +940,30 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   diningFormat: null,   // stays null while options is set — nothing committed
   includedIn: null,
   options: [             // MealOption[] — only set while genuinely undecided
-    { diningFormat: 'included', place: null,
-      includedIn: { entity: 'stay', id: 'stay_talkeetna' },
-      note: 'If breakfast turns out to be included in the room rate — worth confirming at booking.' },
-    { diningFormat: 'sit-down',
+    { _id: 'act_jun27_ideal_1_opt0', diningFormat: 'included', place: null,
+      includedIn: { entity: 'stay', id: 'stay_talkeetna' } },
+    { _id: 'act_jun27_ideal_1_opt1', diningFormat: 'sit-down',
       place: { id: 'ChIJS63CqrW_zlYRNQYObIK7Szk', label: 'Flying Squirrel Bakery Cafe', images: [] },
-      includedIn: null, note: null },
-    { diningFormat: 'grab-and-go', place: null, includedIn: null,
-      note: 'Coffee and a pastry from Nagley’s General Store, if we want to get moving faster.' },
+      includedIn: null },
+    { _id: 'act_jun27_ideal_1_opt2', diningFormat: 'grab-and-go', place: null, includedIn: null },
   ],
   images: [],
-}</code></pre>
+}
+
+// Elsewhere in notes.json — 'If breakfast turns out to be included in the room
+// rate — worth confirming at booking.' concerning the first candidate above:
+{ _id: 'note_act_jun27_ideal_1_opt0', kind: 'footnote',
+  text: 'If breakfast turns out to be included in the room rate — worth confirming at booking.',
+  concerns: [ { entity: 'mealOption', id: 'act_jun27_ideal_1_opt0' } ],
+  images: [] }</code></pre>
         <p class="schema-label">The MealOption shape, used only by Activity.options</p>
         <pre class="schema"><code>type MealOption = {
+  _id: string,               // a mealOption Ref target — see Note's concerns, below
   diningFormat: 'included' | 'package' | 'sit-down' | 'grab-and-go' | 'drivethru' | 'self-catered',
   place: Place | null,      // same Place shape as Activity.place; null when there's no
                               // resolvable venue (included, package, self-catered, or not yet named)
   includedIn: Ref | null,   // set only when diningFormat is 'included' or 'package' — same
                               // rule as Activity.includedIn, just scoped to this one candidate
-  note: string | null,      // why this option's on the table, e.g. a timing or cost trade-off
 }</code></pre>
         <ul class="rationale">
           <li><strong>startAt/endAt are set only when actually known.</strong> timeLabel exists for the honestly-vague cases — "Afternoon" — instead of inventing false precision; see Activity's own timeLabel note above for its closed vocabulary and sort-anchor mapping.</li>
@@ -971,6 +973,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
           <li><strong>includedIn reuses Note's <code>Ref</code> type</strong> rather than inventing a second polymorphic pointer — a bundled meal points at whichever Stay, Leg, or Activity's booking actually covers it, so cost and confirmation number stay owned by that one booking instead of being duplicated onto the meal itself. Set when <code>diningFormat</code> is <code>'included'</code> (points at a <code>{ entity: 'stay', ... }</code>, etc. — the base rate itself) or <code>'package'</code> (points at a <code>{ entity: 'package', ... }</code> — see Stay); every other format leaves it <code>null</code>.</li>
           <li><strong>'included' and 'package' are deliberately separate <code>diningFormat</code> values</strong>, not one "covered somehow" flag — <code>'included'</code> means the base rate already pays for it, no separate decision required; <code>'package'</code> means it's covered only if a specific optional add-on gets purchased, and that purchase has its own <code>planning</code>/<code>booked</code>/<code>cancelled</code> status independent of the Stay. Collapsing them would either lose that distinction or force a not-yet-decided purchase to read as already-included.</li>
           <li><strong>options is the one genuinely new mechanism here</strong>, added once "which of these three places for breakfast" turned out not to fit the single-value fields at all — the three candidates can each have a <em>different</em> <code>diningFormat</code> (included / sit-down / grab-and-go), so the choice has to live per-candidate, not on the Activity itself. It mirrors <code>Stay.lodging: null</code>'s "nothing chosen yet" — just extended to hold the actual named candidates instead of only recording that a decision is pending. <code>diningFormat</code>/<code>place</code>/<code>includedIn</code> stay <code>null</code> on the Activity the whole time <code>options</code> is set; deciding means picking one candidate, copying its three fields up onto the Activity itself, and clearing <code>options</code> back to <code>null</code> — the array never holds the decided state, only the open one.</li>
+          <li><strong>MealOption carries its own <code>_id</code></strong> even though it's an embedded array element, not a trip-owned collection — the one exception on this page to "only trip-owned entities get an id." A candidate's own free-text caveat (what used to be an inline <code>note</code> field) reads exactly like every other annotation on this page, so it became a <code>Note</code> like the rest, and a <code>Note</code> needs something stable to point <code>concerns</code> at — a bare array index would silently repoint at a different candidate the moment <code>options</code> gets reordered. <code>_id</code> survives reordering; it doesn't survive the candidate being promoted (<code>options</code> clearing to <code>null</code> once one's picked) — same as deleting any other entity a Note concerns, any Note still pointing at that id just has nothing left to render against.</li>
           <li><strong>priority is an enumerated rank, not a boolean</strong> — matching every other significance-style field on this page (<code>status</code>, <code>mealType</code>, <code>diningFormat</code>) rather than a loose <code>highlight: true/false</code>. Null for nearly everything; set only on the handful of activities worth calling out. It's what the computed Day's title reads to decide whether to name a day after its headline activity — "Denali Flightseeing" — instead of falling back to wherever that night's Stay is. When a day has several activities tied at the same top priority, the title joins their <code>text</code> with " &amp; ", in sequence order. Deliberately generic rather than single-purpose: any future "what matters today" or trip-highlights view can read the same field without a new one being invented.</li>
           <li><strong>travelers is an excursion's own, directly authored roster</strong> — <code>Trip.travelers[].id</code>, the same link <code>Package.travelers</code> uses. It exists for exactly one case: an activity someone plans or books individually, where not every traveler is necessarily doing it — a shore excursion one family member skips, say. It's deliberately <em>not</em> read on a meal (<code>mealType</code> set) — a meal's real attendees are already derivable from <code>diningFormat</code>/<code>includedIn</code> against whichever <code>Package</code> backs it (trip-model.js's <code>resolveMealTravelers</code>), and authoring a second, competing traveler list on the same Activity would just invite the two to drift. Null is the default on every activity today, meaning either everyone's doing it or it just isn't decided yet — a day watching scenery go by from the ship, for instance, isn't an excursion at all and was never a candidate for this field, regardless of whether every traveler happens to be there.</li>
         </ul>
@@ -1028,13 +1031,14 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   images: [] }</code></pre>
         <p class="schema-label">The Ref shape, reusable beyond Note</p>
         <pre class="schema"><code>type Ref =
-  | { entity: 'trip'|'leg'|'stay'|'transit'|'route'|'activity'|'scenario'|'package', id }
+  | { entity: 'trip'|'leg'|'stay'|'transit'|'route'|'activity'|'scenario'|'package'|'mealOption', id }
   | { date }
   | { dateRange: [start, end] }</code></pre>
         <ul class="rationale">
           <li><strong>kind replaces the old stored icon.</strong> The presentation tier maps <code>kind</code> ('warning' | 'footnote' | 'info') to icon and prominence itself.</li>
           <li><strong>Footnote numbers are never stored.</strong> They're assigned at render time, in the order notes are encountered on a given page — removing the exact hand-sync burden the current site's footnote system requires today.</li>
           <li><strong>concerns is reserved for annotation, not structure.</strong> Note today, a future Journal/actual-experience entry later, would reuse it — the strongly-typed foreign keys elsewhere (<code>Stay.legId</code>, <code>Transit.routeId</code>) stay exactly as they are, since those are structural, not annotative.</li>
+          <li><strong><code>entity: 'mealOption'</code> is the one <code>Ref</code> kind that's conditional, not just placed.</strong> Every other entity kind's notes always render wherever that entity itself shows up; a <code>mealOption</code> note only renders while its specific candidate is the one currently selected among its Activity's <code>options</code> — switching candidates in the UI swaps which of that Activity's notes are visible, same as switching a Scenario's ideal/alternate tab swaps which day's notes show. The Activity's own notes (<code>entity: 'activity'</code>) are unaffected either way, since they're about the meal choice as a whole rather than any one candidate.</li>
         </ul>
       </article>
 

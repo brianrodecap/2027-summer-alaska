@@ -10,8 +10,10 @@ import { materialIcon, DEFAULT_PLACE_ICON, DINING_FORMAT_ICON } from '../shared/
 import { BookingChip } from '../shared/BookingChip';
 import { TravelerChips } from '../shared/TravelerChips';
 import { TransitOverlapWarning } from '../shared/TransitOverlapWarning';
+import { LinkifiedText } from '../shared/LinkifiedText';
+import { NotesCluster } from '../shared/Notes';
 import { MealRow, MealRowLeading } from './MealRow';
-import type { Day, EnrichedActivity, EnrichedMealOption } from '../../model/types';
+import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
 
 // Activities don't carry an explicit category field — a committed meal's
 // diningFormat is the only synchronous signal richer than "does this
@@ -39,8 +41,18 @@ export function ActivityLeading({ activity, day }: { activity: EnrichedActivity;
   );
 }
 
-export function ActivityRow({ activity, day, onOpen }: { activity: EnrichedActivity; day: Day; onOpen: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void }) {
-  if (activity.options?.length) return <MealRow activity={activity} day={day} onOpen={onOpen} />;
+export function ActivityRow({
+  activity,
+  day,
+  onOpen,
+  midNotes,
+}: {
+  activity: EnrichedActivity;
+  day: Day;
+  onOpen: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
+  midNotes?: Note[];
+}) {
+  if (activity.options?.length) return <MealRow activity={activity} day={day} onOpen={onOpen} midNotes={midNotes} />;
 
   return (
     <ButtonBase
@@ -51,7 +63,10 @@ export function ActivityRow({ activity, day, onOpen }: { activity: EnrichedActiv
         <Typography variant="caption" color="text.secondary">
           {timeAndMealTypeLabel(activity)}
         </Typography>
-        <Typography variant="body1">{activity.text}</Typography>
+        <Typography variant="body1">
+          <LinkifiedText text={activity.text} />
+        </Typography>
+        <NotesCluster notes={midNotes} />
         <TravelerChips names={activity.travelers} />
         {activity.booking && (
           <Box sx={{ mt: 0.5 }}>

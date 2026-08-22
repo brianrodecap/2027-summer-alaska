@@ -13,6 +13,7 @@ import WarningIcon from '@mui/icons-material/Warning';
 import InfoIcon from '@mui/icons-material/Info';
 import NotesIcon from '@mui/icons-material/Notes';
 
+import { ConfirmDialog } from '../shared/ConfirmDialog';
 import type { NoteKind, Ref, RefEntityKind } from '../../model/types';
 import type { NoteTarget } from '../../state/NoteEditContext';
 
@@ -28,6 +29,7 @@ const ENTITY_LABEL: Record<RefEntityKind, string> = {
   activity: 'this activity',
   scenario: 'this scenario branch',
   package: 'this package',
+  mealOption: 'this candidate',
 };
 
 function describeRef(ref: Ref): string {
@@ -54,6 +56,7 @@ export function NoteEditDialog({
 }) {
   const [kind, setKind] = useState<NoteKind>(target.mode === 'create' ? target.kind : target.note.kind);
   const [text, setText] = useState(target.mode === 'edit' ? target.note.text : '');
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const about = target.mode === 'create' ? describeRef({ entity: target.entity, id: target.id }) : describeRef(target.note.concerns[0]);
 
   return (
@@ -88,7 +91,7 @@ export function NoteEditDialog({
       </DialogContent>
       <DialogActions sx={{ justifyContent: onDelete ? 'space-between' : 'flex-end', px: 3, pb: 2 }}>
         {onDelete && (
-          <Button color="error" onClick={onDelete}>
+          <Button color="error" onClick={() => setConfirmingDelete(true)}>
             Delete
           </Button>
         )}
@@ -99,6 +102,15 @@ export function NoteEditDialog({
           </Button>
         </Stack>
       </DialogActions>
+      {onDelete && (
+        <ConfirmDialog
+          open={confirmingDelete}
+          title="Delete this note?"
+          message="This can't be undone from the app — it removes the note entirely."
+          onCancel={() => setConfirmingDelete(false)}
+          onConfirm={onDelete}
+        />
+      )}
     </Dialog>
   );
 }

@@ -2,7 +2,7 @@ import Stack from '@mui/material/Stack';
 import Chip from '@mui/material/Chip';
 
 import { materialIcon, ROUTE_TONE_ICON } from '../shared/materialIcon';
-import { useTripSelections } from '../../state/TripSelectionsContext';
+import { useRouteToneSelection } from '../../state/TripSelectionsContext';
 import type { EnrichedTransit } from '../../model/types';
 
 // A Route with 2+ variants (e.g. the New vs. Old Glenn Highway) is a
@@ -14,11 +14,11 @@ import type { EnrichedTransit } from '../../model/types';
 // — no re-walk needed for a plain route-tone switch.
 export function RouteVariantTabs({ transit }: { transit: EnrichedTransit }) {
   const info = transit.routeInfo;
-  const { routeTones, selectRouteTone } = useTripSelections();
+  const { routeTones, selectRouteTone } = useRouteToneSelection();
   if (!info || info.variants.length < 2) return null;
   const selectedTone = routeTones.get(transit._id) ?? info.selectedTone;
   return (
-    <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
+    <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }} onClick={(e) => e.stopPropagation()}>
       {info.variants.map((v) => {
         const Icon = materialIcon(ROUTE_TONE_ICON[v.tone] ?? 'route');
         const active = v.tone === selectedTone;

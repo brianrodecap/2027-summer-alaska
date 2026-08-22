@@ -49,7 +49,7 @@ export function TransitDetailPanel({
           <BookingChip booking={transit.booking} />
         </Box>
       )}
-      <NotesCluster notes={transit.notes} />
+      <NotesCluster notes={transit.notes} expanded />
     </DetailSideSheet>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
@@ -9,7 +9,7 @@ import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import RouteIcon from '@mui/icons-material/Route';
 
 import { useTripData } from '../state/TripDataContext';
-import { useTripSelections } from '../state/TripSelectionsContext';
+import { useFilterSelection } from '../state/TripSelectionsContext';
 import { useEdit } from '../state/EditContext';
 import { DayBlock } from '../components/day/DayBlock';
 import { DayMapPanel } from '../components/day/DayMapPanel';
@@ -24,7 +24,7 @@ import type { Day, EnrichedActivity, EnrichedMealOption, EnrichedStay, EnrichedT
 
 export function DaysView() {
   const { view, data, setData } = useTripData();
-  const { activeFilterTokens } = useTripSelections();
+  const { activeFilterTokens } = useFilterSelection();
   const { openEdit } = useEdit();
   const { slug, date } = useParams();
   const navigate = useNavigate();
@@ -50,11 +50,11 @@ export function DaysView() {
     el?.scrollIntoView({ block: 'start' });
   }, [date, view]);
 
-  if (!view) return null;
-
-  const handleOpenActivity = (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => {
+  const handleOpenActivity = useCallback((activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => {
     setOpenActivity({ activity, selectedOption });
-  };
+  }, []);
+
+  if (!view) return null;
 
   return (
     <Box>

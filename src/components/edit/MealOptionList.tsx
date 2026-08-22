@@ -41,7 +41,7 @@ function parseIncludedIn(value: string): Ref | null {
 }
 
 function emptyOption(): MealOption {
-  return { diningFormat: 'sit-down', place: null, includedIn: null, note: null };
+  return { _id: crypto.randomUUID(), diningFormat: 'sit-down', place: null, includedIn: null };
 }
 
 // One MealOption candidate row — an add/remove/reorder list, the same
@@ -100,7 +100,6 @@ function MealOptionRow({
             </MenuItem>
           ))}
         </TextField>
-        <TextField label="Note (optional)" value={option.note ?? ''} onChange={(e) => onChange({ ...option, note: e.target.value || null })} />
       </Stack>
       <IconButton size="small" aria-label="Remove this candidate" onClick={onRemove} sx={{ position: 'absolute', bottom: 8, right: 8 }}>
         <DeleteIcon fontSize="small" />
@@ -136,7 +135,7 @@ export function MealOptionList({ options, stays, onChange }: { options: MealOpti
       </Typography>
       {options.map((option, i) => (
         <MealOptionRow
-          key={i}
+          key={option._id}
           option={option}
           stays={stays}
           onChange={(o) => update(i, o)}

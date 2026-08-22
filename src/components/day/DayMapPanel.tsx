@@ -9,7 +9,7 @@ import Typography from '@mui/material/Typography';
 
 import { dayFullRouteUrl, dayMapEmbedUrl } from '../../model/tripModel';
 import { activeMealOptions } from '../../model/mealOptions';
-import { useTripSelections } from '../../state/TripSelectionsContext';
+import { useScenarioSelection, useRouteToneSelection, useMealOptionSelection } from '../../state/TripSelectionsContext';
 import type { Day, Place, SequenceItem } from '../../model/types';
 
 // Only activities the reader has actually switched away from the model's
@@ -40,7 +40,9 @@ function collectMealPlaces(day: Day, mealOptionIndex: Map<string, number>): Map<
 // dayMapEmbedUrl is null when the day has nothing resolvable to map yet
 // (e.g. a still-unplanned day with no places named anywhere).
 export function DayMapPanel({ day, open, onClose }: { day: Day | null; open: boolean; onClose: () => void }) {
-  const { scenarioTone, routeTones, mealOptionIndex } = useTripSelections();
+  const { scenarioTone } = useScenarioSelection();
+  const { routeTones } = useRouteToneSelection();
+  const { mealOptionIndex } = useMealOptionSelection();
   if (!day) return null;
 
   const selections = {

@@ -19,6 +19,71 @@ import type {
   Transit,
 } from './types';
 
+// ---------- blank entities, for the day list's own "Add" button ----------
+//
+// Each starts with just enough filled in to place it on the day it was
+// added from (legId, plus a same-day date/time default) — every other field
+// is left at its "nothing decided yet" value, same as an author would leave
+// it blank in the JSON. The edit dialog's own validation (applyActivityForm
+// et al.) is what forces a real time to be entered before Save.
+
+export function blankActivity(legId: string, date: string): Activity {
+  return {
+    _id: crypto.randomUUID(),
+    legId,
+    scenarioId: null,
+    status: 'planning',
+    startAt: null,
+    endAt: null,
+    timeLabel: null,
+    date,
+    order: null,
+    priority: null,
+    text: '',
+    place: null,
+    booking: null,
+    mealType: null,
+    diningFormat: null,
+    includedIn: null,
+    options: null,
+    travelers: null,
+    images: [],
+  };
+}
+
+export function blankStay(legId: string, date: string): Stay {
+  return {
+    _id: crypto.randomUUID(),
+    legId,
+    checkInAt: `${date}T15:00`,
+    checkOutAt: `${date}T15:00`,
+    status: 'planning',
+    lodging: { placeId: null, name: '' },
+    booking: null,
+    packages: null,
+    images: [],
+  };
+}
+
+export function blankTransit(legId: string, date: string): Transit {
+  return {
+    _id: crypto.randomUUID(),
+    legId,
+    journeyId: null,
+    scenarioId: null,
+    status: 'planning',
+    mode: 'drive',
+    from: { id: null, label: '' },
+    to: { id: null, label: '' },
+    departsAt: `${date}T09:00`,
+    arrivesAt: null,
+    routeId: null,
+    routeVariant: null,
+    booking: null,
+    images: [],
+  };
+}
+
 // ---------- Activity ----------
 
 export interface ActivityFormState {

@@ -6,6 +6,7 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 
+import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { RouteEditForm } from './RouteEditForm';
 import { routeFormFrom, applyRouteForm } from '../../model/editForms';
 import type { Route } from '../../model/types';
@@ -30,6 +31,7 @@ export function RouteEditDialog({
 }) {
   const [form, setForm] = useState<Route>(() => routeFormFrom(route));
   const [error, setError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const handleSave = () => {
     const clone = structuredClone(route);
@@ -54,7 +56,7 @@ export function RouteEditDialog({
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between', px: 3 }}>
         {isNew ? <span /> : (
-          <Button color="error" onClick={() => onDelete(route._id)}>
+          <Button color="error" onClick={() => setConfirmingDelete(true)}>
             Delete
           </Button>
         )}
@@ -65,6 +67,13 @@ export function RouteEditDialog({
           </Button>
         </div>
       </DialogActions>
+      <ConfirmDialog
+        open={confirmingDelete}
+        title="Delete this route?"
+        message="This can't be undone from the app — it removes the route entirely, including all its variants."
+        onCancel={() => setConfirmingDelete(false)}
+        onConfirm={() => onDelete(route._id)}
+      />
     </Dialog>
   );
 }

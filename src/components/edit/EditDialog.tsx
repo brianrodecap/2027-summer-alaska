@@ -6,6 +6,7 @@ import DialogActions from '@mui/material/DialogActions';
 import Button from '@mui/material/Button';
 import Alert from '@mui/material/Alert';
 
+import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { ActivityEditForm } from './ActivityEditForm';
 import { StayEditForm } from './StayEditForm';
 import { TransitEditForm } from './TransitEditForm';
@@ -30,6 +31,12 @@ const EDIT_ENTITY_LABEL: Record<EditKind, string> = {
   transit: 'Edit transit',
 };
 
+const ADD_ENTITY_LABEL: Record<EditKind, string> = {
+  activity: 'Add activity',
+  stay: 'Add stay',
+  transit: 'Add transit',
+};
+
 const DIRTY_COLLECTION: Record<EditKind, CollectionName> = {
   activity: 'activities',
   stay: 'stays',
@@ -41,6 +48,7 @@ type Entity = Activity | Stay | Transit;
 interface EditDialogProps {
   kind: EditKind;
   entity: Entity | undefined;
+  isNew?: boolean;
   stays: Stay[];
   tripTravelers: Traveler[];
   routes: Route[];
@@ -63,8 +71,9 @@ export function EditDialog(props: EditDialogProps) {
   return <EditDialogBody {...props} entity={entity} key={entity._id} />;
 }
 
-function EditDialogBody({ kind, entity, stays, tripTravelers, routes, onClose, onSave, onDelete }: EditDialogProps & { entity: Entity }) {
+function EditDialogBody({ kind, entity, isNew, stays, tripTravelers, routes, onClose, onSave, onDelete }: EditDialogProps & { entity: Entity }) {
   const [error, setError] = useState<string | null>(null);
+  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [activityForm, setActivityForm] = useState<ActivityFormState | null>(kind === 'activity' ? activityFormFrom(entity as Activity) : null);
   const [stayForm, setStayForm] = useState<StayFormState | null>(kind === 'stay' ? stayFormFrom(entity as Stay) : null);
   const [transitForm, setTransitForm] = useState<TransitFormState | null>(kind === 'transit' ? transitFormFrom(entity as Transit) : null);
@@ -84,7 +93,7 @@ function EditDialogBody({ kind, entity, stays, tripTravelers, routes, onClose, o
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{EDIT_ENTITY_LABEL[kind]}</DialogTitle>
+      <DialogTitle>{isNew ? ADD_ENTITY_LABEL[kind] : EDIT_ENTITY_LABEL[kind]}</DialogTitle>
       <DialogContent dividers>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
@@ -98,16 +107,29 @@ function EditDialogBody({ kind, entity, stays, tripTravelers, routes, onClose, o
         {kind === 'transit' && transitForm && <TransitEditForm form={transitForm} onChange={setTransitForm} routes={routes} />}
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between', px: 3 }}>
-        <Button color="error" onClick={() => onDelete(kind, entity._id)}>
-          Delete
-        </Button>
+        {isNew ? (
+          <span />
+        ) : (
+          <Button color="error" onClick={() => setConfirmingDelete(true)}>
+            Delete
+          </Button>
+        )}
         <div>
           <Button onClick={onClose}>Cancel</Button>
           <Button variant="contained" onClick={handleSave}>
-            Save
+            {isNew ? 'Add' : 'Save'}
           </Button>
         </div>
       </DialogActions>
+      {!isNew && (
+        <ConfirmDialog
+          open={confirmingDelete}
+          title={`Delete this ${kind}?`}
+          message="This can't be undone from the app — it removes the entry entirely."
+          onCancel={() => setConfirmingDelete(false)}
+          onConfirm={() => onDelete(kind, entity._id)}
+        />
+      )}
     </Dialog>
   );
 }

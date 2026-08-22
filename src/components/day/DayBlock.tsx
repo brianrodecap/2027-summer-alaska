@@ -1,18 +1,70 @@
+import { memo, useState } from 'react';
 import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
+import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
+import AddIcon from '@mui/icons-material/Add';
 import MapIcon from '@mui/icons-material/Map';
 
 import { NotesCluster } from '../shared/Notes';
 import { DayTimeline } from './DayTimeline';
+import { useEdit, type EditKind } from '../../state/EditContext';
 import type { Day, EnrichedActivity, EnrichedMealOption, EnrichedStay, EnrichedTransit } from '../../model/types';
+
+const ADD_MENU_ITEMS: { kind: EditKind; label: string }[] = [
+  { kind: 'activity', label: 'Activity' },
+  { kind: 'stay', label: 'Stay' },
+  { kind: 'transit', label: 'Transit' },
+];
+
+// The day block's own footer — lets a day that's missing something (a meal,
+// a leg of a drive, a place to sleep) grow a new Stay/Transit/Activity right
+// where it belongs, instead of only ever editing what's already there.
+function AddToDayButton({ day }: { day: Day }) {
+  const { openCreate } = useEdit();
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+
+  return (
+    <>
+      <Button
+        startIcon={<AddIcon />}
+        onClick={(e) => setAnchorEl(e.currentTarget)}
+        sx={{ mt: 1 }}
+      >
+        Add to this day
+      </Button>
+      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
+        {ADD_MENU_ITEMS.map((item) => (
+          <MenuItem
+            key={item.kind}
+            onClick={() => {
+              setAnchorEl(null);
+              openCreate(item.kind, day.leg._id, day.date);
+            }}
+          >
+            {item.label}
+          </MenuItem>
+        ))}
+      </Menu>
+    </>
+  );
+}
 
 // One <section> per Day with a sticky header (date + title) and its full
 // Stay/Transit/Activity detail rendered inline underneath — position: sticky
 // within its own block, so it stays pinned to the top of the viewport while
 // that day's content scrolls past, then hands off to the next day's header
 // the moment this one's block scrolls out of view.
-export function DayBlock({
+//
+// Memoized: DaysView holds several bits of dialog-open state (which
+// activity/stay/transit side sheet is open, the map dialog, scroll
+// elevation) that change on nearly every tap. Without memo, each of those
+// unrelated state changes would re-render every one of the ~28 unvirtualized
+// day blocks and everything under them, not just the one row that was
+// actually clicked.
+export const DayBlock = memo(function DayBlock({
   day,
   daysByDate,
   onOpenActivity,
@@ -64,7 +116,8 @@ export function DayBlock({
           onOpenStay={onOpenStay}
           onOpenTransit={onOpenTransit}
         />
+        <AddToDayButton day={day} />
       </Box>
     </Box>
   );
-}
+});

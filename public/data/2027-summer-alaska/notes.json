@@ -23,7 +23,7 @@
   {
     "_id": "note_jun28_bus_checkin",
     "kind": "footnote",
-    "text": "Book ahead at reservedenali.com; arrive 20 minutes early.",
+    "text": "Book ahead at https://www.reservedenali.com/; arrive 20 minutes early.",
     "concerns": [ { "entity": "activity", "id": "act_jun28_2" } ],
     "images": []
   },
@@ -248,12 +248,7 @@
     "_id": "note_no_dedicated_buffer",
     "kind": "footnote",
     "text": "No dedicated weather buffer day for this flight — per the note that missing one flightseeing tour among many isn't a big loss.",
-    "concerns": [
-      { "entity": "scenario", "id": "scenario_jun27_ideal" },
-      { "entity": "activity", "id": "act_jul7_1" },
-      { "entity": "activity", "id": "act_jul8_1" },
-      { "entity": "activity", "id": "act_jul11_1" }
-    ],
+    "concerns": [ { "entity": "scenario", "id": "scenario_jun27_ideal" }, { "entity": "activity", "id": "act_jul7_1" }, { "entity": "activity", "id": "act_jul8_1" }, { "entity": "activity", "id": "act_jul11_1" } ],
     "images": [ { "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_and_Range_from_Air_with_Plane_Wing_%287065283015%29.jpg", "credit": "Photo by Jacob W. Frank / NPS, CC BY 2.0", "caption": "Flightseeing plane wing over Denali and the Alaska Range" } ]
   },
   {
@@ -562,6 +557,440 @@
     "kind": "footnote",
     "text": "Port Alsworth is accessible only by air — this charter flight is typically arranged directly through the lodge (Lake Clark Resort / The Farm Lodge) rather than booked as a standalone commercial flight; exact carrier and time to be confirmed with them.",
     "concerns": [ { "entity": "transit", "id": "transit_anchorage_portalsworth" }, { "entity": "transit", "id": "transit_portalsworth_anchorage" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jun26_3_opt0",
+    "kind": "footnote",
+    "text": "Downtown — kitchen typically runs toward midnight; a real sit-down meal if we’re not too wiped out.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jun26_3_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jun26_3_opt1",
+    "kind": "footnote",
+    "text": "Near the airport — open 24 hours, so it’s there no matter how late we actually land.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jun26_3_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jun26_3_opt2",
+    "kind": "footnote",
+    "text": "Whatever drive-thru is open on the way out of town, if we’d rather just get moving toward Talkeetna.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jun26_3_opt2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jun27_ideal_1_opt0",
+    "kind": "footnote",
+    "text": "If breakfast turns out to be included in the room rate — worth confirming at booking.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jun27_ideal_1_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jun27_ideal_1_opt2",
+    "kind": "footnote",
+    "text": "Coffee and a pastry to go, if we want to get moving faster.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jun27_ideal_1_opt2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jun27_alt_1_opt0",
+    "kind": "footnote",
+    "text": "If breakfast turns out to be included in the room rate — worth confirming at booking.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jun27_alt_1_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jun27_alt_1_opt2",
+    "kind": "footnote",
+    "text": "Coffee and a pastry from Nagley’s General Store, if we want to get moving faster.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jun27_alt_1_opt2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jun28_breakfast_opt0",
+    "kind": "footnote",
+    "text": "If the lodge's breakfast service opens early enough for a 6:30am departure — worth confirming at check-in.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jun28_breakfast_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jun28_breakfast_opt1",
+    "kind": "footnote",
+    "text": "Coffee and a pastry to go, if the lodge isn't open yet.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jun28_breakfast_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jun28_breakfast_opt2",
+    "kind": "footnote",
+    "text": "Snacks from the car, eaten on the drive to the Denali entrance.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jun28_breakfast_opt2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jun29_breakfast_opt0",
+    "kind": "footnote",
+    "text": "If breakfast is included at the Westmark — worth confirming at booking.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jun29_breakfast_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jun29_breakfast_opt1",
+    "kind": "footnote",
+    "text": "Quick coffee and something portable, given the 7am departure for Coldfoot.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jun29_breakfast_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jun29_lunch_opt0",
+    "kind": "footnote",
+    "text": "A roadside stop between the Yukon River and Coldfoot — burgers and milkshakes.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jun29_lunch_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jun29_lunch_opt1",
+    "kind": "footnote",
+    "text": "Packed food eaten in the car, to keep moving toward the 1pm Coldfoot arrival.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jun29_lunch_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul1_ideal_lunch_opt0",
+    "kind": "footnote",
+    "text": "Between Coldfoot and the Yukon River.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul1_ideal_lunch_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul1_ideal_lunch_opt1",
+    "kind": "footnote",
+    "text": "Packed food eaten in the car — this is the relaxed version of the day, so no rush either way.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul1_ideal_lunch_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul2_breakfast_opt0",
+    "kind": "footnote",
+    "text": "If breakfast is included at the Westmark — worth confirming at booking.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul2_breakfast_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul2_breakfast_opt1",
+    "kind": "footnote",
+    "text": "A longtime Fairbanks institution for a big sit-down breakfast, if there's time before the 9am departure.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul2_breakfast_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul2_6_opt0",
+    "kind": "footnote",
+    "text": "The lodge's main dining room.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul2_6_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul2_6_opt1",
+    "kind": "footnote",
+    "text": "More casual, also at the lodge.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul2_6_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul3_lunch_opt0",
+    "kind": "footnote",
+    "text": "A McCarthy staple that started as a food truck; the potato-head burrito is the signature order.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul3_lunch_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul3_lunch_opt1",
+    "kind": "footnote",
+    "text": "Skip it and eat something packed, if the footbridge crossing runs long and the shuttle's waiting.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul3_lunch_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul3_7_opt0",
+    "kind": "footnote",
+    "text": "At the lodge, if the meal package gets booked.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul3_7_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul3_7_opt1",
+    "kind": "footnote",
+    "text": "A walk into McCarthy for a change of scenery.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul3_7_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul4_1_opt0",
+    "kind": "footnote",
+    "text": "At the lodge, if the meal package gets booked.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul4_1_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul4_1_opt1",
+    "kind": "footnote",
+    "text": "Packed food, if skipping the meal package — on-site alternatives (Meatza Wagon food truck, McCarthy) are limited this early.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul4_1_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul4_5_opt0",
+    "kind": "footnote",
+    "text": "At the lodge.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul4_5_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul4_5_opt1",
+    "kind": "footnote",
+    "text": "A walk into McCarthy for a change of scenery.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul4_5_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul5_1_opt0",
+    "kind": "footnote",
+    "text": "At the lodge, if the meal package gets booked.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul5_1_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul5_1_opt1",
+    "kind": "footnote",
+    "text": "Packed food, if skipping the meal package — checkout is 11am, so this is a quick one either way.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul5_1_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul6_breakfast_opt0",
+    "kind": "footnote",
+    "text": "If there's time before the 8:40am flight — a downtown Anchorage institution.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul6_breakfast_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul6_breakfast_opt1",
+    "kind": "footnote",
+    "text": "Coffee at the airport, if the morning's tighter than planned.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul6_breakfast_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul6_lunch_opt0",
+    "kind": "footnote",
+    "text": "A longstanding Kotzebue spot.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul6_lunch_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul6_lunch_opt1",
+    "kind": "footnote",
+    "text": "Bison Store & Restaurant, if we'd rather keep it quick before the flightseeing check-in.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul6_lunch_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul9_dinner_opt0",
+    "kind": "footnote",
+    "text": "An Anchorage classic, worth the wait.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul9_dinner_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul9_dinner_opt1",
+    "kind": "footnote",
+    "text": "Something quick near the hotel instead, given a 6:40pm landing after a long travel day.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul9_dinner_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul10_breakfast_opt0",
+    "kind": "footnote",
+    "text": "Opens at 6am, so it's possible before the 7am departure if we move fast.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul10_breakfast_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul10_breakfast_opt1",
+    "kind": "footnote",
+    "text": "Coffee and something portable from the hotel, to be safe.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul10_breakfast_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul10_dinner_opt0",
+    "kind": "footnote",
+    "text": "Right before the drive back — but it's a tight 45 minutes after the boat tour docks.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul10_dinner_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul10_dinner_opt1",
+    "kind": "footnote",
+    "text": "Back in Anchorage instead, once we're off the road around 8:30pm.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul10_dinner_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul12_breakfast_opt0",
+    "kind": "footnote",
+    "text": "With checkout not until 11am there's no rush.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul12_breakfast_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul12_breakfast_opt1",
+    "kind": "footnote",
+    "text": "Or just breakfast at the Hotel Captain Cook before checking out.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul12_breakfast_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul17_lunch_opt0",
+    "kind": "footnote",
+    "text": "In Anchorage, before hitting the road.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul17_lunch_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul17_lunch_opt1",
+    "kind": "footnote",
+    "text": "Push it to a stop in Girdwood along the way — sourdough pancakes or a sandwich.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul17_lunch_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul17_lunch_opt2",
+    "kind": "footnote",
+    "text": "Something quick, to leave more buffer before the tunnel and the 3:30pm boarding window.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul17_lunch_opt2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul17_dinner_opt0",
+    "kind": "footnote",
+    "text": "Traditional first-night formality.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul17_dinner_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul17_dinner_opt1",
+    "kind": "footnote",
+    "text": "Low-key after a long travel day.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul17_dinner_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul17_dinner_opt2",
+    "kind": "footnote",
+    "text": "Princess's Italian trattoria.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul17_dinner_opt2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul18_dinner_opt0",
+    "kind": "footnote",
+    "text": "Timed to catch the glacier views.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul18_dinner_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul18_dinner_opt1",
+    "kind": "footnote",
+    "text": "The steakhouse.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul18_dinner_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul20_lunch_opt0",
+    "kind": "footnote",
+    "text": "Historic waterfront dining, halibut fish-and-chips.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul20_lunch_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul20_lunch_opt1",
+    "kind": "footnote",
+    "text": "For house-smoked salmon and a beach view.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul20_lunch_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul20_lunch_opt2",
+    "kind": "footnote",
+    "text": "Back onboard, if we'd rather not linger in port.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul20_lunch_opt2" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul21_lunch_opt0",
+    "kind": "footnote",
+    "text": "A two-minute walk from the dock.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul21_lunch_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul21_lunch_opt1",
+    "kind": "footnote",
+    "text": "If we'd rather eat on the move before the tramway.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul21_lunch_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul22_lunch_opt0",
+    "kind": "footnote",
+    "text": "Busy at peak lunch hours but the line moves fast.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul22_lunch_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul22_lunch_opt1",
+    "kind": "footnote",
+    "text": "A quieter alternative.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul22_lunch_opt1" } ],
+    "images": []
+  },
+  {
+    "_id": "note_act_jul23_dinner_opt0",
+    "kind": "footnote",
+    "text": "A proper send-off.",
+    "concerns": [ { "entity": "mealOption", "id": "act_jul23_dinner_opt0" } ],
+    "images": []
+  },
+  {
+    "_id": "note_stay_kennicott_checkin",
+    "kind": "info",
+    "text": "2-night minimum; on-site dining is limited (dining room, Meatza Wagon food truck, or a trip into McCarthy) — a meal package is worth booking.",
+    "concerns": [ { "entity": "stay", "id": "stay_kennicott" } ],
+    "images": []
+  },
+  {
+    "_id": "note_stay_lc_katmai_checkin",
+    "kind": "info",
+    "text": "Reached only by floatplane from Anchorage via Lake Clark Pass (~1.5 hrs); the Alsworth family's rate is expected to include home-cooked meals and the Katmai/Chinitna Bay bear-viewing day trips — confirm exact inclusions and cost when booking.",
+    "concerns": [ { "entity": "stay", "id": "stay_lc_katmai" } ],
+    "images": []
+  },
+  {
+    "_id": "note_pkg_kennicott_meals",
+    "kind": "footnote",
+    "text": "On-site dining is otherwise limited to the Meatza Wagon food truck or a trip into McCarthy — worth booking given the 2-night minimum stay.",
+    "concerns": [ { "entity": "package", "id": "pkg_kennicott_meals" } ],
+    "images": []
+  },
+  {
+    "_id": "note_pkg_princess_premier",
+    "kind": "footnote",
+    "text": "A separately purchased add-on, already booked — its cost is folded into the total cruise fare above rather than broken out as its own line item.",
+    "concerns": [ { "entity": "package", "id": "pkg_princess_premier" } ],
     "images": []
   }
 ]

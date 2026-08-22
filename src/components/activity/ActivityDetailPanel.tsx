@@ -6,7 +6,8 @@ import { mealOptionLabel } from '../../model/mealOptions';
 import { materialIcon, DEFAULT_PLACE_ICON, DINING_FORMAT_ICON } from '../shared/materialIcon';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { BookingChip } from '../shared/BookingChip';
-import { NotesCluster } from '../shared/Notes';
+import { NotesCluster, splitNotes } from '../shared/Notes';
+import { LinkifiedText } from '../shared/LinkifiedText';
 import { PlacePanel } from './PlacePanel';
 import type { EnrichedActivity, EnrichedMealOption, Place } from '../../model/types';
 
@@ -29,7 +30,6 @@ function SelectedMealOptionBody({ option }: { option: EnrichedMealOption }) {
           {DINING_FORMAT_LABEL[option.diningFormat]}
         </Typography>
       )}
-      {option.note && <Typography variant="body2">{option.note}</Typography>}
     </>
   );
 }
@@ -56,6 +56,14 @@ export function ActivityDetailPanel({
   const place = selectedPlace(activity, selectedOption);
   const image = firstImage(activity) ?? (place ? firstImage(place) : null);
   const TitleIcon = selectedOption ? materialIcon(DINING_FORMAT_ICON[selectedOption.diningFormat]) : materialIcon(DEFAULT_PLACE_ICON);
+  // The side sheet has no trailing chip row to keep `mid` (info) notes above
+  // of — unlike the day-list row this opened from, it just wants every
+  // non-footnote note up top, same as before `mid` existed as its own slot.
+  // A selected candidate's own notes (see EnrichedMealOption.notes) join the
+  // Activity's — this sheet is that one candidate's own detail view, so both
+  // are "about what's showing here" the same way the day-list row treats them.
+  const { above, mid, below: footnotes } = splitNotes([...(activity.notes ?? []), ...(selectedOption?.notes ?? [])]);
+  const aboveNotes = [...above, ...mid];
 
   return (
     <DetailSideSheet
@@ -74,14 +82,21 @@ export function ActivityDetailPanel({
           sx={{ width: '100%', borderRadius: 2, mb: 2 }}
         />
       )}
-      {selectedOption ? <SelectedMealOptionBody option={selectedOption} /> : <Typography variant="body1">{activity.text}</Typography>}
+      {selectedOption ? (
+        <SelectedMealOptionBody option={selectedOption} />
+      ) : (
+        <Typography variant="body1">
+          <LinkifiedText text={activity.text} />
+        </Typography>
+      )}
       {activity.booking && (
         <Box sx={{ mt: 1.5 }}>
           <BookingChip booking={activity.booking} />
         </Box>
       )}
-      <NotesCluster notes={activity.notes} />
+      <NotesCluster notes={aboveNotes} expanded />
       {place && <PlacePanel place={place} />}
+      <NotesCluster notes={footnotes} expanded />
     </DetailSideSheet>
   );
 }
