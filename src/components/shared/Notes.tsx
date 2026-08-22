@@ -88,7 +88,7 @@ function NoteChip({ note, expanded }: { note: Note; expanded: boolean }) {
   // "open the detail sheet" handler.
   const toggle = (e: MouseEvent) => {
     e.stopPropagation();
-    if (!expanded && truncatable) setOpen((v) => !v);
+    if (!expanded) setOpen((v) => !v);
     setTapped((v) => !v);
   };
 
