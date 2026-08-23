@@ -18,6 +18,7 @@ import type {
   Place,
   PlanStatus,
   Priority,
+  Ref,
   Route,
   Stay,
   TimeLabel,
@@ -90,6 +91,112 @@ export function blankTransit(legId: string, date: string): Transit {
   };
 }
 
+// ---------- includedIn (Activity's own decided dining format, and every
+// MealOption candidate, both point at whichever Stay/Package/Activity/Transit
+// a diningFormat of 'included'/'package'/'included-with-activity'/
+// 'included-with-transit' is actually included/covered by) ----------
+//
+// includedIn points at a whole Stay's base rate, one specific Package nested
+// inside a Stay, the other Activity this meal is bundled into for
+// 'included-with-activity' (a packed lunch eaten mid-hike, say), or the
+// Transit it's served during for 'included-with-transit' (an in-flight meal,
+// a ferry snack bar) — flattened here into a single select whose value
+// encodes both the entity kind and id ('stay:<id>' / 'package:<id>' /
+// 'activity:<id>' / 'transit:<id>'). Only non-meal Activities are offered: a
+// meal being "included with" another meal isn't a real case.
+// One candidate for the "Included in" select — grouped and jumped-to by
+// date (see IncludedInField), since names alone can repeat across the trip
+// (e.g. two different days both have a "Free time" activity).
+export interface IncludedInOption {
+  value: string;
+  label: string;
+  date: string; // ISO date, for grouping
+  sortKey: string; // ISO datetime, for chronological order within a group
+}
+
+// The only diningFormat values whose meaning actually depends on an
+// includedIn ref — the same set includedInOptions below branches on, shared
+// so every includedIn-showing form (the single-choice ActivityEditForm path
+// and each MealOptionList candidate row) gates the field identically.
+export const DINING_FORMATS_WITH_INCLUDED_IN: DiningFormat[] = [
+  'included',
+  'package',
+  'included-with-activity',
+  'included-with-transit',
+];
+
+// The candidate list depends on which diningFormat is selected — 'included'
+// only offers stays, 'package' only offers packages, and so on — so callers
+// must pass the current diningFormat to keep the dropdown from mixing
+// unrelated entity kinds together. Labels are bare names (no "Included
+// with"/"Package:" prefix) — the date grouping disambiguates instead.
+// Options come back sorted chronologically, which also keeps each date's
+// entries contiguous for grouping.
+export function includedInOptions(
+  diningFormat: DiningFormat | '',
+  stays: Stay[],
+  activities: Activity[],
+  transits: Transit[],
+): IncludedInOption[] {
+  const options: IncludedInOption[] = [];
+  if (diningFormat === 'included') {
+    for (const stay of stays) {
+      options.push({
+        value: `stay:${stay._id}`,
+        label: stay.lodging?.name ?? stay._id,
+        date: stay.checkInAt.slice(0, 10),
+        sortKey: stay.checkInAt,
+      });
+    }
+  } else if (diningFormat === 'package') {
+    for (const stay of stays) {
+      for (const pkg of stay.packages ?? []) {
+        options.push({
+          value: `package:${pkg._id}`,
+          label: pkg.name,
+          date: stay.checkInAt.slice(0, 10),
+          sortKey: stay.checkInAt,
+        });
+      }
+    }
+  } else if (diningFormat === 'included-with-activity') {
+    for (const activity of activities) {
+      if (activity.mealType) continue;
+      const date = activity.startAt ? activity.startAt.slice(0, 10) : activity.date;
+      if (date == null) continue;
+      options.push({
+        value: `activity:${activity._id}`,
+        label: activity.text,
+        date,
+        sortKey: activity.startAt ?? `${date}T00:00`,
+      });
+    }
+  } else if (diningFormat === 'included-with-transit') {
+    for (const transit of transits) {
+      options.push({
+        value: `transit:${transit._id}`,
+        label: `${transit.from.label} → ${transit.to.label}`,
+        date: transit.departsAt.slice(0, 10),
+        sortKey: transit.departsAt,
+      });
+    }
+  }
+  options.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
+  return options;
+}
+
+export function includedInValue(includedIn: Ref | null): string {
+  return includedIn && 'entity' in includedIn ? `${includedIn.entity}:${includedIn.id}` : '';
+}
+
+export function parseIncludedIn(value: string): Ref | null {
+  if (!value) return null;
+  const [entity, id] = value.split(':');
+  return entity === 'stay' || entity === 'package' || entity === 'activity' || entity === 'transit'
+    ? { entity, id }
+    : null;
+}
+
 // ---------- Activity ----------
 
 export interface ActivityFormState {
@@ -103,6 +210,7 @@ export interface ActivityFormState {
   mealType: MealType | '';
   diningFormat: DiningFormat | '';
   place: Place | null;
+  includedIn: Ref | null;
   options: MealOption[];
   travelerIds: string[];
   booking: BookingFormValue;
@@ -124,6 +232,7 @@ export function activityFormFrom(activity: Activity): ActivityFormState {
     mealType: activity.mealType ?? '',
     diningFormat: activity.diningFormat ?? '',
     place: activity.place,
+    includedIn: activity.includedIn,
     options: activity.options ?? [],
     travelerIds: activity.travelers ?? [],
     booking: bookingFormValueFrom(activity.booking),
@@ -168,6 +277,7 @@ export function applyActivityForm(activity: Activity, form: ActivityFormState): 
     activity.options = null;
     activity.place = form.place;
     activity.diningFormat = form.diningFormat || null;
+    activity.includedIn = form.includedIn;
   }
   activity.travelers = form.travelerIds.length ? form.travelerIds : null;
   activity.booking = readBookingFormValue(form.booking, activity.booking);

@@ -7,18 +7,22 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 import type { ActivityFormState } from '../../model/editForms';
+import { DINING_FORMATS_WITH_INCLUDED_IN } from '../../model/editForms';
 import type {
+  Activity,
   DiningFormat,
   MealType,
   PlanStatus,
   Priority,
   Stay,
   TimeLabel,
+  Transit,
   Traveler,
 } from '../../model/types';
 import { BookingFields } from './BookingFields';
 import { DateTimeFieldPair } from './DateTimeFieldPair';
 import { DurationSelect } from './DurationSelect';
+import { IncludedInField } from './IncludedInField';
 import { MealOptionList } from './MealOptionList';
 import { PlacePickerField } from './PlacePickerField';
 
@@ -57,6 +61,8 @@ const DINING_FORMAT_OPTIONS: { value: DiningFormat | ''; label: string }[] = [
   { value: '', label: 'None' },
   { value: 'included', label: 'Included with the stay' },
   { value: 'package', label: 'Covered by package' },
+  { value: 'included-with-activity', label: 'Included with another activity' },
+  { value: 'included-with-transit', label: 'Included with travel' },
   { value: 'sit-down', label: 'Sit-down' },
   { value: 'grab-and-go', label: 'Grab-and-go' },
   { value: 'drivethru', label: 'Drive-thru' },
@@ -67,11 +73,15 @@ export function ActivityEditForm({
   form,
   onChange,
   stays,
+  activities,
+  transits,
   tripTravelers,
 }: {
   form: ActivityFormState;
   onChange: (form: ActivityFormState) => void;
   stays: Stay[];
+  activities: Activity[];
+  transits: Transit[];
   tripTravelers: Traveler[];
 }) {
   const hasOptions = form.options.length > 0;
@@ -159,7 +169,15 @@ export function ActivityEditForm({
           select
           label="Dining format"
           value={form.diningFormat}
-          onChange={(e) => onChange({ ...form, diningFormat: e.target.value as DiningFormat | '' })}
+          onChange={(e) => {
+            const diningFormat = e.target.value as DiningFormat | '';
+            const includedIn = DINING_FORMATS_WITH_INCLUDED_IN.includes(
+              diningFormat as DiningFormat,
+            )
+              ? form.includedIn
+              : null;
+            onChange({ ...form, diningFormat, includedIn });
+          }}
         >
           {DINING_FORMAT_OPTIONS.map((o) => (
             <MenuItem key={o.value} value={o.value}>
@@ -168,11 +186,27 @@ export function ActivityEditForm({
           ))}
         </TextField>
       )}
+      {!hasOptions &&
+        form.diningFormat &&
+        DINING_FORMATS_WITH_INCLUDED_IN.includes(form.diningFormat) && (
+          <IncludedInField
+            diningFormat={form.diningFormat}
+            stays={stays}
+            activities={activities}
+            transits={transits}
+            value={form.includedIn}
+            onChange={(includedIn) => onChange({ ...form, includedIn })}
+            jumpToDate={form.startsDate}
+          />
+        )}
 
       <Divider />
       <MealOptionList
         options={form.options}
         stays={stays}
+        activities={activities}
+        transits={transits}
+        jumpToDate={form.startsDate}
         onChange={(options) => onChange({ ...form, options })}
       />
 

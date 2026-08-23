@@ -909,7 +909,7 @@
     "timeLabel": null,
     "order": null,
     "priority": null,
-    "text": "Stop at Yukon River Camp",
+    "text": "Yukon River Camp",
     "place": {
       "id": "ChIJCSqfQ1VLKVER9FZigu88Qtg",
       "label": "Yukon River Camp",
@@ -927,65 +927,26 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jun29_5",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-06-29T11:00",
-    "durationMinutes": 30,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Arctic Circle photo stop",
-    "place": {
-      "id": "ChIJq1OY5MlJKVERzomrV_shh1E",
-      "label": "Arctic Circle Sign",
-      "images": []
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Arctic_circle_Dalton_Highway.jpg",
-        "credit": "Photo by Mison / CC BY-SA 3.0",
-        "caption": "Arctic Circle sign on the Dalton Highway"
-      }
-    ]
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jun29_lunch",
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-06-29T11:45",
+    "startAt": "2027-06-29T12:00",
     "durationMinutes": null,
     "timeLabel": null,
     "order": null,
     "priority": null,
-    "text": "Lunch on the road — choosing where",
+    "text": "Lunch on the road",
     "place": null,
     "booking": null,
     "mealType": "lunch",
     "diningFormat": null,
     "includedIn": null,
     "options": [
-      {
-        "_id": "act_jun29_lunch_opt0",
-        "diningFormat": "grab-and-go",
-        "place": {
-          "id": "ChIJCSqfQ1VLKVER9FZigu88Qtg",
-          "label": "The Hotspot Cafe",
-          "images": []
-        },
-        "includedIn": null
-      },
       {
         "_id": "act_jun29_lunch_opt1",
         "diningFormat": "self-catered",
@@ -994,72 +955,19 @@
       }
     ],
     "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jun29_7",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-06-29T13:00",
-    "durationMinutes": 15,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Drop bags at Slate Creek Inn",
-    "place": {
-      "id": "ChIJKXBYEtzAKFERMTb-h_NwAtE",
-      "label": "Slate Creek Inn",
-      "images": []
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [
-      {
-        "uri": "https://images.squarespace-cdn.com/content/v1/53c02418e4b0b3bb7d14b47f/41555e6c-d79d-48eb-85e9-f35682cdfc82/Coldfoot+Camp+Sign+s.jpg",
-        "credit": "Courtesy of Coldfoot Camp",
-        "caption": "The Coldfoot Camp sign on the Dalton Highway"
-      }
-    ]
-  },
-  {
-    "_id": "act_jun29_11",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-06-29T13:15",
-    "durationMinutes": 15,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Check in with Coyote Air about tomorrow’s flight",
-    "place": {
-      "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
-      "label": "Coyote Air",
-      "images": []
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jun29_8",
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-06-29T13:30",
-    "durationMinutes": 180,
-    "timeLabel": null,
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Afternoon",
     "order": null,
-    "priority": null,
+    "priority": "high",
     "text": "Arctic Interagency Visitor Center",
     "place": {
       "id": "ChIJmYs44d3AKFERJq-Pgp3qfhY",
@@ -1078,7 +986,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-06-29"
   },
   {
     "_id": "act_jun29_9",
@@ -1140,66 +1049,6 @@
       }
     ],
     "date": "2027-06-29"
-  },
-  {
-    "_id": "act_jun30_ideal_1",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun30_ideal",
-    "status": "planning",
-    "startAt": "2027-06-30T08:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Breakfast buffet at Coldfoot Camp Cafe",
-    "place": {
-      "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
-      "label": "Coldfoot Camp Cafe",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/World%27s_Northernmost_Truck_Stop,_Coldfoot,_AK.jpg",
-          "credit": "Photo by Scott McMurren / CC BY 2.0",
-          "caption": "Coldfoot Camp, the world's northernmost truck stop"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": "breakfast",
-    "diningFormat": "sit-down",
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jun30_ideal_2",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun30_ideal",
-    "status": "planning",
-    "startAt": "2027-06-30T09:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Check in at the Coyote Air office, Coldfoot Airport",
-    "place": {
-      "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
-      "label": "Coyote Air",
-      "images": [
-        {
-          "uri": "https://flycoyote.com/wp-content/uploads/2021/03/coyote-air-22022557-1024x569.jpg",
-          "credit": "Courtesy of Coyote Air",
-          "caption": "Coyote Air bush flying operation, Coldfoot Airport"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
   },
   {
     "_id": "act_jun30_ideal_3",
@@ -1351,66 +1200,6 @@
       }
     ],
     "date": "2027-06-30"
-  },
-  {
-    "_id": "act_jun30_alt_1",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun30_alt",
-    "status": "planning",
-    "startAt": "2027-06-30T08:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Breakfast buffet at Coldfoot Camp Cafe",
-    "place": {
-      "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
-      "label": "Coldfoot Camp Cafe",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/World%27s_Northernmost_Truck_Stop,_Coldfoot,_AK.jpg",
-          "credit": "Photo by Scott McMurren / CC BY 2.0",
-          "caption": "Coldfoot Camp, the world's northernmost truck stop"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": "breakfast",
-    "diningFormat": "sit-down",
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jun30_alt_2",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun30_alt",
-    "status": "planning",
-    "startAt": "2027-06-30T09:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Check in with Coyote Air",
-    "place": {
-      "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
-      "label": "Coyote Air",
-      "images": [
-        {
-          "uri": "https://flycoyote.com/wp-content/uploads/2021/03/coyote-air-22022557-1024x569.jpg",
-          "credit": "Courtesy of Coyote Air",
-          "caption": "Coyote Air bush flying operation, Coldfoot Airport"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
   },
   {
     "_id": "act_jun30_alt_3",
@@ -1717,36 +1506,6 @@
     "images": []
   },
   {
-    "_id": "act_jul1_ideal_5",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jul1_ideal",
-    "status": "planning",
-    "startAt": "2027-07-01T18:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Dinner at The Pump House Restaurant",
-    "place": {
-      "id": "ChIJbf5SBnJbMlEReyVKG1_ISbU",
-      "label": "The Pump House Restaurant",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Chena_Pump_House_NRHP_Fairbanks,_AK.JPG",
-          "credit": "Photo by Durkeeco / CC BY-SA 3.0",
-          "caption": "The historic Chena Pump House, now the Pump House Restaurant"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": "dinner",
-    "diningFormat": "sit-down",
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
     "_id": "act_jul1_alt_breakfast",
     "legId": "leg_parks",
     "scenarioId": "scenario_jul1_alt",
@@ -1973,36 +1732,6 @@
     "booking": null,
     "mealType": null,
     "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jul1_alt_6",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jul1_alt",
-    "status": "planning",
-    "startAt": "2027-07-01T18:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Dinner at The Pump House Restaurant",
-    "place": {
-      "id": "ChIJbf5SBnJbMlEReyVKG1_ISbU",
-      "label": "The Pump House Restaurant",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Chena_Pump_House_NRHP_Fairbanks,_AK.JPG",
-          "credit": "Photo by Durkeeco / CC BY-SA 3.0",
-          "caption": "The historic Chena Pump House, now the Pump House Restaurant"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": "dinner",
-    "diningFormat": "sit-down",
     "includedIn": null,
     "options": null,
     "travelers": null,
@@ -5841,6 +5570,124 @@
         "includedIn": null
       }
     ],
+    "travelers": null,
+    "images": [],
+    "date": null
+  },
+  {
+    "_id": "act_jun29_11",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": "2027-06-29T12:45",
+    "durationMinutes": 15,
+    "timeLabel": null,
+    "order": null,
+    "priority": null,
+    "text": "Check in with Coyote Air about tomorrow’s flight",
+    "place": {
+      "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
+      "label": "Coyote Air",
+      "images": []
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [],
+    "date": null
+  },
+  {
+    "_id": "act_jun30_alt_1",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": "2027-06-30T08:00",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "order": null,
+    "priority": null,
+    "text": "Breakfast buffet at Coldfoot Camp Cafe",
+    "place": {
+      "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
+      "label": "Coldfoot Camp Cafe",
+      "images": [
+        {
+          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/World%27s_Northernmost_Truck_Stop,_Coldfoot,_AK.jpg",
+          "credit": "Photo by Scott McMurren / CC BY 2.0",
+          "caption": "Coldfoot Camp, the world's northernmost truck stop"
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": "breakfast",
+    "diningFormat": "sit-down",
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [],
+    "date": null
+  },
+  {
+    "_id": "act_jun30_ideal_2",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": "2027-06-30T09:00",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "order": null,
+    "priority": null,
+    "text": "Check in at the Coyote Air office, Coldfoot Airport",
+    "place": {
+      "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
+      "label": "Coyote Air",
+      "images": [
+        {
+          "uri": "https://flycoyote.com/wp-content/uploads/2021/03/coyote-air-22022557-1024x569.jpg",
+          "credit": "Courtesy of Coyote Air",
+          "caption": "Coyote Air bush flying operation, Coldfoot Airport"
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [],
+    "date": null
+  },
+  {
+    "_id": "act_jul1_ideal_5",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": "2027-07-01T18:30",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "order": null,
+    "priority": null,
+    "text": "Dinner at The Pump House Restaurant",
+    "place": {
+      "id": "ChIJbf5SBnJbMlEReyVKG1_ISbU",
+      "label": "The Pump House Restaurant",
+      "images": [
+        {
+          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Chena_Pump_House_NRHP_Fairbanks,_AK.JPG",
+          "credit": "Photo by Durkeeco / CC BY-SA 3.0",
+          "caption": "The historic Chena Pump House, now the Pump House Restaurant"
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": "dinner",
+    "diningFormat": "sit-down",
+    "includedIn": null,
+    "options": null,
     "travelers": null,
     "images": [],
     "date": null

@@ -858,7 +858,7 @@
   checkOutAt: '2027-07-24T07:30',
   status: 'planning',
   lodging: {
-    placeId: null, name: 'Discovery Princess (cabin)',
+    placeId: null, name: 'Discovery Princess',
     roomType: 'Balcony (Cat. BC)', roomNumber: 'L232', campsite: null,
     bedConfiguration: 'Convertible twins',   // added: cruise-specific,
     deckGroup: 'Upper', shipZone: 'Mid-Forward', // no hotel Stay needs these
@@ -1326,8 +1326,8 @@
         </div>
         <pre class="schema"><code>{
   _id: 'route_anc_to_whittier',
-  from: { placeId: '...', label: 'Anchorage' },
-  to:   { placeId: '...', label: 'Whittier' },
+  from: { id: 'ChIJ...', label: 'Anchorage' },
+  to:   { id: 'ChIJ...', label: 'Whittier' },
   variants: [
     {
       tone: 'scenic',
@@ -1351,6 +1351,26 @@
           <li>
             <strong>No tripId, no dates, no booking.</strong> The same trip, or a different trip
             entirely, can reference this route again.
+          </li>
+          <li>
+            <strong
+              >from/to resolve against the Places API and persist an id, same as Place — but
+              through the dedicated <code>RouteEndpoint</code> shape, not Place itself.</strong
+            >
+            The stored id exists for exactly one purpose: letting the route editor
+            (<code>RouteEditForm</code>'s <code>recomputeVariant</code>) auto-hydrate each
+            variant's first and final leg's drive time from a real Google Directions lookup every
+            time the route is reopened, instead of forcing a re-pick of From/To on every edit. A
+            route's endpoint is frequently a whole city or highway junction ('Anchorage',
+            'Coldfoot') rather than one exact point — a fine anchor for a duration estimate, but the
+            wrong id to hand to anything that plots a single pin. <code>RouteEndpoint</code> is kept
+            structurally identical to Place but nominally distinct so that boundary is enforced by
+            the type itself: the day-list map/Directions code
+            (<code>dayMapEmbedUrl</code>/<code>dayFullRouteUrl</code> in <code>tripModel.ts</code>)
+            reads only <code>Transit.from</code>/<code>to</code> and
+            <code>variants[].places[].place</code>, never a Route's own <code>from</code>/<code
+              >to</code
+            >.
           </li>
           <li>
             <strong>variants[].tone has its own vocabulary</strong> —
@@ -1468,8 +1488,10 @@
           <li>
             <strong>Reused everywhere a real point is needed</strong>: Activity's
             <code>place</code>, Stay's <code>lodging</code>, Route's
-            <code>from</code>/<code>to</code>/<code>places[].place</code>, and (as of the ferry
-            test) Transit's <code>from</code>/<code>to</code> all share this exact shape.
+            <code>variants[].places[].place</code>, and (as of the ferry test) Transit's
+            <code>from</code>/<code>to</code> all literally use this type. Route's own
+            <code>from</code>/<code>to</code> use the structurally-identical but nominally distinct
+            <code>RouteEndpoint</code> instead — see Route's rationale for why that boundary exists.
           </li>
           <li>
             <strong>images is the one field the live lookup can't fill in</strong> — the Places API

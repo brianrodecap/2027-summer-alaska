@@ -176,6 +176,49 @@ describe('transitOverlapWarning', () => {
   });
 });
 
+describe('activityOverlapWarning', () => {
+  it('flags two Activities on the same leg/scenario whose timed spans overlap', () => {
+    const data = structuredClone(loadRealTripData());
+    pushMinimalActivity(data, {
+      _id: 'test_container',
+      legId: 'leg_test_only',
+      text: 'Root Glacier guided half-day hike',
+      startAt: '2027-06-28T09:00',
+      durationMinutes: 300,
+    });
+    pushMinimalActivity(data, {
+      legId: 'leg_test_only',
+      startAt: '2027-06-28T13:30',
+      mealType: 'lunch',
+      diningFormat: 'self-catered',
+    });
+    const view = buildTripView(data);
+    expect(view.activitiesById.get('test_activity')?.activityOverlapWarning).toBe(
+      'Overlaps with "Root Glacier guided half-day hike".',
+    );
+  });
+
+  it("exempts a meal explicitly modeled as diningFormat 'included-with-activity'", () => {
+    const data = structuredClone(loadRealTripData());
+    pushMinimalActivity(data, {
+      _id: 'test_container',
+      legId: 'leg_test_only',
+      text: 'Root Glacier guided half-day hike',
+      startAt: '2027-06-28T09:00',
+      durationMinutes: 300,
+    });
+    pushMinimalActivity(data, {
+      legId: 'leg_test_only',
+      startAt: '2027-06-28T13:30',
+      mealType: 'lunch',
+      diningFormat: 'included-with-activity',
+      includedIn: { entity: 'activity', id: 'test_container' },
+    });
+    const view = buildTripView(data);
+    expect(view.activitiesById.get('test_activity')?.activityOverlapWarning).toBeNull();
+  });
+});
+
 describe('same-startAt Activity ordering', () => {
   it('puts a defaulted (timeLabel-anchored) startAt first, then no-duration, then ascending duration', () => {
     const data = structuredClone(loadRealTripData());

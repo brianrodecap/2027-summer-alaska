@@ -302,7 +302,7 @@
     },
     "departsAt": "2027-07-01T09:00",
     "arrivesAt": null,
-    "routeId": "route_dalton_highway",
+    "routeId": "route_new_10",
     "routeVariant": "direct",
     "booking": null,
     "images": [
@@ -328,7 +328,7 @@
     },
     "departsAt": "2027-07-01T10:00",
     "arrivesAt": null,
-    "routeId": "route_dalton_highway",
+    "routeId": "route_new_10",
     "routeVariant": "direct",
     "booking": null,
     "images": [
@@ -354,7 +354,7 @@
     },
     "departsAt": "2027-07-01T07:30",
     "arrivesAt": null,
-    "routeId": "route_dalton_highway",
+    "routeId": "route_new_10",
     "routeVariant": "direct",
     "booking": null,
     "images": [

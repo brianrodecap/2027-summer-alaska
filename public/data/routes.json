@@ -400,5 +400,42 @@
         "caption": "West portal of the Anton Anderson Memorial Tunnel"
       }
     ]
+  },
+  {
+    "_id": "route_new_10",
+    "from": {
+      "id": "ChIJNRitFufAKFERJ0iug2SKplA",
+      "label": "Coldfoot"
+    },
+    "to": {
+      "id": "ChIJqWX9Z09FMlEROvf-CeAF2LM",
+      "label": "Fairbanks"
+    },
+    "variants": [
+      {
+        "tone": "direct",
+        "label": "Dalton Highway",
+        "places": [
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJq1OY5MlJKVERzomrV_shh1E",
+              "label": "Arctic Circle Sign"
+            },
+            "durationMinutes": 0
+          },
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJq1HFuXaxLlERly-xPwd2LII",
+              "label": "Finger Mountain"
+            },
+            "durationMinutes": 0
+          }
+        ],
+        "finalLegMinutes": 0
+      }
+    ],
+    "images": []
   }
 ]

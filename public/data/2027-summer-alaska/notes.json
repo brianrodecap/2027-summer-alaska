@@ -1877,5 +1877,17 @@
       }
     ],
     "images": []
+  },
+  {
+    "_id": "7521afa9-2f02-4ee7-8b5a-9cfad52ae704",
+    "kind": "footnote",
+    "text": "Expect to be asked to check back later rather than a firm no — keep the day loose.",
+    "concerns": [
+      {
+        "entity": "activity",
+        "id": "act_jun30_ideal_2"
+      }
+    ],
+    "images": []
   }
 ]

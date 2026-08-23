@@ -3,7 +3,7 @@
 // scoped to just one of those surfaces (see docs/data-model.html for the
 // entity shapes these draw on).
 import { activityTimeLabel } from './tripModel';
-import type { DiningFormat, Image, MealType } from './types';
+import type { DiningFormat, Image, MealOption, MealType } from './types';
 
 // ---------- images: every entity carries images: Image[] — a list rather
 // than one field so a hand-sourced reference photo and later personal trip
@@ -17,6 +17,8 @@ export function firstImage(entity: { images?: Image[] | null } | null | undefine
 export const DINING_FORMAT_LABEL: Record<DiningFormat, string> = {
   included: 'Included',
   package: 'Package',
+  'included-with-activity': 'Included with activity',
+  'included-with-transit': 'Included with travel',
   'sit-down': 'Sit-down',
   'grab-and-go': 'Grab-and-go',
   drivethru: 'Drive-thru',
@@ -33,12 +35,22 @@ const MEAL_TYPE_LABEL: Record<MealType, string> = {
 // Every day-list row leads with "time · type" on its overline — mealType for
 // a meal Activity, 'Activity' for a plain one — matching Depart/Via/Waypoint/
 // Arrive's own time-plus-type overline and Stay's relation-only one.
-export function timeAndMealTypeLabel(activity: {
-  startAt: string | null;
-  durationMinutes: number | null;
-  timeLabel: string | null;
-  mealType: MealType | null;
-}): string {
-  const time = activityTimeLabel(activity);
+// timeOverride lets MealRow substitute the selected MealOption candidate's
+// own calculated time span (mealOptionTimeLabel, in mealOptions.ts) in place
+// of the Activity's own — the still-open Activity itself has no
+// durationMinutes to compute a span from, only whichever candidate is picked.
+export function timeAndMealTypeLabel(
+  activity: {
+    _id: string;
+    startAt: string | null;
+    durationMinutes: number | null;
+    timeLabel: string | null;
+    mealType: MealType | null;
+    diningFormat: DiningFormat | null;
+    options: MealOption[] | null;
+  },
+  timeOverride?: string,
+): string {
+  const time = timeOverride ?? activityTimeLabel(activity);
   return `${time} · ${activity.mealType ? MEAL_TYPE_LABEL[activity.mealType] : 'Activity'}`;
 }

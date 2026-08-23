@@ -50,6 +50,8 @@ interface EditDialogProps {
   entity: Entity | undefined;
   isNew?: boolean;
   stays: Stay[];
+  activities: Activity[];
+  transits: Transit[];
   tripTravelers: Traveler[];
   routes: Route[];
   onClose: () => void;
@@ -76,6 +78,8 @@ function EditDialogBody({
   entity,
   isNew,
   stays,
+  activities,
+  transits,
   tripTravelers,
   routes,
   onClose,
@@ -123,6 +127,8 @@ function EditDialogBody({
             form={activityForm}
             onChange={setActivityForm}
             stays={stays}
+            activities={activities}
+            transits={transits}
             tripTravelers={tripTravelers}
           />
         )}

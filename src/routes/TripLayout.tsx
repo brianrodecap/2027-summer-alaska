@@ -7,6 +7,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { Suspense } from 'react';
 import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
 
 import { exportEdits } from '../model/exportEdits';
@@ -113,7 +114,15 @@ export function TripLayout() {
         <EditProvider>
           <NoteEditProvider>
             <TripHero />
-            <Outlet />
+            <Suspense
+              fallback={
+                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                  <CircularProgress />
+                </Box>
+              }
+            >
+              <Outlet />
+            </Suspense>
           </NoteEditProvider>
         </EditProvider>
       </TripSelectionsProvider>

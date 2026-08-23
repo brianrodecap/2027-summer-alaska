@@ -85,12 +85,29 @@ export interface Leg {
 }
 
 // A pinned Google Place ID (or null for a named-but-unresolvable point) plus a display
-// label. Reused verbatim for Activity.place, Stay.lodging, Route from/to/places[].place,
+// label. Reused verbatim for Activity.place, Stay.lodging, Route places[].place,
 // and Transit from/to.
 export interface Place {
   id: string | null;
   label: string;
   images?: Image[];
+}
+
+// Route's own from/to endpoints. Resolved against the Places API and
+// persisted the same way Place is — RouteEditForm relies on the stored id to
+// auto-hydrate each variant's first and final leg's drive time (see
+// recomputeVariant) without requiring a re-pick every time the route is
+// reopened. Kept as its own type rather than reused Place, though, because a
+// route's endpoint is frequently a whole city or highway junction
+// ('Anchorage', 'Coldfoot') rather than one specific point — fine as a
+// Directions-API duration lookup, but the wrong id to hand to a map/embed
+// URL that plots one exact pin (see dayMapEmbedUrl/dayFullRouteUrl in
+// tripModel.ts, which draw only from Transit.from/to and
+// variants[].places[].place, never from a Route's own from/to). This type
+// exists so that boundary has to be crossed on purpose.
+export interface RouteEndpoint {
+  id: string | null;
+  label: string;
 }
 
 export interface Lodging {
@@ -174,8 +191,8 @@ export interface RouteVariant {
 
 export interface Route {
   _id: string;
-  from: Place;
-  to: Place;
+  from: RouteEndpoint;
+  to: RouteEndpoint;
   variants: RouteVariant[];
   images: Image[];
 }
@@ -217,7 +234,14 @@ export interface Note {
 }
 
 export type DiningFormat =
-  'included' | 'package' | 'sit-down' | 'grab-and-go' | 'drivethru' | 'self-catered';
+  | 'included'
+  | 'package'
+  | 'included-with-activity'
+  | 'included-with-transit'
+  | 'sit-down'
+  | 'grab-and-go'
+  | 'drivethru'
+  | 'self-catered';
 
 // Candidate shape used only by Activity.options, while a meal choice is genuinely
 // undecided — deciding means promoting one candidate's 3 fields onto the Activity itself
@@ -290,6 +314,7 @@ export interface EnrichedActivity extends Omit<Activity, 'options' | 'travelers'
   notes: Note[];
   hasWarningNote: boolean;
   transitOverlapWarning: string | null;
+  activityOverlapWarning: string | null;
   travelers: string[] | null; // resolved display names, not ids
   options: EnrichedMealOption[] | null;
 }

@@ -116,7 +116,7 @@ export function DaysView() {
     const movingUp = activeMeta.index > overMeta.index;
     const dropMeta: DragMeta =
       movingUp && overMeta.before ? { ...overMeta, ...overMeta.before } : overMeta;
-    const dayStart = `${dropMeta.endAt.slice(0, 10)}T00:00`;
+    const dayStart = dropMeta.containerDayStart;
     setData((prev) => applyActivityReorder(prev, dropMeta, activityId, dayStart), ['activities']);
   };
 

@@ -4,12 +4,14 @@ import ButtonBase from '@mui/material/ButtonBase';
 import Typography from '@mui/material/Typography';
 
 import { firstImage, timeAndMealTypeLabel } from '../../model/formatting';
+import { liveOverlapWarnings } from '../../model/mealOptions';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
+import { useMealOptionSelection } from '../../state/TripSelectionsContext';
 import { BookingChip } from '../shared/BookingChip';
 import { LinkifiedText } from '../shared/LinkifiedText';
 import { DEFAULT_PLACE_ICON, DINING_FORMAT_ICON, RowLeadingDot } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
-import { TransitOverlapWarning } from '../shared/TransitOverlapWarning';
+import { OverlapWarnings } from '../shared/OverlapWarnings';
 import { TravelerChips } from '../shared/TravelerChips';
 import { MealRow, MealRowLeading } from './MealRow';
 
@@ -47,6 +49,8 @@ export function ActivityRow({
   onOpen: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
   midNotes?: Note[];
 }) {
+  const { mealOptionIndex } = useMealOptionSelection();
+
   if (activity.options?.length)
     return <MealRow activity={activity} day={day} onOpen={onOpen} midNotes={midNotes} />;
 
@@ -76,7 +80,7 @@ export function ActivityRow({
             <BookingChip booking={activity.booking} />
           </Box>
         )}
-        <TransitOverlapWarning activity={activity} />
+        <OverlapWarnings activity={liveOverlapWarnings(activity, day, mealOptionIndex)} />
       </Box>
     </ButtonBase>
   );

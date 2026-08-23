@@ -8,7 +8,9 @@ import Typography from '@mui/material/Typography';
 import { DINING_FORMAT_LABEL, firstImage, timeAndMealTypeLabel } from '../../model/formatting';
 import {
   activeMealOptions,
+  liveOverlapWarnings,
   mealOptionLabel,
+  mealOptionTimeLabel,
   selectedMealOptionIndex,
 } from '../../model/mealOptions';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
@@ -16,7 +18,7 @@ import { useMealOptionSelection } from '../../state/TripSelectionsContext';
 import { LinkifiedText } from '../shared/LinkifiedText';
 import { DINING_FORMAT_ICON, renderMaterialIcon, RowLeadingDot } from '../shared/materialIcon';
 import { NotesCluster, splitNotes } from '../shared/Notes';
-import { TransitOverlapWarning } from '../shared/TransitOverlapWarning';
+import { OverlapWarnings } from '../shared/OverlapWarnings';
 import { TravelerChips } from '../shared/TravelerChips';
 
 // Which candidate is "active" for a meal Activity — shared by the row's own
@@ -63,7 +65,7 @@ export function MealRow({
   onOpen: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
   midNotes?: Note[];
 }) {
-  const { selectMealOption } = useMealOptionSelection();
+  const { mealOptionIndex, selectMealOption } = useMealOptionSelection();
   const { options, index, selected } = useMealSelection(activity, day);
   const {
     above: optionAbove,
@@ -80,7 +82,10 @@ export function MealRow({
       >
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
           <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-            {timeAndMealTypeLabel(activity)}
+            {timeAndMealTypeLabel(
+              activity,
+              selected ? mealOptionTimeLabel(activity, selected) : undefined,
+            )}
           </Typography>
           <Typography variant="body1">
             {selected ? mealOptionLabel(selected) : <LinkifiedText text={activity.text} />}
@@ -88,7 +93,7 @@ export function MealRow({
           <NotesCluster notes={midNotes} />
           <NotesCluster notes={optionMid} />
           <TravelerChips names={selected?.travelers} />
-          <TransitOverlapWarning activity={activity} />
+          <OverlapWarnings activity={liveOverlapWarnings(activity, day, mealOptionIndex)} />
         </Box>
       </ButtonBase>
       {options.length > 1 && (

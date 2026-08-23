@@ -45,6 +45,7 @@ import type {
   RoutePlaceEntry,
   RouteStage,
   Scenario,
+  ScenarioTabsSequenceItem,
   ScenarioTrack,
   SectionSequenceItem,
   SequenceItem,
@@ -309,13 +310,14 @@ export function formatMoney(cost: Money | null | undefined): string | null {
 }
 
 export function activityTimeLabel(
-  activity: Pick<Activity, 'startAt' | 'durationMinutes' | 'timeLabel'>,
+  activity: Pick<
+    Activity,
+    '_id' | 'startAt' | 'durationMinutes' | 'timeLabel' | 'mealType' | 'diningFormat' | 'options'
+  >,
 ): string {
   if (activity.startAt) {
-    const end =
-      activity.durationMinutes != null
-        ? addMinutesIso(activity.startAt, activity.durationMinutes)
-        : null;
+    const minutes = activityDurationMinutes(activity);
+    const end = minutes != null ? addMinutesIso(activity.startAt, minutes) : null;
     return formatTime(activity.startAt) + (end ? `–${formatTime(end)}` : '');
   }
   if (activity.timeLabel) return activity.timeLabel;
@@ -596,9 +598,15 @@ export function addMinutesIso(iso: string, minutes: number): string {
 // durationMinutes isn't already on record. A still-open meal
 // (activity.options set, diningFormat null) borrows its first candidate's
 // format as the best available guess.
+// 'included-with-activity'/'included-with-transit' both get 0: the meal
+// happens inside whatever Activity/Transit it's bundled into (includedIn),
+// which already owns that stretch of the day — giving it its own nonzero
+// estimate here would double-count the time.
 const DEFAULT_MEAL_DURATION_MINUTES: Record<string, number> = {
   included: 30,
   package: 45,
+  'included-with-activity': 0,
+  'included-with-transit': 0,
   'sit-down': 60,
   'grab-and-go': 15,
   drivethru: 10,
@@ -1027,19 +1035,59 @@ function deriveSummary(
 
 const PRIORITY_RANK: Record<string, number> = { high: 3, medium: 2, low: 1 };
 
-function sectionActivities(sequence: SequenceItem[]): EnrichedActivity[] {
+export function sectionActivities(sequence: SequenceItem[]): EnrichedActivity[] {
   return (sequence.filter((i) => i.type === 'section') as SectionSequenceItem[]).flatMap(
     (i) => i.activities,
   );
 }
 
+// Same as sectionActivities, but also recurses into every nested
+// scenario-tabs split's own tracks (unlike plannedTrackCandidates, which
+// stops at the first sibling with a candidate) — for callers that need
+// every Activity a day could possibly render, regardless of which branch,
+// e.g. mealOptions.ts's overlap-warning pool.
+export function sectionActivitiesDeep(sequence: SequenceItem[]): EnrichedActivity[] {
+  return sequence.flatMap((item) => {
+    if (item.type === 'section') return item.activities;
+    if (item.type === 'scenario-tabs') {
+      return (item.tracks ?? []).flatMap((track) => sectionActivitiesDeep(track.sequence));
+    }
+    return [];
+  });
+}
+
+// Tries a group of sibling tracks ideal-tone-first (same convention as
+// idealOrFirstTrack), recursing into any nested scenario-tabs split each
+// track contains — but if the preferred track's own chain carries no
+// headline (priority) event at all, falls through to the next sibling
+// rather than surfacing a blank title. Jul 1 is exactly this case: the
+// top-level "Relaxed drive-back day" (ideal) branch has no priority
+// activity, but its sibling "Last-chance backup day" does, two levels down
+// inside its own "Flight goes" split — so that's what should title the day.
+// Still never combines two branches' candidates together — the first
+// sibling with any candidate wins outright, so a flightseeing day's title
+// doesn't also drag in its own weathered-out backup.
+function plannedTrackCandidates(tracks: ScenarioTrack[]): EnrichedActivity[] {
+  if (!tracks.length) return [];
+  const ideal = idealOrFirstTrack({ scenarioTracks: tracks });
+  const ordered = ideal ? [ideal, ...tracks.filter((t) => t !== ideal)] : tracks;
+  for (const track of ordered) {
+    const own = sectionActivities(track.sequence).filter((a) => a.priority);
+    const tabs = track.sequence.find(
+      (i): i is ScenarioTabsSequenceItem => i.type === 'scenario-tabs',
+    );
+    const nested = tabs?.tracks?.length ? plannedTrackCandidates(tabs.tracks) : [];
+    const candidates = [...own, ...nested];
+    if (candidates.length) return candidates;
+  }
+  return [];
+}
+
 // Pulled from day.sequence (the fixed backbone) plus the planned scenario
-// track only — never both branches of a weather split at once, so a
-// flightseeing day's title doesn't also drag in its own weathered-out backup.
+// tracks.
 function titleCandidates(day: Pick<Day, 'scenarioTracks' | 'sequence'>): EnrichedActivity[] {
-  const idealTrack = idealOrFirstTrack(day);
-  const branching = idealTrack ? sectionActivities(idealTrack.sequence) : [];
-  return [...sectionActivities(day.sequence), ...branching].filter((a) => a.priority);
+  const fixed = sectionActivities(day.sequence).filter((a) => a.priority);
+  return [...fixed, ...plannedTrackCandidates(day.scenarioTracks)];
 }
 
 function deriveTitle(day: Pick<Day, 'scenarioTracks' | 'sequence' | 'location'>): string {
@@ -1526,9 +1574,13 @@ function inTransitActivities(transit: Transit, activities: EnrichedActivity[]): 
 // mid-meal is a real risk of missing it, not something to wave off the same
 // way — so this uses activityDurationMinutes' meal-format estimate too, not
 // just an explicit durationMinutes.
-function transitDepartsDuringActivity(activity: Activity, transit: Transit): boolean {
+function transitDepartsDuringActivity(
+  activity: Activity,
+  transit: Transit,
+  formatOverrides?: Map<string, DiningFormat>,
+): boolean {
   if (!activity.startAt) return false;
-  const minutes = activityDurationMinutes(activity);
+  const minutes = activityDurationMinutes(activity, formatOverrides);
   if (minutes == null) return false;
   const activityEndsAt = addMinutesIso(activity.startAt, minutes);
   return (
@@ -1556,12 +1608,98 @@ function transitOverlapFor(
   activity: Activity,
   transits: Transit[],
   exemptMealFromMidDrive: boolean,
+  formatOverrides?: Map<string, DiningFormat>,
 ): { transit: Transit; departsMidActivity: boolean } | null {
-  const departing = transits.find((t) => transitDepartsDuringActivity(activity, t));
+  const departing = transits.find((t) =>
+    transitDepartsDuringActivity(activity, t, formatOverrides),
+  );
   if (departing) return { transit: departing, departsMidActivity: true };
   if (exemptMealFromMidDrive) return null;
   const containing = transits.find((t) => activityFallsWithinTransit(activity, t));
   return containing ? { transit: containing, departsMidActivity: false } : null;
+}
+
+// Two Activities aren't supposed to occupy the same clock-time on the same
+// leg/scenario branch at all — most often a meal authored as its own
+// Activity that actually happens during another one (a packed lunch eaten
+// mid-hike), which belongs modeled as diningFormat 'included-with-activity'
+// + includedIn pointing at that Activity instead of quietly overlapping it.
+// Only real-timed Activities can be compared — a fuzzy timeLabel-only one
+// has no clock-time span to check. A null-duration side (activityDurationMinutes'
+// own "point-in-time" case) is treated as zero-width, so it still flags
+// landing inside the other's span without needing a made-up length of its own.
+function activitiesOverlap(
+  a: Activity,
+  b: Activity,
+  formatOverrides?: Map<string, DiningFormat>,
+): boolean {
+  if (!a.startAt || !b.startAt) return false;
+  if (a.legId !== b.legId || a.scenarioId !== b.scenarioId) return false;
+  const aEnd = addMinutesIso(a.startAt, activityDurationMinutes(a, formatOverrides) ?? 0);
+  const bEnd = addMinutesIso(b.startAt, activityDurationMinutes(b, formatOverrides) ?? 0);
+  return a.startAt < bEnd && b.startAt < aEnd;
+}
+
+// diningFormat 'included-with-activity' is the explicit "this overlap is
+// correct, not a scheduling mistake" signal — includedIn names exactly
+// which Activity it's bundled into, so only that specific pairing is
+// exempted, not every overlap this Activity happens to have.
+function isIncludedWithActivity(activity: Activity, other: Activity): boolean {
+  return (
+    activity.diningFormat === 'included-with-activity' &&
+    !!activity.includedIn &&
+    'entity' in activity.includedIn &&
+    activity.includedIn.entity === 'activity' &&
+    activity.includedIn.id === other._id
+  );
+}
+
+function activityOverlapFor(
+  activity: Activity,
+  activities: Activity[],
+  formatOverrides?: Map<string, DiningFormat>,
+): Activity | null {
+  return (
+    activities.find(
+      (other) =>
+        other._id !== activity._id &&
+        activitiesOverlap(activity, other, formatOverrides) &&
+        !isIncludedWithActivity(activity, other) &&
+        !isIncludedWithActivity(other, activity),
+    ) ?? null
+  );
+}
+
+// The two overlap-warning strings shown on an Activity's row — computed once
+// per Activity at page load (buildTripView, no overrides: each still-open
+// meal reads as its first candidate's format) and recomputable later against
+// whichever MealOption candidates are actually live-selected right now (the
+// meal row's own tabs), the same "live" pattern resolveTransitRoute already
+// uses for route-variant tabs. A meal's picked format changes how long it
+// runs, which can flip whether it actually overlaps a nearby Transit/Activity.
+export function overlapWarningsFor(
+  activity: Activity,
+  activities: Activity[],
+  transits: Transit[],
+  formatOverrides?: Map<string, DiningFormat>,
+): { transitOverlapWarning: string | null; activityOverlapWarning: string | null } {
+  const overlappingTransit = transitOverlapFor(
+    activity,
+    transits,
+    Boolean(activity.mealType),
+    formatOverrides,
+  );
+  const overlappingActivity = activityOverlapFor(activity, activities, formatOverrides);
+  return {
+    transitOverlapWarning: overlappingTransit
+      ? overlappingTransit.departsMidActivity
+        ? `${overlappingTransit.transit.from.label} departs before this ends.`
+        : `During transit: ${overlappingTransit.transit.from.label} → ${overlappingTransit.transit.to.label}`
+      : null,
+    activityOverlapWarning: overlappingActivity
+      ? `Overlaps with "${overlappingActivity.text}".`
+      : null,
+  };
 }
 
 // Every place entry must carry a kind of 'waypoint' or 'via' (never a bare
@@ -1979,17 +2117,18 @@ export function buildTripView(data: TripData): TripView {
     // A meal starting mid-drive is exempt — see DEFAULT_MEAL_DURATION_MINUTES
     // above for why that's normal, not a modeling mistake. A departure
     // scheduled mid-meal still isn't exempt (transitOverlapFor's own note).
-    const overlappingTransit = transitOverlapFor(a, transits, Boolean(a.mealType));
+    const { transitOverlapWarning, activityOverlapWarning } = overlapWarningsFor(
+      a,
+      activities,
+      transits,
+    );
     return {
       ...a,
       date: resolveActivityDate(a),
       notes: notesForEntity(notes, 'activity', a._id),
       hasWarningNote: entityHasWarning(notes, 'activity', a._id),
-      transitOverlapWarning: overlappingTransit
-        ? overlappingTransit.departsMidActivity
-          ? `${overlappingTransit.transit.from.label} departs before this ends.`
-          : `During transit: ${overlappingTransit.transit.from.label} → ${overlappingTransit.transit.to.label}`
-        : null,
+      transitOverlapWarning,
+      activityOverlapWarning,
       travelers: a.mealType
         ? resolveMealTravelers(trip.travelers, a.includedIn, packagesById)
         : resolveExcursionTravelers(trip.travelers, a.travelers),

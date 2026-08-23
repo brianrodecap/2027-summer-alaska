@@ -365,7 +365,11 @@ function SortableRow({
 }) {
   const { setNodeRef, transform, transition, attributes, listeners, isDragging } = useSortable({
     id: dragId,
-    disabled,
+    // A plain boolean here disables both draggable AND droppable (dnd-kit's
+    // own normalizeDisabled) — a Stay/Transit row must stay non-draggable
+    // but still droppable, so an Activity can land immediately before/after
+    // it (see this function's own note above).
+    disabled: { draggable: disabled, droppable: false },
     data: dragMeta,
   });
   const style: CSSProperties = {
@@ -448,7 +452,11 @@ export const DayTimeline = memo(function DayTimeline({
 
   const nodes: DayTimelineNode[] = flattened.flatMap((item, i): DayTimelineNode[] => {
     if (item.type === 'stay') {
-      const dragId = `stay-${item.stay._id}-${i}`;
+      // Must match buildDragMeta's own id scheme exactly (reorder.ts) — keyed
+      // by date, not `i`, since a multi-night Stay renders its own row on
+      // every night under one shared DndContext (DaysView.tsx), and `i` alone
+      // can collide across different days' rows.
+      const dragId = `stay-${item.stay._id}-${day.date}`;
       return [
         {
           key: dragId,

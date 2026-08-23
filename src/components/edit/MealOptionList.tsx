@@ -10,45 +10,22 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
+import { DINING_FORMATS_WITH_INCLUDED_IN } from '../../model/editForms';
 import { DINING_FORMAT_LABEL } from '../../model/formatting';
-import type { DiningFormat, MealOption, Ref, Stay } from '../../model/types';
+import type { Activity, DiningFormat, MealOption, Stay, Transit } from '../../model/types';
+import { IncludedInField } from './IncludedInField';
 import { PlacePickerField } from './PlacePickerField';
 
 const MEAL_OPTION_DINING_FORMAT_VALUES: DiningFormat[] = [
   'included',
   'package',
+  'included-with-activity',
+  'included-with-transit',
   'sit-down',
   'grab-and-go',
   'drivethru',
   'self-catered',
 ];
-
-// includedIn points at either a whole Stay's base rate or one specific
-// Package nested inside a Stay — flattened here into a single select whose
-// value encodes both the entity kind and id ('stay:<id>' / 'package:<id>').
-function includedInOptions(stays: Stay[]): { value: string; label: string }[] {
-  const options = [{ value: '', label: 'Not included/covered' }];
-  for (const stay of stays) {
-    options.push({
-      value: `stay:${stay._id}`,
-      label: `Included with ${stay.lodging?.name ?? stay._id}`,
-    });
-    for (const pkg of stay.packages ?? []) {
-      options.push({ value: `package:${pkg._id}`, label: `Package: ${pkg.name}` });
-    }
-  }
-  return options;
-}
-
-function includedInValue(includedIn: Ref | null): string {
-  return includedIn && 'entity' in includedIn ? `${includedIn.entity}:${includedIn.id}` : '';
-}
-
-function parseIncludedIn(value: string): Ref | null {
-  if (!value) return null;
-  const [entity, id] = value.split(':');
-  return entity === 'stay' || entity === 'package' ? { entity, id } : null;
-}
 
 function emptyOption(): MealOption {
   return { _id: crypto.randomUUID(), diningFormat: 'sit-down', place: null, includedIn: null };
@@ -61,6 +38,9 @@ function emptyOption(): MealOption {
 function MealOptionRow({
   option,
   stays,
+  activities,
+  transits,
+  jumpToDate,
   onChange,
   onRemove,
   onMoveUp,
@@ -68,6 +48,9 @@ function MealOptionRow({
 }: {
   option: MealOption;
   stays: Stay[];
+  activities: Activity[];
+  transits: Transit[];
+  jumpToDate: string | null;
   onChange: (option: MealOption) => void;
   onRemove: () => void;
   onMoveUp: () => void;
@@ -89,7 +72,13 @@ function MealOptionRow({
           select
           label="Dining format"
           value={option.diningFormat}
-          onChange={(e) => onChange({ ...option, diningFormat: e.target.value as DiningFormat })}
+          onChange={(e) => {
+            const diningFormat = e.target.value as DiningFormat;
+            const includedIn = DINING_FORMATS_WITH_INCLUDED_IN.includes(diningFormat)
+              ? option.includedIn
+              : null;
+            onChange({ ...option, diningFormat, includedIn });
+          }}
           fullWidth
         >
           {MEAL_OPTION_DINING_FORMAT_VALUES.map((v) => (
@@ -110,18 +99,17 @@ function MealOptionRow({
           place={option.place}
           onChange={(place) => onChange({ ...option, place })}
         />
-        <TextField
-          select
-          label="Included in"
-          value={includedInValue(option.includedIn)}
-          onChange={(e) => onChange({ ...option, includedIn: parseIncludedIn(e.target.value) })}
-        >
-          {includedInOptions(stays).map((o) => (
-            <MenuItem key={o.value} value={o.value}>
-              {o.label}
-            </MenuItem>
-          ))}
-        </TextField>
+        {DINING_FORMATS_WITH_INCLUDED_IN.includes(option.diningFormat) && (
+          <IncludedInField
+            diningFormat={option.diningFormat}
+            stays={stays}
+            activities={activities}
+            transits={transits}
+            value={option.includedIn}
+            onChange={(includedIn) => onChange({ ...option, includedIn })}
+            jumpToDate={jumpToDate}
+          />
+        )}
       </Stack>
       <IconButton
         size="small"
@@ -141,10 +129,16 @@ function MealOptionRow({
 export function MealOptionList({
   options,
   stays,
+  activities,
+  transits,
+  jumpToDate,
   onChange,
 }: {
   options: MealOption[];
   stays: Stay[];
+  activities: Activity[];
+  transits: Transit[];
+  jumpToDate: string | null;
   onChange: (options: MealOption[]) => void;
 }) {
   const update = (i: number, option: MealOption) =>
@@ -174,6 +168,9 @@ export function MealOptionList({
           key={option._id}
           option={option}
           stays={stays}
+          activities={activities}
+          transits={transits}
+          jumpToDate={jumpToDate}
           onChange={(o) => update(i, o)}
           onRemove={() => remove(i)}
           onMoveUp={() => moveUp(i)}

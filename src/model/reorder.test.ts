@@ -38,19 +38,26 @@ function activity(overrides: Partial<EnrichedActivity>): EnrichedActivity {
     notes: [],
     hasWarningNote: false,
     transitOverlapWarning: null,
+    activityOverlapWarning: null,
     ...overrides,
   };
 }
 
 describe('resolveDropTiming', () => {
   it('anchors exactly at the preceding item', () => {
-    expect(resolveDropTiming('2027-06-01T12:00', DAY_START)).toEqual({
+    expect(resolveDropTiming('2027-06-01T12:00', DAY_START, '2027-06-01T08:00')).toEqual({
       startAt: '2027-06-01T12:00',
     });
   });
 
-  it('anchors to the container day start when dropped with nothing before it', () => {
-    expect(resolveDropTiming(null, DAY_START)).toEqual({ startAt: DAY_START });
+  it('keeps the dragged Activity’s own time when the drop has no real anchor', () => {
+    expect(resolveDropTiming(null, DAY_START, '2027-06-01T08:00')).toEqual({
+      startAt: '2027-06-01T08:00',
+    });
+  });
+
+  it('falls back to the container day start only when the Activity has no time of its own either', () => {
+    expect(resolveDropTiming(null, DAY_START, null)).toEqual({ startAt: DAY_START });
   });
 });
 
@@ -246,6 +253,62 @@ describe('Stay Check-out/Check-in drop targets', () => {
     // this DragMeta's own activityId is null (the Check-in row itself
     // isn't draggable).
     expect(checkin.anchorActivityId).toBe('act2');
+  });
+
+  it('Check-out on a day with no real top-level content has a null endAt, and a drop there keeps the dragged Activity’s own time', () => {
+    // Everything on this day lives inside a Scenario (excluded from
+    // realAnchors) — Check-out has nothing real to take a time from.
+    const flattened: SequenceItem[] = [
+      { type: 'stay', stay: enrichedStay({}), relation: 'Check out', key: '2027-06-01T11:00' },
+      { type: 'scenario-tabs', key: '2027-06-01T08:00' },
+    ];
+    const dragMeta = buildDragMeta(flattened, null, DAY_START);
+    const checkout = dragMeta.find((d) => d.kind === 'day-start')!;
+    expect(checkout.endAt).toBeNull();
+    expect(checkout.cascadeActivityIds).toEqual([]);
+
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [],
+      activities: [activity({ _id: 'act1', startAt: '2027-06-01T08:00', scenarioId: 'scenario1' })],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+    const next = applyActivityReorder(data, checkout, 'act1', DAY_START);
+    const moved = next.activities.find((a) => a._id === 'act1');
+    expect(moved?.startAt).toBe('2027-06-01T08:00');
+    expect(moved?.scenarioId).toBeNull();
+  });
+
+  it('a mid-stay "Staying" row has a null endAt (its own key is only ever the synthetic day start)', () => {
+    const flattened: SequenceItem[] = [
+      { type: 'stay', stay: enrichedStay({}), relation: 'Staying', key: DAY_START },
+      { type: 'scenario-tabs', key: '2027-06-01T08:00' },
+    ];
+    const dragMeta = buildDragMeta(flattened, null, DAY_START);
+    const staying = dragMeta.find((d) => d.id.startsWith('stay-'))!;
+    expect(staying.kind).toBe('after');
+    expect(staying.endAt).toBeNull();
+  });
+
+  it('gives a Stay row a dragId unique per calendar day, not just per local row index, since a multi-night Stay renders one row per night under one shared DndContext', () => {
+    const stay = enrichedStay({});
+    const nightOne = buildDragMeta(
+      [{ type: 'stay', stay, relation: 'Staying', key: '2027-06-01T00:00' }],
+      null,
+      '2027-06-01T00:00',
+    );
+    const checkOutDay = buildDragMeta(
+      [{ type: 'stay', stay, relation: 'Check out', key: '2027-06-02T11:00' }],
+      null,
+      '2027-06-02T00:00',
+    );
+    expect(nightOne[0].id).not.toBe(checkOutDay[0].id);
+    expect(nightOne[0].containerDayStart).toBe('2027-06-01T00:00');
+    expect(checkOutDay[0].containerDayStart).toBe('2027-06-02T00:00');
   });
 
   it('lands a dropped Activity exactly on its anchor’s own instant, then resolves the tie by array position rather than nudging either timestamp', () => {

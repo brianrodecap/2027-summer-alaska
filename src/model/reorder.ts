@@ -102,7 +102,21 @@ function activityAnchorEndAt(activity: ActivityTiming, dayStart: string): string
 export interface DragMeta {
   id: string;
   index: number;
-  endAt: string;
+  // null only for a Stay row with no real anchor to take a time from — a
+  // 'Staying' row (always, see stayEventKey), or Check-out/Check-in on a day
+  // with no other real top-level content (`first`/`lastAnchor` below both
+  // null). applyActivityReorder's resolveDropTiming treats null as "leave
+  // the dragged Activity's own time alone" rather than forcing it to this
+  // container's literal midnight, which — with nothing else here to make
+  // room for or take a slot from — would just be a meaningless, un-asked-for
+  // time change.
+  endAt: string | null;
+  // The container's own day-start (`${date}T00:00`) — always populated,
+  // regardless of endAt — so DaysView.tsx's handleDragEnd can resolve which
+  // calendar day a drop landed on (needed for resolveDropTiming's own
+  // fallback and the cascade shift below) without parsing it out of endAt,
+  // which a Stay-row anchor may not have at all.
+  containerDayStart: string;
   legId: string;
   scenarioId: string | null;
   activityId: string | null;
@@ -205,15 +219,21 @@ export function buildDragMeta(
   };
 
   return flattened
-    .flatMap((item, i): Array<Omit<DragMeta, 'index'>> => {
+    .flatMap((item, i): Array<Omit<DragMeta, 'index' | 'containerDayStart'>> => {
       if (item.type === 'stay') {
-        const id = `stay-${item.stay._id}-${i}`;
+        // Keyed by date, not the per-day flatMap index `i` — a multi-night
+        // Stay renders its own row on every night it covers (Check
+        // in/Staying/Check out), all sharing one DndContext across the whole
+        // day list (DaysView.tsx), so `i` alone collides across days: two
+        // different nights can both land at local index 0. The date is the
+        // one thing guaranteed unique per Stay row regardless of relation.
+        const id = `stay-${item.stay._id}-${dayStart.slice(0, 10)}`;
         if (item.relation === 'Check out') {
           const first = firstActivityIdx >= 0 ? realAnchors[firstActivityIdx] : null;
           return [
             {
               id,
-              endAt: first?.activityStartAt ?? dayStart,
+              endAt: first?.activityStartAt ?? null,
               legId: first?.legId ?? item.stay.legId,
               scenarioId,
               activityId: null,
@@ -228,7 +248,7 @@ export function buildDragMeta(
           return [
             {
               id,
-              endAt: lastAnchor?.endAt ?? dayStart,
+              endAt: lastAnchor?.endAt ?? null,
               legId: lastAnchor?.legId ?? item.stay.legId,
               scenarioId,
               activityId: null,
@@ -238,10 +258,14 @@ export function buildDragMeta(
             },
           ];
         }
+        // A 'Staying' row's own key (item.key) is always dayStart itself
+        // (stayEventKey) — synthetic, not a real event time — so, same as
+        // Check-out/Check-in with nothing real to anchor to above, endAt is
+        // null rather than that literal midnight.
         return [
           {
             id,
-            endAt: item.key,
+            endAt: null,
             legId: item.stay.legId,
             scenarioId,
             activityId: null,
@@ -300,21 +324,27 @@ export function buildDragMeta(
       }
       return []; // scenario-tabs — no single anchor point
     })
-    .map((meta, index) => ({ ...meta, index }));
+    .map((meta, index) => ({ ...meta, containerDayStart: dayStart, index }));
 }
 
-// The recalc rule: an Activity dropped after some preceding row starts
-// right when that row ends (precedingEndAt) — or, for a `kind: 'day-start'`
-// drop, takes over that exact startAt outright — dropped at the very start
-// of a container with nothing at all before it, it anchors to the
-// container's own day start instead. durationMinutes is never touched
-// here: it's independent of position under this model, so it survives a
-// drag completely unchanged.
+// The recalc rule: an Activity dropped after some preceding row starts right
+// when that row ends (precedingEndAt) — or, for a `kind: 'day-start'` drop,
+// takes over that exact startAt outright. A null precedingEndAt (see
+// DragMeta.endAt's own note) means the drop position had no real anchor to
+// take a time from at all — nothing here to make room for or take a slot
+// from — so the dragged Activity just keeps its own current startAt
+// (ownStartAt) instead of being forced to some arbitrary time; only an
+// Activity with no startAt of its own either (a fuzzy timeLabel/date-only
+// one, landing in a real slot for the first time) falls all the way back to
+// the container's own day start. durationMinutes is never touched here: it's
+// independent of position under this model, so it survives a drag
+// completely unchanged.
 export function resolveDropTiming(
   precedingEndAt: string | null,
   dayStart: string,
+  ownStartAt: string | null,
 ): { startAt: string } {
-  return { startAt: precedingEndAt ?? dayStart };
+  return { startAt: precedingEndAt ?? ownStartAt ?? dayStart };
 }
 
 // An Activity's own end-of-event moment starting from a given `startAt` —
@@ -398,7 +428,7 @@ export function applyActivityReorder(
 ): TripData {
   const activity = data.activities.find((a) => a._id === activityId);
   if (!activity) return data;
-  const timing = resolveDropTiming(dropMeta.endAt, dayStart);
+  const timing = resolveDropTiming(dropMeta.endAt, dayStart, activity.startAt);
   const updated: Activity = {
     ...activity,
     startAt: timing.startAt,

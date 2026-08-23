@@ -5,6 +5,7 @@ import CabinIcon from '@mui/icons-material/Cabin';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloudIcon from '@mui/icons-material/Cloud';
+import CommuteIcon from '@mui/icons-material/Commute';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import EventIcon from '@mui/icons-material/Event';
 import FilterListIcon from '@mui/icons-material/FilterList';
@@ -17,6 +18,7 @@ import HotelIcon from '@mui/icons-material/Hotel';
 import InfoIcon from '@mui/icons-material/Info';
 import KitchenIcon from '@mui/icons-material/Kitchen';
 import LandscapeIcon from '@mui/icons-material/Landscape';
+import LinkIcon from '@mui/icons-material/Link';
 import LocalBarIcon from '@mui/icons-material/LocalBar';
 import LocalCafeIcon from '@mui/icons-material/LocalCafe';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
@@ -102,6 +104,8 @@ const ICONS: Record<string, IconComponent> = {
   star: StarIcon,
   warning: WarningIcon,
   filter_list: FilterListIcon,
+  link: LinkIcon,
+  commute: CommuteIcon,
 };
 
 // Maps a live Place's primaryType (Places API (New)) to an icon for the
@@ -170,6 +174,8 @@ export const DEFAULT_PLACE_ICON = 'place';
 export const DINING_FORMAT_ICON: Record<DiningFormat, string> = {
   included: 'redeem',
   package: 'local_offer',
+  'included-with-activity': 'link',
+  'included-with-transit': 'commute',
   'sit-down': 'restaurant',
   'grab-and-go': 'takeout_dining',
   drivethru: 'directions_car',

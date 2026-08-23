@@ -1,9 +1,16 @@
-import { createContext, type ReactNode, useContext, useState } from 'react';
+import { createContext, lazy, type ReactNode, Suspense, useContext, useState } from 'react';
 
-import { EditDialog } from '../components/edit/EditDialog';
 import { blankActivity, blankStay, blankTransit } from '../model/editForms';
 import type { Activity, Stay, Transit } from '../model/types';
 import { useTripData } from './TripDataContext';
+
+// Lazy: the edit forms pull in PlacePickerField's Autocomplete and the
+// date/time pickers, which most visits (read-only browsing) never touch.
+// EditDialog is only ever mounted once `state` is set below, so this defers
+// that weight until the first pencil/add tap.
+const EditDialog = lazy(() =>
+  import('../components/edit/EditDialog').then((m) => ({ default: m.EditDialog })),
+);
 
 export type EditKind = 'activity' | 'stay' | 'transit';
 
@@ -127,17 +134,21 @@ export function EditProvider({ children }: { children: ReactNode }) {
     >
       {children}
       {state && data && (
-        <EditDialog
-          kind={state.kind}
-          entity={entity}
-          isNew={state.mode === 'create'}
-          stays={data.stays}
-          tripTravelers={data.trip.travelers}
-          routes={data.routes}
-          onClose={closeEdit}
-          onSave={handleSave}
-          onDelete={handleDelete}
-        />
+        <Suspense fallback={null}>
+          <EditDialog
+            kind={state.kind}
+            entity={entity}
+            isNew={state.mode === 'create'}
+            stays={data.stays}
+            activities={data.activities}
+            transits={data.transits}
+            tripTravelers={data.trip.travelers}
+            routes={data.routes}
+            onClose={closeEdit}
+            onSave={handleSave}
+            onDelete={handleDelete}
+          />
+        </Suspense>
       )}
     </EditContext.Provider>
   );
