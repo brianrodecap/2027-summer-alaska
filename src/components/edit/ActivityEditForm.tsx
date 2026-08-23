@@ -85,6 +85,11 @@ export function ActivityEditForm({
   tripTravelers: Traveler[];
 }) {
   const hasOptions = form.options.length > 0;
+  // The meal-candidates section must stay reachable even if mealType was
+  // somehow left blank on existing candidate data, so hasOptions keeps it
+  // visible too — the single-choice dining-format/included-in fields below
+  // don't need this since they're mutually exclusive with hasOptions anyway.
+  const isMeal = form.mealType !== '' || hasOptions;
 
   return (
     <Stack spacing={2}>
@@ -164,7 +169,7 @@ export function ActivityEditForm({
           </MenuItem>
         ))}
       </TextField>
-      {!hasOptions && (
+      {form.mealType !== '' && !hasOptions && (
         <TextField
           select
           label="Dining format"
@@ -186,7 +191,8 @@ export function ActivityEditForm({
           ))}
         </TextField>
       )}
-      {!hasOptions &&
+      {form.mealType !== '' &&
+        !hasOptions &&
         form.diningFormat &&
         DINING_FORMATS_WITH_INCLUDED_IN.includes(form.diningFormat) && (
           <IncludedInField
@@ -200,15 +206,19 @@ export function ActivityEditForm({
           />
         )}
 
-      <Divider />
-      <MealOptionList
-        options={form.options}
-        stays={stays}
-        activities={activities}
-        transits={transits}
-        jumpToDate={form.startsDate}
-        onChange={(options) => onChange({ ...form, options })}
-      />
+      {isMeal && (
+        <>
+          <Divider />
+          <MealOptionList
+            options={form.options}
+            stays={stays}
+            activities={activities}
+            transits={transits}
+            jumpToDate={form.startsDate}
+            onChange={(options) => onChange({ ...form, options })}
+          />
+        </>
+      )}
 
       {tripTravelers.length > 0 && (
         <>

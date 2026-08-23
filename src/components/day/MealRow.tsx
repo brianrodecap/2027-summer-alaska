@@ -15,6 +15,7 @@ import {
 } from '../../model/mealOptions';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
 import { useMealOptionSelection } from '../../state/TripSelectionsContext';
+import { BookingChip } from '../shared/BookingChip';
 import { LinkifiedText } from '../shared/LinkifiedText';
 import { DINING_FORMAT_ICON, renderMaterialIcon, RowLeadingDot } from '../shared/materialIcon';
 import { NotesCluster, splitNotes } from '../shared/Notes';
@@ -93,6 +94,11 @@ export function MealRow({
           <NotesCluster notes={midNotes} />
           <NotesCluster notes={optionMid} />
           <TravelerChips names={selected?.travelers} />
+          {selected?.booking && (
+            <Box sx={{ mt: 0.5 }}>
+              <BookingChip booking={selected.booking} />
+            </Box>
+          )}
           <OverlapWarnings activity={liveOverlapWarnings(activity, day, mealOptionIndex)} />
         </Box>
       </ButtonBase>

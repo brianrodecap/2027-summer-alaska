@@ -13,6 +13,7 @@ import Typography from '@mui/material/Typography';
 import { DINING_FORMATS_WITH_INCLUDED_IN } from '../../model/editForms';
 import { DINING_FORMAT_LABEL } from '../../model/formatting';
 import type { Activity, DiningFormat, MealOption, Stay, Transit } from '../../model/types';
+import { BookingFields, bookingFormValueFrom, readBookingFormValue } from './BookingFields';
 import { IncludedInField } from './IncludedInField';
 import { PlacePickerField } from './PlacePickerField';
 
@@ -28,7 +29,13 @@ const MEAL_OPTION_DINING_FORMAT_VALUES: DiningFormat[] = [
 ];
 
 function emptyOption(): MealOption {
-  return { _id: crypto.randomUUID(), diningFormat: 'sit-down', place: null, includedIn: null };
+  return {
+    _id: crypto.randomUUID(),
+    diningFormat: 'sit-down',
+    place: null,
+    includedIn: null,
+    booking: null,
+  };
 }
 
 // One MealOption candidate row — an add/remove/reorder list, the same
@@ -110,6 +117,12 @@ function MealOptionRow({
             jumpToDate={jumpToDate}
           />
         )}
+        <BookingFields
+          value={bookingFormValueFrom(option.booking)}
+          onChange={(v) =>
+            onChange({ ...option, booking: readBookingFormValue(v, option.booking) })
+          }
+        />
       </Stack>
       <IconButton
         size="small"

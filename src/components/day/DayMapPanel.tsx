@@ -8,7 +8,7 @@ import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 
 import { activeMealOptions } from '../../model/mealOptions';
-import { dayFullRouteUrl, dayMapEmbedUrl } from '../../model/tripModel';
+import { dayFullRouteUrls, dayMapEmbedUrl } from '../../model/tripModel';
 import type { Day, Place, SequenceItem } from '../../model/types';
 import {
   useMealOptionSelection,
@@ -17,7 +17,7 @@ import {
 } from '../../state/TripSelectionsContext';
 
 // Only activities the reader has actually switched away from the model's
-// default candidate get an entry here — dayMapStops/dayFullRouteUrl already
+// default candidate get an entry here — dayMapStops/dayFullRouteUrls already
 // fall back to the first place-bearing option on their own for anything
 // left out of this map, same as the model's own "planned by default"
 // convention.
@@ -66,7 +66,7 @@ export function DayMapPanel({
     mealPlaces: collectMealPlaces(day, mealOptionIndex),
   };
   const url = dayMapEmbedUrl(day, selections);
-  const fullRouteUrl = dayFullRouteUrl(day, selections);
+  const fullRouteUrls = dayFullRouteUrls(day, selections);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -91,11 +91,15 @@ export function DayMapPanel({
             Nothing resolvable to map yet for this day.
           </Typography>
         )}
-        {fullRouteUrl && (
-          <Box sx={{ mt: 2 }}>
-            <Link href={fullRouteUrl} target="_blank" rel="noopener">
-              Open full route in Google Maps
-            </Link>
+        {fullRouteUrls.length > 0 && (
+          <Box sx={{ mt: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+            {fullRouteUrls.map((routeUrl, i) => (
+              <Link key={routeUrl} href={routeUrl} target="_blank" rel="noopener">
+                {fullRouteUrls.length > 1
+                  ? `Open route ${i + 1} in Google Maps`
+                  : 'Open full route in Google Maps'}
+              </Link>
+            ))}
           </Box>
         )}
       </DialogContent>

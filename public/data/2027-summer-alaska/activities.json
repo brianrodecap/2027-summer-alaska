@@ -78,7 +78,8 @@
           "label": "Humpy’s Great Alaskan Alehouse",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jun26_3_opt1",
@@ -88,13 +89,15 @@
           "label": "Denny’s Restaurant",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jun26_3_opt2",
         "diningFormat": "drivethru",
         "place": null,
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -627,7 +630,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_talkeetna"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jun28_breakfast_opt1",
@@ -637,13 +641,15 @@
           "label": "Conscious Coffee",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jun28_breakfast_opt2",
         "diningFormat": "self-catered",
         "place": null,
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -887,13 +893,15 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_westmark_fbx_1"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jun29_breakfast_opt1",
         "diningFormat": "grab-and-go",
         "place": null,
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -951,7 +959,8 @@
         "_id": "act_jun29_lunch_opt1",
         "diningFormat": "self-catered",
         "place": null,
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -1433,13 +1442,15 @@
           "label": "The Hotspot Cafe",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul1_ideal_lunch_opt1",
         "diningFormat": "self-catered",
         "place": null,
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -1761,7 +1772,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_westmark_fbx_2"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul2_breakfast_opt1",
@@ -1771,7 +1783,8 @@
           "label": "The Cookie Jar",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -1912,13 +1925,15 @@
             }
           ]
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul2_6_opt1",
         "diningFormat": "sit-down",
         "place": null,
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -2009,13 +2024,15 @@
           "label": "The Potato",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul3_lunch_opt1",
         "diningFormat": "self-catered",
         "place": null,
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -2145,7 +2162,8 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_kennicott_meals"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul3_7_opt1",
@@ -2155,7 +2173,8 @@
           "label": "McCarthy Lodge Resort",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -2195,13 +2214,15 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_kennicott_meals"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul4_1_opt1",
         "diningFormat": "self-catered",
         "place": null,
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -2335,7 +2356,8 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_kennicott_meals"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul4_5_opt1",
@@ -2345,7 +2367,8 @@
           "label": "McCarthy Lodge Resort",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -2385,13 +2408,15 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_kennicott_meals"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul5_1_opt1",
         "diningFormat": "self-catered",
         "place": null,
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -2573,13 +2598,15 @@
           "label": "Snow City Cafe",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul6_breakfast_opt1",
         "diningFormat": "grab-and-go",
         "place": null,
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -2664,7 +2691,8 @@
           "label": "Empress Chinese Restaurant",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul6_lunch_opt1",
@@ -2674,7 +2702,8 @@
           "label": "Bison Store & Restaurant",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -3211,7 +3240,8 @@
           "label": "Moose's Tooth Pub & Pizzeria",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul9_dinner_opt1",
@@ -3221,7 +3251,8 @@
           "label": "Hotel Captain Cook",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -3252,13 +3283,15 @@
           "label": "Snow City Cafe",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul10_breakfast_opt1",
         "diningFormat": "grab-and-go",
         "place": null,
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -3371,7 +3404,8 @@
           "label": "Seward Brewing Company",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul10_dinner_opt1",
@@ -3381,7 +3415,8 @@
           "label": "Moose's Tooth Pub & Pizzeria",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -3552,7 +3587,8 @@
           "label": "Snow City Cafe",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul12_breakfast_opt1",
@@ -3561,7 +3597,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_anchorage_2"
-        }
+        },
+        "booking": null
       }
     ],
     "travelers": null,
@@ -4250,7 +4287,8 @@
           "label": "Moose's Tooth Pub & Pizzeria",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul17_lunch_opt1",
@@ -4260,13 +4298,15 @@
           "label": "The Bake Shop",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul17_lunch_opt2",
         "diningFormat": "grab-and-go",
         "place": null,
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -4324,7 +4364,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul17_dinner_opt1",
@@ -4337,7 +4378,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul17_dinner_opt2",
@@ -4350,7 +4392,8 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        }
+        },
+        "booking": null
       }
     ],
     "travelers": null,
@@ -4384,7 +4427,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul18_breakfast_opt1",
@@ -4397,7 +4441,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       }
     ],
     "travelers": null,
@@ -4431,7 +4476,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul18_lunch_opt1",
@@ -4444,7 +4490,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       }
     ],
     "travelers": null,
@@ -4508,7 +4555,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul18_dinner_opt1",
@@ -4521,7 +4569,8 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        }
+        },
+        "booking": null
       }
     ],
     "travelers": null,
@@ -4555,7 +4604,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul19_breakfast_opt1",
@@ -4568,7 +4618,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       }
     ],
     "travelers": null,
@@ -4659,7 +4710,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul19_dinner_opt1",
@@ -4672,7 +4724,8 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        }
+        },
+        "booking": null
       }
     ],
     "travelers": null,
@@ -4816,7 +4869,8 @@
           "label": "The Cookhouse",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul20_lunch_opt1",
@@ -4826,7 +4880,8 @@
           "label": "Duck Point Smokehouse",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul20_lunch_opt2",
@@ -4839,7 +4894,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       }
     ],
     "travelers": null,
@@ -4873,7 +4929,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul20_dinner_opt1",
@@ -4886,7 +4943,8 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        }
+        },
+        "booking": null
       }
     ],
     "travelers": null,
@@ -5011,7 +5069,8 @@
           "label": "Tracy's King Crab Shack",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul21_lunch_opt1",
@@ -5021,7 +5080,8 @@
           "label": "Deckhand Dave's Fish Tacos",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -5083,7 +5143,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul21_dinner_opt1",
@@ -5096,7 +5157,8 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        }
+        },
+        "booking": null
       }
     ],
     "travelers": null,
@@ -5178,7 +5240,8 @@
           "label": "Alaska Fish House at Salmon Landing",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jul22_lunch_opt1",
@@ -5188,7 +5251,8 @@
           "label": "Annabelle's Famous Keg and Chowder House on Front Street",
           "images": []
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,
@@ -5256,7 +5320,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul22_dinner_opt1",
@@ -5269,7 +5334,8 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        }
+        },
+        "booking": null
       }
     ],
     "travelers": null,
@@ -5330,7 +5396,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul23_breakfast_opt1",
@@ -5343,7 +5410,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       }
     ],
     "travelers": null,
@@ -5377,7 +5445,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul23_lunch_opt1",
@@ -5390,7 +5459,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       }
     ],
     "travelers": null,
@@ -5424,7 +5494,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul23_dinner_opt1",
@@ -5437,7 +5508,8 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jul23_dinner_opt2",
@@ -5450,7 +5522,8 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
-        }
+        },
+        "booking": null
       }
     ],
     "travelers": null,
@@ -5537,7 +5610,8 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_talkeetna"
-        }
+        },
+        "booking": null
       },
       {
         "_id": "act_jun27_ideal_1_opt1",
@@ -5551,7 +5625,8 @@
             }
           ]
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       },
       {
         "_id": "act_jun27_ideal_1_opt2",
@@ -5567,7 +5642,8 @@
             }
           ]
         },
-        "includedIn": null
+        "includedIn": null,
+        "booking": null
       }
     ],
     "travelers": null,

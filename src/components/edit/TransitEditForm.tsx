@@ -89,19 +89,20 @@ export function TransitEditForm({
           </MenuItem>
         ))}
       </TextField>
-      <TextField
-        select
-        label="Route variant"
-        value={form.routeVariant ?? ''}
-        onChange={(e) => onChange({ ...form, routeVariant: e.target.value || null })}
-        disabled={!selectedRoute}
-      >
-        {routeVariantOptions(selectedRoute).map((o) => (
-          <MenuItem key={o.value} value={o.value}>
-            {o.label}
-          </MenuItem>
-        ))}
-      </TextField>
+      {selectedRoute && (
+        <TextField
+          select
+          label="Route variant"
+          value={form.routeVariant ?? ''}
+          onChange={(e) => onChange({ ...form, routeVariant: e.target.value || null })}
+        >
+          {routeVariantOptions(selectedRoute).map((o) => (
+            <MenuItem key={o.value} value={o.value}>
+              {o.label}
+            </MenuItem>
+          ))}
+        </TextField>
+      )}
       <Divider />
       <BookingFields value={form.booking} onChange={(booking) => onChange({ ...form, booking })} />
     </Stack>

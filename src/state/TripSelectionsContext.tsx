@@ -3,7 +3,7 @@ import { createContext, type ReactNode, useContext, useMemo, useState } from 're
 // Replaces the old vanilla-JS app's "read live tab state off the DOM" pattern
 // (readDaySelections/recomputeRoutedTransits) with real React state. Every
 // place trip-model.ts accepts a `live`/`selections` argument
-// (resolveTransitRoute, dayMapStops, dayFullRouteUrl) derives it from these
+// (resolveTransitRoute, dayMapStops, dayFullRouteUrls) derives it from these
 // contexts via a small selector, instead of querying rendered DOM nodes.
 //
 // Four independent contexts rather than one combined value: with a single

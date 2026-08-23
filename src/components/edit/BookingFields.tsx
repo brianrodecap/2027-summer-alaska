@@ -46,33 +46,37 @@ export function BookingFields({
         }
         label="Has a booking / reservation"
       />
-      <TextField
-        select
-        label="Status"
-        value={value.status}
-        onChange={(e) => onChange({ ...value, status: e.target.value as BookingStatus })}
-      >
-        {BOOKING_STATUS_OPTIONS.map((o) => (
-          <MenuItem key={o.value} value={o.value}>
-            {o.label}
-          </MenuItem>
-        ))}
-      </TextField>
-      <Stack direction="row" spacing={2}>
-        <TextField
-          label="Confirmation #"
-          value={value.confirmationNumber}
-          onChange={(e) => onChange({ ...value, confirmationNumber: e.target.value })}
-          fullWidth
-        />
-        <TextField
-          label="Cost"
-          type="number"
-          value={value.costAmount}
-          onChange={(e) => onChange({ ...value, costAmount: e.target.value })}
-          fullWidth
-        />
-      </Stack>
+      {value.hasBooking && (
+        <>
+          <TextField
+            select
+            label="Status"
+            value={value.status}
+            onChange={(e) => onChange({ ...value, status: e.target.value as BookingStatus })}
+          >
+            {BOOKING_STATUS_OPTIONS.map((o) => (
+              <MenuItem key={o.value} value={o.value}>
+                {o.label}
+              </MenuItem>
+            ))}
+          </TextField>
+          <Stack direction="row" spacing={2}>
+            <TextField
+              label="Confirmation #"
+              value={value.confirmationNumber}
+              onChange={(e) => onChange({ ...value, confirmationNumber: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="Cost"
+              type="number"
+              value={value.costAmount}
+              onChange={(e) => onChange({ ...value, costAmount: e.target.value })}
+              fullWidth
+            />
+          </Stack>
+        </>
+      )}
     </Stack>
   );
 }

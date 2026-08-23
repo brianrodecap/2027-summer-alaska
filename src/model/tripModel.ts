@@ -387,24 +387,35 @@ function entityHasWarning(notes: Note[], entity: RefEntityKind, id: string): boo
 // groups tokens by their `prefix:` (OR within a group, AND across groups), so
 // this is the entire vocabulary a new filter option would need to plug into.
 
-// TODO(you): a Leg can be booked as one bundle — leg_cruise's own `booking`
-// covers the whole week — while nearly every Stay/Transit/Activity inside it
-// still carries `booking: null` of its own, because nothing about that one
-// day was reserved separately. Right now this only ever looks at the
-// entity's own booking, so almost everything inside a bundled leg shows as
-// neither "Booked" nor "Needs booking" in the filter nav, even though the
-// leg itself is fully paid for. Decide whether/how a bundled leg's own
-// booking.status should roll down onto a child with no booking of its own —
-// `entity` is the Stay/Transit/Activity in question, with its own optional
-// `booking` and its own `legId` — every call site below already has it in
-// hand.
+// Deliberately never rolls a Leg's own bundle-level booking (e.g. leg_cruise's
+// paid-in-full booking) down onto a child with no booking of its own: a
+// bundled leg being booked doesn't mean everything inside it is settled —
+// shore excursions and specialty-dining reservations are booked (or not)
+// independently of the cruise fare, and already carry their own `booking`
+// (Activity) / MealOption.booking accordingly. A child with no booking at all
+// (an included/onboard activity that was never a separately bookable thing)
+// stays untagged rather than being labeled either "Booked" or "Needs
+// booking".
 //
-// This placeholder only ever looks at the entity's own booking, so the
-// feature works end to end while you decide the real rule.
-function resolveBookingTag(entity: { booking?: Booking | null }): string | null {
-  if (entity.booking?.status === 'booked') return 'booking:booked';
-  if (entity.booking?.status === 'planning') return 'booking:needs';
-  return null;
+// A still-open meal Activity has no single booking of its own — each
+// candidate books (or doesn't) independently, and more than one can carry a
+// real reservation at once (e.g. backup tables held at two restaurants while
+// still deciding). Rather than guessing which candidate "counts" (that's a
+// live UI selection this pure tag function has no access to), both tags can
+// apply at once here: a meal with one booked candidate and one still-unbooked
+// one matches *both* "Booked" and "Needs booking" — each true of some part of
+// this row, and the filter nav already ORs multiple tokens within a group.
+function resolveBookingTags(entity: {
+  booking?: Booking | null;
+  options?: { booking: Booking | null }[] | null;
+}): string[] {
+  const statuses = new Set(
+    [entity.booking, ...(entity.options ?? []).map((o) => o.booking)].map((b) => b?.status),
+  );
+  const tags: string[] = [];
+  if (statuses.has('booked')) tags.push('booking:booked');
+  if (statuses.has('planning')) tags.push('booking:needs');
+  return tags;
 }
 
 // The `leg:` tag always comes from the entity's own legId, not the day's
@@ -413,13 +424,12 @@ function resolveBookingTag(entity: { booking?: Booking | null }): string | null 
 export function filterTagsFor(entity: {
   legId: string;
   booking?: Booking | null;
+  options?: { booking: Booking | null }[] | null;
   priority?: string | null;
   hasWarningNote?: boolean;
   transitOverlapWarning?: string | null;
 }): string[] {
-  const tags = [`leg:${entity.legId}`];
-  const bookingTag = resolveBookingTag(entity);
-  if (bookingTag) tags.push(bookingTag);
+  const tags = [`leg:${entity.legId}`, ...resolveBookingTags(entity)];
   if (entity.priority) tags.push('attr:highlight');
   if (entity.hasWarningNote || entity.transitOverlapWarning) tags.push('attr:attention');
   return tags;
@@ -1266,7 +1276,7 @@ export function dayMapEmbedUrl(day: Day, selections: DaySelections = {}): string
 // mechanism instead pairs each text stop with a same-position id in a
 // separate parameter: origin/origin_place_id, destination/
 // destination_place_id, and waypoints/waypoint_place_ids (pipe-separated,
-// positionally matched to waypoints — see routeStop/dayFullRouteUrl below).
+// positionally matched to waypoints — see routeStop/dayFullRouteUrls below).
 // This also isn't limited to a start→end pair the way the embed is, so
 // route vias and activities can ride along as real waypoints. Can't be
 // embedded in an iframe the way the classic endpoint can — Google blocks
@@ -1276,7 +1286,13 @@ export function dayMapEmbedUrl(day: Day, selections: DaySelections = {}): string
 // Google caps this URL at 9 waypoints — a hard ceiling on this URL scheme,
 // not a raisable quota (the paid Directions/Routes API allows more, but
 // costs a second billed API and a key that can't stay Places-only, the same
-// trade-off already rejected for dayMapEmbedUrl above).
+// trade-off already rejected for dayMapEmbedUrl above). Confirmed by hand: a
+// 10th waypoint gets silently dropped rather than rejected, so exceeding
+// this is a real, silent content bug, not just a theoretical one. Google's
+// own docs describe a lower 3-waypoint ceiling specific to mobile browsers,
+// but that tier doesn't apply here in practice — tapping this link on a
+// phone launches the native Maps app by default (verified by hand), which
+// gets the same 9-waypoint allowance as desktop.
 const MAX_ROUTE_WAYPOINTS = 9;
 
 interface RouteStop {
@@ -1301,19 +1317,9 @@ function routeStop(
   return { label, placeId: placeLike?.id ?? placeLike?.placeId ?? null };
 }
 
-interface TaggedRouteStop extends RouteStop {
-  tier: 'boundary' | 'via' | 'activity';
-  priorityRank: number | null;
-}
-
 // Same chronological order as dayMapStops (checkouts, the day's own
 // sequence, the planned scenario track, checkins), but every stop keeps its
-// place id when it has one and is tagged with which priority tier it
-// belongs to — 'boundary' (the day's own Stay checkout/check-in, always
-// first/last), 'via' (a Transit's own endpoints or a Route's interim
-// stages — physical points on the day's path), or 'activity' (a chosen
-// thing to do, ranked by its own priority like deriveTitle above).
-// selectRouteWaypoints (below) is what actually uses the tagging.
+// place id when it has one so dayFullRouteUrls can route through it precisely.
 //
 // selections extends the { scenarioTone, mealPlaces } shape dayMapStops
 // takes with a third live choice this link also has to honor: routeTones
@@ -1322,21 +1328,21 @@ interface TaggedRouteStop extends RouteStop {
 // away from the model's own default. All three fall back to their own model
 // default (routeInfo.selectedTone; idealOrFirstTrack; the first
 // place-bearing option) for whatever a caller didn't supply.
-function dayFullRouteStops(day: Day, selections: DaySelections = {}): TaggedRouteStop[] {
+function dayFullRouteStops(day: Day, selections: DaySelections = {}): RouteStop[] {
   const { checkOuts, rest, checkIns } = splitOutStayBoundaries(day.sequence);
   const track = selectedTrack(day, selections.scenarioTone);
-  const stops: TaggedRouteStop[] = [];
+  const stops: RouteStop[] = [];
   const pushStay = (item: SequenceItem) => {
     if (item.type !== 'stay') return;
     const stop = routeStop(item.stay.lodging ?? undefined);
-    if (stop) stops.push({ ...stop, tier: 'boundary', priorityRank: null });
+    if (stop) stops.push(stop);
   };
   const pushSequence = (sequence: SequenceItem[]) => {
     for (const item of sequence) {
       if (item.type === 'transit-boundary') {
         const place = item.phase === 'depart' ? item.transit.from : item.transit.to;
         const stop = routeStop(place);
-        if (stop) stops.push({ ...stop, tier: 'via', priorityRank: null });
+        if (stop) stops.push(stop);
       } else if (item.type === 'transit-stage') {
         // day.sequence carries every route variant's stages (see
         // routeStageItems), each just tagged hidden for the live-selection
@@ -1350,17 +1356,12 @@ function dayFullRouteStops(day: Day, selections: DaySelections = {}): TaggedRout
           (item.transit.routeInfo as ResolvedRouteInfo).selectedTone;
         if (item.variant.tone !== tone) continue;
         const stop = routeStop({ id: item.stage.placeId, label: item.stage.label });
-        if (stop) stops.push({ ...stop, tier: 'via', priorityRank: null });
+        if (stop) stops.push(stop);
       } else if (item.type === 'section') {
         for (const activity of item.activities) {
           const place = resolveActivityPlace(activity, selections.mealPlaces);
           const stop = routeStop(place ?? undefined);
-          if (stop)
-            stops.push({
-              ...stop,
-              tier: 'activity',
-              priorityRank: (activity.priority && PRIORITY_RANK[activity.priority]) ?? 0,
-            });
+          if (stop) stops.push(stop);
         }
       }
     }
@@ -1372,40 +1373,11 @@ function dayFullRouteStops(day: Day, selections: DaySelections = {}): TaggedRout
   return stops.filter((stop, i) => i === 0 || stop.label !== stops[i - 1].label);
 }
 
-// TODO(you): the actual business decision this feature hinges on. `middle`
-// holds every candidate stop between the day's first and last (already in
-// real chronological order), each tagged `tier: 'via' | 'activity'` and, for
-// activities, a `priorityRank` (0 for untagged, up to 3 for 'high' — see
-// PRIORITY_RANK above). Google only allows `maxWaypoints` of them. Decide
-// which ones survive, and return them — still in chronological order, still
-// capped at maxWaypoints.
-//
-// This placeholder just keeps whichever stops come first, tier and priority
-// ignored, so the feature works end to end while you decide the real rule.
-// Some things worth weighing: should every 'via' always outrank every
-// 'activity' (a via is a point you're driving past regardless, an activity
-// is optional), even one marked high priority? How should two same-tier,
-// same-priority stops break a tie? Is losing a stop near the middle of the
-// day worse than losing one near either end?
-function selectRouteWaypoints(middle: TaggedRouteStop[], maxWaypoints: number): TaggedRouteStop[] {
-  return middle.slice(0, maxWaypoints);
-}
-
-export function dayFullRouteUrl(day: Day, selections: DaySelections = {}): string | null {
-  const stops = dayFullRouteStops(day, selections);
-  if (stops.length < 2) return null;
-  const origin = stops[0];
-  const destination = stops[stops.length - 1];
-  // Only a stop with a real placeId is precise enough to spend one of the 9
-  // scarce waypoint slots on — a city-level label like "Anchorage" (a
-  // Transit's from/to with no placeId, per data-model.html) would burn a
-  // slot on an imprecise, ambiguous point competing against vias/activities
-  // that resolved to an exact pin. Origin/destination skip this filter —
-  // they're essential regardless of whether they resolved to a place id —
-  // and pass their id via the separate _place_id parameter instead (see the
-  // section header comment above for why it can't just live inline).
-  const candidates = stops.slice(1, -1).filter((stop) => stop.placeId);
-  const waypoints = selectRouteWaypoints(candidates, MAX_ROUTE_WAYPOINTS);
+function buildDirectionsUrl(
+  origin: RouteStop,
+  destination: RouteStop,
+  waypoints: RouteStop[],
+): string {
   const params = new URLSearchParams({
     api: '1',
     origin: origin.label,
@@ -1416,12 +1388,44 @@ export function dayFullRouteUrl(day: Day, selections: DaySelections = {}): strin
   if (destination.placeId) params.set('destination_place_id', destination.placeId);
   if (waypoints.length) {
     params.set('waypoints', waypoints.map((stop) => stop.label).join('|'));
-    // Every candidate here already passed the placeId filter above, so this
-    // stays positionally 1:1 with waypoints — required, since Google matches
-    // the two lists by index rather than by any id embedded in the text.
+    // Every waypoint here already passed the placeId filter in
+    // dayFullRouteUrls below, so this stays positionally 1:1 with waypoints
+    // — required, since Google matches the two lists by index rather than
+    // by any id embedded in the text.
     params.set('waypoint_place_ids', waypoints.map((stop) => stop.placeId as string).join('|'));
   }
   return `https://www.google.com/maps/dir/?${params.toString()}`;
+}
+
+// A day with more real stops than one link can hold (see
+// MAX_ROUTE_WAYPOINTS) gets split into consecutive links instead of picking
+// which stops to drop: each link's destination becomes the next link's
+// origin, so every stop still ends up in some link, in the same
+// chronological order, just spread across more than one tap.
+export function dayFullRouteUrls(day: Day, selections: DaySelections = {}): string[] {
+  const stops = dayFullRouteStops(day, selections);
+  if (stops.length < 2) return [];
+  const first = stops[0];
+  const last = stops[stops.length - 1];
+  // Only a stop with a real placeId is precise enough to route through — a
+  // city-level label like "Anchorage" (a Transit's from/to with no
+  // placeId, per data-model.html) is too ambiguous to trust as a waypoint,
+  // even though it's fine as a link's own origin/destination. Those skip
+  // this filter — they're essential regardless of whether they resolved to
+  // a place id — and pass their id via the separate _place_id parameter
+  // instead (see the section header comment above for why it can't just
+  // live inline).
+  const candidates = stops.slice(1, -1).filter((stop) => stop.placeId);
+  const points = [first, ...candidates, last];
+  const urls: string[] = [];
+  let originIndex = 0;
+  while (originIndex < points.length - 1) {
+    const destinationIndex = Math.min(originIndex + MAX_ROUTE_WAYPOINTS + 1, points.length - 1);
+    const waypoints = points.slice(originIndex + 1, destinationIndex);
+    urls.push(buildDirectionsUrl(points[originIndex], points[destinationIndex], waypoints));
+    originIndex = destinationIndex;
+  }
+  return urls;
 }
 
 function buildDay(
@@ -1711,7 +1715,7 @@ export function overlapWarningsFor(
 // once reused the same whole-highway Place ID as a place entry on two Route
 // documents covering different 100+-mile stretches of the same highway, and
 // because a place entry's place feeds straight into a live geocoder/
-// Directions URL (dayMapEmbedUrl, dayFullRouteUrl), that silently sent a
+// Directions URL (dayMapEmbedUrl, dayFullRouteUrls), that silently sent a
 // real "open in Google Maps" link on an 8-hour detour. The non-negative
 // durationMinutes check guards a second, subtler way order could break: a
 // route is an ordered list — variant.places.map in stageTimesForVariant
@@ -1919,6 +1923,22 @@ function bookingLineItems(
         date: activity.date,
         booking: activity.booking,
       });
+    }
+    // A still-open meal's own candidates can each carry their own
+    // reservation (see resolveBookingTags above) — every priced/booked one
+    // gets its own row here too, rather than being silently dropped once
+    // options is set and activity.booking itself stays null.
+    for (const option of activity.options ?? []) {
+      if (option.booking) {
+        items.push({
+          entity: 'mealOption',
+          id: option._id,
+          legId: activity.legId,
+          label: option.place ? `${activity.text} — ${option.place.label}` : activity.text,
+          date: activity.date,
+          booking: option.booking,
+        });
+      }
     }
   }
   return dedupeMirroredBookings(items);

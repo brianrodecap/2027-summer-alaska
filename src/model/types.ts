@@ -101,7 +101,7 @@ export interface Place {
 // route's endpoint is frequently a whole city or highway junction
 // ('Anchorage', 'Coldfoot') rather than one specific point — fine as a
 // Directions-API duration lookup, but the wrong id to hand to a map/embed
-// URL that plots one exact pin (see dayMapEmbedUrl/dayFullRouteUrl in
+// URL that plots one exact pin (see dayMapEmbedUrl/dayFullRouteUrls in
 // tripModel.ts, which draw only from Transit.from/to and
 // variants[].places[].place, never from a Route's own from/to). This type
 // exists so that boundary has to be crossed on purpose.
@@ -253,6 +253,11 @@ export interface MealOption {
   diningFormat: DiningFormat;
   place: Place | null;
   includedIn: Ref | null;
+  // Whether this specific candidate's reservation has been made — independent of
+  // includedIn: a 'package' option can be fully covered by a paid-up package
+  // (includedIn.entity === 'package') while its actual table/time slot is still
+  // unreserved. null for options where a reservation isn't a thing (walk-in venues).
+  booking: Booking | null;
 }
 
 export type TimeLabel = 'All day' | 'Morning' | 'Afternoon' | 'Evening' | (string & {});
@@ -444,7 +449,7 @@ export interface BudgetTotals {
   currency: string | null;
 }
 
-export type BudgetEntityKind = 'leg' | 'stay' | 'transit' | 'activity';
+export type BudgetEntityKind = 'leg' | 'stay' | 'transit' | 'activity' | 'mealOption';
 
 export interface BudgetLineItem {
   entity: BudgetEntityKind;
@@ -500,7 +505,7 @@ export interface TripView {
 }
 
 // ---------- live selections — what a React caller feeds back into resolveTransitRoute /
-// dayMapStops / dayFullRouteUrl in place of the model's own authored defaults. Today's
+// dayMapStops / dayFullRouteUrls in place of the model's own authored defaults. Today's
 // vanilla-JS app read this off rendered DOM tab state; in the React app this is real state
 // (TripSelectionsContext) passed in as plain arguments instead. ----------
 

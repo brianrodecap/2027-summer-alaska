@@ -3,7 +3,7 @@ import Typography from '@mui/material/Typography';
 
 import { DINING_FORMAT_LABEL, firstImage } from '../../model/formatting';
 import { mealOptionLabel } from '../../model/mealOptions';
-import type { EnrichedActivity, EnrichedMealOption, Place } from '../../model/types';
+import type { Booking, EnrichedActivity, EnrichedMealOption, Place } from '../../model/types';
 import { BookingChip } from '../shared/BookingChip';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { LinkifiedText } from '../shared/LinkifiedText';
@@ -16,6 +16,13 @@ function selectedPlace(
   selectedOption?: EnrichedMealOption,
 ): Place | null {
   return selectedOption ? selectedOption.place : activity.place;
+}
+
+function selectedBooking(
+  activity: EnrichedActivity,
+  selectedOption?: EnrichedMealOption,
+): Booking | null {
+  return selectedOption?.booking ?? activity.booking;
 }
 
 // A meal Activity's own place is never on activity.place (only options are)
@@ -57,6 +64,7 @@ export function ActivityDetailPanel({
   if (!activity) return null;
 
   const place = selectedPlace(activity, selectedOption);
+  const booking = selectedBooking(activity, selectedOption);
   const image = firstImage(activity) ?? (place ? firstImage(place) : null);
   const titleIconName = selectedOption
     ? DINING_FORMAT_ICON[selectedOption.diningFormat]
@@ -98,9 +106,9 @@ export function ActivityDetailPanel({
           <LinkifiedText text={activity.text} />
         </Typography>
       )}
-      {activity.booking && (
+      {booking && (
         <Box sx={{ mt: 1.5 }}>
-          <BookingChip booking={activity.booking} />
+          <BookingChip booking={booking} />
         </Box>
       )}
       <NotesCluster notes={aboveNotes} expanded />
