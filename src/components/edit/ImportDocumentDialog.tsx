@@ -94,6 +94,12 @@ export function ImportDocumentDialog({ legId, date, onClose }: ImportDocumentDia
     onClose();
   };
 
+  const handleFileChosen = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFile(e.target.files?.[0] ?? null);
+    setStatus('idle');
+    setExtracted(null);
+  };
+
   const handleDownloadOriginal = () => {
     if (!file) return;
     const url = URL.createObjectURL(file);
@@ -118,19 +124,27 @@ export function ImportDocumentDialog({ legId, date, onClose }: ImportDocumentDia
           </Alert>
         )}
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-          <Button variant="outlined" component="label" disabled={status === 'loading'}>
-            {file ? file.name : 'Choose a booking PDF or photo'}
-            <input
-              type="file"
-              hidden
-              accept=".pdf,image/*"
-              onChange={(e) => {
-                setFile(e.target.files?.[0] ?? null);
-                setStatus('idle');
-                setExtracted(null);
-              }}
-            />
-          </Button>
+          {file && (
+            <Typography variant="body2" color="text.secondary">
+              Selected: {file.name}
+            </Typography>
+          )}
+          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+            <Button variant="outlined" component="label" disabled={status === 'loading'}>
+              Take a photo
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                capture="environment"
+                onChange={handleFileChosen}
+              />
+            </Button>
+            <Button variant="outlined" component="label" disabled={status === 'loading'}>
+              Choose a file
+              <input type="file" hidden accept=".pdf,image/*" onChange={handleFileChosen} />
+            </Button>
+          </Box>
           <TextField
             label="Anthropic API key"
             type="password"

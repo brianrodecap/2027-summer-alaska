@@ -3,9 +3,28 @@
 // src/config/aiKey.ts for why this key is never hardcoded like config/places.ts's Google
 // key). Modeled on src/model/places.ts's style — a bare fetch() against the REST API, no
 // SDK dependency.
-import { blankActivity, blankStay, blankTransit, type EditKind } from './editForms';
+import {
+  blankActivity,
+  blankStay,
+  blankTransit,
+  DINING_FORMATS_WITH_INCLUDED_IN,
+  type EditKind,
+} from './editForms';
+import { DINING_FORMAT_LABEL } from './formatting';
 import { wallClockMs } from './tripModel';
-import type { Activity, Stay, Transit } from './types';
+import type { Activity, DiningFormat, MealType, Stay, Transit } from './types';
+
+// The only DiningFormat values the AI is allowed to set — the ones that don't
+// require an includedIn Ref pointing at a specific existing Stay/Package/
+// Activity/Transit, which the model can't see and would otherwise have to
+// invent (same reasoning as placeLabel/lodgingName never carrying an id) —
+// a human still picks those via IncludedInField in the review form. Derived
+// from DINING_FORMATS_WITH_INCLUDED_IN (editForms.ts), the same partition
+// ActivityEditForm and MealOptionList already gate on, rather than a second
+// hand-maintained list that could drift if a DiningFormat value is ever added.
+const EXTRACTABLE_DINING_FORMATS: DiningFormat[] = (
+  Object.keys(DINING_FORMAT_LABEL) as DiningFormat[]
+).filter((format) => !DINING_FORMATS_WITH_INCLUDED_IN.includes(format));
 
 const MODEL_ID = 'claude-sonnet-5';
 const ANTHROPIC_VERSION = '2023-06-01';
@@ -59,6 +78,8 @@ export interface ExtractedFields {
   confirmationNumber?: string;
   costAmount?: number;
   costCurrency?: string;
+  mealType?: MealType; // activity: set only when this document is a meal/dining booking
+  diningFormat?: DiningFormat; // activity: one of EXTRACTABLE_DINING_FORMATS only
 }
 
 // Shared by both the single-entity tool (below) and the multi-entity one
@@ -88,6 +109,18 @@ const ENTITY_SCHEMA = {
     confirmationNumber: { type: 'string' },
     costAmount: { type: 'number' },
     costCurrency: { type: 'string', description: "ISO 4217 currency code, e.g. 'USD'." },
+    mealType: {
+      type: 'string',
+      enum: ['breakfast', 'lunch', 'dinner', 'snack'],
+      description:
+        'Only for an activity that is a meal/dining booking, e.g. a restaurant reservation.',
+    },
+    diningFormat: {
+      type: 'string',
+      enum: EXTRACTABLE_DINING_FORMATS,
+      description:
+        "Only for an activity that is a meal/dining booking. Never 'included', 'package', 'included-with-activity', or 'included-with-transit' — those require linking to an existing entity a human must pick, so omit diningFormat instead if the document says the meal is included/covered by something else.",
+    },
   },
   required: ['kind'],
 };
@@ -101,7 +134,8 @@ const RECORD_ENTITY_TOOL = {
 const EXTRACTION_INSTRUCTIONS =
   'Extract the booking/itinerary details from this document into the record_entity tool. ' +
   'Use the field names exactly as given and omit any field you cannot determine from the document — do not guess. ' +
-  'placeLabel and lodgingName must be plain text only; never invent an id.';
+  'placeLabel and lodgingName must be plain text only; never invent an id. ' +
+  'If this document is a meal/restaurant reservation or dining booking, also set mealType and, if the format is clear, diningFormat.';
 
 interface AnthropicContentBlock {
   type: string;
@@ -231,7 +265,8 @@ const TRIP_EXTRACTION_INSTRUCTIONS =
   'A round-trip flight confirmation is two transit entries, one for the outbound flight and one for the return. ' +
   'A cruise confirmation is usually one stay entry for the cabin. ' +
   'Use the field names exactly as given and omit any field you cannot determine from the document — do not guess. ' +
-  'placeLabel and lodgingName must be plain text only; never invent an id.';
+  'placeLabel and lodgingName must be plain text only; never invent an id. ' +
+  'For any entry that is a meal/restaurant reservation or dining booking, also set mealType and, if the format is clear, diningFormat.';
 
 export async function extractTripEntitiesFromDocument(
   file: File,
@@ -352,6 +387,8 @@ export function draftEntityFromExtraction(
   activity.text = fields.text ?? '';
   activity.place = fields.placeLabel ? { id: null, label: fields.placeLabel } : null;
   activity.booking = booking;
+  activity.mealType = fields.mealType ?? null;
+  activity.diningFormat = fields.diningFormat ?? null;
   return activity;
 }
 
