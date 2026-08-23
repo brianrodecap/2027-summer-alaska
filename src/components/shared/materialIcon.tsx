@@ -43,6 +43,7 @@ import TerrainIcon from '@mui/icons-material/Terrain';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import WarningIcon from '@mui/icons-material/Warning';
 import WaterIcon from '@mui/icons-material/Water';
+import TimelineDot from '@mui/lab/TimelineDot';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
 import type { ComponentType, ReactElement } from 'react';
 
@@ -151,6 +152,17 @@ export function renderMaterialIcon(
 ): ReactElement {
   const Icon = materialIcon(name);
   return <Icon {...props} />;
+}
+
+// The day timeline's default leading-dot treatment (see DayTimeline.tsx,
+// ActivityRow.tsx, MealRow.tsx) — an outlined dot around a small icon,
+// substituted for a row's own image when it has none.
+export function RowLeadingDot({ icon }: { icon: string | null | undefined }): ReactElement {
+  return (
+    <TimelineDot variant="outlined" color="grey">
+      {renderMaterialIcon(icon, { fontSize: 'small' })}
+    </TimelineDot>
+  );
 }
 
 export const DEFAULT_PLACE_ICON = 'place';

@@ -35,7 +35,7 @@ const MEAL_TYPE_LABEL: Record<MealType, string> = {
 // Arrive's own time-plus-type overline and Stay's relation-only one.
 export function timeAndMealTypeLabel(activity: {
   startAt: string | null;
-  endAt: string | null;
+  durationMinutes: number | null;
   timeLabel: string | null;
   mealType: MealType | null;
 }): string {

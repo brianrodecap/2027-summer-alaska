@@ -1,7 +1,19 @@
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  DragOverlay,
+  type DragStartEvent,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import RouteIcon from '@mui/icons-material/Route';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
+import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import useScrollTrigger from '@mui/material/useScrollTrigger';
@@ -17,6 +29,8 @@ import { TransitDetailPanel } from '../components/day/TransitDetailPanel';
 import { RoutesDialog } from '../components/edit/RoutesDialog';
 import { JumpToDayPicker } from '../components/pickers/JumpToDayPicker';
 import { dayHasVisibleContent } from '../model/filters';
+import { applyActivityReorder, type DragMeta } from '../model/reorder';
+import { formatTime } from '../model/tripModel';
 import type {
   Day,
   EnrichedActivity,
@@ -67,6 +81,45 @@ export function DaysView() {
     [],
   );
 
+  // Reordering — see src/model/reorder.ts. A distance threshold on the
+  // pointer sensor is what lets a plain tap still open a row's detail sheet
+  // instead of every click starting a drag.
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+  const [draggingId, setDraggingId] = useState<string | null>(null);
+  const draggingActivity = draggingId
+    ? (data?.activities.find((a) => a._id === draggingId) ?? null)
+    : null;
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const meta = event.active.data.current as DragMeta | undefined;
+    setDraggingId(meta?.activityId ?? null);
+  };
+
+  // Only onDragEnd is handled — see reorder.ts's own note on why this
+  // skips live cross-container reflow. Dropping directly onto a row is
+  // read as "insert immediately after this row" when the drag moved the
+  // Activity later (down past its own start), but dnd-kit's own `over`
+  // never distinguishes "onto, meaning before" from "onto, meaning after" —
+  // it just names whichever row the pointer is over. Comparing
+  // `activeMeta`'s own index (its position before the drag) against
+  // `overMeta`'s is what tells the two apart: dragging upward past a row
+  // means the intent was to land before it, so the row's own `before`
+  // field (reorder.ts's DragMeta) is used instead of its plain fields.
+  const handleDragEnd = (event: DragEndEvent) => {
+    setDraggingId(null);
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const activeMeta = active.data.current as DragMeta | undefined;
+    const overMeta = over.data.current as DragMeta | undefined;
+    if (!activeMeta?.activityId || !overMeta) return;
+    const activityId = activeMeta.activityId;
+    const movingUp = activeMeta.index > overMeta.index;
+    const dropMeta: DragMeta =
+      movingUp && overMeta.before ? { ...overMeta, ...overMeta.before } : overMeta;
+    const dayStart = `${dropMeta.endAt.slice(0, 10)}T00:00`;
+    setData((prev) => applyActivityReorder(prev, dropMeta, activityId, dayStart), ['activities']);
+  };
+
   if (!view) return null;
 
   return (
@@ -105,19 +158,44 @@ export function DaysView() {
           No days match the selected filters.
         </Typography>
       ) : (
-        <Stack divider={<Box sx={{ borderBottom: 1, borderColor: 'divider' }} />}>
-          {visibleDays.map((day) => (
-            <DayBlock
-              key={day.date}
-              day={day}
-              daysByDate={daysByDate}
-              onOpenActivity={handleOpenActivity}
-              onOpenStay={setOpenStay}
-              onOpenTransit={setOpenTransit}
-              onOpenMap={setMapDay}
-            />
-          ))}
-        </Stack>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+        >
+          <Stack divider={<Box sx={{ borderBottom: 1, borderColor: 'divider' }} />}>
+            {visibleDays.map((day) => (
+              <DayBlock
+                key={day.date}
+                day={day}
+                daysByDate={daysByDate}
+                onOpenActivity={handleOpenActivity}
+                onOpenStay={setOpenStay}
+                onOpenTransit={setOpenTransit}
+                onOpenMap={setMapDay}
+              />
+            ))}
+          </Stack>
+          <DragOverlay>
+            {draggingActivity && (
+              <Paper
+                elevation={3}
+                sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 1 }}
+              >
+                <DragIndicatorIcon fontSize="small" color="action" />
+                <Box>
+                  <Typography variant="subtitle2">{draggingActivity.text}</Typography>
+                  {draggingActivity.startAt && (
+                    <Typography variant="caption" color="text.secondary">
+                      {formatTime(draggingActivity.startAt)}
+                    </Typography>
+                  )}
+                </Box>
+              </Paper>
+            )}
+          </DragOverlay>
+        </DndContext>
       )}
       <DayMapPanel day={mapDay} open={Boolean(mapDay)} onClose={() => setMapDay(null)} />
       <ActivityDetailPanel

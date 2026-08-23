@@ -18,6 +18,7 @@ import type {
 } from '../../model/types';
 import { BookingFields } from './BookingFields';
 import { DateTimeFieldPair } from './DateTimeFieldPair';
+import { DurationSelect } from './DurationSelect';
 import { MealOptionList } from './MealOptionList';
 import { PlacePickerField } from './PlacePickerField';
 
@@ -85,17 +86,13 @@ export function ActivityEditForm({
         onDateChange={(v) => onChange({ ...form, startsDate: v })}
         onTimeChange={(v) => onChange({ ...form, startsTime: v })}
       />
-      <DateTimeFieldPair
-        dateLabel="Ends date"
-        timeLabel="Ends time"
-        dateValue={form.endsDate}
-        timeValue={form.endsTime}
-        onDateChange={(v) => onChange({ ...form, endsDate: v })}
-        onTimeChange={(v) => onChange({ ...form, endsTime: v })}
+      <DurationSelect
+        value={form.durationMinutes}
+        onChange={(durationMinutes) => onChange({ ...form, durationMinutes })}
       />
       <TextField
         select
-        label="Fuzzy time (used only when Starts has a date but no time, and Ends is blank)"
+        label="Fuzzy time (used only when Starts has a date but no time)"
         value={form.timeLabel}
         onChange={(e) => onChange({ ...form, timeLabel: e.target.value as TimeLabel | '' })}
       >

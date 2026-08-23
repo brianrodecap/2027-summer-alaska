@@ -1,4 +1,3 @@
-import TimelineDot from '@mui/lab/TimelineDot';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
@@ -15,7 +14,7 @@ import {
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
 import { useMealOptionSelection } from '../../state/TripSelectionsContext';
 import { LinkifiedText } from '../shared/LinkifiedText';
-import { DINING_FORMAT_ICON, renderMaterialIcon } from '../shared/materialIcon';
+import { DINING_FORMAT_ICON, renderMaterialIcon, RowLeadingDot } from '../shared/materialIcon';
 import { NotesCluster, splitNotes } from '../shared/Notes';
 import { TransitOverlapWarning } from '../shared/TransitOverlapWarning';
 import { TravelerChips } from '../shared/TravelerChips';
@@ -39,11 +38,7 @@ export function MealRowLeading({ activity, day }: { activity: EnrichedActivity; 
   return image ? (
     <Avatar src={image.uri} sx={{ width: 32, height: 32 }} />
   ) : (
-    <TimelineDot color="primary">
-      {renderMaterialIcon(selected ? DINING_FORMAT_ICON[selected.diningFormat] : 'event', {
-        fontSize: 'small',
-      })}
-    </TimelineDot>
+    <RowLeadingDot icon={selected ? DINING_FORMAT_ICON[selected.diningFormat] : 'event'} />
   );
 }
 

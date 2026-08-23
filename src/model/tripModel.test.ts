@@ -29,6 +29,31 @@ function loadRealTripData(): TripData {
   };
 }
 
+function pushMinimalActivity(data: TripData, overrides: Partial<TripData['activities'][number]>) {
+  data.activities.push({
+    _id: 'test_activity',
+    legId: 'leg_parks',
+    scenarioId: null,
+    status: 'planning',
+    startAt: null,
+    durationMinutes: null,
+    timeLabel: null,
+    date: null,
+    order: null,
+    priority: null,
+    text: 'Test activity',
+    place: null,
+    booking: null,
+    mealType: null,
+    diningFormat: null,
+    includedIn: null,
+    options: null,
+    travelers: null,
+    images: [],
+    ...overrides,
+  });
+}
+
 describe('buildTripView against the real trip data', () => {
   const data = loadRealTripData();
   const view = buildTripView(data);
@@ -89,6 +114,95 @@ describe('buildTripView against the real trip data', () => {
       .flatMap((i) => i.activities.map((a) => a._id));
     expect(activityIds).toContain('act_jul17_1'); // board Discovery Princess
     expect(activityIds).toContain('act_jul17_dinner');
+  });
+});
+
+describe('transitOverlapWarning', () => {
+  function pushMinimalTransit(data: TripData, overrides: Partial<TripData['transits'][number]>) {
+    data.transits.push({
+      _id: 'test_transit',
+      legId: 'leg_parks',
+      journeyId: null,
+      scenarioId: null,
+      status: 'planning',
+      mode: 'drive',
+      from: { id: null, label: 'A' },
+      to: { id: null, label: 'B' },
+      departsAt: '2027-06-28T23:00',
+      arrivesAt: '2027-06-28T23:30',
+      routeId: null,
+      routeVariant: null,
+      booking: null,
+      images: [],
+      ...overrides,
+    });
+  }
+
+  it('flags a Transit that departs partway through an Activity, not just the reverse', () => {
+    const data = structuredClone(loadRealTripData());
+    pushMinimalActivity(data, {
+      startAt: '2027-06-28T23:00',
+      durationMinutes: 30,
+      mealType: 'dinner',
+      diningFormat: 'sit-down',
+    });
+    pushMinimalTransit(data, { departsAt: '2027-06-28T23:15' });
+    const view = buildTripView(data);
+    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBe(
+      'A departs before this ends.',
+    );
+  });
+
+  it('still exempts a meal that starts mid-drive (the original direction)', () => {
+    const data = structuredClone(loadRealTripData());
+    pushMinimalTransit(data, { departsAt: '2027-06-28T23:00', arrivesAt: '2027-06-28T23:30' });
+    pushMinimalActivity(data, {
+      startAt: '2027-06-28T23:10',
+      mealType: 'snack',
+      diningFormat: 'drivethru',
+    });
+    const view = buildTripView(data);
+    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBeNull();
+  });
+
+  it('still flags a non-meal Activity that starts mid-drive', () => {
+    const data = structuredClone(loadRealTripData());
+    pushMinimalTransit(data, { departsAt: '2027-06-28T23:00', arrivesAt: '2027-06-28T23:30' });
+    pushMinimalActivity(data, { startAt: '2027-06-28T23:10' });
+    const view = buildTripView(data);
+    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBe(
+      'During transit: A → B',
+    );
+  });
+});
+
+describe('same-startAt Activity ordering', () => {
+  it('puts a defaulted (timeLabel-anchored) startAt first, then no-duration, then ascending duration', () => {
+    const data = structuredClone(loadRealTripData());
+    // TIME_LABEL_ANCHORS puts 'Morning' at 09:00 — same instant as the three
+    // real-startAt activities below, so all four tie on `key`.
+    pushMinimalActivity(data, { _id: 'test_fuzzy', date: '2027-06-28', timeLabel: 'Morning' });
+    pushMinimalActivity(data, {
+      _id: 'test_long',
+      startAt: '2027-06-28T09:00',
+      durationMinutes: 45,
+    });
+    pushMinimalActivity(data, { _id: 'test_noduration', startAt: '2027-06-28T09:00' });
+    pushMinimalActivity(data, {
+      _id: 'test_short',
+      startAt: '2027-06-28T09:00',
+      durationMinutes: 15,
+    });
+
+    const view = buildTripView(data);
+    const day = view.days.find((d) => d.date === '2027-06-28');
+    expect(day).toBeDefined();
+    const activityIds = day!.sequence
+      .filter((i): i is Extract<typeof i, { type: 'section' }> => i.type === 'section')
+      .flatMap((i) => i.activities.map((a) => a._id))
+      .filter((id) => id.startsWith('test_'));
+
+    expect(activityIds).toEqual(['test_fuzzy', 'test_noduration', 'test_short', 'test_long']);
   });
 });
 

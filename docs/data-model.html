@@ -1333,12 +1333,16 @@
       tone: 'scenic',
       label: 'Scenic — via the Seward Highway',
       places: [ { kind: 'waypoint', place: { id: 'ChIJ...', label: 'Girdwood' }, durationMinutes: 40,
-               note: 'photo stop' },
+               distanceMiles: 37, note: 'photo stop' },
              { kind: 'via', place: { id: 'ChIJ...', label: 'Portage Glacier / Whittier junction' },
-               note: 'Anchorage–Whittier drives split off here', durationMinutes: 15 } ],
+               note: 'Anchorage–Whittier drives split off here', durationMinutes: 15,
+               distanceMiles: 12 } ],
       finalLegMinutes: 20,  // drive time from the last place (or Depart, if none)
                              // to this route's own `to` — completes the chain
                              // places[].durationMinutes only carries stop-to-stop
+      finalLegMiles: 9,      // same idea, distance instead of time — both this and
+                             // places[].distanceMiles are informational only, never
+                             // read by any time math
     },
   ],
   images: [],
@@ -1421,6 +1425,16 @@
             real arrival instead of stopping at the last place and clamping to a guess. Same status
             as every other duration on this page — geography, reusable across trips, never a
             discrete clock time.
+          </li>
+          <li>
+            <strong
+              >places[].distanceMiles and variants[].finalLegMiles are purely informational.</strong
+            >
+            Unlike every duration on this page, nothing in <code>stageTimesForVariant</code> or any
+            other computed view ever reads them — they exist only so the route editor (and a future
+            reader of this JSON) can sanity-check a drive time against a real mile count. Both
+            fields are optional for exactly that reason: older Route documents authored before
+            distance lookups existed stay valid without a backfill.
           </li>
         </ul>
       </article>
@@ -1545,7 +1559,9 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   scenarioId: 'scenario_denali_ideal',
   status: 'planning',   // planning | active | completed | cancelled
   startAt: '2027-06-27T09:30',
-  endAt:   '2027-06-27T11:30',
+  durationMinutes: 120,   // null | minutes, one of a fixed set of 15-min/
+                       // 30-min/hour steps (see the edit UI's Duration
+                       // dropdown) — null means unknown/point-in-time
   timeLabel: null,   // fallback for fuzzy timing — closed vocabulary:
                        // 'Morning' | 'Afternoon' | 'Evening', each mapped to
                        // a fixed 9am/1pm/8pm sort anchor in trip-model.js's
@@ -1553,12 +1569,12 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
                        // (a one-off conditional string that can't collapse to
                        // a single time of day) is left as free text and just
                        // borrows the nearest preceding real timestamp instead.
-  date: null,          // 'YYYY-MM-DD' | null — set only when startAt and endAt
-                       // are both null, alongside a real timeLabel anchor:
-                       // fuzzy timing still needs a real date to place the
+  date: null,          // 'YYYY-MM-DD' | null — set only when startAt is
+                       // null, alongside a real timeLabel anchor: fuzzy
+                       // timing still needs a real date to place the
                        // activity on, which a timeLabel string alone can't
                        // supply (see trip-model.js's resolveActivityDate).
-                       // Always null whenever startAt/endAt carries the date.
+                       // Always null whenever startAt carries the date.
   order: null,         // vestigial — no code reads this; array position in
                        // the JSON already is the authored order
   priority: 'high',   // 'high' | 'medium' | 'low' | null — null for the vast
@@ -1590,7 +1606,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   scenarioId: null,
   status: 'planning',
   startAt: '2027-07-20T14:00',
-  endAt: '2027-07-20T16:00',
+  durationMinutes: 120,
   timeLabel: null,
   order: null,
   priority: null,
@@ -1612,7 +1628,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   scenarioId: null,
   status: 'planning',
   startAt: '2027-06-27T08:00',
-  endAt: null,
+  durationMinutes: null,
   timeLabel: null,
   order: null,
   priority: null,
@@ -1634,7 +1650,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   scenarioId: null,
   status: 'planning',
   startAt: '2027-07-22T19:30',
-  endAt: null,
+  durationMinutes: null,
   timeLabel: null,
   order: null,
   priority: null,
@@ -1654,7 +1670,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   scenarioId: 'scenario_jun27_ideal',
   status: 'planning',
   startAt: '2027-06-27T08:00',
-  endAt: null,
+  durationMinutes: null,
   timeLabel: null,
   order: null,
   priority: null,
@@ -1692,9 +1708,11 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
 }</code></pre>
         <ul class="rationale">
           <li>
-            <strong>startAt/endAt are set only when actually known.</strong> timeLabel exists for
-            the honestly-vague cases — "Afternoon" — instead of inventing false precision; see
-            Activity's own timeLabel note above for its closed vocabulary and sort-anchor mapping.
+            <strong>startAt/durationMinutes are set only when actually known.</strong> A duration is
+            a fixed 15-min/30-min/hour step, not a free end time (see the edit UI's Duration
+            dropdown) — timeLabel exists for the honestly-vague cases — "Afternoon" — instead of
+            inventing false precision; see Activity's own timeLabel note above for its closed
+            vocabulary and sort-anchor mapping.
           </li>
           <li>
             <strong>booking is absent for most activities</strong> — a casual stroll never needs one

@@ -130,6 +130,7 @@ export const DayBlock = memo(function DayBlock({
         <DayTimeline
           day={day}
           sequence={day.sequence}
+          containerId={day.date}
           daysByDate={daysByDate}
           onOpenActivity={onOpenActivity}
           onOpenStay={onOpenStay}

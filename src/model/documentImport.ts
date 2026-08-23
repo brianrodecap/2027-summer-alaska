@@ -5,6 +5,7 @@
 // SDK dependency.
 import type { EditKind } from '../state/EditContext';
 import { blankActivity, blankStay, blankTransit } from './editForms';
+import { wallClockMs } from './tripModel';
 import type { Activity, Stay, Transit } from './types';
 
 const MODEL_ID = 'claude-sonnet-5';
@@ -341,7 +342,14 @@ export function draftEntityFromExtraction(
 
   const activity = blankActivity(legId, date);
   if (fields.startAt) activity.startAt = fields.startAt;
-  if (fields.endAt) activity.endAt = fields.endAt;
+  // The AI still extracts a natural endAt from the document text — derive
+  // durationMinutes from it locally (rounded to the dropdown's finest
+  // granularity) rather than teaching the extraction schema a new shape.
+  if (fields.startAt && fields.endAt) {
+    const minutes =
+      Math.round((wallClockMs(fields.endAt) - wallClockMs(fields.startAt)) / 60000 / 15) * 15;
+    activity.durationMinutes = minutes > 0 ? minutes : null;
+  }
   activity.text = fields.text ?? '';
   activity.place = fields.placeLabel ? { id: null, label: fields.placeLabel } : null;
   activity.booking = booking;

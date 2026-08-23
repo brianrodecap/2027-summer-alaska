@@ -156,8 +156,14 @@ function collectEntityDates(stays: Stay[], transits: Transit[], activities: Acti
     if (t.arrivesAt) dates.push(dateOnly(t.arrivesAt));
   }
   for (const a of activities) {
-    if (a.startAt) dates.push(dateOnly(a.startAt));
-    if (a.endAt) dates.push(dateOnly(a.endAt));
+    if (a.startAt) {
+      dates.push(dateOnly(a.startAt));
+      // Only an explicitly authored duration extends the range here — same
+      // as endAt never being a meal-format estimate before.
+      if (a.durationMinutes) {
+        dates.push(dateOnly(addMinutesIso(a.startAt, a.durationMinutes)));
+      }
+    }
     if (a.date) dates.push(a.date);
   }
   return dates;
@@ -303,24 +309,27 @@ export function formatMoney(cost: Money | null | undefined): string | null {
 }
 
 export function activityTimeLabel(
-  activity: Pick<Activity, 'startAt' | 'endAt' | 'timeLabel'>,
+  activity: Pick<Activity, 'startAt' | 'durationMinutes' | 'timeLabel'>,
 ): string {
-  if (activity.startAt)
-    return formatTime(activity.startAt) + (activity.endAt ? `–${formatTime(activity.endAt)}` : '');
-  if (activity.endAt) return `By ${formatTime(activity.endAt)}`;
+  if (activity.startAt) {
+    const end =
+      activity.durationMinutes != null
+        ? addMinutesIso(activity.startAt, activity.durationMinutes)
+        : null;
+    return formatTime(activity.startAt) + (end ? `–${formatTime(end)}` : '');
+  }
   if (activity.timeLabel) return activity.timeLabel;
   return 'Time TBD';
 }
 
-// ---------- Activity's date is usually implied by startAt/endAt. The fuzzy-
-// time path (timeLabel only, no exact startAt/endAt — see TIME_LABEL_ANCHORS
-// below) has no timestamp to read a date from, so Activity carries an
-// explicit `date` field for exactly that case (data-model.html) — set only
-// when startAt and endAt are both null, alongside timeLabel. ----------
+// ---------- Activity's date is usually implied by startAt. The fuzzy-time
+// path (timeLabel only, no exact startAt — see TIME_LABEL_ANCHORS below) has
+// no timestamp to read a date from, so Activity carries an explicit `date`
+// field for exactly that case (data-model.html) — set only when startAt is
+// null, alongside timeLabel. ----------
 
 function resolveActivityDate(activity: Activity): string | null {
   if (activity.startAt) return dateOnly(activity.startAt);
-  if (activity.endAt) return dateOnly(activity.endAt);
   return activity.date ?? null;
 }
 
@@ -469,12 +478,12 @@ export function stayRelation(stay: Stay, date: string): StayRelation {
 // occupied for the rest of the day) has no instant to sort by — it's
 // standing context for the whole day, not a scheduled event — so it's
 // anchored to the start of the day. Fuzzy-timed activities (timeLabel only,
-// no startAt/endAt) have no real timestamp either, but timeLabel is a closed
+// no startAt) have no real timestamp either, but timeLabel is a closed
 // vocabulary (TIME_LABEL_ANCHORS below) rather than free text, so per
 // Guiding principle 03 each one gets a real anchor time straight from that
 // table — validateActivityTiming (below) enforces every Activity has one of
-// startAt, endAt, or a table entry, so there's never a timeLabel left over
-// with no anchor to fall back on.
+// startAt or a table entry, so there's never a timeLabel left over with no
+// anchor to fall back on.
 
 // The only anchors this trip's days actually need — deliberately coarse,
 // since a fuzzy label like "Morning" was never claiming more precision than
@@ -491,29 +500,31 @@ const TIME_LABEL_ANCHORS: Record<string, string> = {
 };
 
 // Every Activity must resolve to both a real sort position and a real date:
-// startAt, endAt, or a `date` paired with a timeLabel drawn from
-// TIME_LABEL_ANCHORS above. A timeLabel outside that closed vocabulary (a
-// one-off conditional string) doesn't count — it has no anchor time of its
-// own — and neither does a timeLabel with no `date`, since resolveActivityDate
-// would have nowhere left to place it. Checked once at load time so a bad
-// entry fails loudly here rather than sorting on an undefined key, or
-// silently vanishing from the day list, downstream — this is what lets
+// startAt, or a `date` paired with a timeLabel drawn from TIME_LABEL_ANCHORS
+// above. A timeLabel outside that closed vocabulary (a one-off conditional
+// string) doesn't count — it has no anchor time of its own — and neither
+// does a timeLabel with no `date`, since resolveActivityDate would have
+// nowhere left to place it. Checked once at load time so a bad entry fails
+// loudly here rather than sorting on an undefined key, or silently
+// vanishing from the day list, downstream — this is what lets
 // activitySortKey (below) always return a real value instead of needing its
 // own null-handling fallback.
 function validateActivityTiming(activities: Activity[]): void {
   const untimed = activities.filter(
-    (a) => !a.startAt && !a.endAt && !(a.date && a.timeLabel && TIME_LABEL_ANCHORS[a.timeLabel]),
+    (a) => !a.startAt && !(a.date && a.timeLabel && TIME_LABEL_ANCHORS[a.timeLabel]),
   );
   if (untimed.length) {
     throw new Error(
-      `Activity(s) missing startAt, endAt, or a date+timeLabel pair: ${untimed.map((a) => a._id).join(', ')}`,
+      `Activity(s) missing startAt or a date+timeLabel pair: ${untimed.map((a) => a._id).join(', ')}`,
     );
   }
 }
 
-function activitySortKey(activity: Activity, dayStart: string): string {
+export function activitySortKey(
+  activity: Pick<Activity, 'startAt' | 'timeLabel'>,
+  dayStart: string,
+): string {
   if (activity.startAt) return activity.startAt;
-  if (activity.endAt) return activity.endAt;
   return `${dayStart.slice(0, 10)}T${TIME_LABEL_ANCHORS[activity.timeLabel as string]}`;
 }
 
@@ -556,30 +567,35 @@ function transitSortKey(transit: Transit, dayStart: string): string {
 // spacing across the whole departsAt–arrivesAt span would. It's still only
 // an estimate (no live traffic/pace data backs it), just a better-informed
 // one than guessing — acceptable for a plan, not actuals.
-function wallClockMs(iso: string): number {
+export function wallClockMs(iso: string): number {
   const [datePart, timePart] = iso.split('T');
   const [y, m, d] = datePart.split('-').map(Number);
   const [hh, mm] = timePart.split(':').map(Number);
   return Date.UTC(y, m - 1, d, hh, mm);
 }
 
-function formatWallClock(ms: number): string {
+export function formatWallClock(ms: number): string {
   const dt = new Date(ms);
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${dt.getUTCFullYear()}-${pad(dt.getUTCMonth() + 1)}-${pad(dt.getUTCDate())}T${pad(dt.getUTCHours())}:${pad(dt.getUTCMinutes())}`;
 }
 
+export function addMinutesIso(iso: string, minutes: number): string {
+  return formatWallClock(wallClockMs(iso) + minutes * 60000);
+}
+
 // A meal Activity reached mid-drive is exempt from the transit-overlap
 // warning (see transitOverlapFor, below) — eating during a long drive is
 // normal, not a modeling mistake — but it still genuinely takes time, and a
-// meal with no authored endAt (a still-undecided "choosing where", or a
-// self-catered packed lunch that was never given a real duration) used to
-// fold into the walk below as zero minutes, silently understating how long
-// the stop actually took. These are rough, diningFormat-shaped guesses —
-// grab-and-go/drivethru barely slow the drive, a sit-down meal genuinely
-// does — used only when a real endAt isn't already on record. A still-open
-// meal (activity.options set, diningFormat null) borrows its first
-// candidate's format as the best available guess.
+// meal with no authored durationMinutes (a still-undecided "choosing
+// where", or a self-catered packed lunch that was never given a real
+// duration) used to fold into the walk below as zero minutes, silently
+// understating how long the stop actually took. These are rough,
+// diningFormat-shaped guesses — grab-and-go/drivethru barely slow the
+// drive, a sit-down meal genuinely does — used only when a real
+// durationMinutes isn't already on record. A still-open meal
+// (activity.options set, diningFormat null) borrows its first candidate's
+// format as the best available guess.
 const DEFAULT_MEAL_DURATION_MINUTES: Record<string, number> = {
   included: 30,
   package: 45,
@@ -590,6 +606,12 @@ const DEFAULT_MEAL_DURATION_MINUTES: Record<string, number> = {
 };
 const FALLBACK_MEAL_DURATION_MINUTES = 30;
 
+// The one canonical "how long does this Activity take" answer — an
+// explicit durationMinutes, or a meal-format estimate when there's none,
+// or null (point-in-time/unknown) otherwise. Everything that used to read
+// endAt now reads this instead: the drive-time walk below, reorder.ts's
+// drag-and-drop anchor/shift math, and the transit-overlap check.
+//
 // formatOverrides (activityId -> diningFormat) lets a caller stand in
 // whichever MealOption candidate is actually live-selected in the day view
 // right now — the meal row's own tabs — in place of the model's own stored
@@ -598,21 +620,21 @@ const FALLBACK_MEAL_DURATION_MINUTES = 30;
 // picked yet; populated whenever a meal row's own tabs change, so a lunch
 // stop's picked format (sit-down vs. drive-thru) actually reaches the
 // drive-time walk below instead of only changing that row's own display.
-function activityEffectiveEndMs(
-  activity: EnrichedActivity,
+// Typed against just the fields it reads (rather than EnrichedActivity)
+// so a raw, not-yet-enriched Activity — e.g. reorder.ts's own drag-and-drop
+// duration recalculation, working straight off TripData — can call this too.
+export function activityDurationMinutes(
+  activity: Pick<Activity, '_id' | 'durationMinutes' | 'mealType' | 'diningFormat' | 'options'>,
   formatOverrides?: Map<string, DiningFormat>,
-): number {
-  if (activity.endAt) return wallClockMs(activity.endAt);
-  const startMs = wallClockMs(activity.startAt as string);
-  if (!activity.mealType) return startMs;
+): number | null {
+  if (activity.durationMinutes != null) return activity.durationMinutes;
+  if (!activity.mealType) return null;
   const format =
     formatOverrides?.get(activity._id) ??
     activity.diningFormat ??
     activity.options?.[0]?.diningFormat ??
     null;
-  const minutes =
-    (format && DEFAULT_MEAL_DURATION_MINUTES[format]) ?? FALLBACK_MEAL_DURATION_MINUTES;
-  return startMs + minutes * 60000;
+  return (format && DEFAULT_MEAL_DURATION_MINUTES[format]) ?? FALLBACK_MEAL_DURATION_MINUTES;
 }
 
 // Every variant gets its own independent walk — even though only one
@@ -663,7 +685,7 @@ function stageTimesForVariant(
       ) {
         const driveMs = nextStartMs - clockMs;
         remainingMs -= driveMs;
-        clockMs = activityEffectiveEndMs(next, formatOverrides);
+        clockMs = nextStartMs + (activityDurationMinutes(next, formatOverrides) ?? 0) * 60000;
         queue.shift();
       } else {
         clockMs += remainingMs;
@@ -746,20 +768,46 @@ interface Keyed {
   key: string;
 }
 
-// Merge-sorts already-keyed items (key: an ISO timestamp — every item has a
-// real one by now, see activitySortKey) into chronological order. A stable
-// sort so same-key items (e.g. two activities both anchored to the same
-// "Morning" timeLabel) keep their original already-authored order.
-function mergeByTime<T extends Keyed>(items: T[]): T[] {
-  return [...items].sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
-}
-
 type PreSequenceItem =
   | { type: 'stay'; stay: EnrichedStay; relation: StayRelation; key: string }
   | TransitBoundarySequenceItem
   | TransitStageSequenceItem
   | KeyedActivity
   | { type: 'scenario-tabs'; key: string; tracks?: ScenarioTrack[] };
+
+// Tie-break for two Activities landing on the exact same `key` (the same
+// real startAt, or the same TIME_LABEL_ANCHORS-derived instant): a defaulted
+// (timeLabel-anchored, no real startAt of its own) Activity sorts first,
+// then one with no durationMinutes of its own, then ascending by
+// durationMinutes — the trip owner's own ordering rule for same-time rows.
+// A tie between anything else (a Stay/Transit item on either side, or two
+// non-Activity items) returns 0 so mergeByTime's stable sort falls through
+// to the items' original array order instead, preserving the existing
+// stays-then-transits-then-activities precedence a same-key tie already
+// relied on (see reorder.ts's own note on that).
+function activityTieBreak(a: PreSequenceItem, b: PreSequenceItem): number {
+  if (a.type !== 'activity' || b.type !== 'activity') return 0;
+  const fuzzyA = !a.activity.startAt;
+  const fuzzyB = !b.activity.startAt;
+  if (fuzzyA !== fuzzyB) return fuzzyA ? -1 : 1;
+  const durA = a.activity.durationMinutes;
+  const durB = b.activity.durationMinutes;
+  if ((durA == null) !== (durB == null)) return durA == null ? -1 : 1;
+  return (durA ?? 0) - (durB ?? 0);
+}
+
+// Merge-sorts already-keyed items (key: an ISO timestamp — every item has a
+// real one by now, see activitySortKey) into chronological order. A stable
+// sort so a same-key tie that activityTieBreak doesn't resolve (e.g. two
+// Stay/Transit items, or two Activities equally fuzzy/durationed) keeps its
+// original already-authored order.
+function mergeByTime(items: PreSequenceItem[]): PreSequenceItem[] {
+  return [...items].sort((a, b) => {
+    if (a.key < b.key) return -1;
+    if (a.key > b.key) return 1;
+    return activityTieBreak(a, b);
+  });
+}
 
 // Collapses consecutive { type: 'activity' } items into one
 // { type: 'section', activities } block — a Stay/Transit event in between
@@ -1467,6 +1515,30 @@ function inTransitActivities(transit: Transit, activities: EnrichedActivity[]): 
     .sort((a, b) => ((a.startAt as string) < (b.startAt as string) ? -1 : 1));
 }
 
+// The reverse direction from activityFallsWithinTransit: a Transit's own
+// departsAt lands inside the Activity's own startAt–(startAt+duration)
+// range, meaning the transit is scheduled to leave partway through the
+// activity rather than the activity starting mid-drive — e.g. a
+// drag-and-drop reorder (see reorder.ts) landing an Activity's block on top
+// of an already-fixed departure time. Unlike activityFallsWithinTransit,
+// this isn't exempted for meals at this function's own call site below: a
+// meal reached mid-drive is a normal stop, but a departure scheduled
+// mid-meal is a real risk of missing it, not something to wave off the same
+// way — so this uses activityDurationMinutes' meal-format estimate too, not
+// just an explicit durationMinutes.
+function transitDepartsDuringActivity(activity: Activity, transit: Transit): boolean {
+  if (!activity.startAt) return false;
+  const minutes = activityDurationMinutes(activity);
+  if (minutes == null) return false;
+  const activityEndsAt = addMinutesIso(activity.startAt, minutes);
+  return (
+    activity.legId === transit.legId &&
+    activity.scenarioId === transit.scenarioId &&
+    transit.departsAt >= activity.startAt &&
+    transit.departsAt < activityEndsAt
+  );
+}
+
 // An Activity is never supposed to land inside a Transit's own span at all —
 // a real stop reached partway through a drive belongs on the Route as a via
 // waypoint (data-model.html's Route entity), not as an ordinary Activity that
@@ -1475,8 +1547,21 @@ function inTransitActivities(transit: Transit, activities: EnrichedActivity[]): 
 // have these pending migration to a real waypoint — it's surfaced instead as
 // a visible warning on the row, so a bad case is seen and fixed rather than
 // silently absorbed the way the route-stage folding above already treats it.
-function transitOverlapFor(activity: Activity, transits: Transit[]): Transit | null {
-  return transits.find((t) => activityFallsWithinTransit(activity, t)) ?? null;
+// Checks both overlap directions; only the "activity starts mid-drive" one
+// is exempted for meals (its own call site, below). `departsMidActivity`
+// tells the call site which direction matched, since the two read very
+// differently as a warning message ("happening during this drive" vs.
+// "this transit leaves before you're done").
+function transitOverlapFor(
+  activity: Activity,
+  transits: Transit[],
+  exemptMealFromMidDrive: boolean,
+): { transit: Transit; departsMidActivity: boolean } | null {
+  const departing = transits.find((t) => transitDepartsDuringActivity(activity, t));
+  if (departing) return { transit: departing, departsMidActivity: true };
+  if (exemptMealFromMidDrive) return null;
+  const containing = transits.find((t) => activityFallsWithinTransit(activity, t));
+  return containing ? { transit: containing, departsMidActivity: false } : null;
 }
 
 // Every place entry must carry a kind of 'waypoint' or 'via' (never a bare
@@ -1891,16 +1976,19 @@ export function buildTripView(data: TripData): TripView {
   const packagesById = new Map(stays.flatMap((s) => s.packages ?? []).map((p) => [p._id, p]));
 
   const enrichedActivities: EnrichedActivity[] = activities.map((a) => {
-    // A meal is exempt from the warning — see DEFAULT_MEAL_DURATION_MINUTES
-    // above for why eating mid-drive is normal, not a modeling mistake.
-    const overlappingTransit = a.mealType ? null : transitOverlapFor(a, transits);
+    // A meal starting mid-drive is exempt — see DEFAULT_MEAL_DURATION_MINUTES
+    // above for why that's normal, not a modeling mistake. A departure
+    // scheduled mid-meal still isn't exempt (transitOverlapFor's own note).
+    const overlappingTransit = transitOverlapFor(a, transits, Boolean(a.mealType));
     return {
       ...a,
       date: resolveActivityDate(a),
       notes: notesForEntity(notes, 'activity', a._id),
       hasWarningNote: entityHasWarning(notes, 'activity', a._id),
       transitOverlapWarning: overlappingTransit
-        ? `During transit: ${overlappingTransit.from.label} → ${overlappingTransit.to.label}`
+        ? overlappingTransit.departsMidActivity
+          ? `${overlappingTransit.transit.from.label} departs before this ends.`
+          : `During transit: ${overlappingTransit.transit.from.label} → ${overlappingTransit.transit.to.label}`
         : null,
       travelers: a.mealType
         ? resolveMealTravelers(trip.travelers, a.includedIn, packagesById)

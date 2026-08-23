@@ -160,6 +160,7 @@ export interface RoutePlaceEntry {
   coordinates?: { lat: number; lng: number }; // fallback only when place has no resolvable id
   label?: string; // used together with coordinates, when place is absent
   durationMinutes: number;
+  distanceMiles?: number; // informational only — never fed into any time math
   note?: string | null;
 }
 
@@ -168,6 +169,7 @@ export interface RouteVariant {
   label: string;
   places: RoutePlaceEntry[];
   finalLegMinutes: number;
+  finalLegMiles?: number; // informational only — never fed into any time math
 }
 
 export interface Route {
@@ -239,9 +241,9 @@ export interface Activity {
   scenarioId: string | null;
   status: PlanStatus;
   startAt: string | null;
-  endAt: string | null;
+  durationMinutes: number | null; // null when unknown/point-in-time; see activityDurationMinutes
   timeLabel: TimeLabel | null;
-  date: string | null; // set only when startAt and endAt are both null
+  date: string | null; // set only when startAt is null
   order: number | null; // vestigial — nothing reads this
   priority: Priority | null;
   text: string;

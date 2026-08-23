@@ -1,4 +1,3 @@
-import TimelineDot from '@mui/lab/TimelineDot';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
@@ -8,7 +7,7 @@ import { firstImage, timeAndMealTypeLabel } from '../../model/formatting';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
 import { BookingChip } from '../shared/BookingChip';
 import { LinkifiedText } from '../shared/LinkifiedText';
-import { DEFAULT_PLACE_ICON, DINING_FORMAT_ICON, renderMaterialIcon } from '../shared/materialIcon';
+import { DEFAULT_PLACE_ICON, DINING_FORMAT_ICON, RowLeadingDot } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
 import { TransitOverlapWarning } from '../shared/TransitOverlapWarning';
 import { TravelerChips } from '../shared/TravelerChips';
@@ -33,9 +32,7 @@ export function ActivityLeading({ activity, day }: { activity: EnrichedActivity;
   return image ? (
     <Avatar src={image.uri} sx={{ width: 32, height: 32 }} />
   ) : (
-    <TimelineDot color="primary">
-      {renderMaterialIcon(activityRowIconName(activity), { fontSize: 'small' })}
-    </TimelineDot>
+    <RowLeadingDot icon={activityRowIconName(activity)} />
   );
 }
 

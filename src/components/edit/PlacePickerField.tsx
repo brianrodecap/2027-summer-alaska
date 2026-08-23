@@ -14,10 +14,10 @@ import { usePlaceSearch } from './usePlaceSearch';
 // supplies the dropdown chrome, keyboard nav, and loading spinner that the
 // old app's hand-rolled debounce/dropdown-render code used to build itself;
 // usePlaceSearch (above) covers only what Autocomplete doesn't: debouncing,
-// a minimum query length, and race-condition guarding. Both Name and the
-// Place ID field below it stay directly editable too — search can miss or
-// return the wrong match, so typing the id straight in still has to work as
-// a fallback.
+// a minimum query length, and race-condition guarding. The Place ID itself
+// is never shown or hand-editable anywhere in the app — a search pick is the
+// only way to set one, so a bad match has to be fixed by searching again,
+// not by typing a raw id.
 export function PlacePickerField({
   label = 'Name',
   place,
@@ -36,6 +36,7 @@ export function PlacePickerField({
     <Stack spacing={1}>
       <Autocomplete<PlaceSearchResult, false, false, true>
         freeSolo
+        fullWidth
         options={options}
         loading={loading}
         filterOptions={(x) => x} // results are already server-filtered by query
@@ -84,18 +85,6 @@ export function PlacePickerField({
             }}
           />
         )}
-      />
-      <TextField
-        label="Google Place ID"
-        size="small"
-        value={place?.id ?? ''}
-        onChange={(e) =>
-          onChange({
-            id: e.target.value || null,
-            label: place?.label ?? inputValue,
-            images: place?.images,
-          })
-        }
       />
     </Stack>
   );

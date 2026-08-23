@@ -200,13 +200,21 @@
           {
             "kind": "waypoint",
             "place": {
-              "id": "ChIJ4waXwW73LVER8yMRgZh3rXQ",
-              "label": "Livengood"
+              "id": "ChIJq1HFuXaxLlERly-xPwd2LII",
+              "label": "Finger Mountain"
             },
-            "durationMinutes": 85
+            "durationMinutes": 230
+          },
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJq1OY5MlJKVERzomrV_shh1E",
+              "label": "Arctic Circle Sign"
+            },
+            "durationMinutes": 25
           }
         ],
-        "finalLegMinutes": 260
+        "finalLegMinutes": 90
       }
     ],
     "images": [

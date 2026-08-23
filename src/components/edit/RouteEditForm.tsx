@@ -10,8 +10,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-import { lookupDriveMinutes } from '../../model/directions';
-import type { PlaceSearchResult } from '../../model/places';
+import { lookupDriveInfo } from '../../model/directions';
 import type { Route, RoutePlaceEntry, RouteVariant } from '../../model/types';
 import { PlacePickerField } from './PlacePickerField';
 
@@ -35,50 +34,66 @@ function swap<T>(arr: T[], i: number, j: number): T[] {
   return next;
 }
 
-// The Place ID a place entry's own drive time should be measured *from* —
-// whichever stop immediately precedes it in the variant's places[] array
-// (the authoritative stage order — see route-places-array-order-authoritative),
-// or the route's own From when it's the first entry.
-function originIdBefore(
-  variant: RouteVariant,
-  placeIndex: number,
-  fromId: string | null,
-): string | null {
-  for (let i = placeIndex - 1; i >= 0; i -= 1) {
-    const id = variant.places[i].place?.id;
-    if (id) return id;
-  }
-  return fromId;
+// Formats a computed leg for the form's own read-only display — never fed
+// back into the data, just a sanity check on what the last lookup returned.
+function formatLeg(minutes: number, miles?: number): string {
+  return miles != null ? `~${minutes} min · ${miles} mi` : `~${minutes} min`;
 }
 
-function lastStopId(variant: RouteVariant, fromId: string | null): string | null {
-  for (let i = variant.places.length - 1; i >= 0; i -= 1) {
-    const id = variant.places[i].place?.id;
-    if (id) return id;
-  }
-  return fromId;
-}
-
-// variant.finalLegMinutes is the one drive time places[] never covers on its
-// own: from whichever stop comes last (or the route's own From, with none)
-// to the route's actual To. Re-measured after anything that could move
-// "whichever stop comes last" — a place picked/added/removed, or From/To
-// itself repicked. Failure (no drivable route, API not enabled) just leaves
-// the field exactly as it was — still hand-editable, the same fallback every
-// place picker already has.
-async function refreshFinalLeg(
+// Place ID, durationMinutes/distanceMiles, and finalLegMinutes/finalLegMiles
+// are never hand-typed in this form — they're re-derived here from Google's
+// live drive time and distance (via lookupDriveInfo) every time the stop
+// sequence or the route's own From/To changes, walking places[] in its own
+// authoritative order (see route-places-array-order-authoritative) rather
+// than anything sorted by the durations themselves. A lookup failure (no
+// drivable route, API not enabled) just leaves that entry's stored values as
+// they were — silently stale until the next successful recompute, same
+// fail-closed fallback every place picker already has.
+//
+// Every leg's origin/destination pair is known synchronously up front (each
+// place's own id, chained from the previous stop or From) — none of them
+// depend on another leg's lookup result — so the lookups themselves fire
+// concurrently rather than one at a time. `fromIndex` additionally skips
+// lookups for legs before it: an edit at one stop can only change the origin
+// chain from that position onward, so an earlier, already-correct leg is
+// left untouched rather than re-fetched.
+async function recomputeVariant(
   variant: RouteVariant,
   fromId: string | null,
   toId: string | null,
-): Promise<number> {
-  const originId = lastStopId(variant, fromId);
-  if (!originId || !toId) return variant.finalLegMinutes;
-  try {
-    const minutes = await lookupDriveMinutes(originId, toId);
-    return minutes ?? variant.finalLegMinutes;
-  } catch {
-    return variant.finalLegMinutes;
+  fromIndex = 0,
+): Promise<RouteVariant> {
+  const legs: { originId: string | null; destId: string | null }[] = [];
+  let originId = fromId;
+  for (const p of variant.places) {
+    const destId = p.place?.id ?? null;
+    legs.push({ originId, destId });
+    if (destId) originId = destId;
   }
+  const finalOriginId = originId;
+
+  const [placeResults, finalInfo] = await Promise.all([
+    Promise.all(
+      legs.map(({ originId, destId }, i) =>
+        i >= fromIndex && originId && destId
+          ? lookupDriveInfo(originId, destId).catch(() => null)
+          : Promise.resolve(null),
+      ),
+    ),
+    finalOriginId && toId ? lookupDriveInfo(finalOriginId, toId).catch(() => null) : null,
+  ]);
+
+  const places = variant.places.map((p, i) => {
+    const info = placeResults[i];
+    return info ? { ...p, durationMinutes: info.minutes, distanceMiles: info.miles } : p;
+  });
+
+  return {
+    ...variant,
+    places,
+    finalLegMinutes: finalInfo ? finalInfo.minutes : variant.finalLegMinutes,
+    finalLegMiles: finalInfo ? finalInfo.miles : variant.finalLegMiles,
+  };
 }
 
 export function RouteEditForm({
@@ -92,12 +107,13 @@ export function RouteEditForm({
     onChange({ ...form, variants: form.variants.map((v, i) => (i === index ? variant : v)) });
   };
 
-  const refreshAllFinalLegs = async (route: Route) => {
+  // Recomputes every variant's durationMinutes/finalLegMinutes from scratch —
+  // used after From/To itself changes, since that shifts the origin every
+  // first-place duration (and a places-less variant's finalLegMinutes) is
+  // measured from.
+  const recomputeAllVariants = async (route: Route) => {
     const updated = await Promise.all(
-      route.variants.map(async (v) => ({
-        ...v,
-        finalLegMinutes: await refreshFinalLeg(v, route.from.id, route.to.id),
-      })),
+      route.variants.map((v) => recomputeVariant(v, route.from.id, route.to.id)),
     );
     onChange({ ...route, variants: updated });
   };
@@ -108,13 +124,17 @@ export function RouteEditForm({
       <PlacePickerField
         place={form.from}
         onChange={(place) => onChange({ ...form, from: place ?? { id: null, label: '' } })}
-        onPicked={() => refreshAllFinalLegs(form)}
+        onPicked={(picked) =>
+          recomputeAllVariants({ ...form, from: { id: picked.id, label: picked.label } })
+        }
       />
       <Typography variant="subtitle2">To</Typography>
       <PlacePickerField
         place={form.to}
         onChange={(place) => onChange({ ...form, to: place ?? { id: null, label: '' } })}
-        onPicked={() => refreshAllFinalLegs(form)}
+        onPicked={(picked) =>
+          recomputeAllVariants({ ...form, to: { id: picked.id, label: picked.label } })
+        }
       />
       <Divider />
       <Typography variant="subtitle2">Variants</Typography>
@@ -201,44 +221,20 @@ export function RouteEditForm({
                       );
                       updateVariant(vi, { ...variant, places: next });
                     }}
-                    onPicked={async (result: PlaceSearchResult) => {
-                      const originId = originIdBefore(variant, pi, form.from.id);
-                      let durationMinutes = place.durationMinutes;
-                      if (originId) {
-                        try {
-                          const minutes = await lookupDriveMinutes(originId, result.id);
-                          if (minutes != null) durationMinutes = minutes;
-                        } catch {
-                          // leave the duration field alone — still hand-editable.
-                        }
-                      }
+                    onPicked={async (result) => {
                       const nextPlaces = variant.places.map((p, i) =>
-                        i === pi
-                          ? { ...p, place: { id: result.id, label: result.label }, durationMinutes }
-                          : p,
+                        i === pi ? { ...p, place: { id: result.id, label: result.label } } : p,
                       );
-                      const nextVariant = { ...variant, places: nextPlaces };
-                      const finalLegMinutes = await refreshFinalLeg(
-                        nextVariant,
+                      const nextVariant = await recomputeVariant(
+                        { ...variant, places: nextPlaces },
                         form.from.id,
                         form.to.id,
+                        pi,
                       );
-                      updateVariant(vi, { ...nextVariant, finalLegMinutes });
+                      updateVariant(vi, nextVariant);
                     }}
                   />
-                  <Stack direction="row" spacing={2} sx={{ alignItems: 'flex-start' }}>
-                    <TextField
-                      label="Minutes from previous stop"
-                      type="number"
-                      size="small"
-                      value={place.durationMinutes}
-                      onChange={(e) => {
-                        const next = variant.places.map((p, i) =>
-                          i === pi ? { ...p, durationMinutes: Number(e.target.value) } : p,
-                        );
-                        updateVariant(vi, { ...variant, places: next });
-                      }}
-                    />
+                  <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
                     <TextField
                       label="Note (optional)"
                       size="small"
@@ -254,21 +250,21 @@ export function RouteEditForm({
                     <IconButton
                       aria-label="Remove this stage"
                       onClick={async () => {
-                        const nextVariant = {
-                          ...variant,
-                          places: variant.places.filter((_, i) => i !== pi),
-                        };
-                        const finalLegMinutes = await refreshFinalLeg(
-                          nextVariant,
+                        const nextVariant = await recomputeVariant(
+                          { ...variant, places: variant.places.filter((_, i) => i !== pi) },
                           form.from.id,
                           form.to.id,
+                          pi,
                         );
-                        updateVariant(vi, { ...nextVariant, finalLegMinutes });
+                        updateVariant(vi, nextVariant);
                       }}
                     >
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Stack>
+                  <Typography variant="caption" color="text.secondary">
+                    {formatLeg(place.durationMinutes, place.distanceMiles)} from previous stop
+                  </Typography>
                 </Stack>
               </Paper>
             ))}
@@ -286,15 +282,10 @@ export function RouteEditForm({
             >
               Add place
             </Button>
-            <TextField
-              label="Final leg — minutes from the last stop to the route's To"
-              type="number"
-              size="small"
-              value={variant.finalLegMinutes}
-              onChange={(e) =>
-                updateVariant(vi, { ...variant, finalLegMinutes: Number(e.target.value) })
-              }
-            />
+            <Typography variant="caption" color="text.secondary">
+              Final leg to {form.to.label || 'To'}:{' '}
+              {formatLeg(variant.finalLegMinutes, variant.finalLegMiles)}
+            </Typography>
           </Stack>
         </Paper>
       ))}

@@ -80,6 +80,8 @@ export function ScenarioTabsSection({
         <DayTimeline
           day={day}
           sequence={activeTrack.sequence}
+          containerId={`${day.date}::${activeTrack.scenario._id}`}
+          scenarioId={activeTrack.scenario._id}
           daysByDate={daysByDate}
           onOpenActivity={onOpenActivity}
           onOpenStay={onOpenStay}

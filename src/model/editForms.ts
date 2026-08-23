@@ -40,7 +40,7 @@ export function blankActivity(legId: string, date: string): Activity {
     scenarioId: null,
     status: 'planning',
     startAt: null,
-    endAt: null,
+    durationMinutes: null,
     timeLabel: null,
     date,
     order: null,
@@ -95,8 +95,7 @@ export function blankTransit(legId: string, date: string): Transit {
 export interface ActivityFormState {
   startsDate: string | null;
   startsTime: string | null;
-  endsDate: string | null;
-  endsTime: string | null;
+  durationMinutes: number | null;
   timeLabel: TimeLabel | '';
   text: string;
   status: PlanStatus;
@@ -114,13 +113,10 @@ export interface ActivityFormState {
 export function activityFormFrom(activity: Activity): ActivityFormState {
   const startsDate = activity.startAt ? activity.startAt.slice(0, 10) : (activity.date ?? null);
   const startsTime = activity.startAt ? activity.startAt.slice(11, 16) : null;
-  const endsDate = activity.endAt ? activity.endAt.slice(0, 10) : null;
-  const endsTime = activity.endAt ? activity.endAt.slice(11, 16) : null;
   return {
     startsDate,
     startsTime,
-    endsDate,
-    endsTime,
+    durationMinutes: activity.durationMinutes,
     timeLabel: activity.timeLabel ?? '',
     text: activity.text,
     status: activity.status,
@@ -135,29 +131,28 @@ export function activityFormFrom(activity: Activity): ActivityFormState {
 }
 
 // Every Activity must resolve to both a real sort position and a real date
-// — startAt, endAt, or a Starts date paired with a fuzzy timeLabel. An exact
-// Starts/Ends always wins over the fuzzy time select when both are given.
+// — startAt, or a Starts date paired with a fuzzy timeLabel. An exact Starts
+// always wins over the fuzzy time select when both are given.
 export function applyActivityForm(activity: Activity, form: ActivityFormState): string | null {
   const text = form.text.trim();
   if (!text) return 'Needs a description.';
   const startAt =
     form.startsDate && form.startsTime ? `${form.startsDate}T${form.startsTime}` : null;
-  const endAt = form.endsDate && form.endsTime ? `${form.endsDate}T${form.endsTime}` : null;
   activity.text = text;
   activity.status = form.status;
   activity.priority = form.priority || null;
-  if (startAt || endAt) {
+  if (startAt) {
     activity.startAt = startAt;
-    activity.endAt = endAt;
+    activity.durationMinutes = form.durationMinutes;
     activity.timeLabel = null;
     activity.date = null;
   } else if (form.startsDate && form.timeLabel) {
     activity.startAt = null;
-    activity.endAt = null;
+    activity.durationMinutes = null;
     activity.date = form.startsDate;
     activity.timeLabel = form.timeLabel;
   } else {
-    return 'Needs a start/end time, or a Starts date with a fuzzy time.';
+    return 'Needs a start date+time, or a Starts date with a fuzzy time.';
   }
   activity.mealType = form.mealType || null;
   // A non-empty candidate list always wins: options and the Activity's own
