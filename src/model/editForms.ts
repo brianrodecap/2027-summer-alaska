@@ -9,6 +9,7 @@ import {
   bookingFormValueFrom,
   readBookingFormValue,
 } from '../components/edit/BookingFields';
+import { transitRouteLabel } from './tripModel';
 import type {
   Activity,
   DiningFormat,
@@ -89,6 +90,43 @@ export function blankTransit(legId: string, date: string): Transit {
     booking: null,
     images: [],
   };
+}
+
+// ---------- kind→collection dispatch, shared by EditContext, EditDialog,
+// and ImportDocumentDialog rather than each re-deriving it ----------
+
+export type EditKind = 'activity' | 'stay' | 'transit';
+
+export const COLLECTION_FOR_KIND: Record<EditKind, 'activities' | 'stays' | 'transits'> = {
+  activity: 'activities',
+  stay: 'stays',
+  transit: 'transits',
+};
+
+export function blankForKind(
+  kind: EditKind,
+  legId: string,
+  date: string,
+): Activity | Stay | Transit {
+  if (kind === 'activity') return blankActivity(legId, date);
+  if (kind === 'stay') return blankStay(legId, date);
+  return blankTransit(legId, date);
+}
+
+export function findByKind<
+  T extends { activities: Activity[]; stays: Stay[]; transits: Transit[] },
+>(kind: EditKind, id: string, data: T): Activity | Stay | Transit | undefined {
+  return (data[COLLECTION_FOR_KIND[kind]] as (Activity | Stay | Transit)[]).find(
+    (e) => e._id === id,
+  );
+}
+
+// Swaps two array entries by index — shared by RouteEditForm's variant
+// reordering and MealOptionList's candidate reordering.
+export function swapItems<T>(arr: T[], i: number, j: number): T[] {
+  const next = [...arr];
+  [next[i], next[j]] = [next[j], next[i]];
+  return next;
 }
 
 // ---------- includedIn (Activity's own decided dining format, and every
@@ -175,7 +213,7 @@ export function includedInOptions(
     for (const transit of transits) {
       options.push({
         value: `transit:${transit._id}`,
-        label: `${transit.from.label} → ${transit.to.label}`,
+        label: transitRouteLabel(transit),
         date: transit.departsAt.slice(0, 10),
         sortKey: transit.departsAt,
       });

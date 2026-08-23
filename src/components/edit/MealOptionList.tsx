@@ -10,7 +10,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-import { DINING_FORMATS_WITH_INCLUDED_IN } from '../../model/editForms';
+import { DINING_FORMATS_WITH_INCLUDED_IN, swapItems } from '../../model/editForms';
 import { DINING_FORMAT_LABEL } from '../../model/formatting';
 import type { Activity, DiningFormat, MealOption, Stay, Transit } from '../../model/types';
 import { BookingFields, bookingFormValueFrom, readBookingFormValue } from './BookingFields';
@@ -159,15 +159,11 @@ export function MealOptionList({
   const remove = (i: number) => onChange(options.filter((_, idx) => idx !== i));
   const moveUp = (i: number) => {
     if (i === 0) return;
-    const next = [...options];
-    [next[i - 1], next[i]] = [next[i], next[i - 1]];
-    onChange(next);
+    onChange(swapItems(options, i - 1, i));
   };
   const moveDown = (i: number) => {
     if (i === options.length - 1) return;
-    const next = [...options];
-    [next[i], next[i + 1]] = [next[i + 1], next[i]];
-    onChange(next);
+    onChange(swapItems(options, i, i + 1));
   };
 
   return (

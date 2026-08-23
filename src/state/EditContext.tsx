@@ -1,6 +1,6 @@
 import { createContext, lazy, type ReactNode, Suspense, useContext, useState } from 'react';
 
-import { blankActivity, blankStay, blankTransit } from '../model/editForms';
+import { blankForKind, COLLECTION_FOR_KIND, type EditKind, findByKind } from '../model/editForms';
 import type { Activity, Stay, Transit } from '../model/types';
 import { useTripData } from './TripDataContext';
 
@@ -12,7 +12,7 @@ const EditDialog = lazy(() =>
   import('../components/edit/EditDialog').then((m) => ({ default: m.EditDialog })),
 );
 
-export type EditKind = 'activity' | 'stay' | 'transit';
+export type { EditKind };
 
 type Entity = Activity | Stay | Transit;
 
@@ -38,23 +38,6 @@ interface EditContextValue {
 
 const EditContext = createContext<EditContextValue | null>(null);
 
-function findEntity(
-  kind: EditKind,
-  id: string,
-  data: ReturnType<typeof useTripData>['data'],
-): Entity | undefined {
-  if (!data) return undefined;
-  if (kind === 'activity') return data.activities.find((a) => a._id === id);
-  if (kind === 'stay') return data.stays.find((s) => s._id === id);
-  return data.transits.find((t) => t._id === id);
-}
-
-function blankFor(kind: EditKind, legId: string, date: string): Entity {
-  if (kind === 'activity') return blankActivity(legId, date);
-  if (kind === 'stay') return blankStay(legId, date);
-  return blankTransit(legId, date);
-}
-
 // Wraps the trip page in one place both the day-list's edit pencils and the
 // activity side sheet's own edit button can reach. There's no backend this
 // can write to — Save mutates a clone of the in-memory entity via
@@ -66,7 +49,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
 
   const openEdit = (kind: EditKind, id: string) => setState({ mode: 'edit', kind, id });
   const openCreate = (kind: EditKind, legId: string, date: string) =>
-    setState({ mode: 'create', kind, entity: blankFor(kind, legId, date) });
+    setState({ mode: 'create', kind, entity: blankForKind(kind, legId, date) });
   const openFromDraft = (kind: EditKind, draft: Entity, overrideId?: string) =>
     setState(
       overrideId
@@ -79,45 +62,27 @@ export function EditProvider({ children }: { children: ReactNode }) {
     if (!state) return;
     const { kind } = state;
     const isNew = state.mode === 'create';
+    const collection = COLLECTION_FOR_KIND[kind];
     setData(
-      (prev) => {
-        if (kind === 'activity') {
-          return {
-            ...prev,
-            activities: isNew
-              ? [...prev.activities, updated as Activity]
-              : prev.activities.map((a) => (a._id === updated._id ? (updated as Activity) : a)),
-          };
-        }
-        if (kind === 'stay') {
-          return {
-            ...prev,
-            stays: isNew
-              ? [...prev.stays, updated as Stay]
-              : prev.stays.map((s) => (s._id === updated._id ? (updated as Stay) : s)),
-          };
-        }
-        return {
-          ...prev,
-          transits: isNew
-            ? [...prev.transits, updated as Transit]
-            : prev.transits.map((t) => (t._id === updated._id ? (updated as Transit) : t)),
-        };
-      },
-      [kind === 'activity' ? 'activities' : kind === 'stay' ? 'stays' : 'transits'],
+      (prev) => ({
+        ...prev,
+        [collection]: isNew
+          ? [...(prev[collection] as Entity[]), updated]
+          : (prev[collection] as Entity[]).map((e) => (e._id === updated._id ? updated : e)),
+      }),
+      [collection],
     );
     closeEdit();
   };
 
   const handleDelete = (kind: EditKind, id: string) => {
+    const collection = COLLECTION_FOR_KIND[kind];
     setData(
-      (prev) => {
-        if (kind === 'activity')
-          return { ...prev, activities: prev.activities.filter((a) => a._id !== id) };
-        if (kind === 'stay') return { ...prev, stays: prev.stays.filter((s) => s._id !== id) };
-        return { ...prev, transits: prev.transits.filter((t) => t._id !== id) };
-      },
-      [kind === 'activity' ? 'activities' : kind === 'stay' ? 'stays' : 'transits'],
+      (prev) => ({
+        ...prev,
+        [collection]: (prev[collection] as Entity[]).filter((e) => e._id !== id),
+      }),
+      [collection],
     );
     closeEdit();
   };
@@ -125,7 +90,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
   const entity = state
     ? state.mode === 'create'
       ? state.entity
-      : (state.seed ?? findEntity(state.kind, state.id, data))
+      : (state.seed ?? (data ? findByKind(state.kind, state.id, data) : undefined))
     : undefined;
 
   return (

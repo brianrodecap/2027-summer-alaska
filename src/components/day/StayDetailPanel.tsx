@@ -6,6 +6,7 @@ import { formatTime } from '../../model/tripModel';
 import type { EnrichedStay } from '../../model/types';
 import { BookingChip } from '../shared/BookingChip';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
+import { EntityHeroImage } from '../shared/EntityHeroImage';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
 
@@ -42,15 +43,7 @@ export function StayDetailPanel({
       title={stay.lodging?.name ?? 'Lodging still open'}
       titleIcon={renderMaterialIcon('hotel', { color: 'primary' })}
     >
-      {image && (
-        <Box
-          component="img"
-          src={image.uri}
-          alt={image.caption ?? ''}
-          title={image.credit ?? ''}
-          sx={{ width: '100%', borderRadius: 2, mb: 2 }}
-        />
-      )}
+      <EntityHeroImage image={image} />
       <Typography variant="body1">
         {formatTime(stay.checkInAt)} in · {formatTime(stay.checkOutAt)} out
       </Typography>

@@ -12,13 +12,14 @@ import {
   applyActivityForm,
   applyStayForm,
   applyTransitForm,
+  COLLECTION_FOR_KIND,
+  type EditKind,
   stayFormFrom,
   type StayFormState,
   transitFormFrom,
   type TransitFormState,
 } from '../../model/editForms';
 import type { Activity, Route, Stay, Transit, Traveler } from '../../model/types';
-import type { EditKind } from '../../state/EditContext';
 import type { CollectionName } from '../../state/TripDataContext';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { ActivityEditForm } from './ActivityEditForm';
@@ -35,12 +36,6 @@ const ADD_ENTITY_LABEL: Record<EditKind, string> = {
   activity: 'Add activity',
   stay: 'Add stay',
   transit: 'Add transit',
-};
-
-const DIRTY_COLLECTION: Record<EditKind, CollectionName> = {
-  activity: 'activities',
-  stay: 'stays',
-  transit: 'transits',
 };
 
 type Entity = Activity | Stay | Transit;
@@ -110,7 +105,7 @@ function EditDialogBody({
       setError(message);
       return;
     }
-    onSave(clone, DIRTY_COLLECTION[kind]);
+    onSave(clone, COLLECTION_FOR_KIND[kind]);
   };
 
   return (

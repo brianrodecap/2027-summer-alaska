@@ -43,6 +43,28 @@ import { useEdit } from '../state/EditContext';
 import { useTripData } from '../state/TripDataContext';
 import { useFilterSelection } from '../state/TripSelectionsContext';
 
+// Stay's and Transit's detail panels are both opened/closed/edited the same
+// way — a plain "which entity is open" state, with Edit clearing it and
+// handing off to EditContext's own dialog. Activity's panel additionally
+// carries a selected meal-option candidate, so it keeps its own state below
+// rather than being forced into this shape.
+function useDetailPanel<T extends { _id: string }>(openEdit: (id: string) => void) {
+  const [entity, setEntity] = useState<T | null>(null);
+  return {
+    entity,
+    open: Boolean(entity),
+    onOpen: setEntity,
+    onClose: () => setEntity(null),
+    onEdit: entity
+      ? () => {
+          const id = entity._id;
+          setEntity(null);
+          openEdit(id);
+        }
+      : undefined,
+  };
+}
+
 export function DaysView() {
   const { view, data, setData } = useTripData();
   const { activeFilterTokens } = useFilterSelection();
@@ -54,8 +76,8 @@ export function DaysView() {
     activity: EnrichedActivity;
     selectedOption?: EnrichedMealOption;
   } | null>(null);
-  const [openStay, setOpenStay] = useState<EnrichedStay | null>(null);
-  const [openTransit, setOpenTransit] = useState<EnrichedTransit | null>(null);
+  const stayPanel = useDetailPanel<EnrichedStay>((id) => openEdit('stay', id));
+  const transitPanel = useDetailPanel<EnrichedTransit>((id) => openEdit('transit', id));
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [routesOpen, setRoutesOpen] = useState(false);
   // Flat while it's the page's own leading edge, shadowed only once content
@@ -171,8 +193,8 @@ export function DaysView() {
                 day={day}
                 daysByDate={daysByDate}
                 onOpenActivity={handleOpenActivity}
-                onOpenStay={setOpenStay}
-                onOpenTransit={setOpenTransit}
+                onOpenStay={stayPanel.onOpen}
+                onOpenTransit={transitPanel.onOpen}
                 onOpenMap={setMapDay}
               />
             ))}
@@ -214,32 +236,16 @@ export function DaysView() {
         }
       />
       <StayDetailPanel
-        stay={openStay}
-        open={Boolean(openStay)}
-        onClose={() => setOpenStay(null)}
-        onEdit={
-          openStay
-            ? () => {
-                const id = openStay._id;
-                setOpenStay(null);
-                openEdit('stay', id);
-              }
-            : undefined
-        }
+        stay={stayPanel.entity}
+        open={stayPanel.open}
+        onClose={stayPanel.onClose}
+        onEdit={stayPanel.onEdit}
       />
       <TransitDetailPanel
-        transit={openTransit}
-        open={Boolean(openTransit)}
-        onClose={() => setOpenTransit(null)}
-        onEdit={
-          openTransit
-            ? () => {
-                const id = openTransit._id;
-                setOpenTransit(null);
-                openEdit('transit', id);
-              }
-            : undefined
-        }
+        transit={transitPanel.entity}
+        open={transitPanel.open}
+        onClose={transitPanel.onClose}
+        onEdit={transitPanel.onEdit}
       />
       {view.dateRange && (
         <JumpToDayPicker

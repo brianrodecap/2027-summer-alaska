@@ -11,6 +11,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 import { lookupDriveInfo } from '../../model/directions';
+import { swapItems as swap } from '../../model/editForms';
 import type { Route, RoutePlaceEntry, RouteVariant } from '../../model/types';
 import { PlacePickerField } from './PlacePickerField';
 
@@ -27,12 +28,6 @@ const PLACE_KIND_OPTIONS: { value: RoutePlaceEntry['kind']; label: string }[] = 
   { value: 'waypoint', label: 'Waypoint — a real stop worth calling out' },
   { value: 'via', label: 'Via — steers routing onto the right road, no stop' },
 ];
-
-function swap<T>(arr: T[], i: number, j: number): T[] {
-  const next = [...arr];
-  [next[i], next[j]] = [next[j], next[i]];
-  return next;
-}
 
 // Formats a computed leg for the form's own read-only display — never fed
 // back into the data, just a sanity check on what the last lookup returned.

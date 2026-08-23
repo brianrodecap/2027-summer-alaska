@@ -117,11 +117,21 @@ function dayActivities(day: Day): EnrichedActivity[] {
 // Every still-open meal in the day, keyed to whichever candidate its own
 // chip row currently has selected — the live counterpart to each Activity's
 // own diningFormat/first-candidate default that overlapWarningsFor falls
-// back to at page load.
+// back to at page load. Every row on the day calls this once per render
+// (via liveOverlapWarnings below), so it's cached per (day, mealOptionIndex)
+// the same way dayActivities is — without it, a day with M activities would
+// redo this whole M-activity scan for each of its M rows.
+const liveFormatOverridesCache = new WeakMap<
+  Day,
+  { mealOptionIndex: Map<string, number>; overrides: Map<string, DiningFormat> }
+>();
+
 function liveFormatOverrides(
   day: Day,
   mealOptionIndex: Map<string, number>,
 ): Map<string, DiningFormat> {
+  const cached = liveFormatOverridesCache.get(day);
+  if (cached && cached.mealOptionIndex === mealOptionIndex) return cached.overrides;
   const overrides = new Map<string, DiningFormat>();
   for (const activity of dayActivities(day)) {
     if (!activity.options?.length) continue;
@@ -129,6 +139,7 @@ function liveFormatOverrides(
     const selected = options[selectedMealOptionIndex(options, mealOptionIndex, activity._id)];
     if (selected) overrides.set(activity._id, selected.diningFormat);
   }
+  liveFormatOverridesCache.set(day, { mealOptionIndex, overrides });
   return overrides;
 }
 

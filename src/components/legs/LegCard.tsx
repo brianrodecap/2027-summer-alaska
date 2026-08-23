@@ -6,7 +6,7 @@ import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 
 import { firstImage } from '../../model/formatting';
-import { formatDateLabel, tripDayCount } from '../../model/tripModel';
+import { formatDateRangeLabel, tripDayCount } from '../../model/tripModel';
 import type { LegSummary } from '../../model/types';
 import { BookingChip } from '../shared/BookingChip';
 import { BookingProgressBar } from '../shared/BookingProgressBar';
@@ -19,9 +19,7 @@ export function LegCard({
   onOpen: (legId: string) => void;
 }) {
   const { leg, dateRange, bookingProgress, bookingPercent } = summary;
-  const range = dateRange
-    ? `${formatDateLabel(dateRange.startDate)} – ${formatDateLabel(dateRange.endDate)}`
-    : '';
+  const range = dateRange ? formatDateRangeLabel(dateRange) : '';
   const dayCount = dateRange ? tripDayCount(dateRange) : 0;
   const image = firstImage(leg);
 

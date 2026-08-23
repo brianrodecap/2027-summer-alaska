@@ -16,7 +16,12 @@ import { filterSequenceItems } from '../../model/filters';
 import { firstImage } from '../../model/formatting';
 import { activeMealOptions, selectedMealOptionIndex } from '../../model/mealOptions';
 import { buildDragMeta, type DragMeta } from '../../model/reorder';
-import { formatTime, splitOutStayBoundaries, stayRelation } from '../../model/tripModel';
+import {
+  activeRouteTone,
+  formatTime,
+  splitOutStayBoundaries,
+  stayRelation,
+} from '../../model/tripModel';
 import type {
   Day,
   EnrichedActivity,
@@ -43,11 +48,6 @@ import { ActivityLeading, ActivityRow } from './ActivityRow';
 import { RouteVariantTabs } from './RouteVariantTabs';
 import { RowMenu } from './RowMenu';
 import { ScenarioTabsSection } from './ScenarioTabsSection';
-
-function activeRouteTone(transit: EnrichedTransit, routeTones: Map<string, string>): string | null {
-  if (!transit.routeInfo) return null;
-  return routeTones.get(transit._id) ?? transit.routeInfo.selectedTone;
-}
 
 // Every route variant's stages/arrival were already walked once in
 // buildTripView (transit.routeInfo.variants[]) — switching which tone is

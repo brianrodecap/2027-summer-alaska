@@ -1,6 +1,3 @@
-import InfoIcon from '@mui/icons-material/Info';
-import NotesIcon from '@mui/icons-material/Notes';
-import WarningIcon from '@mui/icons-material/Warning';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -16,16 +13,12 @@ import { useState } from 'react';
 import type { NoteKind, Ref, RefEntityKind } from '../../model/types';
 import type { NoteTarget } from '../../state/NoteEditContext';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
+import { NOTE_ICON as KIND_ICON } from '../shared/Notes';
 
 const KIND_LABEL: Record<NoteKind, string> = {
   warning: 'Alert',
   info: 'Info',
   footnote: 'Footnote',
-};
-const KIND_ICON: Record<NoteKind, typeof WarningIcon> = {
-  warning: WarningIcon,
-  info: InfoIcon,
-  footnote: NotesIcon,
 };
 
 const ENTITY_LABEL: Record<RefEntityKind, string> = {

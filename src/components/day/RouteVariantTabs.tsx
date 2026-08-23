@@ -1,6 +1,7 @@
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 
+import { activeRouteTone } from '../../model/tripModel';
 import type { EnrichedTransit } from '../../model/types';
 import { useRouteToneSelection } from '../../state/TripSelectionsContext';
 import { renderMaterialIcon, ROUTE_TONE_ICON } from '../shared/materialIcon';
@@ -16,7 +17,7 @@ export function RouteVariantTabs({ transit }: { transit: EnrichedTransit }) {
   const info = transit.routeInfo;
   const { routeTones, selectRouteTone } = useRouteToneSelection();
   if (!info || info.variants.length < 2) return null;
-  const selectedTone = routeTones.get(transit._id) ?? info.selectedTone;
+  const selectedTone = activeRouteTone(transit, routeTones);
   return (
     <Stack
       direction="row"

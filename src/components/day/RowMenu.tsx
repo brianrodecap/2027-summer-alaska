@@ -1,9 +1,6 @@
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import InfoIcon from '@mui/icons-material/Info';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
-import NotesIcon from '@mui/icons-material/Notes';
-import WarningIcon from '@mui/icons-material/Warning';
 import IconButton from '@mui/material/IconButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
@@ -11,9 +8,16 @@ import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import { type MouseEvent, useState } from 'react';
 
-import type { RefEntityKind } from '../../model/types';
+import type { NoteKind, RefEntityKind } from '../../model/types';
 import { useNoteEdit } from '../../state/NoteEditContext';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
+import { NOTE_ICON } from '../shared/Notes';
+
+const ADD_NOTE_ITEMS: { kind: NoteKind; label: string }[] = [
+  { kind: 'warning', label: 'Add alert' },
+  { kind: 'info', label: 'Add info' },
+  { kind: 'footnote', label: 'Add footnote' },
+];
 
 // A row's action menu — a plain kebab IconButton that opens a standard MUI
 // dropdown Menu, rather than a SpeedDial's fanned-out Fab. It sits inline as
@@ -72,24 +76,17 @@ export function RowMenu({
             <ListItemText>Delete</ListItemText>
           </MenuItem>
         )}
-        <MenuItem onClick={pick(() => openNoteCreate(entity, id, 'warning'))}>
-          <ListItemIcon>
-            <WarningIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Add alert</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={pick(() => openNoteCreate(entity, id, 'info'))}>
-          <ListItemIcon>
-            <InfoIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Add info</ListItemText>
-        </MenuItem>
-        <MenuItem onClick={pick(() => openNoteCreate(entity, id, 'footnote'))}>
-          <ListItemIcon>
-            <NotesIcon fontSize="small" />
-          </ListItemIcon>
-          <ListItemText>Add footnote</ListItemText>
-        </MenuItem>
+        {ADD_NOTE_ITEMS.map(({ kind, label }) => {
+          const Icon = NOTE_ICON[kind];
+          return (
+            <MenuItem key={kind} onClick={pick(() => openNoteCreate(entity, id, kind))}>
+              <ListItemIcon>
+                <Icon fontSize="small" />
+              </ListItemIcon>
+              <ListItemText>{label}</ListItemText>
+            </MenuItem>
+          );
+        })}
       </Menu>
       {onDelete && (
         <ConfirmDialog

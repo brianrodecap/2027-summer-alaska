@@ -12,7 +12,7 @@ import type { Note, NoteKind } from '../../model/types';
 import { useNoteEdit } from '../../state/NoteEditContext';
 import { LinkifiedText } from './LinkifiedText';
 
-const NOTE_ICON: Record<NoteKind, typeof WarningIcon> = {
+export const NOTE_ICON: Record<NoteKind, typeof WarningIcon> = {
   warning: WarningIcon,
   info: InfoIcon,
   footnote: NotesIcon,

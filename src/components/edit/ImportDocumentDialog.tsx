@@ -18,8 +18,10 @@ import {
   extractEntityFromDocument,
   findConflictCandidate,
 } from '../../model/documentImport';
+import { COLLECTION_FOR_KIND, type EditKind } from '../../model/editForms';
+import { transitRouteLabel } from '../../model/tripModel';
 import type { Activity, Stay, Transit } from '../../model/types';
-import { type EditKind, useEdit } from '../../state/EditContext';
+import { useEdit } from '../../state/EditContext';
 import { useTripData } from '../../state/TripDataContext';
 
 const KIND_LABEL: Record<EditKind, string> = {
@@ -30,10 +32,7 @@ const KIND_LABEL: Record<EditKind, string> = {
 
 function labelFor(kind: EditKind, entity: Activity | Stay | Transit): string {
   if (kind === 'stay') return (entity as Stay).lodging?.name || 'Untitled stay';
-  if (kind === 'transit') {
-    const t = entity as Transit;
-    return `${t.from.label || '?'} → ${t.to.label || '?'}`;
-  }
+  if (kind === 'transit') return transitRouteLabel(entity as Transit);
   return (entity as Activity).text || 'Untitled activity';
 }
 
@@ -41,10 +40,7 @@ function collectionFor(
   kind: EditKind,
   data: ReturnType<typeof useTripData>['data'],
 ): (Activity | Stay | Transit)[] {
-  if (!data) return [];
-  if (kind === 'activity') return data.activities;
-  if (kind === 'stay') return data.stays;
-  return data.transits;
+  return data ? (data[COLLECTION_FOR_KIND[kind]] as (Activity | Stay | Transit)[]) : [];
 }
 
 interface ImportDocumentDialogProps {

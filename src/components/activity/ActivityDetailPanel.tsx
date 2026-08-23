@@ -6,6 +6,7 @@ import { mealOptionLabel } from '../../model/mealOptions';
 import type { Booking, EnrichedActivity, EnrichedMealOption, Place } from '../../model/types';
 import { BookingChip } from '../shared/BookingChip';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
+import { EntityHeroImage } from '../shared/EntityHeroImage';
 import { LinkifiedText } from '../shared/LinkifiedText';
 import { DEFAULT_PLACE_ICON, DINING_FORMAT_ICON, renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster, splitNotes } from '../shared/Notes';
@@ -90,15 +91,7 @@ export function ActivityDetailPanel({
       title={place ? place.label : activity.text}
       titleIcon={place ? renderMaterialIcon(titleIconName, { color: 'primary' }) : undefined}
     >
-      {image && (
-        <Box
-          component="img"
-          src={image.uri}
-          alt={image.caption ?? ''}
-          title={image.credit ?? ''}
-          sx={{ width: '100%', borderRadius: 2, mb: 2 }}
-        />
-      )}
+      <EntityHeroImage image={image} />
       {selectedOption ? (
         <SelectedMealOptionBody option={selectedOption} />
       ) : (

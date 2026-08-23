@@ -2,10 +2,11 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
 import { firstImage } from '../../model/formatting';
-import { formatTime } from '../../model/tripModel';
+import { formatTime, transitRouteLabel } from '../../model/tripModel';
 import type { EnrichedTransit } from '../../model/types';
 import { BookingChip } from '../shared/BookingChip';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
+import { EntityHeroImage } from '../shared/EntityHeroImage';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
 
@@ -34,20 +35,12 @@ export function TransitDetailPanel({
       open={open}
       onClose={onClose}
       onEdit={onEdit}
-      title={`${transit.from.label} → ${transit.to.label}`}
+      title={transitRouteLabel(transit)}
       titleIcon={renderMaterialIcon(transit.mode === 'flight' ? 'flight' : 'directions_car', {
         color: 'primary',
       })}
     >
-      {image && (
-        <Box
-          component="img"
-          src={image.uri}
-          alt={image.caption ?? ''}
-          title={image.credit ?? ''}
-          sx={{ width: '100%', borderRadius: 2, mb: 2 }}
-        />
-      )}
+      <EntityHeroImage image={image} />
       <Typography variant="body1">
         {formatTime(transit.departsAt)} depart ·{' '}
         {transit.arrivesAt ? `${formatTime(transit.arrivesAt)} arrive` : 'arrival time TBD'}

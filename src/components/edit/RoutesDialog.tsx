@@ -10,12 +10,9 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 
+import { transitRouteLabel as routeLabel } from '../../model/tripModel';
 import type { Route } from '../../model/types';
 import { RouteEditDialog } from './RouteEditDialog';
-
-function routeLabel(route: Route): string {
-  return `${route.from.label} → ${route.to.label}`;
-}
 
 function nextRouteId(routes: Route[]): string {
   let n = routes.length + 1;

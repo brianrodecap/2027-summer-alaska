@@ -3,8 +3,7 @@
 // src/config/aiKey.ts for why this key is never hardcoded like config/places.ts's Google
 // key). Modeled on src/model/places.ts's style — a bare fetch() against the REST API, no
 // SDK dependency.
-import type { EditKind } from '../state/EditContext';
-import { blankActivity, blankStay, blankTransit } from './editForms';
+import { blankActivity, blankStay, blankTransit, type EditKind } from './editForms';
 import { wallClockMs } from './tripModel';
 import type { Activity, Stay, Transit } from './types';
 

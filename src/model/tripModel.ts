@@ -205,6 +205,12 @@ export function formatTripDateChip(range: DateRange, dayCount: number): string {
   return `${formatFullDate(range.startDate)} – ${formatFullDate(range.endDate)}, ${range.endDate.slice(0, 4)} · ${dayCount} days`;
 }
 
+// Plain "<start> – <end>" span, no year/day-count — used by the Leg card and
+// dialog, as opposed to formatTripDateChip's fuller trip-summary form.
+export function formatDateRangeLabel(range: DateRange): string {
+  return `${formatDateLabel(range.startDate)} – ${formatDateLabel(range.endDate)}`;
+}
+
 // Lets the trips list show a day count from a computed range alone, without
 // building that trip's full day-by-day view.
 export function tripDayCount(range: DateRange): number {
@@ -258,43 +264,30 @@ function percentBooked(statuses: BookingStatus[]): number {
   return Math.round((bookedCount / statuses.length) * 100);
 }
 
-export function legBookingProgress(
+export interface BookingSummary {
+  progress: BookingProgress;
+  percent: number;
+}
+
+export function legBookingSummary(
   leg: Leg,
   stays: Stay[],
   transits: Transit[],
   activities: Activity[],
-): BookingProgress {
-  return summarizeBookingStatuses(legBookingStatuses(leg, stays, transits, activities));
+): BookingSummary {
+  const statuses = legBookingStatuses(leg, stays, transits, activities);
+  return { progress: summarizeBookingStatuses(statuses), percent: percentBooked(statuses) };
 }
 
-export function legBookingPercent(
-  leg: Leg,
-  stays: Stay[],
-  transits: Transit[],
-  activities: Activity[],
-): number {
-  return percentBooked(legBookingStatuses(leg, stays, transits, activities));
-}
-
-export function tripBookingProgress(
+export function tripBookingSummary(
   legs: Leg[],
   stays: Stay[],
   transits: Transit[],
   activities: Activity[],
-): BookingProgress {
-  if (!legs.length) return 'unplanned';
-  return summarizeBookingStatuses(
-    legs.flatMap((leg) => legBookingStatuses(leg, stays, transits, activities)),
-  );
-}
-
-export function tripBookingPercent(
-  legs: Leg[],
-  stays: Stay[],
-  transits: Transit[],
-  activities: Activity[],
-): number {
-  return percentBooked(legs.flatMap((leg) => legBookingStatuses(leg, stays, transits, activities)));
+): BookingSummary {
+  if (!legs.length) return { progress: 'unplanned', percent: 0 };
+  const statuses = legs.flatMap((leg) => legBookingStatuses(leg, stays, transits, activities));
+  return { progress: summarizeBookingStatuses(statuses), percent: percentBooked(statuses) };
 }
 
 export function formatTime(iso: string): string {
@@ -307,6 +300,15 @@ export function formatTime(iso: string): string {
 export function formatMoney(cost: Money | null | undefined): string | null {
   if (!cost) return null;
   return cost.amount.toLocaleString('en-US', { style: 'currency', currency: cost.currency });
+}
+
+// A Transit's or Route's endpoints, rendered the same way everywhere they're
+// summarized in one line — the day list, edit forms, and the Routes dialog.
+export function transitRouteLabel(endpoints: {
+  from: { label: string | null };
+  to: { label: string | null };
+}): string {
+  return `${endpoints.from.label || '?'} → ${endpoints.to.label || '?'}`;
 }
 
 export function activityTimeLabel(
@@ -1317,6 +1319,19 @@ function routeStop(
   return { label, placeId: placeLike?.id ?? placeLike?.placeId ?? null };
 }
 
+// A routed Transit's live-selected tone: whichever the reader has actually
+// picked in routeTones (transitId -> tone), falling back to the model's own
+// default (routeInfo.selectedTone) — shared by DayTimeline/RouteVariantTabs'
+// rendering and this file's own dayFullRouteStops below, rather than each
+// re-deriving the same override-over-default lookup.
+export function activeRouteTone(
+  transit: { _id: string; routeInfo: ResolvedRouteInfo | null },
+  routeTones?: Map<string, string>,
+): string | null {
+  if (!transit.routeInfo) return null;
+  return routeTones?.get(transit._id) ?? transit.routeInfo.selectedTone;
+}
+
 // Same chronological order as dayMapStops (checkouts, the day's own
 // sequence, the planned scenario track, checkins), but every stop keeps its
 // place id when it has one so dayFullRouteUrls can route through it precisely.
@@ -1351,9 +1366,7 @@ function dayFullRouteStops(day: Day, selections: DaySelections = {}): RouteStop[
         // one link. Prefer whichever tone the reader actually has selected
         // (selections.routeTones); only fall back to routeInfo's own
         // default when the caller didn't pass one.
-        const tone =
-          selections.routeTones?.get(item.transit._id) ??
-          (item.transit.routeInfo as ResolvedRouteInfo).selectedTone;
+        const tone = activeRouteTone(item.transit, selections.routeTones);
         if (item.variant.tone !== tone) continue;
         const stop = routeStop({ id: item.stage.placeId, label: item.stage.label });
         if (stop) stops.push(stop);
@@ -1698,7 +1711,7 @@ export function overlapWarningsFor(
     transitOverlapWarning: overlappingTransit
       ? overlappingTransit.departsMidActivity
         ? `${overlappingTransit.transit.from.label} departs before this ends.`
-        : `During transit: ${overlappingTransit.transit.from.label} → ${overlappingTransit.transit.to.label}`
+        : `During transit: ${transitRouteLabel(overlappingTransit.transit)}`
       : null,
     activityOverlapWarning: overlappingActivity
       ? `Overlaps with "${overlappingActivity.text}".`
@@ -1907,7 +1920,7 @@ function bookingLineItems(
         entity: 'transit',
         id: transit._id,
         legId: transit.legId,
-        label: `${transit.from.label} → ${transit.to.label}`,
+        label: transitRouteLabel(transit),
         date: dateOnly(transit.departsAt),
         booking: transit.booking,
       });
@@ -2229,14 +2242,17 @@ export function buildTripView(data: TripData): TripView {
     return 0;
   });
 
-  const legSummaries: LegSummary[] = sortedLegs.map((leg) => ({
-    leg,
-    dateRange: legDateRanges.get(leg._id) ?? null,
-    days: days.filter((d) => d.leg._id === leg._id),
-    notes: notesForEntity(notes, 'leg', leg._id),
-    bookingProgress: legBookingProgress(leg, stays, transits, activities),
-    bookingPercent: legBookingPercent(leg, stays, transits, activities),
-  }));
+  const legSummaries: LegSummary[] = sortedLegs.map((leg) => {
+    const { progress, percent } = legBookingSummary(leg, stays, transits, activities);
+    return {
+      leg,
+      dateRange: legDateRanges.get(leg._id) ?? null,
+      days: days.filter((d) => d.leg._id === leg._id),
+      notes: notesForEntity(notes, 'leg', leg._id),
+      bookingProgress: progress,
+      bookingPercent: percent,
+    };
+  });
 
   const budget = buildBudgetView(
     trip,
@@ -2249,8 +2265,12 @@ export function buildTripView(data: TripData): TripView {
 
   const activitiesById = new Map(enrichedActivities.map((a) => [a._id, a]));
 
-  const bookingProgress = tripBookingProgress(legs, stays, transits, activities);
-  const bookingPercent = tripBookingPercent(legs, stays, transits, activities);
+  const { progress: bookingProgress, percent: bookingPercent } = tripBookingSummary(
+    legs,
+    stays,
+    transits,
+    activities,
+  );
 
   // routesById is exposed alongside the rest of the computed view so a live
   // recompute (TripSelectionsContext-driven) can call resolveTransitRoute

@@ -5,12 +5,13 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 import type { TransitFormState } from '../../model/editForms';
+import { transitRouteLabel } from '../../model/tripModel';
 import type { Route } from '../../model/types';
 import { BookingFields } from './BookingFields';
 import { DateTimeFieldPair } from './DateTimeFieldPair';
 
 function routeSelectOptions(routes: Route[]) {
-  const options = routes.map((r) => ({ value: r._id, label: `${r.from.label} → ${r.to.label}` }));
+  const options = routes.map((r) => ({ value: r._id, label: transitRouteLabel(r) }));
   options.sort((a, b) => a.label.localeCompare(b.label));
   return [{ value: '', label: 'None' }, ...options];
 }

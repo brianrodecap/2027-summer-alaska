@@ -18,9 +18,10 @@ import Typography from '@mui/material/Typography';
 import type { ReactNode } from 'react';
 
 import { firstImage } from '../../model/formatting';
-import { formatDateLabel, formatMoney, tripDayCount } from '../../model/tripModel';
+import { formatDateRangeLabel, formatMoney, tripDayCount } from '../../model/tripModel';
 import type { Booking, Day, LegSummary } from '../../model/types';
 import { BookingChip } from '../shared/BookingChip';
+import { EntityHeroImage } from '../shared/EntityHeroImage';
 import { NotesCluster } from '../shared/Notes';
 import { groupDaysByLocation } from './legDayGroups';
 
@@ -140,19 +141,9 @@ export function LegDialog({
         </IconButton>
       </DialogTitle>
       <DialogContent dividers sx={{ maxHeight: '70vh' }}>
-        {image && (
-          <Box
-            component="img"
-            src={image.uri}
-            alt={image.caption ?? ''}
-            title={image.credit ?? ''}
-            sx={{ width: '100%', borderRadius: 2, mb: 2 }}
-          />
-        )}
+        <EntityHeroImage image={image} />
         <Typography variant="body2" color="text.secondary">
-          {dateRange
-            ? `${formatDateLabel(dateRange.startDate)} – ${formatDateLabel(dateRange.endDate)} · `
-            : ''}
+          {dateRange ? `${formatDateRangeLabel(dateRange)} · ` : ''}
           {dayCount} days
         </Typography>
         {leg.booking ? (

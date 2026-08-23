@@ -23,8 +23,7 @@ import { firstImage } from '../model/formatting';
 import {
   formatTripDateChip,
   loadTripsIndex,
-  tripBookingPercent,
-  tripBookingProgress,
+  tripBookingSummary,
   tripDateRange,
   tripDayCount,
 } from '../model/tripModel';
@@ -118,8 +117,7 @@ export function TripsHome() {
         {sortedTrips.map(({ slug, trip, legs, stays, transits, activities }) => {
           const image = firstImage(trip);
           const range = tripDateRange(stays, transits, activities);
-          const progress = tripBookingProgress(legs, stays, transits, activities);
-          const percent = tripBookingPercent(legs, stays, transits, activities);
+          const { progress, percent } = tripBookingSummary(legs, stays, transits, activities);
           return (
             <Grid key={slug} size={{ xs: 12, sm: 6 }} sx={{ display: 'flex' }}>
               <Card
