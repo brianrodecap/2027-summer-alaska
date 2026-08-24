@@ -9,9 +9,9 @@ import MenuItem from '@mui/material/MenuItem';
 import { type MouseEvent, useState } from 'react';
 
 import type { NoteKind, RefEntityKind } from '../../model/types';
-import { useNoteEdit } from '../../state/NoteEditContext';
+import { useNoteEdit } from '../../state/useNoteEdit';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
-import { NOTE_ICON } from '../shared/Notes';
+import { NOTE_ICON } from '../shared/noteKind';
 
 const ADD_NOTE_ITEMS: { kind: NoteKind; label: string }[] = [
   { kind: 'warning', label: 'Add alert' },

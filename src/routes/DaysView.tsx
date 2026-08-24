@@ -8,6 +8,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import RouteIcon from '@mui/icons-material/Route';
@@ -17,10 +18,11 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import useScrollTrigger from '@mui/material/useScrollTrigger';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { ActivityDetailPanel } from '../components/activity/ActivityDetailPanel';
+import { AskAIDialog } from '../components/day/AskAIDialog';
 import { DayBlock } from '../components/day/DayBlock';
 import { DayMapPanel } from '../components/day/DayMapPanel';
 import { FilterMenu } from '../components/day/FilterMenu';
@@ -39,9 +41,9 @@ import type {
   EnrichedTransit,
   Route,
 } from '../model/types';
-import { useEdit } from '../state/EditContext';
-import { useTripData } from '../state/TripDataContext';
-import { useFilterSelection } from '../state/TripSelectionsContext';
+import { useEdit } from '../state/useEdit';
+import { useTripData } from '../state/useTripData';
+import { useFilterSelection } from '../state/useTripSelections';
 
 // Stay's and Transit's detail panels are both opened/closed/edited the same
 // way — a plain "which entity is open" state, with Edit clearing it and
@@ -80,6 +82,7 @@ export function DaysView() {
   const transitPanel = useDetailPanel<EnrichedTransit>((id) => openEdit('transit', id));
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [routesOpen, setRoutesOpen] = useState(false);
+  const [askAIOpen, setAskAIOpen] = useState(false);
   // Flat while it's the page's own leading edge, shadowed only once content
   // has scrolled in underneath it — the M3 app-bar spec's own elevation rule.
   const elevated = useScrollTrigger({ disableHysteresis: true, threshold: 1 });
@@ -90,11 +93,25 @@ export function DaysView() {
     [view, activeFilterTokens],
   );
 
+  // `view` is a fresh object every time data is edited (setData ->
+  // buildTripView recompute), so it can't be trusted as a "did the URL's
+  // date actually change" signal on its own — that would re-scroll to
+  // `date` on every edit, fighting any scrolling the user had done since.
+  // This only auto-scrolls once per distinct `date`, retrying only until
+  // `view` first becomes available, to cover the case where the day's
+  // element doesn't exist in the DOM yet (data still loading on first
+  // mount) — depending on `viewLoaded` rather than `view` itself keeps the
+  // effect from re-firing on every later edit once that first load has
+  // happened.
+  const scrolledDateRef = useRef<string | undefined>(undefined);
+  const viewLoaded = Boolean(view);
   useEffect(() => {
-    if (!date) return;
+    if (!date || scrolledDateRef.current === date) return;
     const el = document.getElementById(`day-${date}`);
-    el?.scrollIntoView({ block: 'start' });
-  }, [date, view]);
+    if (!el) return;
+    el.scrollIntoView({ block: 'start' });
+    scrolledDateRef.current = date;
+  }, [date, viewLoaded]);
 
   const handleOpenActivity = useCallback(
     (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => {
@@ -169,6 +186,9 @@ export function DaysView() {
         <FilterMenu legSummaries={view.legSummaries} />
         <IconButton aria-label="Manage routes" onClick={() => setRoutesOpen(true)}>
           <RouteIcon />
+        </IconButton>
+        <IconButton aria-label="Ask AI" onClick={() => setAskAIOpen(true)}>
+          <AutoAwesomeIcon />
         </IconButton>
       </Box>
       {visibleDays.length === 0 ? (
@@ -257,6 +277,7 @@ export function DaysView() {
           onSelectDay={(selectedDate) => navigate(`/${slug}/days/${selectedDate}`)}
         />
       )}
+      {data && <AskAIDialog open={askAIOpen} onClose={() => setAskAIOpen(false)} data={data} />}
       {data && (
         <RoutesDialog
           routes={data.routes}

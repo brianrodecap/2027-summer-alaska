@@ -14,8 +14,9 @@ import { exportEdits } from '../model/exportEdits';
 import { formatTripDateChip, tripDayCount } from '../model/tripModel';
 import { EditProvider } from '../state/EditContext';
 import { NoteEditProvider } from '../state/NoteEditContext';
-import { TripDataProvider, useTripData } from '../state/TripDataContext';
+import { TripDataProvider } from '../state/TripDataContext';
 import { TripSelectionsProvider } from '../state/TripSelectionsContext';
+import { useTripData } from '../state/useTripData';
 
 function TripHero() {
   const navigate = useNavigate();

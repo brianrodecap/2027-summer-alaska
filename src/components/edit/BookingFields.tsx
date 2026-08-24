@@ -5,14 +5,8 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-import type { Booking, BookingStatus } from '../../model/types';
-
-export interface BookingFormValue {
-  hasBooking: boolean;
-  status: BookingStatus;
-  confirmationNumber: string;
-  costAmount: string;
-}
+import type { BookingStatus } from '../../model/types';
+import type { BookingFormValue } from './bookingFormValue';
 
 const BOOKING_STATUS_OPTIONS: { value: BookingStatus; label: string }[] = [
   { value: 'planning', label: 'Planning' },
@@ -79,27 +73,4 @@ export function BookingFields({
       )}
     </Stack>
   );
-}
-
-export function bookingFormValueFrom(booking: Booking | null | undefined): BookingFormValue {
-  return {
-    hasBooking: Boolean(booking),
-    status: booking?.status ?? 'planning',
-    confirmationNumber: booking?.confirmationNumber ?? '',
-    costAmount: booking?.cost?.amount != null ? String(booking.cost.amount) : '',
-  };
-}
-
-export function readBookingFormValue(
-  value: BookingFormValue,
-  currentBooking: Booking | null | undefined,
-): Booking | null {
-  if (!value.hasBooking) return null;
-  return {
-    status: value.status,
-    confirmationNumber: value.confirmationNumber || null,
-    cost: value.costAmount
-      ? { amount: Number(value.costAmount), currency: currentBooking?.cost?.currency ?? 'USD' }
-      : null,
-  };
 }

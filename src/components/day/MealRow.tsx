@@ -14,12 +14,14 @@ import {
   selectedMealOptionIndex,
 } from '../../model/mealOptions';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
-import { useMealOptionSelection } from '../../state/TripSelectionsContext';
+import { useMealOptionSelection } from '../../state/useTripSelections';
 import { BookingChip } from '../shared/BookingChip';
 import { LinkifiedText } from '../shared/LinkifiedText';
-import { DINING_FORMAT_ICON, renderMaterialIcon, RowLeadingDot } from '../shared/materialIcon';
-import { NotesCluster, splitNotes } from '../shared/Notes';
+import { DINING_FORMAT_ICON, renderMaterialIcon } from '../shared/materialIcon';
+import { splitNotes } from '../shared/noteKind';
+import { NotesCluster } from '../shared/Notes';
 import { OverlapWarnings } from '../shared/OverlapWarnings';
+import { RowLeadingDot } from '../shared/RowLeadingDot';
 import { TravelerChips } from '../shared/TravelerChips';
 
 // Which candidate is "active" for a meal Activity — shared by the row's own

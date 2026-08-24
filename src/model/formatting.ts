@@ -3,7 +3,26 @@
 // scoped to just one of those surfaces (see docs/data-model.html for the
 // entity shapes these draw on).
 import { activityTimeLabel } from './tripModel';
-import type { DiningFormat, Image, MealOption, MealType } from './types';
+import type { DiningFormat, Image, Leg, MealOption, MealType } from './types';
+
+// ---------- leg skeleton-authority vocabulary ----------
+
+export const AUTHORITY_OPTIONS: {
+  value: Leg['skeletonAuthority'];
+  label: string;
+  helper: string;
+}[] = [
+  {
+    value: 'self',
+    label: 'Self-planned',
+    helper: 'You picked these dates/locations — free to shift them later.',
+  },
+  {
+    value: 'operator',
+    label: 'Operator-fixed',
+    helper: 'An operator (cruise, tour) locked this date/location skeleton in.',
+  },
+];
 
 // ---------- images: every entity carries images: Image[] — a list rather
 // than one field so a hand-sourced reference photo and later personal trip

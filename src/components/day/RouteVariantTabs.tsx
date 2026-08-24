@@ -3,7 +3,7 @@ import Stack from '@mui/material/Stack';
 
 import { activeRouteTone } from '../../model/tripModel';
 import type { EnrichedTransit } from '../../model/types';
-import { useRouteToneSelection } from '../../state/TripSelectionsContext';
+import { useRouteToneSelection } from '../../state/useTripSelections';
 import { renderMaterialIcon, ROUTE_TONE_ICON } from '../shared/materialIcon';
 
 // A Route with 2+ variants (e.g. the New vs. Old Glenn Highway) is a

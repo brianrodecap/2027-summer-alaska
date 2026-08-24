@@ -1,8 +1,9 @@
-import { createContext, lazy, type ReactNode, Suspense, useContext, useState } from 'react';
+import { lazy, type ReactNode, Suspense, useState } from 'react';
 
 import { blankForKind, COLLECTION_FOR_KIND, type EditKind, findByKind } from '../model/editForms';
 import type { Activity, Stay, Transit } from '../model/types';
-import { useTripData } from './TripDataContext';
+import { EditContext } from './EditContextObject';
+import { useTripData } from './useTripData';
 
 // Lazy: the edit forms pull in PlacePickerField's Autocomplete and the
 // date/time pickers, which most visits (read-only browsing) never touch.
@@ -19,24 +20,6 @@ type Entity = Activity | Stay | Transit;
 type EditState =
   | { mode: 'edit'; kind: EditKind; id: string; seed?: Entity }
   | { mode: 'create'; kind: EditKind; entity: Entity };
-
-interface EditContextValue {
-  openEdit: (kind: EditKind, id: string) => void;
-  // Opens the dialog on a fresh, not-yet-saved entity pre-placed on `date`
-  // within `legId` — the day list's own "Add" button. Save appends it to
-  // the matching collection instead of replacing an existing entry.
-  openCreate: (kind: EditKind, legId: string, date: string) => void;
-  // Opens the dialog seeded from an AI-extracted draft (see
-  // model/documentImport.ts). With overrideId, opens in edit mode against
-  // that entity's id with the draft supplying the form's starting values —
-  // Save then replaces it, exactly like a normal edit. Without it, opens in
-  // create mode with the draft itself — Save appends, exactly like
-  // openCreate.
-  openFromDraft: (kind: EditKind, draft: Entity, overrideId?: string) => void;
-  deleteEntity: (kind: EditKind, id: string) => void;
-}
-
-const EditContext = createContext<EditContextValue | null>(null);
 
 // Wraps the trip page in one place both the day-list's edit pencils and the
 // activity side sheet's own edit button can reach. There's no backend this
@@ -117,10 +100,4 @@ export function EditProvider({ children }: { children: ReactNode }) {
       )}
     </EditContext.Provider>
   );
-}
-
-export function useEdit(): EditContextValue {
-  const ctx = useContext(EditContext);
-  if (!ctx) throw new Error('useEdit must be used within an EditProvider');
-  return ctx;
 }

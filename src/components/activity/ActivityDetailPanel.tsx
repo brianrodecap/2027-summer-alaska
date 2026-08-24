@@ -9,7 +9,8 @@ import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
 import { LinkifiedText } from '../shared/LinkifiedText';
 import { DEFAULT_PLACE_ICON, DINING_FORMAT_ICON, renderMaterialIcon } from '../shared/materialIcon';
-import { NotesCluster, splitNotes } from '../shared/Notes';
+import { splitNotes } from '../shared/noteKind';
+import { NotesCluster } from '../shared/Notes';
 import { PlacePanel } from './PlacePanel';
 
 function selectedPlace(

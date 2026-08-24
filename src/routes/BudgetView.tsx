@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';
 
 import { BudgetBreakdowns } from '../components/budget/BudgetBreakdowns';
 import { BudgetStats } from '../components/budget/BudgetStats';
-import { useTripData } from '../state/TripDataContext';
+import { useTripData } from '../state/useTripData';
 
 // The Budget page's own top section — the same big stat cards the Overview
 // teaser links from, plus the one-time explainer of what each bucket means,

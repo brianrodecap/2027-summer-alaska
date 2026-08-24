@@ -3,6 +3,7 @@
 // src/config/aiKey.ts for why this key is never hardcoded like config/places.ts's Google
 // key). Modeled on src/model/places.ts's style — a bare fetch() against the REST API, no
 // SDK dependency.
+import { type AnthropicTool, callAnthropicMessages } from './anthropicClient';
 import {
   blankActivity,
   blankStay,
@@ -12,7 +13,7 @@ import {
 } from './editForms';
 import { DINING_FORMAT_LABEL } from './formatting';
 import { wallClockMs } from './tripModel';
-import type { Activity, DiningFormat, MealType, Stay, Transit } from './types';
+import type { Activity, Booking, Day, DiningFormat, MealType, Stay, Transit } from './types';
 
 // The only DiningFormat values the AI is allowed to set — the ones that don't
 // require an includedIn Ref pointing at a specific existing Stay/Package/
@@ -22,13 +23,9 @@ import type { Activity, DiningFormat, MealType, Stay, Transit } from './types';
 // from DINING_FORMATS_WITH_INCLUDED_IN (editForms.ts), the same partition
 // ActivityEditForm and MealOptionList already gate on, rather than a second
 // hand-maintained list that could drift if a DiningFormat value is ever added.
-const EXTRACTABLE_DINING_FORMATS: DiningFormat[] = (
+export const EXTRACTABLE_DINING_FORMATS: DiningFormat[] = (
   Object.keys(DINING_FORMAT_LABEL) as DiningFormat[]
 ).filter((format) => !DINING_FORMATS_WITH_INCLUDED_IN.includes(format));
-
-const MODEL_ID = 'claude-sonnet-5';
-const ANTHROPIC_VERSION = '2023-06-01';
-const API_URL = 'https://api.anthropic.com/v1/messages';
 
 const SUPPORTED_TYPES = ['application/pdf', 'image/png', 'image/jpeg', 'image/webp'] as const;
 type SupportedType = (typeof SUPPORTED_TYPES)[number];
@@ -85,7 +82,7 @@ export interface ExtractedFields {
 // Shared by both the single-entity tool (below) and the multi-entity one
 // (see extractTripEntitiesFromDocument) — one document-derived entry's shape
 // either way, just extracted one-at-a-time vs. all-at-once.
-const ENTITY_SCHEMA = {
+export const ENTITY_SCHEMA = {
   type: 'object',
   properties: {
     kind: {
@@ -137,24 +134,6 @@ const EXTRACTION_INSTRUCTIONS =
   'placeLabel and lodgingName must be plain text only; never invent an id. ' +
   'If this document is a meal/restaurant reservation or dining booking, also set mealType and, if the format is clear, diningFormat.';
 
-interface AnthropicContentBlock {
-  type: string;
-  name?: string;
-  input?: unknown;
-}
-
-interface AnthropicResponse {
-  content: AnthropicContentBlock[];
-  stop_reason: string;
-  error?: { message?: string };
-}
-
-interface AnthropicTool {
-  name: string;
-  description: string;
-  input_schema: unknown;
-}
-
 async function callExtractionTool(
   file: File,
   apiKey: string,
@@ -167,34 +146,18 @@ async function callExtractionTool(
       ? { type: 'document', source: { type: 'base64', media_type: file.type, data } }
       : { type: 'image', source: { type: 'base64', media_type: file.type, data } };
 
-  const res = await fetch(API_URL, {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'anthropic-version': ANTHROPIC_VERSION,
-      'anthropic-dangerous-direct-browser-access': 'true',
-      'content-type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: MODEL_ID,
+  const body = await callAnthropicMessages(
+    {
       max_tokens: 4096,
       thinking: { type: 'disabled' },
       tools: [tool],
       tool_choice: { type: 'tool', name: tool.name },
       messages: [{ role: 'user', content: [mediaBlock, { type: 'text', text: instructions }] }],
-    }),
-  });
-
-  const body = (await res.json().catch(() => null)) as AnthropicResponse | null;
-  if (!res.ok) {
-    throw new DocumentImportError(body?.error?.message ?? `Claude API error ${res.status}`);
-  }
-  if (!body) {
-    throw new DocumentImportError('Claude API returned an unreadable response.');
-  }
-  if (body.stop_reason === 'refusal') {
-    throw new DocumentImportError('Claude declined to process this document.');
-  }
+    },
+    apiKey,
+    (message) => new DocumentImportError(message),
+    'Claude declined to process this document.',
+  );
   const toolUse = body.content.find(
     (block) => block.type === 'tool_use' && block.name === tool.name,
   );
@@ -327,6 +290,28 @@ export function draftTripEntities(
   return staged;
 }
 
+// Resolves which day (and therefore which Leg) a single extracted entity belongs on,
+// for the trip-wide "Import document" flow (AI menu, App Bar) — unlike the old per-day
+// "Add to this day" entry point, there's no day already in hand here, so the document's
+// own extracted date is what has to carry that instead. Tries every date-ish field in
+// the order a document is likely to give a meaningful one; returns null if none of them
+// landed on a real day of the trip (nothing extracted, or a date outside its range),
+// leaving the caller to surface that as an error rather than guess.
+export function resolveLegAndDateForFields(
+  fields: ExtractedFields,
+  days: Day[],
+): { legId: string; date: string } | null {
+  const candidates = [fields.startAt, fields.checkInAt, fields.endAt, fields.checkOutAt].filter(
+    (v): v is string => Boolean(v),
+  );
+  for (const candidate of candidates) {
+    const date = candidate.slice(0, 10);
+    const day = days.find((d) => d.date === date);
+    if (day) return { legId: day.leg._id, date: day.date };
+  }
+  return null;
+}
+
 // ---------- 3. Overlay onto a blank entity ----------
 
 function moneyFrom(fields: ExtractedFields): { amount: number; currency: string } | null {
@@ -335,19 +320,26 @@ function moneyFrom(fields: ExtractedFields): { amount: number; currency: string 
     : null;
 }
 
+// Shared by draftEntityFromExtraction (below, `base` omitted — nothing to fall back to on a
+// brand-new entity) and askAI.ts's draftEntityFromProposal (`base` is the real entity's
+// existing booking, so a field the AI didn't mention survives instead of being reset).
+export function mergeBooking(fields: ExtractedFields, base: Booking | null = null): Booking | null {
+  if (!fields.bookingStatus && !fields.confirmationNumber && fields.costAmount == null) {
+    return base;
+  }
+  return {
+    status: fields.bookingStatus ?? base?.status ?? 'booked',
+    cost: fields.costAmount != null ? moneyFrom(fields) : (base?.cost ?? null),
+    confirmationNumber: fields.confirmationNumber ?? base?.confirmationNumber ?? null,
+  };
+}
+
 export function draftEntityFromExtraction(
   fields: ExtractedFields,
   legId: string,
   date: string,
 ): Activity | Stay | Transit {
-  const booking =
-    fields.bookingStatus || fields.confirmationNumber || fields.costAmount != null
-      ? {
-          status: fields.bookingStatus ?? 'booked',
-          cost: moneyFrom(fields),
-          confirmationNumber: fields.confirmationNumber ?? null,
-        }
-      : null;
+  const booking = mergeBooking(fields);
 
   if (fields.kind === 'stay') {
     const stay = blankStay(legId, date);

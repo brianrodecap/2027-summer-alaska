@@ -8,7 +8,7 @@ import {
   type BookingFormValue,
   bookingFormValueFrom,
   readBookingFormValue,
-} from '../components/edit/BookingFields';
+} from '../components/edit/bookingFormValue';
 import { transitRouteLabel } from './tripModel';
 import type {
   Activity,

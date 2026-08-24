@@ -15,8 +15,8 @@ import type {
   EnrichedStay,
   EnrichedTransit,
 } from '../../model/types';
-import { type EditKind, useEdit } from '../../state/EditContext';
-import { ImportDocumentDialog } from '../edit/ImportDocumentDialog';
+import type { EditKind } from '../../state/EditContext';
+import { useEdit } from '../../state/useEdit';
 import { NotesCluster } from '../shared/Notes';
 import { DayTimeline } from './DayTimeline';
 
@@ -32,7 +32,6 @@ const ADD_MENU_ITEMS: { kind: EditKind; label: string }[] = [
 function AddToDayButton({ day }: { day: Day }) {
   const { openCreate } = useEdit();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [importOpen, setImportOpen] = useState(false);
 
   return (
     <>
@@ -51,22 +50,7 @@ function AddToDayButton({ day }: { day: Day }) {
             {item.label}
           </MenuItem>
         ))}
-        <MenuItem
-          onClick={() => {
-            setAnchorEl(null);
-            setImportOpen(true);
-          }}
-        >
-          From a document…
-        </MenuItem>
       </Menu>
-      {importOpen && (
-        <ImportDocumentDialog
-          legId={day.leg._id}
-          date={day.date}
-          onClose={() => setImportOpen(false)}
-        />
-      )}
     </>
   );
 }

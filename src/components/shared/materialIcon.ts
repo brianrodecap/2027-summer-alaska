@@ -45,9 +45,8 @@ import TerrainIcon from '@mui/icons-material/Terrain';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
 import WarningIcon from '@mui/icons-material/Warning';
 import WaterIcon from '@mui/icons-material/Water';
-import TimelineDot from '@mui/lab/TimelineDot';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
-import type { ComponentType, ReactElement } from 'react';
+import { type ComponentType, createElement, type ReactElement } from 'react';
 
 import type { DiningFormat } from '../../model/types';
 
@@ -147,26 +146,14 @@ export function materialIcon(name: string | null | undefined): IconComponent {
 // varies by row/scenario/dining format) and then rendering it as a JSX tag
 // (`<Icon .../>`) trips react-hooks/static-components — React can't tell the
 // selection is a stable lookup rather than a component freshly defined on
-// every render. Returning the built element from a plain (lowercase, non-
-// component) function sidesteps that: callers never hold onto an icon
-// component reference themselves.
+// every render. Building the element with createElement instead of JSX
+// sidesteps that, and keeps this lookup function (not a component itself) out
+// of RowLeadingDot.tsx's Fast-Refresh-sensitive component file.
 export function renderMaterialIcon(
   name: string | null | undefined,
   props?: SvgIconProps,
 ): ReactElement {
-  const Icon = materialIcon(name);
-  return <Icon {...props} />;
-}
-
-// The day timeline's default leading-dot treatment (see DayTimeline.tsx,
-// ActivityRow.tsx, MealRow.tsx) — an outlined dot around a small icon,
-// substituted for a row's own image when it has none.
-export function RowLeadingDot({ icon }: { icon: string | null | undefined }): ReactElement {
-  return (
-    <TimelineDot variant="outlined" color="grey">
-      {renderMaterialIcon(icon, { fontSize: 'small' })}
-    </TimelineDot>
-  );
+  return createElement(materialIcon(name), props);
 }
 
 export const DEFAULT_PLACE_ICON = 'place';

@@ -12,7 +12,7 @@ import { AddLegDialog } from '../components/legs/AddLegDialog';
 import { LegCard } from '../components/legs/LegCard';
 import { LegDialog } from '../components/legs/LegDialog';
 import type { Leg } from '../model/types';
-import { useTripData } from '../state/TripDataContext';
+import { useTripData } from '../state/useTripData';
 
 export function Overview() {
   const { view, data, setData } = useTripData();

@@ -14,7 +14,7 @@ import {
   useMealOptionSelection,
   useRouteToneSelection,
   useScenarioSelection,
-} from '../../state/TripSelectionsContext';
+} from '../../state/useTripSelections';
 
 // Only activities the reader has actually switched away from the model's
 // default candidate get an entry here — dayMapStops/dayFullRouteUrls already

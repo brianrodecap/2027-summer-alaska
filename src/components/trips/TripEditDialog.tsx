@@ -35,9 +35,9 @@ import {
   type LegFormState,
   tripFormFrom,
 } from '../../model/editForms';
+import { AUTHORITY_OPTIONS } from '../../model/formatting';
 import { slugify } from '../../model/slug';
 import type { Leg, Trip } from '../../model/types';
-import { AUTHORITY_OPTIONS } from '../legs/AddLegDialog';
 
 const KIND_LABEL: Record<ExtractedFields['kind'], string> = {
   activity: 'Activity',

@@ -38,7 +38,18 @@ export function JumpToDayPicker({
   const validDates = useMemo(() => new Set(days.map((d) => d.date)), [days]);
 
   return (
-    <Dialog open={open} onClose={onClose}>
+    // DateCalendar's inner root is a fixed 320px wide, overflow:hidden box
+    // (@mui/x-date-pickers' own DIALOG_WIDTH constant) that doesn't shrink
+    // to fit a narrower container. MUI's default Dialog margin (32px a
+    // side) leaves less than that on most phones (e.g. 375px screens get
+    // only 311px), clipping the calendar's rightmost column and the
+    // month-nav arrow. Shrinking the margin to 8px keeps it clear of that
+    // cutoff down to ~336px-wide screens.
+    <Dialog
+      open={open}
+      onClose={onClose}
+      sx={{ '& .MuiDialog-paper': { mx: 1, maxWidth: 'calc(100% - 16px)' } }}
+    >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         Jump to a day
         <IconButton onClick={onClose} aria-label="Close">

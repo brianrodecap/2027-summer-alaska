@@ -1,26 +1,12 @@
-import { createContext, type ReactNode, useContext, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useEffect, useMemo, useState } from 'react';
 
 import { buildTripView, loadTripData } from '../model/tripModel';
-import type { TripData, TripView } from '../model/types';
-
-// Which raw JSON collection(s) an edit touched — surfaced back to the user so
-// "export edits" (still just a client-side download, no backend to write to;
-// see EditContext) knows which file(s) actually need re-copying into
-// public/data/<slug>/.
-export type CollectionName =
-  'legs' | 'stays' | 'transits' | 'activities' | 'scenarios' | 'notes' | 'routes';
-
-interface TripDataContextValue {
-  slug: string;
-  data: TripData | null;
-  view: TripView | null;
-  loading: boolean;
-  error: Error | null;
-  dirtyCollections: Set<CollectionName>;
-  setData: (updater: (prev: TripData) => TripData, dirty?: CollectionName[]) => void;
-}
-
-const TripDataContext = createContext<TripDataContextValue | null>(null);
+import type { TripData } from '../model/types';
+import {
+  type CollectionName,
+  TripDataContext,
+  type TripDataContextValue,
+} from './TripDataContextObject';
 
 interface LoadResult {
   slug: string;
@@ -100,10 +86,4 @@ export function TripDataProvider({ slug, children }: { slug: string; children: R
   };
 
   return <TripDataContext.Provider value={value}>{children}</TripDataContext.Provider>;
-}
-
-export function useTripData(): TripDataContextValue {
-  const ctx = useContext(TripDataContext);
-  if (!ctx) throw new Error('useTripData must be used within a TripDataProvider');
-  return ctx;
 }

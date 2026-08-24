@@ -11,7 +11,7 @@ import type {
   EnrichedTransit,
   ScenarioTrack,
 } from '../../model/types';
-import { useScenarioSelection } from '../../state/TripSelectionsContext';
+import { useScenarioSelection } from '../../state/useTripSelections';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
 import { DayTimeline } from './DayTimeline';

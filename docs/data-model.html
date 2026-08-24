@@ -1354,23 +1354,23 @@
           </li>
           <li>
             <strong
-              >from/to resolve against the Places API and persist an id, same as Place — but
-              through the dedicated <code>RouteEndpoint</code> shape, not Place itself.</strong
+              >from/to resolve against the Places API and persist an id, same as Place — but through
+              the dedicated <code>RouteEndpoint</code> shape, not Place itself.</strong
             >
             The stored id exists for exactly one purpose: letting the route editor
-            (<code>RouteEditForm</code>'s <code>recomputeVariant</code>) auto-hydrate each
-            variant's first and final leg's drive time from a real Google Directions lookup every
-            time the route is reopened, instead of forcing a re-pick of From/To on every edit. A
-            route's endpoint is frequently a whole city or highway junction ('Anchorage',
-            'Coldfoot') rather than one exact point — a fine anchor for a duration estimate, but the
-            wrong id to hand to anything that plots a single pin. <code>RouteEndpoint</code> is kept
-            structurally identical to Place but nominally distinct so that boundary is enforced by
-            the type itself: the day-list map/Directions code
-            (<code>dayMapEmbedUrl</code>/<code>dayFullRouteUrl</code> in <code>tripModel.ts</code>)
-            reads only <code>Transit.from</code>/<code>to</code> and
-            <code>variants[].places[].place</code>, never a Route's own <code>from</code>/<code
-              >to</code
-            >.
+            (<code>RouteEditForm</code>'s <code>recomputeVariant</code>) auto-hydrate each variant's
+            first and final leg's drive time from a real Google Directions lookup every time the
+            route is reopened, instead of forcing a re-pick of From/To on every edit. A route's
+            endpoint is frequently a whole city or highway junction ('Anchorage', 'Coldfoot') rather
+            than one exact point — a fine anchor for a duration estimate, but the wrong id to hand
+            to anything that plots a single pin. <code>RouteEndpoint</code> is kept structurally
+            identical to Place but nominally distinct so that boundary is enforced by the type
+            itself: the day-list map/Directions code (<code>dayMapEmbedUrl</code>/<code
+              >dayFullRouteUrl</code
+            >
+            in <code>tripModel.ts</code>) reads only <code>Transit.from</code>/<code>to</code> and
+            <code>variants[].places[].place</code>, never a Route's own
+            <code>from</code>/<code>to</code>.
           </li>
           <li>
             <strong>variants[].tone has its own vocabulary</strong> —

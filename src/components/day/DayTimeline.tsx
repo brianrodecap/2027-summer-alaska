@@ -35,15 +35,16 @@ import type {
   TransitBoundarySequenceItem,
   TransitStageSequenceItem,
 } from '../../model/types';
-import { useEdit } from '../../state/EditContext';
+import { useEdit } from '../../state/useEdit';
 import {
   useFilterSelection,
   useMealOptionSelection,
   useRouteToneSelection,
-} from '../../state/TripSelectionsContext';
+} from '../../state/useTripSelections';
 import { BookingChip } from '../shared/BookingChip';
-import { RowLeadingDot } from '../shared/materialIcon';
-import { NotesCluster, splitNotes } from '../shared/Notes';
+import { splitNotes } from '../shared/noteKind';
+import { NotesCluster } from '../shared/Notes';
+import { RowLeadingDot } from '../shared/RowLeadingDot';
 import { ActivityLeading, ActivityRow } from './ActivityRow';
 import { RouteVariantTabs } from './RouteVariantTabs';
 import { RowMenu } from './RowMenu';

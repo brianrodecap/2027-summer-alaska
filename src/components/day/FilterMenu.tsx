@@ -10,7 +10,7 @@ import { useState } from 'react';
 
 import { buildFilterGroups } from '../../model/filters';
 import type { LegSummary } from '../../model/types';
-import { useFilterSelection } from '../../state/TripSelectionsContext';
+import { useFilterSelection } from '../../state/useTripSelections';
 import { renderMaterialIcon } from '../shared/materialIcon';
 
 // The day list's own filter nav — an icon button opening a checklist menu

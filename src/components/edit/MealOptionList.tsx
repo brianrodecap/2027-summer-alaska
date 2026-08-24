@@ -13,7 +13,8 @@ import Typography from '@mui/material/Typography';
 import { DINING_FORMATS_WITH_INCLUDED_IN, swapItems } from '../../model/editForms';
 import { DINING_FORMAT_LABEL } from '../../model/formatting';
 import type { Activity, DiningFormat, MealOption, Stay, Transit } from '../../model/types';
-import { BookingFields, bookingFormValueFrom, readBookingFormValue } from './BookingFields';
+import { BookingFields } from './BookingFields';
+import { bookingFormValueFrom, readBookingFormValue } from './bookingFormValue';
 import { IncludedInField } from './IncludedInField';
 import { PlacePickerField } from './PlacePickerField';
 

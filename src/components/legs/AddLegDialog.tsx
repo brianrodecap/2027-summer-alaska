@@ -10,24 +10,8 @@ import TextField from '@mui/material/TextField';
 import { useState } from 'react';
 
 import { applyLegForm, blankLegForm } from '../../model/editForms';
+import { AUTHORITY_OPTIONS } from '../../model/formatting';
 import type { Leg } from '../../model/types';
-
-export const AUTHORITY_OPTIONS: {
-  value: Leg['skeletonAuthority'];
-  label: string;
-  helper: string;
-}[] = [
-  {
-    value: 'self',
-    label: 'Self-planned',
-    helper: 'You picked these dates/locations — free to shift them later.',
-  },
-  {
-    value: 'operator',
-    label: 'Operator-fixed',
-    helper: 'An operator (cruise, tour) locked this date/location skeleton in.',
-  },
-];
 
 // Overview's own "Add leg" — mirrors AddTripDialog's Save/Cancel shape, but
 // (unlike Add trip) it saves through the already-open trip's own EditContext

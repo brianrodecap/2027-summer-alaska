@@ -6,12 +6,13 @@ import Typography from '@mui/material/Typography';
 import { firstImage, timeAndMealTypeLabel } from '../../model/formatting';
 import { liveOverlapWarnings } from '../../model/mealOptions';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
-import { useMealOptionSelection } from '../../state/TripSelectionsContext';
+import { useMealOptionSelection } from '../../state/useTripSelections';
 import { BookingChip } from '../shared/BookingChip';
 import { LinkifiedText } from '../shared/LinkifiedText';
-import { DEFAULT_PLACE_ICON, DINING_FORMAT_ICON, RowLeadingDot } from '../shared/materialIcon';
+import { DEFAULT_PLACE_ICON, DINING_FORMAT_ICON } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
 import { OverlapWarnings } from '../shared/OverlapWarnings';
+import { RowLeadingDot } from '../shared/RowLeadingDot';
 import { TravelerChips } from '../shared/TravelerChips';
 import { MealRow, MealRowLeading } from './MealRow';
 

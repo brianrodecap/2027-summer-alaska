@@ -11,9 +11,9 @@ import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
 import type { NoteKind, Ref, RefEntityKind } from '../../model/types';
-import type { NoteTarget } from '../../state/NoteEditContext';
+import type { NoteTarget } from '../../state/NoteEditContextObject';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
-import { NOTE_ICON as KIND_ICON } from '../shared/Notes';
+import { NOTE_ICON as KIND_ICON } from '../shared/noteKind';
 
 const KIND_LABEL: Record<NoteKind, string> = {
   warning: 'Alert',

@@ -20,7 +20,7 @@ import {
   type TransitFormState,
 } from '../../model/editForms';
 import type { Activity, Route, Stay, Transit, Traveler } from '../../model/types';
-import type { CollectionName } from '../../state/TripDataContext';
+import type { CollectionName } from '../../state/TripDataContextObject';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { ActivityEditForm } from './ActivityEditForm';
 import { StayEditForm } from './StayEditForm';

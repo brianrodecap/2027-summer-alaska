@@ -1,19 +1,9 @@
-import { createContext, type ReactNode, useContext, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 import { NoteEditDialog } from '../components/notes/NoteEditDialog';
 import type { Note, NoteKind, RefEntityKind } from '../model/types';
-import { useTripData } from './TripDataContext';
-
-export type NoteTarget =
-  | { mode: 'create'; entity: RefEntityKind; id: string; kind: NoteKind }
-  | { mode: 'edit'; note: Note };
-
-interface NoteEditContextValue {
-  openNoteCreate: (entity: RefEntityKind, id: string, kind: NoteKind) => void;
-  openNoteEdit: (note: Note) => void;
-}
-
-const NoteEditContext = createContext<NoteEditContextValue | null>(null);
+import { NoteEditContext, type NoteTarget } from './NoteEditContextObject';
+import { useTripData } from './useTripData';
 
 // Mirrors EditContext's own shape (a target + a dialog mounted once here),
 // kept separate because a Note's create/edit/delete flow is genuinely
@@ -71,10 +61,4 @@ export function NoteEditProvider({ children }: { children: ReactNode }) {
       )}
     </NoteEditContext.Provider>
   );
-}
-
-export function useNoteEdit(): NoteEditContextValue {
-  const ctx = useContext(NoteEditContext);
-  if (!ctx) throw new Error('useNoteEdit must be used within a NoteEditProvider');
-  return ctx;
 }

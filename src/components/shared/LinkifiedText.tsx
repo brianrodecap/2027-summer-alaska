@@ -18,6 +18,7 @@ export function LinkifiedText({ text }: { text: string }) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
+            sx={{ overflowWrap: 'anywhere' }}
           >
             {segment.text}
           </Link>
