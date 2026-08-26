@@ -25,24 +25,17 @@ import {
   type ProposedEdit,
   resolveProposalDraft,
 } from '../../model/askAI';
-import { findByKind } from '../../model/editForms';
-import { transitRouteLabel } from '../../model/tripModel';
-import type { Activity, Stay, Transit, TripData } from '../../model/types';
+import { entityLabel, findByKind } from '../../model/editForms';
+import type { TripData } from '../../model/types';
 import { useEdit } from '../../state/useEdit';
-import { ImportDocumentPanel } from '../edit/ImportDocumentDialog';
+import { ImportDocumentPanel } from '../edit/ImportDocumentPanel';
 import { ApiKeyField } from '../shared/ApiKeyField';
 
 function proposalLabel(proposal: ProposedEdit, data: TripData): string {
   if (!proposal.entityId) return proposal.summary;
   const existing = findByKind(proposal.kind, proposal.entityId, data);
   if (!existing) return proposal.summary;
-  const name =
-    proposal.kind === 'stay'
-      ? ((existing as Stay).lodging?.name ?? 'this stay')
-      : proposal.kind === 'transit'
-        ? transitRouteLabel(existing as Transit)
-        : (existing as Activity).text || 'this activity';
-  return `${proposal.summary} (${name})`;
+  return `${proposal.summary} (${entityLabel(proposal.kind, existing)})`;
 }
 
 interface AskAIDialogProps {
@@ -53,7 +46,7 @@ interface AskAIDialogProps {
 
 // Single entry point for both AI-backed features: a chat over the trip's own
 // data (AskPanel) and document-extraction-driven entity creation
-// (ImportDocumentPanel, src/components/edit/ImportDocumentDialog.tsx). Both
+// (ImportDocumentPanel, src/components/edit/ImportDocumentPanel.tsx). Both
 // sections sit in the same dialog rather than behind tabs — nothing is
 // hidden, and both hit the same Anthropic API with the same browser-stored
 // key, so that key field lives here once rather than being duplicated.
@@ -100,6 +93,9 @@ function AskPanel({ data, apiKey, onClose }: AskPanelProps) {
   // keystroke or chat turn — a full per-leg scan+sort over every Stay/Transit/Activity
   // that would otherwise redo identical work on each message sent in a conversation.
   const tripContext = useMemo(() => buildTripContext(data), [data]);
+  // Also gated on [messages, data] rather than recomputed inline in the render below —
+  // `question` (the chat input) lives in this same component and changes on every
+  // keystroke, and proposalLabel's findByKind does a linear scan per proposal.
   const proposalLabels = useMemo(
     () => messages.map((m) => (m.proposal ? proposalLabel(m.proposal, data) : undefined)),
     [messages, data],

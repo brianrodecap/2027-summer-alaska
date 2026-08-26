@@ -38,17 +38,30 @@ export interface AskAIMessage {
 // _id — compact enough to fit comfortably in a chat system prompt, and
 // giving the model real ids it can hand back via propose_edit's entityId
 // rather than needing a second lookup round-trip.
+function groupByLegId<T extends { legId: string }>(items: T[]): Map<string, T[]> {
+  const byLeg = new Map<string, T[]>();
+  for (const item of items) {
+    const group = byLeg.get(item.legId);
+    if (group) group.push(item);
+    else byLeg.set(item.legId, [item]);
+  }
+  return byLeg;
+}
+
 export function buildTripContext(data: TripData): string {
+  const staysByLeg = groupByLegId(data.stays);
+  const transitsByLeg = groupByLegId(data.transits);
+  const activitiesByLeg = groupByLegId(data.activities);
   const lines: string[] = [`Trip: ${data.trip.name}`];
   for (const leg of data.legs) {
     lines.push(`\nLeg "${leg.name}" — legId: ${leg._id}`);
-    const stays = [...data.stays.filter((s) => s.legId === leg._id)].sort((a, b) =>
+    const stays = [...(staysByLeg.get(leg._id) ?? [])].sort((a, b) =>
       a.checkInAt.localeCompare(b.checkInAt),
     );
-    const transits = [...data.transits.filter((t) => t.legId === leg._id)].sort((a, b) =>
+    const transits = [...(transitsByLeg.get(leg._id) ?? [])].sort((a, b) =>
       a.departsAt.localeCompare(b.departsAt),
     );
-    const activities = [...data.activities.filter((a) => a.legId === leg._id)].sort((a, b) =>
+    const activities = [...(activitiesByLeg.get(leg._id) ?? [])].sort((a, b) =>
       (a.startAt ?? a.date ?? '').localeCompare(b.startAt ?? b.date ?? ''),
     );
     for (const s of stays) {
@@ -144,7 +157,16 @@ export async function askAI(
   const body = await callAnthropicMessages(
     {
       max_tokens: 1024,
-      system: `${ASK_AI_SYSTEM_PROMPT}\n\nHere is the trip itinerary:\n${tripContext}`,
+      // The trip itinerary is identical on every turn of a conversation — mark it as an
+      // Anthropic prompt-cache breakpoint so a multi-message chat only pays to reprocess
+      // it once instead of on every send.
+      system: [
+        {
+          type: 'text',
+          text: `${ASK_AI_SYSTEM_PROMPT}\n\nHere is the trip itinerary:\n${tripContext}`,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
       tools: [PROPOSE_EDIT_TOOL],
       messages,
     },

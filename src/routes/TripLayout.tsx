@@ -82,7 +82,7 @@ function TripHero() {
           </IconButton>
         )}
       </Stack>
-      <Stack direction="row" spacing={1} sx={{ ml: 6 }}>
+      <Stack direction="row" spacing={1} sx={{ ml: 6, flexWrap: 'wrap', rowGap: 1 }}>
         {view.dateRange && (
           <Chip
             label={formatTripDateChip(view.dateRange, tripDayCount(view.dateRange))}

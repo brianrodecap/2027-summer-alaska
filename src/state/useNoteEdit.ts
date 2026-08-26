@@ -1,9 +1,6 @@
-import { useContext } from 'react';
-
+import { useRequiredContext } from './contextHook';
 import { NoteEditContext, type NoteEditContextValue } from './NoteEditContextObject';
 
 export function useNoteEdit(): NoteEditContextValue {
-  const ctx = useContext(NoteEditContext);
-  if (!ctx) throw new Error('useNoteEdit must be used within a NoteEditProvider');
-  return ctx;
+  return useRequiredContext(NoteEditContext, 'useNoteEdit must be used within a NoteEditProvider');
 }

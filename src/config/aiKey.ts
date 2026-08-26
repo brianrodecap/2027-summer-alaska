@@ -1,4 +1,5 @@
-// Anthropic API key for the AI document-import feature (src/model/documentImport.ts).
+// Anthropic API key shared by the AI chat and document-import features
+// (src/model/askAI.ts, src/model/documentImport.ts).
 // Unlike src/config/places.ts's Google key, this one is NEVER hardcoded or committed:
 // an Anthropic key has no HTTP-referrer restriction mechanism, so baking one into the
 // bundle would let anyone visiting the site drain the account. Instead it's pasted once

@@ -14,8 +14,8 @@ import {
   findConflictCandidate,
   resolveLegAndDateForFields,
 } from '../../model/documentImport';
-import { COLLECTION_FOR_KIND, type EditKind } from '../../model/editForms';
-import { formatDateLabel, transitRouteLabel } from '../../model/tripModel';
+import { COLLECTION_FOR_KIND, type EditKind, entityLabel } from '../../model/editForms';
+import { formatDateLabel } from '../../model/tripModel';
 import type { Activity, Stay, Transit } from '../../model/types';
 import { useEdit } from '../../state/useEdit';
 import { useTripData } from '../../state/useTripData';
@@ -25,12 +25,6 @@ const KIND_LABEL: Record<EditKind, string> = {
   stay: 'Stay',
   transit: 'Transit',
 };
-
-function labelFor(kind: EditKind, entity: Activity | Stay | Transit): string {
-  if (kind === 'stay') return (entity as Stay).lodging?.name || 'Untitled stay';
-  if (kind === 'transit') return transitRouteLabel(entity as Transit);
-  return (entity as Activity).text || 'Untitled activity';
-}
 
 function collectionFor(
   kind: EditKind,
@@ -169,7 +163,7 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
           {conflictEntity && (
             <Typography variant="body2" sx={{ mt: 1 }}>
               This looks like it may replace an existing {KIND_LABEL[extracted.kind].toLowerCase()}:{' '}
-              <strong>{labelFor(extracted.kind, conflictEntity)}</strong>.
+              <strong>{entityLabel(extracted.kind, conflictEntity)}</strong>.
             </Typography>
           )}
           <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>

@@ -108,7 +108,7 @@ function NoteChip({ note, expanded }: { note: Note; expanded: boolean }) {
       }}
     >
       <Icon fontSize="small" sx={{ mt: '2px', flexShrink: 0 }} />
-      <Typography variant="caption" color="inherit" sx={{ flexGrow: 1, ...textSx }}>
+      <Typography variant="caption" color="inherit" sx={{ flexGrow: 1, minWidth: 0, ...textSx }}>
         <LinkifiedText text={note.text} />
       </Typography>
       {showEdit && editButton}

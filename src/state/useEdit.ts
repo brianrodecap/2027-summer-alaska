@@ -1,9 +1,6 @@
-import { useContext } from 'react';
-
+import { useRequiredContext } from './contextHook';
 import { EditContext, type EditContextValue } from './EditContextObject';
 
 export function useEdit(): EditContextValue {
-  const ctx = useContext(EditContext);
-  if (!ctx) throw new Error('useEdit must be used within an EditProvider');
-  return ctx;
+  return useRequiredContext(EditContext, 'useEdit must be used within an EditProvider');
 }

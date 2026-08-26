@@ -1,5 +1,4 @@
-import { useContext } from 'react';
-
+import { useRequiredContext } from './contextHook';
 import {
   FilterSelectionContext,
   type FilterSelectionValue,
@@ -11,24 +10,22 @@ import {
   type ScenarioSelectionValue,
 } from './TripSelectionsContextObject';
 
-function useRequiredContext<T>(context: React.Context<T | null>, name: string): T {
-  const ctx = useContext(context);
-  if (!ctx) throw new Error(`${name} must be used within a TripSelectionsProvider`);
-  return ctx;
+function useRequired<T>(context: React.Context<T | null>, name: string): T {
+  return useRequiredContext(context, `${name} must be used within a TripSelectionsProvider`);
 }
 
 export function useScenarioSelection(): ScenarioSelectionValue {
-  return useRequiredContext(ScenarioSelectionContext, 'useScenarioSelection');
+  return useRequired(ScenarioSelectionContext, 'useScenarioSelection');
 }
 
 export function useRouteToneSelection(): RouteToneSelectionValue {
-  return useRequiredContext(RouteToneSelectionContext, 'useRouteToneSelection');
+  return useRequired(RouteToneSelectionContext, 'useRouteToneSelection');
 }
 
 export function useMealOptionSelection(): MealOptionSelectionValue {
-  return useRequiredContext(MealOptionSelectionContext, 'useMealOptionSelection');
+  return useRequired(MealOptionSelectionContext, 'useMealOptionSelection');
 }
 
 export function useFilterSelection(): FilterSelectionValue {
-  return useRequiredContext(FilterSelectionContext, 'useFilterSelection');
+  return useRequired(FilterSelectionContext, 'useFilterSelection');
 }

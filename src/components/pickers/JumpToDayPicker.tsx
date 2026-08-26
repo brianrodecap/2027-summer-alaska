@@ -5,7 +5,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
 import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs, { type Dayjs } from 'dayjs';
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 
 import type { Day } from '../../model/types';
 
@@ -37,6 +37,21 @@ export function JumpToDayPicker({
 }) {
   const validDates = useMemo(() => new Set(days.map((d) => d.date)), [days]);
 
+  // Navigating (and so scrolling the day list) immediately on pick would
+  // race MUI's own Modal scroll-lock: it holds `overflow: hidden` on
+  // <body> for the duration of the Dialog's exit transition, so a
+  // scrollIntoView fired synchronously with the pick can silently no-op or
+  // land mid-transition — the mobile "jump to a day lands on blank space"
+  // bug. Modal's internal onExited (which releases the lock) runs
+  // synchronously right after `onTransitionExited` fires, and React defers
+  // this component's own effects until after that — so triggering
+  // onSelectDay from `onTransitionExited` still lands after the lock is
+  // gone by the time DaysView's scroll effect actually runs. (The
+  // transition child's own onExited prop isn't usable for this: Modal
+  // clones its own handler onto that element, clobbering anything set via
+  // slotProps.transition.)
+  const pendingDateRef = useRef<string | null>(null);
+
   return (
     // DateCalendar's inner root is a fixed 320px wide, overflow:hidden box
     // (@mui/x-date-pickers' own DIALOG_WIDTH constant) that doesn't shrink
@@ -49,6 +64,11 @@ export function JumpToDayPicker({
       open={open}
       onClose={onClose}
       sx={{ '& .MuiDialog-paper': { mx: 1, maxWidth: 'calc(100% - 16px)' } }}
+      onTransitionExited={() => {
+        if (!pendingDateRef.current) return;
+        onSelectDay(pendingDateRef.current);
+        pendingDateRef.current = null;
+      }}
     >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         Jump to a day
@@ -64,7 +84,7 @@ export function JumpToDayPicker({
           shouldDisableDate={(value) => !validDates.has(toIsoDate(value as Dayjs))}
           onChange={(value) => {
             if (!value) return;
-            onSelectDay(toIsoDate(value as Dayjs));
+            pendingDateRef.current = toIsoDate(value as Dayjs);
             onClose();
           }}
         />

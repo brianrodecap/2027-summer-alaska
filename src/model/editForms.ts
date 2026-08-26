@@ -121,6 +121,12 @@ export function findByKind<
   );
 }
 
+export function entityLabel(kind: EditKind, entity: Activity | Stay | Transit): string {
+  if (kind === 'stay') return (entity as Stay).lodging?.name || 'Untitled stay';
+  if (kind === 'transit') return transitRouteLabel(entity as Transit);
+  return (entity as Activity).text || 'Untitled activity';
+}
+
 // Swaps two array entries by index — shared by RouteEditForm's variant
 // reordering and MealOptionList's candidate reordering.
 export function swapItems<T>(arr: T[], i: number, j: number): T[] {
