@@ -549,6 +549,16 @@ export const DayTimeline = memo(function DayTimeline({
           // one — kill it so the dot/connector column sits flush against the
           // day block's own left edge instead of floating in the middle.
           '& .MuiTimelineItem-root::before': { display: 'none !important' },
+          // TimelineContent is a flex item with no min-width override, so its
+          // default content-based automatic minimum size wins over its flex
+          // basis. A clamped note's `-webkit-box`/`-webkit-line-clamp` content
+          // (see Notes.tsx's CLAMPED_SX) reports its full unwrapped width as
+          // that minimum instead of a wrapped one, which forces this — and
+          // every ancestor up to the day block — wider than the viewport,
+          // producing horizontal overflow (extra whitespace to the right of
+          // everything else once scrolled). Reset it so flexbox can actually
+          // shrink the content to fit.
+          '& .MuiTimelineContent-root': { minWidth: 0 },
         }}
       >
         {nodes.map((node, i) => (
