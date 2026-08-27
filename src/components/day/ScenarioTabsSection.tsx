@@ -21,6 +21,13 @@ import { resolveActiveTrack, visibleTracksFor } from './scenarioSelection';
 // which branch's own timeline shows below. Each scenario's notes render once
 // at the top of that scenario's panel, not repeated per activity. See
 // scenarioSelection.ts for the follows/requires resolution this wires up to.
+//
+// A flight-contingent day's own live cloud cover/rain chance/wind already
+// shows in DayWeatherStrip, right above these chips — that strip's
+// weatherPlaceId follows the same header-title priority as the day's title
+// itself, so for a day titled after its own flightseeing Activity (the
+// "Flight goes"/"Grounded" case) it's already reading the flightseeing
+// spot's own forecast, not the hotel's. No separate fetch/hint needed here.
 export function ScenarioTabsSection({
   day,
   tracks,

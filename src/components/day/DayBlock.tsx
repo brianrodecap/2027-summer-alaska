@@ -19,6 +19,7 @@ import type { EditKind } from '../../state/EditContext';
 import { useEdit } from '../../state/useEdit';
 import { NotesCluster } from '../shared/Notes';
 import { DayTimeline } from './DayTimeline';
+import { DayWeatherStrip } from './DayWeatherStrip';
 
 const ADD_MENU_ITEMS: { kind: EditKind; label: string }[] = [
   { kind: 'activity', label: 'Activity' },
@@ -110,6 +111,7 @@ export const DayBlock = memo(function DayBlock({
         </IconButton>
       </Box>
       <Box sx={{ px: 3, py: 2 }}>
+        <DayWeatherStrip day={day} />
         <NotesCluster notes={day.notes} />
         <DayTimeline
           day={day}

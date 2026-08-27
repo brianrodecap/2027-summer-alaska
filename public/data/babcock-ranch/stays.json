@@ -1,0 +1,23 @@
+[
+  {
+    "_id": "stay_babcock_ranch",
+    "legId": "44637e90-ea73-4f1b-851d-cbf516620d25",
+    "checkInAt": "2026-08-26T15:00",
+    "checkOutAt": "2026-09-20T11:00",
+    "status": "planning",
+    "lodging": {
+      "placeId": "ChIJT1pnRv5k24gRRbXUfU0BEQ4",
+      "name": "16440 Palmetto St, Punta Gorda, FL",
+      "roomType": null,
+      "roomNumber": null,
+      "campsite": null
+    },
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
+    "packages": null,
+    "images": []
+  }
+]

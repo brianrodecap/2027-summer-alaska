@@ -148,6 +148,7 @@ export function TripsHome() {
                         image={image.uri}
                         alt={image.caption ?? ''}
                         title={image.credit ?? ''}
+                        loading="lazy"
                         sx={{ height: 160 }}
                       />
                     ) : (

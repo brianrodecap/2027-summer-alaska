@@ -1019,6 +1019,35 @@ function idealOrFirstTrack(day: Pick<Day, 'scenarioTracks'>): ScenarioTrack | nu
   );
 }
 
+// Every place with a resolvable id touched by a day, in the same
+// chronological order `sequence` itself renders in — used to find "the
+// first/last place of the day" for the live weather strip's sunrise/sunset.
+// A scenario-tabs split recurses into its ideal-or-first track (same
+// convention as idealOrFirstTrack/plannedTrackCandidates above) rather than
+// every branch, since only one branch is what actually happens.
+function orderedPlaceIds(sequence: SequenceItem[]): string[] {
+  return sequence.flatMap((item): string[] => {
+    switch (item.type) {
+      case 'stay': {
+        const id = item.stay.lodging?.placeId;
+        return id ? [id] : [];
+      }
+      case 'transit-boundary': {
+        const id = item.phase === 'depart' ? item.transit.from?.id : item.transit.to?.id;
+        return id ? [id] : [];
+      }
+      case 'transit-stage':
+        return item.stage.placeId ? [item.stage.placeId] : [];
+      case 'section':
+        return item.activities.flatMap((a) => (a.place?.id ? [a.place.id] : []));
+      case 'scenario-tabs': {
+        const track = idealOrFirstTrack({ scenarioTracks: item.tracks ?? [] });
+        return track ? orderedPlaceIds(track.sequence) : [];
+      }
+    }
+  });
+}
+
 function firstActivityIn(sequence: SequenceItem[]): EnrichedActivity | null {
   return (
     (sequence.find((i) => i.type === 'section') as SectionSequenceItem | undefined)
@@ -1102,9 +1131,8 @@ function titleCandidates(day: Pick<Day, 'scenarioTracks' | 'sequence'>): Enriche
   return [...fixed, ...plannedTrackCandidates(day.scenarioTracks)];
 }
 
-function deriveTitle(day: Pick<Day, 'scenarioTracks' | 'sequence' | 'location'>): string {
-  const candidates = titleCandidates(day);
-  if (!candidates.length) return day.location;
+function deriveTitle(location: string, candidates: EnrichedActivity[]): string {
+  if (!candidates.length) return location;
   const topRank = Math.max(...candidates.map((a) => PRIORITY_RANK[a.priority as string]));
   return candidates
     .filter((a) => PRIORITY_RANK[a.priority as string] === topRank)
@@ -1502,6 +1530,8 @@ function buildDay(
     arrivingTransit?.to?.label ??
     dayTransits[0]?.from?.label ??
     leg.name;
+  const locationPlaceId =
+    primaryStay?.lodging?.placeId ?? arrivingTransit?.to?.id ?? dayTransits[0]?.from?.id ?? null;
 
   const { tracks: scenarioTracks, anchorKey: scenarioAnchorKey } = buildScenarioTracks(
     transitsForSequence,
@@ -1511,29 +1541,48 @@ function buildDay(
     date,
     dayStart,
   );
+  const sequence = buildSequence(
+    dayStays,
+    transitsForSequence,
+    dayActivities,
+    date,
+    dayStart,
+    scenarioAnchorKey,
+  );
+
+  // Sunrise/sunset track wherever the day actually starts and ends —
+  // chronological order already puts a checkout Stay first and a check-in
+  // Stay last (see buildSequence's own stay-boundary-ordering note), so this
+  // is just "the first/last place with a resolvable id", not a special case.
+  const dayPlaceIds = orderedPlaceIds(sequence);
+  const sunrisePlaceId = dayPlaceIds[0] ?? null;
+  const sunsetPlaceId = dayPlaceIds[dayPlaceIds.length - 1] ?? null;
+  // The high/low temperature follows the same priority the header title
+  // does — a flightseeing day's weather is the flightseeing spot's, not the
+  // hotel's — falling back to the day's own default location otherwise.
+  // Computed once here and reused below for the title itself, rather than
+  // each re-deriving its own titleCandidates() pass over the same day.
+  const candidates = titleCandidates({ scenarioTracks, sequence });
+  const weatherPlaceId = candidates.find((a) => a.place?.id)?.place?.id ?? locationPlaceId;
 
   const day: Day = {
     date,
     dateLabel: formatDateLabel(date),
     leg,
     location,
+    sunrisePlaceId,
+    sunsetPlaceId,
+    weatherPlaceId,
     stays: dayStays,
     transits: dayTransits,
-    sequence: buildSequence(
-      dayStays,
-      transitsForSequence,
-      dayActivities,
-      date,
-      dayStart,
-      scenarioAnchorKey,
-    ),
+    sequence,
     scenarioTracks,
     notes: notesForDay(notes, date),
     summary: '',
     title: '',
   };
   day.summary = deriveSummary(day);
-  day.title = deriveTitle(day);
+  day.title = deriveTitle(day.location, candidates);
   return day;
 }
 
@@ -1824,7 +1873,7 @@ export function resolveTransitRoute(
 // data-model.html) — the only booking on this trip with a real payment
 // schedule today, but the rule holds for any future one that gets it too.
 
-function todayDateStr(): string {
+export function todayDateStr(): string {
   const d = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;

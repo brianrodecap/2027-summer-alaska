@@ -415,6 +415,20 @@ export interface Day {
   dateLabel: string;
   leg: Leg;
   location: string;
+  // Real Google Place ids for the live weather strip — resolved once here
+  // rather than in the component, since each answers a different question:
+  // sunrise/sunset track wherever the day actually starts/ends (the first
+  // and last place with a resolvable id in `sequence`'s own chronological
+  // order — typically the morning's checkout Stay and the evening's
+  // check-in Stay), while the high/low temperature follows the same
+  // priority the day's own header title does (deriveTitle's priority
+  // Activity, e.g. a flightseeing day's temperature is the flightseeing
+  // spot's, not the hotel's) — falling back to the same place `location`'s
+  // label was drawn from when no priority Activity claims the day. null
+  // wherever nothing in that day resolves to a real geocodable point.
+  sunrisePlaceId: string | null;
+  sunsetPlaceId: string | null;
+  weatherPlaceId: string | null;
   stays: EnrichedStay[];
   transits: EnrichedTransit[];
   sequence: SequenceItem[];

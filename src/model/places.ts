@@ -46,15 +46,22 @@ const FIELD_MASK = [
 // scenario branches, e.g. the same breakfast spot on the ideal and alternate plan).
 const cache = new Map<string, Promise<PlaceDetails>>();
 
-export async function fetchPlace(id: string): Promise<PlaceDetails> {
+// Raw Place Details fetch for a given field mask — shared with weather.ts's
+// coordinate lookup below, which needs the same endpoint/auth/error-handling
+// but a different (cheaper) field mask than this module's own FIELD_MASK.
+export async function fetchPlaceFields<T>(id: string, fieldMask: string): Promise<T> {
   const res = await fetch(`https://places.googleapis.com/v1/places/${id}`, {
     headers: {
       'X-Goog-Api-Key': PLACES_API_KEY,
-      'X-Goog-FieldMask': FIELD_MASK,
+      'X-Goog-FieldMask': fieldMask,
     },
   });
   if (!res.ok) throw new Error(`Places API error ${res.status}`);
   return res.json();
+}
+
+export async function fetchPlace(id: string): Promise<PlaceDetails> {
+  return fetchPlaceFields<PlaceDetails>(id, FIELD_MASK);
 }
 
 export function getPlace(id: string): Promise<PlaceDetails> {
