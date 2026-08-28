@@ -254,7 +254,7 @@
     "to": {
       "label": "Seward"
     },
-    "departsAt": "2027-07-10T07:00",
+    "departsAt": "2027-07-15T07:00",
     "arrivesAt": null,
     "routeId": "route_seward_highway",
     "routeVariant": "direct",
@@ -280,7 +280,7 @@
     "to": {
       "label": "Anchorage"
     },
-    "departsAt": "2027-07-10T18:00",
+    "departsAt": "2027-07-15T18:00",
     "arrivesAt": null,
     "routeId": "route_seward_highway",
     "routeVariant": "direct",
@@ -364,54 +364,6 @@
         "caption": "Dalton Highway with pipeline near Finger Mountain"
       }
     ]
-  },
-  {
-    "_id": "transit_anchorage_portalsworth",
-    "legId": "leg_parks",
-    "journeyId": null,
-    "scenarioId": null,
-    "status": "planning",
-    "mode": "flight",
-    "from": {
-      "label": "Anchorage"
-    },
-    "to": {
-      "label": "Port Alsworth"
-    },
-    "departsAt": "2027-07-12T12:00",
-    "arrivesAt": "2027-07-12T13:30",
-    "routeId": null,
-    "routeVariant": null,
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
-    "images": []
-  },
-  {
-    "_id": "transit_portalsworth_anchorage",
-    "legId": "leg_parks",
-    "journeyId": null,
-    "scenarioId": null,
-    "status": "planning",
-    "mode": "flight",
-    "from": {
-      "label": "Port Alsworth"
-    },
-    "to": {
-      "label": "Anchorage"
-    },
-    "departsAt": "2027-07-17T08:00",
-    "arrivesAt": "2027-07-17T09:30",
-    "routeId": null,
-    "routeVariant": null,
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
-    "images": []
   },
   {
     "_id": "transit_anchorage_whittier",

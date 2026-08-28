@@ -214,7 +214,7 @@
     "_id": "stay_anchorage_2",
     "legId": "leg_parks",
     "checkInAt": "2027-07-09T15:00",
-    "checkOutAt": "2027-07-12T11:00",
+    "checkOutAt": "2027-07-17T11:00",
     "status": "planning",
     "lodging": {
       "placeId": "ChIJoUUNNIG9yFYRT1rea_yflgI",
@@ -230,33 +230,6 @@
     },
     "packages": null,
     "images": []
-  },
-  {
-    "_id": "stay_lc_katmai",
-    "legId": "leg_parks",
-    "checkInAt": "2027-07-12T13:30",
-    "checkOutAt": "2027-07-17T08:00",
-    "status": "planning",
-    "lodging": {
-      "placeId": null,
-      "name": "Lake Clark Resort (The Farm Lodge)",
-      "roomType": null,
-      "roomNumber": null,
-      "campsite": null
-    },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
-    "packages": null,
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Brooks_Falls_Katmai_National_Park.jpg",
-        "credit": "Photo by Richard A. Weaver / CC BY-SA 4.0",
-        "caption": "Brown bear fishing for salmon at Brooks Falls"
-      }
-    ]
   },
   {
     "_id": "stay_cruise",

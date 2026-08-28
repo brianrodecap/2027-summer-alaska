@@ -750,14 +750,10 @@
   {
     "_id": "note_jul11_seward_fallback",
     "kind": "footnote",
-    "text": "This is also the trip's last practical slot to repeat the Seward day trip if Jul 10 was weathered out — after this, the schedule moves on to Lake Clark/Katmai. If repeating Seward, this day's Anchorage plan (Heritage Center / Coastal Trail / Wildlife Conservation Center) simply doesn't happen.",
+    "text": "Jul 16 is held open as flex/spare time — the trip's last practical slot before cruise embarkation to repeat the Seward day trip if Jul 15 needs it (rough seas, tour cancellation, etc.).",
     "concerns": [
       {
-        "entity": "activity",
-        "id": "act_jul11_1"
-      },
-      {
-        "date": "2027-07-11"
+        "date": "2027-07-16"
       }
     ],
     "images": []
@@ -765,7 +761,7 @@
   {
     "_id": "note_awcc_girdwood_distance",
     "kind": "footnote",
-    "text": "Actually in Girdwood, ~45 min each way from Anchorage via the Seward Highway — not a short hop from the Heritage Center or Coastal Trail like the day's other two stops. Given a full day of driving to Seward the day before, this is the first thing to cut if the day runs long.",
+    "text": "Actually in Girdwood, ~45 min each way from Anchorage via the Seward Highway — not a short hop from the Heritage Center or Coastal Trail like the day's other two stops.",
     "concerns": [
       {
         "entity": "activity",
@@ -795,52 +791,6 @@
         "caption": "Aerial view of Kotzebue on the Chukchi Sea coast"
       }
     ]
-  },
-  {
-    "_id": "note_lc_katmai_open",
-    "kind": "info",
-    "text": "Decided: a Port Alsworth lodge stay (Lake Clark Resort / The Farm Lodge), with a dedicated floatplane day trip to Brooks Falls for Katmai bear viewing and a second day trip to Chinitna Bay for Lake Clark's own coastal bears — plus a Lake Clark National Park hiking day and a buffer day that can repeat Katmai if July 13 gets weathered out. Exact package cost/inclusions (meals, which day trips) still need confirming directly with the lodge when booking.",
-    "concerns": [
-      {
-        "entity": "stay",
-        "id": "stay_lc_katmai"
-      }
-    ],
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Brooks_Falls_Katmai_National_Park.jpg",
-        "credit": "Photo by Richard A. Weaver / CC BY-SA 4.0",
-        "caption": "Brown bear fishing for salmon at Brooks Falls"
-      }
-    ]
-  },
-  {
-    "_id": "note_katmai_bear_season",
-    "kind": "info",
-    "text": "Peak brown bear viewing at Brooks Falls runs roughly June 25–July 20, as the sockeye salmon run peaks — this trip's July 13 (and July 16 buffer) date lands right in that window.",
-    "concerns": [
-      {
-        "entity": "activity",
-        "id": "act_jul13_bears"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_katmai_weather_dependent",
-    "kind": "warning",
-    "text": "Both bear-viewing day trips are floatplane-based and weather-dependent, like the Denali, Gates of the Arctic, and Kobuk Valley flights elsewhere in this trip. July 16 is built in as a buffer day specifically to repeat July 13's Katmai trip if it gets weathered out.",
-    "concerns": [
-      {
-        "entity": "activity",
-        "id": "act_jul13_depart"
-      },
-      {
-        "entity": "activity",
-        "id": "act_jul15_depart"
-      }
-    ],
-    "images": []
   },
   {
     "_id": "note_kotzebue_restaurant_churn",
@@ -1090,46 +1040,6 @@
       {
         "entity": "activity",
         "id": "act_jul8_1"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_jul12_walk_options",
-    "kind": "footnote",
-    "text": "An orientation walk toward the Tanalian Falls trailhead is one option; otherwise just relax lakeside — nothing booked either way.",
-    "concerns": [
-      {
-        "entity": "activity",
-        "id": "act_jul12_walk"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_jul16_flightseeing_option",
-    "kind": "footnote",
-    "text": "The flightseeing option would be a Lake Clark Pass loop over the Redoubt and Iliamna volcanoes — operator and cost still need picking, unlike every other flightseeing activity in this trip.",
-    "concerns": [
-      {
-        "entity": "activity",
-        "id": "act_jul16_buffer_ideal"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_portalsworth_charter",
-    "kind": "footnote",
-    "text": "Port Alsworth is accessible only by air — this charter flight is typically arranged directly through the lodge (Lake Clark Resort / The Farm Lodge) rather than booked as a standalone commercial flight; exact carrier and time to be confirmed with them.",
-    "concerns": [
-      {
-        "entity": "transit",
-        "id": "transit_anchorage_portalsworth"
-      },
-      {
-        "entity": "transit",
-        "id": "transit_portalsworth_anchorage"
       }
     ],
     "images": []
@@ -1615,30 +1525,6 @@
     "images": []
   },
   {
-    "_id": "note_act_jul12_breakfast_opt0",
-    "kind": "footnote",
-    "text": "With checkout not until 11am there's no rush.",
-    "concerns": [
-      {
-        "entity": "mealOption",
-        "id": "act_jul12_breakfast_opt0"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_act_jul12_breakfast_opt1",
-    "kind": "footnote",
-    "text": "Or just breakfast at the Hotel Captain Cook before checking out.",
-    "concerns": [
-      {
-        "entity": "mealOption",
-        "id": "act_jul12_breakfast_opt1"
-      }
-    ],
-    "images": []
-  },
-  {
     "_id": "note_act_jul17_lunch_opt0",
     "kind": "footnote",
     "text": "In Anchorage, before hitting the road.",
@@ -1843,18 +1729,6 @@
     "images": []
   },
   {
-    "_id": "note_stay_lc_katmai_checkin",
-    "kind": "info",
-    "text": "Reached only by floatplane from Anchorage via Lake Clark Pass (~1.5 hrs); the Alsworth family's rate is expected to include home-cooked meals and the Katmai/Chinitna Bay bear-viewing day trips — confirm exact inclusions and cost when booking.",
-    "concerns": [
-      {
-        "entity": "stay",
-        "id": "stay_lc_katmai"
-      }
-    ],
-    "images": []
-  },
-  {
     "_id": "note_pkg_kennicott_meals",
     "kind": "footnote",
     "text": "On-site dining is otherwise limited to the Meatza Wagon food truck or a trip into McCarthy — worth booking given the 2-night minimum stay.",
@@ -1886,6 +1760,54 @@
       {
         "entity": "activity",
         "id": "act_jun30_ideal_2"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "note_lc_ladder_operators",
+    "kind": "info",
+    "text": "Rust's Flying Service handles the Katmai (Brooks Falls) and Redoubt Bay day trips; Lake Clark Air handles Port Alsworth. All three are Lake Hood-based charter operators — exact departure times are set by each operator and confirmed at booking, not fixed here.",
+    "concerns": [
+      {
+        "entity": "leg",
+        "id": "leg_parks"
+      },
+      {
+        "dateRange": [
+          "2027-07-10",
+          "2027-07-13"
+        ]
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "note_lc_ladder_buffer_risk",
+    "kind": "warning",
+    "text": "The buffer day (Jul 13) can only formally rescue one grounded flight. If more than one of Katmai, Port Alsworth, or Redoubt Bay gets weathered out across Jul 10-12, at least one of them won't happen on this trip — there's no day left to chase a second miss.",
+    "concerns": [
+      {
+        "entity": "leg",
+        "id": "leg_parks"
+      },
+      {
+        "dateRange": [
+          "2027-07-10",
+          "2027-07-13"
+        ]
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "note_redoubt_bay_place_id",
+    "kind": "footnote",
+    "text": "Redoubt Bay Lodge doesn't have a confirmed Google Place ID yet — add one once it's looked up.",
+    "concerns": [
+      {
+        "entity": "activity",
+        "id": "act_lc_d3_redoubt_bears"
       }
     ],
     "images": []
