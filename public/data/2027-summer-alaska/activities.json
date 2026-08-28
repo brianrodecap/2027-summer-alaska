@@ -1439,7 +1439,7 @@
         "diningFormat": "grab-and-go",
         "place": {
           "id": "ChIJCSqfQ1VLKVER9FZigu88Qtg",
-          "label": "The Hotspot Cafe",
+          "label": "Yukon River Camp",
           "images": []
         },
         "includedIn": null,
@@ -1454,7 +1454,8 @@
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul1_ideal_3",
@@ -2895,7 +2896,7 @@
     "timeLabel": "Morning",
     "order": 0,
     "priority": "high",
-    "text": "Bonus flightseeing — Noatak/Kotzebue Sound (musk ox)",
+    "text": "Bonus flightseeing — Noatak/Kotzebue Sound",
     "place": {
       "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
       "label": "Golden Eagle Outfitters",
@@ -2903,8 +2904,8 @@
     },
     "booking": {
       "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
+      "confirmationNumber": null,
+      "cost": null
     },
     "mealType": null,
     "diningFormat": null,
@@ -3020,8 +3021,8 @@
     "durationMinutes": null,
     "timeLabel": "Morning",
     "order": 0,
-    "priority": "high",
-    "text": "Bonus flightseeing — Noatak/Kotzebue Sound (musk ox)",
+    "priority": null,
+    "text": "Bonus flightseeing — Noatak/Kotzebue Sound",
     "place": {
       "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
       "label": "Golden Eagle Outfitters",
@@ -3029,8 +3030,8 @@
     },
     "booking": {
       "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
+      "confirmationNumber": null,
+      "cost": null
     },
     "mealType": null,
     "diningFormat": null,
@@ -3149,7 +3150,7 @@
     "durationMinutes": null,
     "timeLabel": "Morning",
     "order": 0,
-    "priority": null,
+    "priority": "high",
     "text": "Flex morning in Kotzebue",
     "place": null,
     "booking": null,
@@ -3360,7 +3361,7 @@
     "durationMinutes": 300,
     "timeLabel": null,
     "order": null,
-    "priority": null,
+    "priority": "high",
     "text": "Kenai Fjords Tours — Resurrection Bay Tour",
     "place": {
       "id": "ChIJTbp77Hecx1YRRQiYmotUsnM",
@@ -3369,15 +3370,16 @@
     },
     "booking": {
       "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
+      "confirmationNumber": null,
+      "cost": null
     },
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul10_dinner",
@@ -5865,66 +5867,6 @@
     "images": []
   },
   {
-    "_id": "act_lc_d4_free_morning",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_lc_d4_free",
-    "status": "planning",
-    "startAt": "2027-07-13T09:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Free morning — all three secured, nothing booked",
-    "place": null,
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_lc_d4_free_afternoon",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_lc_d4_free",
-    "status": "planning",
-    "startAt": "2027-07-13T13:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Free afternoon — Anchorage Museum or last-minute shopping",
-    "place": null,
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_lc_d4_free_dinner",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_lc_d4_free",
-    "status": "planning",
-    "startAt": "2027-07-13T18:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Relaxed dinner in Anchorage",
-    "place": null,
-    "booking": null,
-    "mealType": "dinner",
-    "diningFormat": "sit-down",
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
     "_id": "act_lc_d4_redoubt_final_depart",
     "legId": "leg_parks",
     "scenarioId": "scenario_lc_d4_redoubt_final",
@@ -6289,6 +6231,174 @@
     "booking": null,
     "mealType": "dinner",
     "diningFormat": "sit-down",
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "d5f8a4bd-11ff-4d2f-9b24-2cb7e67d6afe",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_lc_d4_free",
+    "status": "planning",
+    "startAt": "2027-07-13T06:00",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "date": "2027-07-13",
+    "order": null,
+    "priority": null,
+    "text": "Drive to Homer (~4.5 hrs via Seward Highway/Sterling Highway)",
+    "place": {
+      "id": null,
+      "label": "Homer, Alaska"
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "f640f0f4-6b42-4599-95f9-229af48fd7ef",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_lc_d4_free",
+    "status": "planning",
+    "startAt": "2027-07-13T10:45",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "date": "2027-07-13",
+    "order": null,
+    "priority": null,
+    "text": "Explore the Homer Spit — shops, beach, boardwalk",
+    "place": {
+      "id": null,
+      "label": "Homer Spit"
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "31569290-6805-4c67-9e30-8f35058f9129",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_lc_d4_free",
+    "status": "planning",
+    "startAt": "2027-07-13T12:00",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "date": "2027-07-13",
+    "order": null,
+    "priority": null,
+    "text": "Lunch in Homer — choosing where",
+    "place": {
+      "id": null,
+      "label": "Homer, Alaska"
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "f050e32e-8c2d-4363-a811-6809f1a77592",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_lc_d4_free",
+    "status": "planning",
+    "startAt": "2027-07-13T13:30",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "date": "2027-07-13",
+    "order": null,
+    "priority": null,
+    "text": "Pratt Museum or Alaska Islands and Ocean Visitor Center",
+    "place": {
+      "id": null,
+      "label": "Pratt Museum"
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "b1df8890-73ab-4f31-adbf-838df78b8a01",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_lc_d4_free",
+    "status": "planning",
+    "startAt": "2027-07-13T15:30",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "date": "2027-07-13",
+    "order": null,
+    "priority": null,
+    "text": "Begin drive back to Anchorage (~4.5 hrs)",
+    "place": {
+      "id": null,
+      "label": "Homer, Alaska"
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "ff428522-5959-491e-867c-52e681423358",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_lc_d4_free",
+    "status": "planning",
+    "startAt": "2027-07-13T20:15",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "date": "2027-07-13",
+    "order": null,
+    "priority": null,
+    "text": "Late dinner in Anchorage — choosing where",
+    "place": {
+      "id": null,
+      "label": "Anchorage"
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "4880055f-3e62-4d2a-8f02-ef36d76ddecb",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jul8_alt",
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Morning",
+    "date": "2027-07-08",
+    "order": null,
+    "priority": "high",
+    "text": "Bonus day in Kotzebue",
+    "place": {
+      "id": "ChIJNbpwJOYWzVARtRutEpMtQE4",
+      "label": "Kotzebue"
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
     "includedIn": null,
     "options": null,
     "travelers": null,

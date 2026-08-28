@@ -1256,6 +1256,32 @@ function sequenceMapLabels(
   return labels;
 }
 
+// Replaces every { type: 'scenario-tabs' } placeholder in `sequence` with
+// its selected track's own sequence, in place of the placeholder, instead of
+// dropping it — buildSequence/buildTrack key that placeholder to the
+// branching content's own earliest real time (scenarioAnchorKey/childKey) so
+// it merge-sorts into the right chronological slot, but a scenario-less
+// Activity that falls *after* the branch content (Jul 1's dinner, once every
+// weather branch has converged on the same hotel for the evening) still
+// needs the branch's own events actually expanded there to land before it —
+// otherwise a caller that just filters the placeholder out and appends the
+// track separately (as dayMapStops/dayFullRouteStops used to) always sorts
+// the whole branch ahead of that later backbone content, regardless of its
+// real time. The top-level placeholder (from buildSequence) carries no
+// `tracks` of its own — `track` is that level's live selection, resolved by
+// the caller via selectedTrack. A nested placeholder (from buildTrack, e.g.
+// Jul 1's flew/grounded split) does carry its own `tracks`; DaySelections
+// has no live choice for that level, so it falls back to idealOrFirstTrack,
+// the same "planned by default" convention orderedPlaceIds/
+// plannedTrackCandidates already use for nested groups.
+function expandScenarioTabs(sequence: SequenceItem[], track: ScenarioTrack | null): SequenceItem[] {
+  return sequence.flatMap((item): SequenceItem[] => {
+    if (item.type !== 'scenario-tabs') return [item];
+    const chosen = item.tracks ? idealOrFirstTrack({ scenarioTracks: item.tracks }) : track;
+    return chosen ? expandScenarioTabs(chosen.sequence, null) : [];
+  });
+}
+
 // A branching day maps only its planned (ideal, or first) track by default —
 // same "planned by default" convention deriveSummary/deriveTitle already
 // use — rather than plotting both weather branches' places onto one
@@ -1266,8 +1292,7 @@ export function dayMapStops(day: Day, selections: DaySelections = {}): string[] 
   const track = selectedTrack(day, selections.scenarioTone);
   const all = [
     ...sequenceMapLabels(checkOuts, selections.mealPlaces),
-    ...sequenceMapLabels(rest, selections.mealPlaces),
-    ...(track ? sequenceMapLabels(track.sequence, selections.mealPlaces) : []),
+    ...sequenceMapLabels(expandScenarioTabs(rest, track), selections.mealPlaces),
     ...sequenceMapLabels(checkIns, selections.mealPlaces),
   ];
   // Collapses immediate repeats (e.g. a Transit arriving exactly where the
@@ -1408,8 +1433,7 @@ function dayFullRouteStops(day: Day, selections: DaySelections = {}): RouteStop[
     }
   };
   checkOuts.forEach(pushStay);
-  pushSequence(rest);
-  if (track) pushSequence(track.sequence);
+  pushSequence(expandScenarioTabs(rest, track));
   checkIns.forEach(pushStay);
   return stops.filter((stop, i) => i === 0 || stop.label !== stops[i - 1].label);
 }

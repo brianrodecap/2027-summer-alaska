@@ -18,16 +18,20 @@ import { useMemo, useState } from 'react';
 
 import { getStoredApiKey, setStoredApiKey } from '../../config/aiKey';
 import {
+  applyDayPlan,
   askAI,
   AskAIError,
   type AskAIMessage,
   buildTripContext,
+  describeDayPlanOp,
+  type ProposedDayPlan,
   type ProposedEdit,
   resolveProposalDraft,
 } from '../../model/askAI';
 import { entityLabel, findByKind } from '../../model/editForms';
 import type { TripData } from '../../model/types';
 import { useEdit } from '../../state/useEdit';
+import { useTripData } from '../../state/useTripData';
 import { ImportDocumentPanel } from '../edit/ImportDocumentPanel';
 import { ApiKeyField } from '../shared/ApiKeyField';
 
@@ -84,10 +88,15 @@ interface AskPanelProps {
 // actual Save decision always stays with a human.
 function AskPanel({ data, apiKey, onClose }: AskPanelProps) {
   const { openFromDraft } = useEdit();
+  const { setData } = useTripData();
   const [messages, setMessages] = useState<AskAIMessage[]>([]);
   const [question, setQuestion] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A day plan applies directly (no EditDialog round trip — see applyDayPlan's own
+  // note), so this just tracks which chat messages' plans have already been
+  // committed, to swap their "Apply all" button for a plain "Applied" state.
+  const [appliedPlans, setAppliedPlans] = useState<Set<number>>(new Set());
 
   // Rebuilt only when `data` itself changes (a save elsewhere in the app), not on every
   // keystroke or chat turn — a full per-leg scan+sort over every Stay/Transit/Activity
@@ -129,6 +138,11 @@ function AskPanel({ data, apiKey, onClose }: AskPanelProps) {
     }
     openFromDraft(resolved.kind, resolved.draft, resolved.overrideId);
     onClose();
+  };
+
+  const handleApplyPlan = (plan: ProposedDayPlan, messageIndex: number) => {
+    setData((prev) => applyDayPlan(plan, prev), ['activities']);
+    setAppliedPlans((prev) => new Set(prev).add(messageIndex));
   };
 
   return (
@@ -182,6 +196,30 @@ function AskPanel({ data, apiKey, onClose }: AskPanelProps) {
                   <Button size="small" variant="outlined" onClick={() => handleApply(m.proposal!)}>
                     Review & apply
                   </Button>
+                </Box>
+              </Box>
+            )}
+            {m.dayPlan && (
+              <Box sx={{ mt: 1 }}>
+                <Stack component="ul" spacing={0.25} sx={{ m: 0, pl: 2.5 }}>
+                  {m.dayPlan.ops.map((op, opIndex) => (
+                    <Typography key={opIndex} component="li" variant="body2">
+                      {describeDayPlanOp(op, data)}
+                    </Typography>
+                  ))}
+                </Stack>
+                <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  {appliedPlans.has(i) ? (
+                    <Chip size="small" label="Applied" color="success" />
+                  ) : (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      onClick={() => handleApplyPlan(m.dayPlan!, i)}
+                    >
+                      Apply all
+                    </Button>
+                  )}
                 </Box>
               </Box>
             )}
