@@ -2234,7 +2234,7 @@
     "durationMinutes": 120,
     "timeLabel": null,
     "order": null,
-    "priority": null,
+    "priority": "high",
     "text": "Kennecott Mill Town Tour",
     "place": {
       "id": "ChIJU-XcLiODs1YRBCWN4GuXAs4",
@@ -2249,15 +2249,16 @@
     },
     "booking": {
       "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
+      "confirmationNumber": null,
+      "cost": null
     },
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul4_5",
@@ -2449,30 +2450,6 @@
       },
       "confirmationNumber": null
     },
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jul5_7",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-05T16:30",
-    "durationMinutes": 30,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Arrive Anchorage, check into Hotel Captain Cook",
-    "place": {
-      "id": "ChIJoUUNNIG9yFYRT1rea_yflgI",
-      "label": "Hotel Captain Cook",
-      "images": []
-    },
-    "booking": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2919,14 +2896,18 @@
     "order": null,
     "priority": null,
     "text": "Dinner at Little Louie's",
-    "place": null,
+    "place": {
+      "id": "ChIJyfidPVEXzVARzxH_okzDMHM",
+      "label": "Little Louie's"
+    },
     "booking": null,
     "mealType": "dinner",
     "diningFormat": "sit-down",
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul8_breakfast",
@@ -3445,34 +3426,6 @@
       "images": []
     },
     "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jul11_3",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-14T15:15",
-    "durationMinutes": 90,
-    "timeLabel": null,
-    "order": null,
-    "priority": null,
-    "text": "Alaska Wildlife Conservation Center",
-    "place": {
-      "id": "ChIJZ9R_CrJ2yFYRc0c7bqahWdk",
-      "label": "Alaska Wildlife Conservation Center",
-      "images": []
-    },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5469,6 +5422,59 @@
     "booking": null,
     "mealType": "dinner",
     "diningFormat": "sit-down",
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [],
+    "date": null
+  },
+  {
+    "_id": "73df4fd3-2ff8-46c5-8665-735b0b1b56ff",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Morning",
+    "date": "2027-06-28",
+    "order": null,
+    "priority": null,
+    "text": "Eielson Visitor Center",
+    "place": {
+      "id": "ChIJsYRgs6uYzVYRoIkxAtOU_KE",
+      "label": "Eielson Visitor Center"
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "act_jul11_3",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": "2027-07-14T15:15",
+    "durationMinutes": 90,
+    "timeLabel": null,
+    "order": null,
+    "priority": null,
+    "text": "Alaska Wildlife Conservation Center",
+    "place": {
+      "id": "ChIJZ9R_CrJ2yFYRc0c7bqahWdk",
+      "label": "Alaska Wildlife Conservation Center",
+      "images": []
+    },
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
+    "mealType": null,
+    "diningFormat": null,
     "includedIn": null,
     "options": null,
     "travelers": null,

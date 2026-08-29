@@ -171,7 +171,7 @@
     "departsAt": "2027-07-05T08:00",
     "arrivesAt": null,
     "routeId": "route_kennecott_anchorage",
-    "routeVariant": "scenic",
+    "routeVariant": "direct",
     "booking": null,
     "images": [
       {

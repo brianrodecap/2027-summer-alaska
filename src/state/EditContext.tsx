@@ -1,25 +1,36 @@
 import { lazy, type ReactNode, Suspense, useState } from 'react';
 
-import { blankForKind, COLLECTION_FOR_KIND, type EditKind, findByKind } from '../model/editForms';
+import { COLLECTION_FOR_KIND, type EditKind, findByKind } from '../model/editForms';
 import type { Activity, Stay, Transit } from '../model/types';
 import { EditContext } from './EditContextObject';
 import { useTripData } from './useTripData';
 
-// Lazy: the edit forms pull in PlacePickerField's Autocomplete and the
-// date/time pickers, which most visits (read-only browsing) never touch.
-// EditDialog is only ever mounted once `state` is set below, so this defers
-// that weight until the first pencil/add tap.
+// Lazy: both pull in PlacePickerField's Autocomplete and the date/time
+// pickers, which most visits (read-only browsing) never touch. Whichever
+// one `state` below calls for is only ever mounted once a pencil/draft tap
+// actually happens, so this defers that weight until then.
 const EditDialog = lazy(() =>
   import('../components/edit/EditDialog').then((m) => ({ default: m.EditDialog })),
+);
+const EditEventWizard = lazy(() =>
+  import('../components/wizard/EditEventWizard').then((m) => ({ default: m.EditEventWizard })),
 );
 
 export type { EditKind };
 
 type Entity = Activity | Stay | Transit;
 
+// `via` picks which of the two components above renders this state:
+// 'wizard' for a plain openEdit (the day-list pencils/side-sheet edit
+// button) walks the guided step-by-step EditEventWizard; 'flat' for
+// openFromDraft's AI-suggestion/import review renders the original
+// one-page EditDialog instead, since a draft already has every field
+// filled in for the user to check rather than a blank to fill in one step
+// at a time. openFromDraft's create sub-case (no overrideId) is 'flat' for
+// the same reason.
 type EditState =
-  | { mode: 'edit'; kind: EditKind; id: string; seed?: Entity }
-  | { mode: 'create'; kind: EditKind; entity: Entity };
+  | { mode: 'edit'; kind: EditKind; id: string; seed?: Entity; via: 'wizard' | 'flat' }
+  | { mode: 'create'; kind: EditKind; entity: Entity; via: 'flat' };
 
 // Wraps the trip page in one place both the day-list's edit pencils and the
 // activity side sheet's own edit button can reach. There's no backend this
@@ -30,14 +41,13 @@ export function EditProvider({ children }: { children: ReactNode }) {
   const { data, setData } = useTripData();
   const [state, setState] = useState<EditState | null>(null);
 
-  const openEdit = (kind: EditKind, id: string) => setState({ mode: 'edit', kind, id });
-  const openCreate = (kind: EditKind, legId: string, date: string) =>
-    setState({ mode: 'create', kind, entity: blankForKind(kind, legId, date) });
+  const openEdit = (kind: EditKind, id: string) =>
+    setState({ mode: 'edit', kind, id, via: 'wizard' });
   const openFromDraft = (kind: EditKind, draft: Entity, overrideId?: string) =>
     setState(
       overrideId
-        ? { mode: 'edit', kind, id: overrideId, seed: { ...draft, _id: overrideId } }
-        : { mode: 'create', kind, entity: draft },
+        ? { mode: 'edit', kind, id: overrideId, seed: { ...draft, _id: overrideId }, via: 'flat' }
+        : { mode: 'create', kind, entity: draft, via: 'flat' },
     );
   const closeEdit = () => setState(null);
 
@@ -77,25 +87,38 @@ export function EditProvider({ children }: { children: ReactNode }) {
     : undefined;
 
   return (
-    <EditContext.Provider
-      value={{ openEdit, openCreate, openFromDraft, deleteEntity: handleDelete }}
-    >
+    <EditContext.Provider value={{ openEdit, openFromDraft, deleteEntity: handleDelete }}>
       {children}
-      {state && data && (
+      {state && data && entity && (
         <Suspense fallback={null}>
-          <EditDialog
-            kind={state.kind}
-            entity={entity}
-            isNew={state.mode === 'create'}
-            stays={data.stays}
-            activities={data.activities}
-            transits={data.transits}
-            tripTravelers={data.trip.travelers}
-            routes={data.routes}
-            onClose={closeEdit}
-            onSave={handleSave}
-            onDelete={handleDelete}
-          />
+          {state.via === 'wizard' ? (
+            <EditEventWizard
+              kind={state.kind}
+              entity={entity}
+              stays={data.stays}
+              activities={data.activities}
+              transits={data.transits}
+              tripTravelers={data.trip.travelers}
+              routes={data.routes}
+              onClose={closeEdit}
+              onSave={handleSave}
+              onDelete={handleDelete}
+            />
+          ) : (
+            <EditDialog
+              kind={state.kind}
+              entity={entity}
+              isNew={state.mode === 'create'}
+              stays={data.stays}
+              activities={data.activities}
+              transits={data.transits}
+              tripTravelers={data.trip.travelers}
+              routes={data.routes}
+              onClose={closeEdit}
+              onSave={handleSave}
+              onDelete={handleDelete}
+            />
+          )}
         </Suspense>
       )}
     </EditContext.Provider>

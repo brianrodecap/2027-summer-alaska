@@ -3,10 +3,8 @@ import MapIcon from '@mui/icons-material/Map';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
-import Menu from '@mui/material/Menu';
-import MenuItem from '@mui/material/MenuItem';
 import Typography from '@mui/material/Typography';
-import { memo, useState } from 'react';
+import { memo } from 'react';
 
 import { deriveTitle } from '../../model/tripModel';
 import type {
@@ -16,58 +14,23 @@ import type {
   EnrichedStay,
   EnrichedTransit,
 } from '../../model/types';
-import type { EditKind } from '../../state/EditContext';
-import { useEdit } from '../../state/useEdit';
 import { useScenarioSelection } from '../../state/useTripSelections';
 import { NotesCluster } from '../shared/Notes';
 import { DayTimeline } from './DayTimeline';
 import { DayWeatherStrip } from './DayWeatherStrip';
 import { activeTitleCandidates } from './scenarioSelection';
 
-const ADD_MENU_ITEMS: { kind: EditKind; label: string }[] = [
-  { kind: 'activity', label: 'Activity' },
-  { kind: 'stay', label: 'Stay' },
-  { kind: 'transit', label: 'Transit' },
-];
-
 // The day block's own footer — lets a day that's missing something (a meal,
-// a leg of a drive, a place to sleep) grow a new Stay/Transit/Activity right
-// where it belongs, instead of only ever editing what's already there.
-// "Scenario" doesn't go through EditContext's openCreate the way the other
-// three kinds do — Scenario isn't a per-entity day-list line item the way
-// Activity/Stay/Transit are (see ScenariosDialog's own note), so it's
-// wired to its own onAddScenario callback instead.
-function AddToDayButton({ day, onAddScenario }: { day: Day; onAddScenario: (day: Day) => void }) {
-  const { openCreate } = useEdit();
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-
+// a leg of a drive, a place to sleep, a weather-branch) grow a new entry
+// right where it belongs, instead of only ever editing what's already
+// there. Launches the guided AddEventWizard directly rather than a menu of
+// entity kinds — "what are you adding?" is the wizard's own first question
+// now, not something this button has to ask up front.
+function AddToDayButton({ day, onAdd }: { day: Day; onAdd: (day: Day) => void }) {
   return (
-    <>
-      <Button startIcon={<AddIcon />} onClick={(e) => setAnchorEl(e.currentTarget)} sx={{ mt: 1 }}>
-        Add to this day
-      </Button>
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)}>
-        {ADD_MENU_ITEMS.map((item) => (
-          <MenuItem
-            key={item.kind}
-            onClick={() => {
-              setAnchorEl(null);
-              openCreate(item.kind, day.leg._id, day.date);
-            }}
-          >
-            {item.label}
-          </MenuItem>
-        ))}
-        <MenuItem
-          onClick={() => {
-            setAnchorEl(null);
-            onAddScenario(day);
-          }}
-        >
-          Scenario
-        </MenuItem>
-      </Menu>
-    </>
+    <Button startIcon={<AddIcon />} onClick={() => onAdd(day)} sx={{ mt: 1 }}>
+      Add to this day
+    </Button>
   );
 }
 
@@ -90,7 +53,7 @@ export const DayBlock = memo(function DayBlock({
   onOpenStay,
   onOpenTransit,
   onOpenMap,
-  onAddScenario,
+  onAddEvent,
 }: {
   day: Day;
   daysByDate: Map<string, Day>;
@@ -98,7 +61,7 @@ export const DayBlock = memo(function DayBlock({
   onOpenStay: (stay: EnrichedStay) => void;
   onOpenTransit: (transit: EnrichedTransit) => void;
   onOpenMap: (day: Day) => void;
-  onAddScenario: (day: Day) => void;
+  onAddEvent: (day: Day) => void;
 }) {
   const { scenarioTone } = useScenarioSelection();
   const title = deriveTitle(day.location, activeTitleCandidates(day, daysByDate, scenarioTone));
@@ -141,7 +104,7 @@ export const DayBlock = memo(function DayBlock({
           onOpenStay={onOpenStay}
           onOpenTransit={onOpenTransit}
         />
-        <AddToDayButton day={day} onAddScenario={onAddScenario} />
+        <AddToDayButton day={day} onAdd={onAddEvent} />
       </Box>
     </Box>
   );

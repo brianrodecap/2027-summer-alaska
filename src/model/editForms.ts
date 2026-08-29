@@ -416,6 +416,15 @@ export function applyTransitForm(transit: Transit, form: TransitFormState): stri
   return null;
 }
 
+// Shared by TransitEditForm and the wizard's own TransitRouteStep — a
+// route-picker <TextField select> always wants "None" first, then every
+// route alphabetized by its own display label.
+export function routeSelectOptions(routes: Route[]): { value: string; label: string }[] {
+  const options = routes.map((r) => ({ value: r._id, label: transitRouteLabel(r) }));
+  options.sort((a, b) => a.label.localeCompare(b.label));
+  return [{ value: '', label: 'None' }, ...options];
+}
+
 // ---------- Route ----------
 //
 // Route (routes.json) is reference data, not a day-list line item — a
@@ -633,4 +642,212 @@ export function applyLegForm(form: LegFormState, tripId: string): { leg: Leg } |
     images: [],
   };
   return { leg };
+}
+
+// ---------- Add/edit wizard (the day list's guided "Add to this day" flow,
+// plus the same step-by-step treatment for editing an existing Activity/
+// Stay/Transit) ----------
+//
+// The wizard's first question ("what are you adding?") answers onto a
+// WizardCategory rather than straight onto an EditKind, because Activity
+// splits into two materially different follow-ups (a plain Activity vs. a
+// meal, which additionally needs the decided/still-deciding branch) and
+// Scenario — which never went through EditKind at all, see blankScenario
+// above — joins as a fifth choice. Editing an existing entity skips that
+// first question (its EditKind is already fixed), but an existing Activity
+// still gets the smaller "is this a meal?" branch, so it can move between
+// the two without leaving the wizard.
+
+// A superset of EditKind (not an independent enum that happens to share
+// spellings) so that treating a fixed EditKind as its own WizardCategory —
+// see EditEventWizard's initial `category` state — is checked structurally
+// rather than relying on the two literal unions staying in sync by hand.
+export type WizardCategory = EditKind | 'meal' | 'scenario';
+
+export type MealDecision = 'decided' | 'undecided';
+
+export const WIZARD_CATEGORY_META: Record<WizardCategory, { label: string; helper: string }> = {
+  stay: {
+    label: 'Somewhere to sleep',
+    helper: 'A hotel, lodge, cabin, or campsite — anywhere you check in and check out of.',
+  },
+  meal: {
+    label: 'A meal',
+    helper: 'Breakfast, lunch, dinner, or a snack — even if the place is still up in the air.',
+  },
+  transit: {
+    label: 'Getting somewhere',
+    helper: 'A drive, flight, ferry, or any other leg that moves from one place to another.',
+  },
+  activity: {
+    label: 'Something to do',
+    helper: 'A hike, tour, museum, or anything else that happens at a place and a time.',
+  },
+  scenario: {
+    label: 'A weather-branch or backup plan',
+    helper: "Two versions of a day — an 'ideal' plan and the 'alternate' it falls back to.",
+  },
+};
+
+// A brand-new Activity (blankActivity's own mealType: null / options: null)
+// reads back as 'activity' here, matching the wizard's own "Something to
+// do" default.
+export function categoryForActivity(
+  form: Pick<ActivityFormState, 'mealType' | 'options'>,
+): WizardCategory {
+  return form.mealType !== '' || form.options.length > 0 ? 'meal' : 'activity';
+}
+
+export function mealDecisionForActivity(form: Pick<ActivityFormState, 'options'>): MealDecision {
+  return form.options.length > 0 ? 'undecided' : 'decided';
+}
+
+export type WizardStepId =
+  | 'category'
+  | 'mealBranch'
+  | 'stayDetails'
+  | 'stayWhen'
+  | 'transitWhere'
+  | 'transitRoute'
+  | 'transitWhen'
+  | 'activityWhat'
+  | 'activityWhen'
+  | 'activityPlace'
+  | 'extras'
+  | 'mealWhat'
+  | 'mealWhen'
+  | 'mealDecision'
+  | 'mealPlace'
+  | 'mealOptions'
+  | 'booking'
+  | 'scenarioDetails'
+  | 'review';
+
+export const WIZARD_STEP_LABEL: Record<WizardStepId, string> = {
+  category: 'What are you adding?',
+  mealBranch: 'Is this a meal?',
+  stayDetails: "Where you're staying",
+  stayWhen: 'Check-in / check-out',
+  transitWhere: 'From / to',
+  transitRoute: 'Route',
+  transitWhen: 'Departs / arrives',
+  activityWhat: 'What is it?',
+  activityWhen: 'When',
+  activityPlace: 'Place',
+  extras: 'A few more details',
+  mealWhat: 'What meal?',
+  mealWhen: 'When',
+  mealDecision: 'Do you know where yet?',
+  mealPlace: 'Where',
+  mealOptions: 'The candidates',
+  booking: 'Booking',
+  scenarioDetails: 'Scenario details',
+  review: 'Review',
+};
+
+// Only steps worth a nudge get an entry — most fields (Priority, Route
+// variant, ...) are self-explanatory enough not to need one.
+export const WIZARD_STEP_TIP: Partial<Record<WizardStepId, string>> = {
+  category: 'Pick whichever comes closest — the next questions adjust to match.',
+  mealBranch: "Meals get an extra step for whether you've picked a restaurant yet.",
+  stayDetails: 'Just a name for now — the exact address comes later if you need it.',
+  transitWhere: "Plain place names are fine; you don't need a full address.",
+  transitRoute:
+    "Picking a route with known stages fills in travel time automatically and surfaces this leg's stops on the day. Leave it as None for a simple point-to-point trip.",
+  activityWhen: 'No exact time yet? Leave Starts time blank and pick a fuzzy time of day instead.',
+  activityPlace: "Leave this blank if there's no specific real-world location.",
+  mealWhen: 'No exact time yet? Leave Starts time blank and pick a fuzzy time of day instead.',
+  mealDecision:
+    'Still choosing between a few restaurants? Say so — you can list every candidate next.',
+  mealOptions: "Add every place still in the running; each gets its own tab on the day's list.",
+  extras: "Both are optional — skip either if they don't apply.",
+  booking: "Only fill this in once there's an actual reservation or confirmation number.",
+  scenarioDetails:
+    "Ideal is the plan you're hoping for; Alternate is what this day falls back to if it doesn't pan out.",
+};
+
+// `lead` is either the category question (a brand-new entity, kind
+// undecided) or the smaller meal-branch question (editing an existing
+// Activity, kind already fixed) — the two are mutually exclusive, and
+// editing a Stay/Transit gets no lead step at all, since there's nothing
+// left to ask before its own details.
+export function wizardStepsForCategory(
+  category: WizardCategory,
+  opts: {
+    mealDecision: MealDecision;
+    hasTravelers: boolean;
+    lead: 'category' | 'mealBranch' | null;
+  },
+): WizardStepId[] {
+  const lead: WizardStepId[] = opts.lead ? [opts.lead] : [];
+  const extras: WizardStepId[] = opts.hasTravelers ? ['extras'] : [];
+  switch (category) {
+    case 'stay':
+      return [...lead, 'stayDetails', 'stayWhen', 'booking', 'review'];
+    case 'transit':
+      return [...lead, 'transitWhere', 'transitRoute', 'transitWhen', 'booking', 'review'];
+    case 'activity':
+      return [
+        ...lead,
+        'activityWhat',
+        'activityWhen',
+        'activityPlace',
+        ...extras,
+        'booking',
+        'review',
+      ];
+    case 'meal':
+      return [
+        ...lead,
+        'mealWhat',
+        'mealWhen',
+        'mealDecision',
+        opts.mealDecision === 'decided' ? 'mealPlace' : 'mealOptions',
+        ...extras,
+        'booking',
+        'review',
+      ];
+    case 'scenario':
+      return [...lead, 'scenarioDetails', 'review'];
+  }
+}
+
+// Gates a step's Next button — mirrors only the hard requirements each
+// applyXyzForm above already enforces at save time (a real start, a real
+// check-in/out, ...), so nothing here can block Save from ever being
+// reachable. Every other step (Place, Booking, the meal candidates, ...) is
+// genuinely optional and always returns true.
+export function wizardStepCanProceed(
+  stepId: WizardStepId,
+  forms: {
+    activityForm?: ActivityFormState;
+    stayForm?: StayFormState;
+    transitForm?: TransitFormState;
+    scenarioForm?: Scenario;
+  },
+): boolean {
+  switch (stepId) {
+    case 'stayWhen': {
+      const f = forms.stayForm;
+      return Boolean(f && f.checkInDate && f.checkInTime && f.checkOutDate && f.checkOutTime);
+    }
+    case 'transitWhen': {
+      const f = forms.transitForm;
+      return Boolean(
+        f && f.departsDate && f.departsTime && (f.routeId || (f.arrivesDate && f.arrivesTime)),
+      );
+    }
+    case 'activityWhat':
+    case 'mealWhat':
+      return Boolean(forms.activityForm && forms.activityForm.text.trim() !== '');
+    case 'activityWhen':
+    case 'mealWhen': {
+      const f = forms.activityForm;
+      return Boolean(f && f.startsDate && (f.startsTime || f.timeLabel));
+    }
+    case 'scenarioDetails':
+      return Boolean(forms.scenarioForm && forms.scenarioForm.label.trim() !== '');
+    default:
+      return true;
+  }
 }

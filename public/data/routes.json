@@ -10,45 +10,21 @@
     "variants": [
       {
         "tone": "direct",
-        "label": "Direct — via the (New) Glenn Highway and Parks Highway",
+        "label": "Glenn Highway and George Parks Highway",
         "places": [],
         "finalLegMinutes": 123
       },
       {
         "tone": "scenic",
-        "label": "Scenic — via the Old Glenn Highway and Parks Highway",
+        "label": "Old Glenn Highway and George Parks Highway",
         "places": [
-          {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJiUspZMCMyFYRp_UYSpwkZoM",
-              "label": "Eagle River"
-            },
-            "durationMinutes": 15
-          },
-          {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJ-8WuMUHpyFYRfPkhqA6gNuE",
-              "label": "Chugiak"
-            },
-            "durationMinutes": 10
-          },
           {
             "kind": "via",
             "place": {
-              "id": "ChIJ74oLNrLjyFYR49fH3Tczh2I",
-              "label": "Old Glenn Highway"
+              "id": "ChIJe9iB48DiyFYR0c3w5-2X6No",
+              "label": "Butte"
             },
-            "durationMinutes": 30
-          },
-          {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJCyuT6-QdyVYRUN2N53uoJr4",
-              "label": "Palmer"
-            },
-            "durationMinutes": 20
+            "durationMinutes": 0
           }
         ],
         "finalLegMinutes": 75
@@ -65,62 +41,31 @@
   {
     "_id": "route_kennecott_anchorage",
     "from": {
-      "label": "Kennecott/McCarthy"
+      "id": "ChIJ8X09aHSEs1YRhpKnyjO0wT4",
+      "label": "McCarthy"
     },
     "to": {
+      "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
       "label": "Anchorage"
     },
     "variants": [
       {
         "tone": "direct",
-        "label": "Direct — Richardson Highway to Glennallen, then the (New) Glenn Highway",
-        "places": [
-          {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJgeXeo3yPtVYRiOp0uuoG7bY",
-              "label": "Glennallen"
-            },
-            "durationMinutes": 180
-          }
-        ],
+        "label": "Richardson Highway and Glenn Highway",
+        "places": [],
         "finalLegMinutes": 345
       },
       {
         "tone": "scenic",
-        "label": "Scenic — Richardson Highway to Glennallen, then the Old Glenn Highway",
+        "label": "Richardson Highway and Old Glenn Highway",
         "places": [
-          {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJgeXeo3yPtVYRiOp0uuoG7bY",
-              "label": "Glennallen"
-            },
-            "durationMinutes": 180
-          },
-          {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJCyuT6-QdyVYRUN2N53uoJr4",
-              "label": "Palmer"
-            },
-            "durationMinutes": 200
-          },
           {
             "kind": "via",
             "place": {
-              "id": "ChIJ74oLNrLjyFYR49fH3Tczh2I",
-              "label": "Old Glenn Highway"
+              "id": "ChIJe9iB48DiyFYR0c3w5-2X6No",
+              "label": "Butte"
             },
-            "durationMinutes": 40
-          },
-          {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJiUspZMCMyFYRp_UYSpwkZoM",
-              "label": "Eagle River"
-            },
-            "durationMinutes": 15
+            "durationMinutes": 0
           }
         ],
         "finalLegMinutes": 90
@@ -145,25 +90,8 @@
     "variants": [
       {
         "tone": "direct",
-        "label": "Only practical route — the Seward Highway",
+        "label": "Seward Highway",
         "places": [
-          {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJrZNXUGx7yFYRTbgad_F100o",
-              "label": "Girdwood"
-            },
-            "durationMinutes": 45
-          },
-          {
-            "kind": "via",
-            "place": {
-              "id": "ChIJZyfB370NyFYR9QAqNUYxru4",
-              "label": "Portage Glacier / Whittier junction"
-            },
-            "note": "Anchorage–Whittier drives split off here onto the Whittier Access Road and tunnel instead of continuing south",
-            "durationMinutes": 15
-          },
           {
             "kind": "waypoint",
             "place": {
@@ -195,7 +123,7 @@
     "variants": [
       {
         "tone": "direct",
-        "label": "Only practical route — the Elliott Highway to the Dalton Highway",
+        "label": "Elliott Highway and Dalton Highway",
         "places": [
           {
             "kind": "waypoint",
@@ -236,7 +164,7 @@
     "variants": [
       {
         "tone": "direct",
-        "label": "Only practical route — the George Parks Highway",
+        "label": "George Parks Highway",
         "places": [
           {
             "kind": "waypoint",
@@ -269,7 +197,7 @@
     "variants": [
       {
         "tone": "direct",
-        "label": "Only practical route — the Richardson Highway",
+        "label": "Richardson Highway",
         "places": [],
         "finalLegMinutes": 275
       }
@@ -370,7 +298,7 @@
     "variants": [
       {
         "tone": "direct",
-        "label": "Only practical route — the Seward Highway to the Whittier Access Road",
+        "label": "Seward Highway and Whittier Access Road",
         "places": [
           {
             "kind": "waypoint",
@@ -433,6 +361,26 @@
             "durationMinutes": 0
           }
         ],
+        "finalLegMinutes": 0
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "route_new_11",
+    "from": {
+      "id": "ChIJ8X09aHSEs1YRhpKnyjO0wT4",
+      "label": "McCarthy"
+    },
+    "to": {
+      "id": "ChIJOXUaDwNEtlYRT6GRye20VB8",
+      "label": "Valdez"
+    },
+    "variants": [
+      {
+        "tone": "direct",
+        "label": "Edgerton Highway and Richardson Highway",
+        "places": [],
         "finalLegMinutes": 0
       }
     ],

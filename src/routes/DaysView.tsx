@@ -30,14 +30,15 @@ import { FilterMenu } from '../components/day/FilterMenu';
 import { StayDetailPanel } from '../components/day/StayDetailPanel';
 import { TransitDetailPanel } from '../components/day/TransitDetailPanel';
 import { RoutesDialog } from '../components/edit/RoutesDialog';
-import { ScenarioEditDialog } from '../components/edit/ScenarioEditDialog';
 import { ScenariosDialog } from '../components/edit/ScenariosDialog';
 import { JumpToDayPicker } from '../components/pickers/JumpToDayPicker';
-import { applyScenarioDeletion, blankScenario } from '../model/editForms';
+import { AddEventWizard } from '../components/wizard/AddEventWizard';
+import { applyScenarioDeletion, COLLECTION_FOR_KIND, type EditKind } from '../model/editForms';
 import { dayHasVisibleContent } from '../model/filters';
 import { applyActivityReorder, type DragMeta } from '../model/reorder';
 import { formatTime } from '../model/tripModel';
 import type {
+  Activity,
   Day,
   EnrichedActivity,
   EnrichedMealOption,
@@ -45,6 +46,8 @@ import type {
   EnrichedTransit,
   Route,
   Scenario,
+  Stay,
+  Transit,
 } from '../model/types';
 import { useEdit } from '../state/useEdit';
 import { useTripData } from '../state/useTripData';
@@ -88,19 +91,16 @@ export function DaysView() {
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [routesOpen, setRoutesOpen] = useState(false);
   const [scenariosOpen, setScenariosOpen] = useState(false);
-  // Captured once, at the moment "Add to this day" > Scenario is clicked —
-  // not re-derived from `day` on every render, since `view.days` (and so
-  // every Day object) is rebuilt fresh on each edit; re-deriving here would
-  // hand ScenarioEditDialog a freshly-randomUUID'd draft on every unrelated
-  // re-render while it's still open.
-  const [newScenarioDraft, setNewScenarioDraft] = useState<Scenario | null>(null);
+  // The day the "Add to this day" wizard is open for — captured once, at
+  // the moment the button is clicked, not re-derived from `day` on every
+  // render, since `view.days` (and so every Day object) is rebuilt fresh on
+  // each edit; re-deriving here would reset the wizard's own in-progress
+  // state on every unrelated re-render while it's still open.
+  const [addWizardDay, setAddWizardDay] = useState<Day | null>(null);
   // A stable reference (unlike an inline arrow in the day-list map below) so
   // it doesn't defeat DayBlock's own memo on every unrelated DaysView
   // re-render.
-  const handleAddScenario = useCallback(
-    (day: Day) => setNewScenarioDraft(blankScenario(day.leg._id, day.date)),
-    [],
-  );
+  const handleAddEvent = useCallback((day: Day) => setAddWizardDay(day), []);
   const [askAIOpen, setAskAIOpen] = useState(false);
   // Flat while it's the page's own leading edge, shadowed only once content
   // has scrolled in underneath it — the M3 app-bar spec's own elevation rule.
@@ -261,7 +261,7 @@ export function DaysView() {
                 onOpenStay={stayPanel.onOpen}
                 onOpenTransit={transitPanel.onOpen}
                 onOpenMap={setMapDay}
-                onAddScenario={handleAddScenario}
+                onAddEvent={handleAddEvent}
               />
             ))}
           </Stack>
@@ -375,21 +375,36 @@ export function DaysView() {
           }
         />
       )}
-      {data && newScenarioDraft && (
-        <ScenarioEditDialog
-          scenario={newScenarioDraft}
-          isNew
+      {data && addWizardDay && (
+        <AddEventWizard
+          legId={addWizardDay.leg._id}
+          date={addWizardDay.date}
+          stays={data.stays}
+          activities={data.activities}
+          transits={data.transits}
+          scenarios={data.scenarios}
           legs={data.legs}
-          allScenarios={data.scenarios}
-          onClose={() => setNewScenarioDraft(null)}
-          onSave={(scenario: Scenario) => {
+          tripTravelers={data.trip.travelers}
+          routes={data.routes}
+          onClose={() => setAddWizardDay(null)}
+          onSaveEntity={(kind: EditKind, entity: Activity | Stay | Transit) => {
+            const collection = COLLECTION_FOR_KIND[kind];
+            setData(
+              (prev) => ({
+                ...prev,
+                [collection]: [...(prev[collection] as (Activity | Stay | Transit)[]), entity],
+              }),
+              [collection],
+            );
+            setAddWizardDay(null);
+          }}
+          onSaveScenario={(scenario: Scenario) => {
             setData(
               (prev) => ({ ...prev, scenarios: [...prev.scenarios, scenario] }),
               ['scenarios'],
             );
-            setNewScenarioDraft(null);
+            setAddWizardDay(null);
           }}
-          onDelete={() => setNewScenarioDraft(null)}
         />
       )}
     </Box>
