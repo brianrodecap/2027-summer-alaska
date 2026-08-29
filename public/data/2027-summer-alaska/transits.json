@@ -390,5 +390,174 @@
         "caption": "West portal of the Anton Anderson Memorial Tunnel"
       }
     ]
+  },
+  {
+    "_id": "transit_redoubt_out",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": "scenario_lc_d3_redoubt_ideal",
+    "status": "planning",
+    "mode": "flight",
+    "from": {
+      "label": "Rust's Flying Service"
+    },
+    "to": {
+      "label": "Redoubt Bay Lodge"
+    },
+    "departsAt": "2027-07-12T08:30",
+    "arrivesAt": "2027-07-12T09:30",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
+    "images": []
+  },
+  {
+    "_id": "transit_redoubt_return",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": "scenario_lc_d3_redoubt_ideal",
+    "status": "planning",
+    "mode": "flight",
+    "from": {
+      "label": "Redoubt Bay Lodge"
+    },
+    "to": {
+      "label": "Rust's Flying Service"
+    },
+    "departsAt": "2027-07-12T15:00",
+    "arrivesAt": "2027-07-12T16:30",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": null,
+    "images": []
+  },
+  {
+    "_id": "transit_katmai_out",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": "scenario_lc_d1_ideal",
+    "status": "planning",
+    "mode": "flight",
+    "from": {
+      "label": "Rust's Flying Service"
+    },
+    "to": {
+      "label": "Katmai — Brooks Camp"
+    },
+    "departsAt": "2027-07-10T08:00",
+    "arrivesAt": "2027-07-10T09:00",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
+    "images": []
+  },
+  {
+    "_id": "transit_katmai_return",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": "scenario_lc_d1_ideal",
+    "status": "planning",
+    "mode": "flight",
+    "from": {
+      "label": "Katmai — Brooks Camp"
+    },
+    "to": {
+      "label": "Rust's Flying Service"
+    },
+    "departsAt": "2027-07-10T16:30",
+    "arrivesAt": "2027-07-10T18:00",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": null,
+    "images": []
+  },
+  {
+    "_id": "transit_portalsworth_out",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": "scenario_lc_d2_portalsworth_ideal",
+    "status": "planning",
+    "mode": "flight",
+    "from": {
+      "label": "Lake Clark Air"
+    },
+    "to": {
+      "label": "Port Alsworth"
+    },
+    "departsAt": "2027-07-11T08:00",
+    "arrivesAt": "2027-07-11T09:00",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": {
+      "status": "planning",
+      "confirmationNumber": null,
+      "cost": null
+    },
+    "images": []
+  },
+  {
+    "_id": "transit_portalsworth_return",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": "scenario_lc_d2_portalsworth_ideal",
+    "status": "planning",
+    "mode": "flight",
+    "from": {
+      "label": "Port Alsworth"
+    },
+    "to": {
+      "label": "Lake Clark Air"
+    },
+    "departsAt": "2027-07-11T14:30",
+    "arrivesAt": "2027-07-11T16:00",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": null,
+    "images": []
+  },
+  {
+    "_id": "transit_denali_bus_tour",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "bus-tour",
+    "from": {
+      "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
+      "label": "Denali Bus Depot"
+    },
+    "to": {
+      "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
+      "label": "Denali Bus Depot"
+    },
+    "departsAt": "2027-06-28T09:00",
+    "arrivesAt": "2027-06-28T13:30",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": {
+      "status": "planning",
+      "cost": null,
+      "confirmationNumber": null
+    },
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Every_Road-_Denali_(7945497984).jpg",
+        "credit": "Photo by Tim Rains / NPS, public domain",
+        "caption": "Denali National Park tundra landscape"
+      },
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_Wilderness_Access_Center.jpg",
+        "credit": "Photo by Pat W. Sanders / CC BY 2.0",
+        "caption": "Denali Wilderness Access Center, Denali National Park"
+      }
+    ]
   }
 ]

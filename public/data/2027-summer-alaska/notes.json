@@ -64,8 +64,8 @@
     "text": "Exact departure time is assigned when you book, not fixed at 9am. Hop-off privileges anywhere beyond Savage River for wildlife viewing and photos; reboard any later green bus. Round trip is about 4.5 hours to the current Mile 43 turnaround.",
     "concerns": [
       {
-        "entity": "activity",
-        "id": "act_jun28_3"
+        "entity": "transit",
+        "id": "transit_denali_bus_tour"
       }
     ],
     "images": []

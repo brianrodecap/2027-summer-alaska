@@ -519,4 +519,173 @@ describe('applyActivityReorder', () => {
     expect(byId('checkin')?.startAt).toBe('2027-06-27T11:00');
     expect(byId('westrib')?.startAt).toBe('2027-06-27T12:00'); // untouched — no overlap
   });
+
+  // The Homer-Spit bug: dragging a duration-less Activity upward onto the
+  // day's very first real anchor used to force it to take over that
+  // anchor's exact startAt even though it had no duration to lend — with
+  // nothing genuinely displaced, that was just an unrequested time change.
+  // A drag onto the front of a container should still move legId/scenarioId
+  // (and array position for tie-break purposes) without touching a
+  // duration-less Activity's own time at all.
+  it('dragging a duration-less Activity onto the front of a container leaves its own time untouched', () => {
+    const flattened: SequenceItem[] = [
+      {
+        type: 'section',
+        activities: [
+          activity({ _id: 'drive', startAt: '2027-07-13T06:00' }),
+          activity({ _id: 'explore', startAt: '2027-07-13T10:45' }),
+          activity({ _id: 'lunch', startAt: '2027-07-13T12:00' }),
+        ],
+      },
+    ];
+    const dragMeta = buildDragMeta(flattened, null, '2027-07-13T00:00');
+    const driveMeta = dragMeta.find((d) => d.activityId === 'drive')!;
+    expect(driveMeta.before?.kind).toBe('front-takeover');
+    expect(driveMeta.before?.endAt).toBe('2027-07-13T06:00');
+
+    const dropMeta: DragMeta = { ...driveMeta, ...driveMeta.before };
+
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [],
+      activities: [
+        activity({ _id: 'drive', startAt: '2027-07-13T06:00' }),
+        activity({ _id: 'explore', startAt: '2027-07-13T10:45', scenarioId: 'bonus' }),
+        activity({ _id: 'lunch', startAt: '2027-07-13T12:00', scenarioId: 'bonus' }),
+      ],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+
+    const next = applyActivityReorder(data, dropMeta, 'explore', '2027-07-13T00:00');
+    const byId = (id: string) => next.activities.find((a) => a._id === id);
+    expect(byId('explore')?.startAt).toBe('2027-07-13T10:45'); // unchanged
+    expect(byId('explore')?.scenarioId).toBeNull(); // still moves out of the scenario
+    expect(byId('drive')?.startAt).toBe('2027-07-13T06:00'); // untouched, no cascade
+    expect(byId('lunch')?.startAt).toBe('2027-07-13T12:00'); // untouched, no cascade
+  });
+
+  // The same front-of-container drop still forces a takeover when the
+  // dragged Activity genuinely has duration to occupy the slot with — this
+  // is exactly the pre-existing checkin/flightseeing precedent, just phrased
+  // against the new 'front-takeover' kind rather than the old unconditional
+  // rule, to pin down that this fix didn't regress it.
+  it('still forces a takeover onto the front of a container when the dragged Activity has real duration', () => {
+    const flattened: SequenceItem[] = [
+      {
+        type: 'section',
+        activities: [
+          activity({ _id: 'checkin', startAt: '2027-06-27T09:00' }),
+          activity({ _id: 'flightseeing', startAt: '2027-06-27T09:30', durationMinutes: 120 }),
+        ],
+      },
+    ];
+    const dragMeta = buildDragMeta(flattened, null, '2027-06-27T00:00');
+    const checkinMeta = dragMeta.find((d) => d.activityId === 'checkin')!;
+    expect(checkinMeta.before?.kind).toBe('front-takeover');
+
+    const dropMeta: DragMeta = { ...checkinMeta, ...checkinMeta.before };
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [],
+      activities: [
+        activity({ _id: 'checkin', startAt: '2027-06-27T09:00' }),
+        activity({ _id: 'flightseeing', startAt: '2027-06-27T09:30', durationMinutes: 120 }),
+      ],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+
+    const next = applyActivityReorder(data, dropMeta, 'flightseeing', '2027-06-27T00:00');
+    const byId = (id: string) => next.activities.find((a) => a._id === id);
+    expect(byId('flightseeing')?.startAt).toBe('2027-06-27T09:00');
+    expect(byId('checkin')?.startAt).toBe('2027-06-27T11:00');
+  });
+
+  // DayTimeline's own EmptyDropZone (a freshly-added, still-empty Scenario's
+  // "Nothing here yet — drag an activity in" placeholder) builds exactly
+  // this DragMeta shape — no real anchor to take a time from (endAt: null,
+  // same convention as a mid-stay "Staying" row), just a scenarioId/legId to
+  // hand the dropped Activity. Mirrors the "Check-out on a day with no real
+  // top-level content" case above, just assigning a scenarioId instead of
+  // clearing one.
+  it('dropping an Activity onto an empty scenario’s own drop zone assigns its scenarioId/legId, keeping its own time', () => {
+    const emptyZoneMeta: DragMeta = {
+      id: 'empty-2027-06-01::scenario-new',
+      index: 0,
+      endAt: null,
+      containerDayStart: DAY_START,
+      legId: 'legB',
+      scenarioId: 'scenario-new',
+      activityId: null,
+      anchorActivityId: null,
+      kind: 'after',
+    };
+
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [],
+      activities: [activity({ _id: 'act1', legId: 'legA', startAt: '2027-06-01T08:00' })],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+
+    const next = applyActivityReorder(data, emptyZoneMeta, 'act1', DAY_START, true);
+    const moved = next.activities.find((a) => a._id === 'act1');
+    expect(moved?.scenarioId).toBe('scenario-new');
+    expect(moved?.legId).toBe('legB');
+    expect(moved?.startAt).toBe('2027-06-01T08:00'); // untouched — no real anchor to take a time from
+  });
+
+  // The actual Homer-Spit bug: dragging an Activity out of a scenario tab
+  // into the top-level day list (or between two scenario tabs) is a
+  // cross-container drag — DragMeta's own `index`/`before` are only
+  // meaningful within the single buildDragMeta call that produced them, so
+  // whatever row dnd-kit's `over` names in the *other* container is not a
+  // legitimate "insert after this exact instant" anchor. DaysView.tsx
+  // detects this via dnd-kit's own sortable.containerId and passes
+  // `crossContainer: true` — this should leave the dragged Activity's own
+  // time completely untouched, only moving its legId/scenarioId.
+  it('a cross-container drop never forces a time takeover, regardless of the anchor it lands near', () => {
+    const flattened: SequenceItem[] = [
+      {
+        type: 'section',
+        activities: [activity({ _id: 'drive', startAt: '2027-07-13T06:00' })],
+      },
+    ];
+    const dragMeta = buildDragMeta(flattened, null, '2027-07-13T00:00');
+    const driveMeta = dragMeta.find((d) => d.activityId === 'drive')!;
+
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [],
+      activities: [
+        activity({ _id: 'drive', startAt: '2027-07-13T06:00' }),
+        activity({ _id: 'explore', startAt: '2027-07-13T10:45', scenarioId: 'bonus' }),
+      ],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+
+    // Dragged from inside a scenario tab, dropped directly onto 'drive' in
+    // the top-level container — the same plain DragMeta a same-container
+    // "insert after this row" drop would use, but flagged cross-container.
+    const next = applyActivityReorder(data, driveMeta, 'explore', '2027-07-13T00:00', true);
+    const byId = (id: string) => next.activities.find((a) => a._id === id);
+    expect(byId('explore')?.startAt).toBe('2027-07-13T10:45'); // unchanged
+    expect(byId('explore')?.scenarioId).toBeNull(); // still moves out of the scenario
+    expect(byId('drive')?.startAt).toBe('2027-07-13T06:00'); // untouched, no cascade
+  });
 });

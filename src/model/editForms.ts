@@ -21,6 +21,7 @@ import type {
   Priority,
   Ref,
   Route,
+  Scenario,
   Stay,
   TimeLabel,
   Transit,
@@ -454,6 +455,104 @@ export function applyRouteForm(route: Route, form: Route): string | null {
   route.to = { ...form.to, label: toLabel };
   route.variants = form.variants;
   return null;
+}
+
+// ---------- Scenario (the day list's own "Manage scenarios" dialog) ----------
+//
+// Scenario, like Route, isn't a day-list line item scoped to one entity id —
+// it's reference data an Activity/Transit points at via scenarioId, and
+// several scenarios can share a followsScenarioDate/requiresScenarioId chain
+// that spans days. So this mirrors routeFormFrom/applyRouteForm's shape (the
+// form state is a working clone of the Scenario itself) rather than the
+// per-field FormState shape Activity/Stay/Transit use.
+
+// `date` seeds a brand-new scenario's own placement hint (Scenario.date) so
+// it shows up on the day it was added from even before it has any
+// Activity/Transit of its own — left unset for ScenariosDialog's own "Add
+// scenario" flow, which isn't scoped to any one day.
+export function blankScenario(legId: string, date?: string): Scenario {
+  return {
+    _id: crypto.randomUUID(),
+    legId,
+    tone: 'ideal',
+    label: '',
+    icon: 'help_outline',
+    date,
+    images: [],
+  };
+}
+
+export function scenarioFormFrom(scenario: Scenario): Scenario {
+  return structuredClone(scenario);
+}
+
+// A requiresScenarioId/parentScenarioId pointing at a scenario that's since
+// been deleted would silently break that scenario's own tab gating (see
+// scenarioSelection.ts), so both get scrubbed of any id no longer present in
+// allScenarios — same fail-closed spirit as a Route's required non-negative
+// durations, just applied to id references instead of numbers.
+export function applyScenarioForm(
+  scenario: Scenario,
+  form: Scenario,
+  allScenarios: Scenario[],
+): string | null {
+  const label = form.label.trim();
+  if (!label) return 'Needs a label.';
+  if (!form.legId) return 'Needs a leg.';
+  const validIds = new Set(allScenarios.map((s) => s._id));
+  validIds.delete(scenario._id);
+  scenario.legId = form.legId;
+  scenario.tone = form.tone;
+  scenario.label = label;
+  scenario.icon = form.icon || 'help_outline';
+  scenario.followsScenarioDate = form.followsScenarioDate || undefined;
+  const requires = (form.requiresScenarioId ?? []).filter((id) => validIds.has(id));
+  scenario.requiresScenarioId = requires.length ? requires : undefined;
+  scenario.parentScenarioId =
+    form.parentScenarioId && validIds.has(form.parentScenarioId)
+      ? form.parentScenarioId
+      : undefined;
+  return null;
+}
+
+// tripModel.ts's buildScenarioTracks only ever builds a track for a
+// scenarioId still present in scenariosById (see its own top-of-function
+// comment) — and day.sequence is built from everything *without* a
+// scenarioId. So an Activity/Transit left pointing at a deleted scenario
+// doesn't fall back into the day's plain sequence, it silently stops
+// rendering anywhere. Deleting a scenario therefore has to clear that
+// scenarioId back to null on every Activity/Transit that carried it (same
+// fail-closed spirit applyScenarioForm already applies to
+// requires/parentScenarioId above), not just remove the scenario itself.
+export function applyScenarioDeletion<
+  T extends { scenarios: Scenario[]; activities: Activity[]; transits: Transit[] },
+>(data: T, scenarioId: string): T {
+  return {
+    ...data,
+    scenarios: data.scenarios
+      .filter((s) => s._id !== scenarioId)
+      .map((s) => {
+        const requires = (s.requiresScenarioId ?? []).filter((id) => id !== scenarioId);
+        const parentScenarioId = s.parentScenarioId === scenarioId ? undefined : s.parentScenarioId;
+        if (
+          requires.length === (s.requiresScenarioId ?? []).length &&
+          parentScenarioId === s.parentScenarioId
+        ) {
+          return s;
+        }
+        return {
+          ...s,
+          requiresScenarioId: requires.length ? requires : undefined,
+          parentScenarioId,
+        };
+      }),
+    activities: data.activities.map((a) =>
+      a.scenarioId === scenarioId ? { ...a, scenarioId: null } : a,
+    ),
+    transits: data.transits.map((t) =>
+      t.scenarioId === scenarioId ? { ...t, scenarioId: null } : t,
+    ),
+  };
 }
 
 // ---------- Trip (the trips list's own Add/Edit trip dialog) ----------

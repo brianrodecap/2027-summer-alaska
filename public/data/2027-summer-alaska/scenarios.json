@@ -295,7 +295,6 @@
     "tone": "ideal",
     "label": "Flight goes",
     "icon": "flight_takeoff",
-    "followsScenarioDate": "2027-07-10",
     "requiresScenarioId": [
       "scenario_lc_d1_ideal"
     ],
@@ -307,33 +306,8 @@
     "tone": "alternate",
     "label": "Grounded",
     "icon": "cloud",
-    "followsScenarioDate": "2027-07-10",
     "requiresScenarioId": [
       "scenario_lc_d1_ideal"
-    ],
-    "images": []
-  },
-  {
-    "_id": "scenario_lc_d2_katmai_retry_ideal",
-    "legId": "leg_parks",
-    "tone": "ideal",
-    "label": "Katmai retry — flight goes",
-    "icon": "flight_takeoff",
-    "followsScenarioDate": "2027-07-10",
-    "requiresScenarioId": [
-      "scenario_lc_d1_alt"
-    ],
-    "images": []
-  },
-  {
-    "_id": "scenario_lc_d2_katmai_retry_alt",
-    "legId": "leg_parks",
-    "tone": "alternate",
-    "label": "Grounded again",
-    "icon": "cloud",
-    "followsScenarioDate": "2027-07-10",
-    "requiresScenarioId": [
-      "scenario_lc_d1_alt"
     ],
     "images": []
   },
@@ -343,7 +317,6 @@
     "tone": "ideal",
     "label": "Flight goes",
     "icon": "flight_takeoff",
-    "followsScenarioDate": "2027-07-11",
     "requiresScenarioId": [
       "scenario_lc_d2_portalsworth_ideal"
     ],
@@ -355,109 +328,8 @@
     "tone": "alternate",
     "label": "Grounded",
     "icon": "cloud",
-    "followsScenarioDate": "2027-07-11",
     "requiresScenarioId": [
       "scenario_lc_d2_portalsworth_ideal"
-    ],
-    "images": []
-  },
-  {
-    "_id": "scenario_lc_d3_portalsworth_ideal",
-    "legId": "leg_parks",
-    "tone": "ideal",
-    "label": "Flight goes",
-    "icon": "flight_takeoff",
-    "followsScenarioDate": "2027-07-11",
-    "requiresScenarioId": [
-      "scenario_lc_d2_portalsworth_alt",
-      "scenario_lc_d2_katmai_retry_ideal"
-    ],
-    "images": []
-  },
-  {
-    "_id": "scenario_lc_d3_portalsworth_alt",
-    "legId": "leg_parks",
-    "tone": "alternate",
-    "label": "Grounded",
-    "icon": "cloud",
-    "followsScenarioDate": "2027-07-11",
-    "requiresScenarioId": [
-      "scenario_lc_d2_portalsworth_alt",
-      "scenario_lc_d2_katmai_retry_ideal"
-    ],
-    "images": []
-  },
-  {
-    "_id": "scenario_lc_d3_katmai_retry2_ideal",
-    "legId": "leg_parks",
-    "tone": "ideal",
-    "label": "Katmai retry — flight goes",
-    "icon": "flight_takeoff",
-    "followsScenarioDate": "2027-07-11",
-    "requiresScenarioId": [
-      "scenario_lc_d2_katmai_retry_alt"
-    ],
-    "images": []
-  },
-  {
-    "_id": "scenario_lc_d3_katmai_retry2_alt",
-    "legId": "leg_parks",
-    "tone": "alternate",
-    "label": "Grounded again",
-    "icon": "cloud",
-    "followsScenarioDate": "2027-07-11",
-    "requiresScenarioId": [
-      "scenario_lc_d2_katmai_retry_alt"
-    ],
-    "images": []
-  },
-  {
-    "_id": "scenario_lc_d4_free",
-    "legId": "leg_parks",
-    "tone": "ideal",
-    "label": "Bonus day — all three secured",
-    "icon": "redeem",
-    "followsScenarioDate": "2027-07-12",
-    "requiresScenarioId": [
-      "scenario_lc_d3_redoubt_ideal"
-    ],
-    "images": []
-  },
-  {
-    "_id": "scenario_lc_d4_redoubt_final",
-    "legId": "leg_parks",
-    "tone": "ideal",
-    "label": "Final attempt — Redoubt Bay",
-    "icon": "flight_takeoff",
-    "followsScenarioDate": "2027-07-12",
-    "requiresScenarioId": [
-      "scenario_lc_d3_redoubt_alt",
-      "scenario_lc_d3_portalsworth_ideal"
-    ],
-    "images": []
-  },
-  {
-    "_id": "scenario_lc_d4_portalsworth_final",
-    "legId": "leg_parks",
-    "tone": "alternate",
-    "label": "Final attempt — Port Alsworth",
-    "icon": "cloud",
-    "followsScenarioDate": "2027-07-12",
-    "requiresScenarioId": [
-      "scenario_lc_d3_portalsworth_alt",
-      "scenario_lc_d3_katmai_retry2_ideal"
-    ],
-    "images": []
-  },
-  {
-    "_id": "scenario_lc_d4_katmai_final",
-    "legId": "leg_parks",
-    "tone": "alternate",
-    "label": "Final attempt — Katmai",
-    "icon": "cloud",
-    "followsScenarioDate": "2027-07-12",
-    "requiresScenarioId": [
-      "scenario_lc_d3_katmai_retry2_alt"
     ],
     "images": []
   }

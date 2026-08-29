@@ -15,7 +15,7 @@ import { useScenarioSelection } from '../../state/useTripSelections';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
 import { DayTimeline } from './DayTimeline';
-import { resolveActiveTrack, visibleTracksFor } from './scenarioSelection';
+import { resolveActiveTrack } from './scenarioSelection';
 
 // A branching day's scenarios each become one chip; the chip group picks
 // which branch's own timeline shows below. Each scenario's notes render once
@@ -31,6 +31,7 @@ import { resolveActiveTrack, visibleTracksFor } from './scenarioSelection';
 export function ScenarioTabsSection({
   day,
   tracks,
+  visible,
   topLevel,
   daysByDate,
   onOpenActivity,
@@ -39,6 +40,11 @@ export function ScenarioTabsSection({
 }: {
   day: Day;
   tracks: ScenarioTrack[];
+  // Pre-filtered by the caller (ScenarioTabsNode, via visibleTracksFor) —
+  // it already needs this same list for its own emptiness check before
+  // rendering this component at all, so it's passed through rather than
+  // recomputed here.
+  visible: ScenarioTrack[];
   topLevel: boolean;
   daysByDate: Map<string, Day>;
   onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
@@ -48,9 +54,6 @@ export function ScenarioTabsSection({
   const { scenarioTone, selectScenario } = useScenarioSelection();
   const [localIndex, setLocalIndex] = useState(0);
 
-  if (!tracks.length) return null;
-
-  const visible = visibleTracksFor(tracks, daysByDate, scenarioTone, topLevel);
   if (!visible.length) return null;
 
   const activeTrack = topLevel

@@ -142,6 +142,11 @@ export function materialIcon(name: string | null | undefined): IconComponent {
   return (name && ICONS[name]) || HelpOutlineIcon;
 }
 
+// Every icon name this registry can render, alphabetized for the Scenario
+// edit form's icon picker — there's no domain-specific order for an icon
+// list the way chronological order fits a date-based dropdown.
+export const ICON_NAMES = Object.keys(ICONS).sort();
+
 // Picking an icon *component* based on render-time data (a name string that
 // varies by row/scenario/dining format) and then rendering it as a JSX tag
 // (`<Icon .../>`) trips react-hooks/static-components — React can't tell the

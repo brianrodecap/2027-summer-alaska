@@ -40,6 +40,7 @@ import {
   useFilterSelection,
   useMealOptionSelection,
   useRouteToneSelection,
+  useScenarioSelection,
 } from '../../state/useTripSelections';
 import { BookingChip } from '../shared/BookingChip';
 import { splitNotes } from '../shared/noteKind';
@@ -48,6 +49,7 @@ import { RowLeadingDot } from '../shared/RowLeadingDot';
 import { ActivityLeading, ActivityRow } from './ActivityRow';
 import { RouteVariantTabs } from './RouteVariantTabs';
 import { RowMenu } from './RowMenu';
+import { visibleTracksFor } from './scenarioSelection';
 import { ScenarioTabsSection } from './ScenarioTabsSection';
 
 // Every route variant's stages/arrival were already walked once in
@@ -318,6 +320,16 @@ const ScenarioTabsNode = memo(function ScenarioTabsNode({
   onOpenStay: (stay: EnrichedStay) => void;
   onOpenTransit: (transit: EnrichedTransit) => void;
 }) {
+  const { scenarioTone } = useScenarioSelection();
+  // Mirrors ScenarioTabsSection's own emptiness check — a gated child track
+  // whose requires-list no longer matches the followed day's active branch
+  // (or a track list that's simply gone, e.g. right after the scenario it
+  // held was deleted) has nothing to show. Bail before rendering any of the
+  // TimelineItem chrome, same as TransitStageNode does for a non-active
+  // route variant's stage — otherwise the dot/connector renders with an
+  // empty panel underneath.
+  const visible = visibleTracksFor(tracks, daysByDate, scenarioTone, topLevel);
+  if (!visible.length) return null;
   return (
     <TimelineItem>
       <TimelineSeparator>
@@ -328,6 +340,7 @@ const ScenarioTabsNode = memo(function ScenarioTabsNode({
         <ScenarioTabsSection
           day={day}
           tracks={tracks}
+          visible={visible}
           topLevel={topLevel}
           daysByDate={daysByDate}
           onOpenActivity={onOpenActivity}
@@ -362,17 +375,19 @@ function SortableRow({
       attributes: ReturnType<typeof useSortable>['attributes'];
       listeners: ReturnType<typeof useSortable>['listeners'];
     } | null,
+    isOver: boolean,
   ) => ReactElement;
 }) {
-  const { setNodeRef, transform, transition, attributes, listeners, isDragging } = useSortable({
-    id: dragId,
-    // A plain boolean here disables both draggable AND droppable (dnd-kit's
-    // own normalizeDisabled) — a Stay/Transit row must stay non-draggable
-    // but still droppable, so an Activity can land immediately before/after
-    // it (see this function's own note above).
-    disabled: { draggable: disabled, droppable: false },
-    data: dragMeta,
-  });
+  const { setNodeRef, transform, transition, attributes, listeners, isDragging, isOver } =
+    useSortable({
+      id: dragId,
+      // A plain boolean here disables both draggable AND droppable (dnd-kit's
+      // own normalizeDisabled) — a Stay/Transit row must stay non-draggable
+      // but still droppable, so an Activity can land immediately before/after
+      // it (see this function's own note above).
+      disabled: { draggable: disabled, droppable: false },
+      data: dragMeta,
+    });
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition: transition ?? undefined,
@@ -380,10 +395,49 @@ function SortableRow({
   };
   return (
     <Box ref={setNodeRef} style={style}>
-      {children(disabled ? null : { attributes, listeners })}
+      {children(disabled ? null : { attributes, listeners }, isOver)}
     </Box>
   );
 }
+
+// The droppable placeholder for a sequence with nothing in it yet — most
+// notably a freshly-added, still-empty Scenario tab (DaysView's "Add to
+// this day" > Scenario), which otherwise has no rendered row at all to drop
+// an Activity onto. Built on SortableRow (disabled to drag, not to drop) so
+// it shares the same DragMeta-shaped `data`/useSortable wiring every other
+// row uses, and gets picked up by DaysView.tsx's handleDragEnd the same way.
+const EmptyDropZone = memo(function EmptyDropZone({
+  id,
+  meta,
+  scenario,
+}: {
+  id: string;
+  meta: DragMeta;
+  scenario: boolean;
+}) {
+  return (
+    <SortableRow dragId={id} disabled dragMeta={meta}>
+      {(_dragHandleProps, isOver) => (
+        <Box
+          sx={{
+            border: '1px dashed',
+            borderColor: isOver ? 'primary.main' : 'divider',
+            borderRadius: 1.5,
+            py: 2,
+            px: 2,
+            textAlign: 'center',
+            bgcolor: isOver ? 'primary.container' : 'transparent',
+            transition: 'background-color 120ms, border-color 120ms',
+          }}
+        >
+          <Typography variant="body2" color="text.secondary">
+            {scenario ? 'Nothing here yet — drag an activity in' : 'Nothing scheduled yet.'}
+          </Typography>
+        </Box>
+      )}
+    </SortableRow>
+  );
+});
 
 export const DayTimeline = memo(function DayTimeline({
   day,
@@ -419,6 +473,7 @@ export const DayTimeline = memo(function DayTimeline({
   // to pull out.
   const { checkOuts, rest, checkIns } = splitOutStayBoundaries(filtered);
   const flattened = [...checkOuts, ...rest, ...checkIns];
+  const dayStart = `${day.date}T00:00`;
 
   if (!flattened.length) {
     // Filtering everything out of an otherwise non-empty sequence renders
@@ -426,14 +481,33 @@ export const DayTimeline = memo(function DayTimeline({
     // what hides the day-block itself; "Nothing scheduled yet" stays
     // reserved for a day that's genuinely empty, filters aside.
     if (sequence.length && activeFilterTokens.size) return null;
+    // Still wrapped in a SortableContext, same as the non-empty branch below
+    // — a freshly-added, still-empty scenario (DaysView's "Add to this day"
+    // > Scenario) needs somewhere to catch a drop, and a bare early-return
+    // here would leave it with no registered droppable at all.
+    const placeholderId = `empty-${containerId}`;
+    const placeholderMeta: DragMeta = {
+      id: placeholderId,
+      index: 0,
+      endAt: null,
+      containerDayStart: dayStart,
+      legId: day.leg._id,
+      scenarioId,
+      activityId: null,
+      anchorActivityId: null,
+      kind: 'after',
+    };
     return (
-      <Typography variant="body2" color="text.secondary" sx={{ py: 1 }}>
-        Nothing scheduled yet.
-      </Typography>
+      <SortableContext
+        items={[placeholderId]}
+        strategy={verticalListSortingStrategy}
+        id={containerId}
+      >
+        <EmptyDropZone id={placeholderId} meta={placeholderMeta} scenario={scenarioId !== null} />
+      </SortableContext>
     );
   }
 
-  const dayStart = `${day.date}T00:00`;
   const dragMeta = buildDragMeta(flattened, scenarioId, dayStart);
   const dragMetaById = new Map(dragMeta.map((d) => [d.id, d]));
 
@@ -534,6 +608,29 @@ export const DayTimeline = memo(function DayTimeline({
     ];
   });
 
+  // A 'Staying' night (relation 'Staying') is lodging that bookends the
+  // whole day — it's where the day starts (waking up there) as much as
+  // where it ends (going back to sleep there), unlike Check out/Check in
+  // which each name a single real event. splitOutStayBoundaries already
+  // renders its one canonical item at the end of the day, alongside Check
+  // in (dragMeta/dnd-kit, the map/route stops, and reorder.ts's drop
+  // targeting all key off that single occurrence) — this adds a second,
+  // purely decorative copy at the very top for the "woke up here" half,
+  // outside the sortable list entirely (dragId: null, same as a
+  // scenario-tabs row) so it never becomes a second drop target or a second
+  // map/route stop for the same lodging.
+  const morningStayNodes: DayTimelineNode[] = flattened
+    .filter((item): item is StaySequenceItem => item.type === 'stay' && item.relation === 'Staying')
+    .map((item) => ({
+      key: `stay-${item.stay._id}-${day.date}-morning`,
+      dragId: null,
+      draggable: false,
+      render: (isLast: boolean) => (
+        <StayNode item={item} date={day.date} isLast={isLast} onOpen={onOpenStay} />
+      ),
+    }));
+  const allNodes = [...morningStayNodes, ...nodes];
+
   return (
     <SortableContext
       items={dragMeta.map((d) => d.id)}
@@ -561,7 +658,7 @@ export const DayTimeline = memo(function DayTimeline({
           '& .MuiTimelineContent-root': { minWidth: 0 },
         }}
       >
-        {nodes.map((node, i) => (
+        {allNodes.map((node, i) => (
           <Fragment key={node.key}>
             {node.dragId ? (
               <SortableRow
@@ -571,7 +668,7 @@ export const DayTimeline = memo(function DayTimeline({
               >
                 {(dragHandleProps) =>
                   node.render(
-                    i === nodes.length - 1,
+                    i === allNodes.length - 1,
                     dragHandleProps ? (
                       <IconButton
                         size="small"
@@ -593,7 +690,7 @@ export const DayTimeline = memo(function DayTimeline({
                 }
               </SortableRow>
             ) : (
-              node.render(i === nodes.length - 1)
+              node.render(i === allNodes.length - 1)
             )}
           </Fragment>
         ))}

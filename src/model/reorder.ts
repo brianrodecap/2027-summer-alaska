@@ -121,13 +121,25 @@ export interface DragMeta {
   scenarioId: string | null;
   activityId: string | null;
   anchorActivityId: string | null;
-  kind: 'after' | 'day-start';
+  // 'front-takeover' only ever arrives here via the `{ ...overMeta,
+  // ...overMeta.before }` spread in DaysView.tsx's handleDragEnd — a plain
+  // DragMeta built by buildDragMeta is always 'after' or 'day-start'.
+  kind: 'after' | 'day-start' | 'front-takeover';
   cascadeActivityIds?: string[];
   before?: {
     endAt: string;
     legId: string;
     anchorActivityId: string | null;
     cascadeActivityIds: string[];
+    // 'front-takeover' marks the one `before` case with no real preceding
+    // anchor at all (see beforeFieldsAt) — applyActivityReorder only honors
+    // its forced endAt/cascade when the dragged Activity actually has a
+    // real duration to occupy that slot with; a duration-less drag already
+    // sorts correctly on its own current startAt (nothing to displace), so
+    // forcing a time match there would just be a gratuitous, unrequested
+    // time change. 'after' behaves exactly like the plain (non-`before`)
+    // case elsewhere in this file.
+    kind: 'after' | 'front-takeover';
   };
 }
 
@@ -214,6 +226,7 @@ export function buildDragMeta(
         legId: preceding?.legId ?? ownLegId,
         anchorActivityId: preceding?.activityId ?? null,
         cascadeActivityIds: downstreamActivityIds(k),
+        kind: preceding ? 'after' : 'front-takeover',
       },
     };
   };
@@ -425,10 +438,41 @@ export function applyActivityReorder(
   dropMeta: DragMeta,
   activityId: string,
   dayStart: string,
+  // True when this drop crossed from one rendered Timeline into another (a
+  // scenario tab <-> the top-level day, or between two scenario tabs) —
+  // DaysView.tsx's handleDragEnd derives this from dnd-kit's own
+  // `sortable.containerId`, since DragMeta's own `index` (and therefore
+  // `before`/`movingUp`) is only ever meaningful within one buildDragMeta
+  // call. There's no reliable "genuinely earlier or later" signal to act on
+  // once a drag crosses that boundary — only legId/scenarioId (and, for
+  // tie-break purposes, array position) should change; the dragged
+  // Activity's own time carries over untouched, same as the "no real
+  // anchor" case elsewhere in this file. Without this, a cross-container
+  // drop still resolves to *some* row's plain DragMeta and forces the
+  // dragged Activity onto that row's own instant regardless of duration —
+  // this is what the reported Homer-Spit bug actually was.
+  crossContainer = false,
 ): TripData {
   const activity = data.activities.find((a) => a._id === activityId);
   if (!activity) return data;
-  const timing = resolveDropTiming(dropMeta.endAt, dayStart, activity.startAt);
+
+  // A 'front-takeover' drop (beforeFieldsAt's no-preceding-anchor fallback)
+  // only genuinely displaces anything when the dragged Activity has a real
+  // duration to occupy the front slot with. A duration-less Activity has
+  // nothing to lend, so its own current startAt already sorts correctly on
+  // its own merits (see the day-start/checkin-flightseeing precedent this
+  // deliberately leaves untouched) — forcing it to the anchor's own instant
+  // here would just be an unrequested time change with no real slot taken
+  // over, so the drop falls back to "no real anchor" behavior instead: keep
+  // the dragged Activity's own time, and don't cascade-shift anyone out of
+  // the way of a takeover that never happened.
+  const isNoOpFrontTakeover =
+    dropMeta.kind === 'front-takeover' && activityDurationMinutes(activity) == null;
+  const skipTakeover = crossContainer || isNoOpFrontTakeover;
+  const endAt = skipTakeover ? null : dropMeta.endAt;
+  const cascadeActivityIds = skipTakeover ? undefined : dropMeta.cascadeActivityIds;
+
+  const timing = resolveDropTiming(endAt, dayStart, activity.startAt);
   const updated: Activity = {
     ...activity,
     startAt: timing.startAt,
@@ -440,10 +484,10 @@ export function applyActivityReorder(
 
   let rest = data.activities.filter((a) => a._id !== activityId);
 
-  if (dropMeta.cascadeActivityIds?.length) {
+  if (cascadeActivityIds?.length) {
     rest = cascadeShift(
       rest,
-      dropMeta.cascadeActivityIds,
+      cascadeActivityIds,
       dropMeta.kind === 'day-start'
         ? { kind: 'uniform', shiftMinutes: activityDurationMinutes(activity) ?? 1 }
         : { kind: 'minimal', startAfter: activityEndAt(timing.startAt, updated) },

@@ -203,6 +203,13 @@ export interface Scenario {
   tone: 'ideal' | 'alternate';
   label: string;
   icon: string;
+  // Placement hint for a scenario with no Activity/Transit of its own yet —
+  // consulted only while that's true (buildScenarioTracks in tripModel.ts),
+  // so the day list has somewhere to show its (empty, droppable) tab. Once a
+  // real Activity/Transit points its scenarioId here, that content's own
+  // date takes over as the real anchor and this is ignored, same as
+  // Activity.date is superseded the moment a real startAt exists.
+  date?: string;
   followsScenarioDate?: string;
   requiresScenarioId?: string[];
   parentScenarioId?: string;

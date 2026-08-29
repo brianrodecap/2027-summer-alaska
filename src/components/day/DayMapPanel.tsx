@@ -44,8 +44,13 @@ function collectMealPlaces(
   return result;
 }
 
-// dayMapEmbedUrl is null when the day has nothing resolvable to map yet
-// (e.g. a still-unplanned day with no places named anywhere).
+// dayMapEmbedUrl comes back empty when the day has nothing resolvable to
+// map yet (e.g. a still-unplanned day with no places named anywhere). It can
+// also come back with more than one entry — a day that crosses a genuine
+// relocation (a one-way flight/ferry with no same-day return, e.g. Anchorage
+// -> Kotzebue) spans two road networks with nothing connecting them, so it's
+// shown as separate maps rather than one embed pretending a drivable route
+// exists where there isn't one.
 export function DayMapPanel({
   day,
   open,
@@ -65,7 +70,7 @@ export function DayMapPanel({
     routeTones,
     mealPlaces: collectMealPlaces(day, mealOptionIndex),
   };
-  const url = dayMapEmbedUrl(day, selections);
+  const urls = dayMapEmbedUrl(day, selections);
   const fullRouteUrls = dayFullRouteUrls(day, selections);
 
   return (
@@ -77,15 +82,30 @@ export function DayMapPanel({
         </IconButton>
       </DialogTitle>
       <DialogContent dividers>
-        {url ? (
-          <Box
-            component="iframe"
-            src={url}
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            title={`Map for ${day.dateLabel}`}
-            sx={{ width: '100%', height: 320, border: 0, borderRadius: 1 }}
-          />
+        {urls.length > 0 ? (
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            {urls.map((url, i) => (
+              <Box key={url}>
+                {urls.length > 1 && (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ display: 'block', mb: 0.5 }}
+                  >
+                    Leg {i + 1} of {urls.length}
+                  </Typography>
+                )}
+                <Box
+                  component="iframe"
+                  src={url}
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  title={`Map for ${day.dateLabel}${urls.length > 1 ? ` (leg ${i + 1})` : ''}`}
+                  sx={{ width: '100%', height: 320, border: 0, borderRadius: 1 }}
+                />
+              </Box>
+            ))}
+          </Box>
         ) : (
           <Typography variant="body2" color="text.secondary">
             Nothing resolvable to map yet for this day.

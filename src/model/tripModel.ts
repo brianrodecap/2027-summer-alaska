@@ -852,13 +852,25 @@ function collapseActivityRuns(ordered: PreSequenceItem[]): SequenceItem[] {
   return sequence;
 }
 
-// scenarioAnchorKey (from buildScenarioTracks below) is the earliest real key
-// among everything in the day's branching content — passed in here so a
-// single { type: 'scenario-tabs' } placeholder can be merge-sorted into the
+// scenarioAnchorKey (from buildScenarioTracks below) is the day's
+// ideal-or-first candidate track's own earliest real key — passed in here so
+// a single { type: 'scenario-tabs' } placeholder can be merge-sorted into the
 // backbone at that real chronological position, instead of the tab group
 // always trailing every other event on the day regardless of when its own
 // content actually falls (see DayTimeline, which now just renders whatever
 // lands at that slot rather than special-casing the tab group's placement).
+// It's scoped to just that one default-shown track (the same "planned by
+// default" convention idealOrFirstTrack/dayMapStops/deriveSummary already
+// use), not the earliest moment across every sibling candidate: a sibling
+// track's own content can start well before the one actually displayed, and
+// anchoring to that borrowed, earlier moment would leave anything landing in
+// the gap between it and the *displayed* track's own real start looking like
+// it renders after the whole tab group despite its own time being earlier.
+// The tradeoff is the reverse of the nested case below: switching which tab
+// is live-selected can leave the badge's own backbone position stale
+// relative to newly-displayed content, since that pick isn't known yet at
+// this pure, selection-independent build step — accepted deliberately here
+// in exchange for a placement that's normally correct.
 function buildSequence(
   dayStays: EnrichedStay[],
   transitsForSequence: EnrichedTransit[],
@@ -909,7 +921,6 @@ function buildScenarioTracks(
     ...transitsForSequence.map((t) => t.scenarioId).filter((id): id is string => Boolean(id)),
     ...dayActivities.map((a) => a.scenarioId).filter((id): id is string => Boolean(id)),
   ]);
-  let anchorKey: string | null = null;
 
   function trackOwnItems(
     scenarioId: string,
@@ -954,13 +965,12 @@ function buildScenarioTracks(
   function buildTrack(scenarioId: string, scenario: Scenario): ScenarioTrack {
     const items = trackOwnItems(scenarioId);
     const ownKey = earliestKey(items);
-    if (ownKey !== null && (anchorKey === null || ownKey < anchorKey)) anchorKey = ownKey;
 
     const children: ScenarioTrack[] = [];
     for (const [childId, childScenario] of scenariosById) {
-      if (childScenario.parentScenarioId === scenarioId && present.has(childId)) {
-        children.push(buildTrack(childId, childScenario));
-      }
+      if (childScenario.parentScenarioId !== scenarioId) continue;
+      const childTrack = includableTrack(childId, childScenario, date);
+      if (childTrack) children.push(childTrack);
     }
     const realAnchorKey = children.length
       ? earliestKey(
@@ -997,12 +1007,48 @@ function buildScenarioTracks(
     };
   }
 
+  // A scenarioId can land in `present` without actually putting anything on
+  // *this* date: transitsForSequence (buildDay) folds in every Transit that
+  // merely departed yesterday, purely so an overnight one's post-midnight
+  // stages/Arrive still render today — a same-day Transit that doesn't
+  // cross midnight is still in that list, contributing its scenarioId to
+  // `present` while resolving to zero real items today (trackOwnItems'
+  // transitItemsOnDate returns nothing for it on this date). Building the
+  // track and checking its own sequence, rather than trusting `present`
+  // alone, is what tells that apart from a genuinely-empty, deliberately
+  // date-anchored new scenario (blankScenario's own `date` field) — the
+  // former must stay invisible (nothing to show, and no droppable target
+  // makes sense for content that isn't actually missing), the latter is
+  // exactly the case DayTimeline's own EmptyDropZone exists for.
+  function includableTrack(
+    scenarioId: string,
+    scenario: Scenario,
+    forDate: string,
+  ): ScenarioTrack | null {
+    const isNewEmpty = !present.has(scenarioId) && scenario.date === forDate;
+    if (!present.has(scenarioId) && !isNewEmpty) return null;
+    const track = buildTrack(scenarioId, scenario);
+    if (!track.sequence.length && !isNewEmpty) return null;
+    return track;
+  }
+
   const tracks: ScenarioTrack[] = [];
   for (const [scenarioId, scenario] of scenariosById) {
     if (scenario.parentScenarioId) continue; // picked up as a child, above
-    if (!present.has(scenarioId)) continue;
-    tracks.push(buildTrack(scenarioId, scenario));
+    const track = includableTrack(scenarioId, scenario, date);
+    if (track) tracks.push(track);
   }
+  // A brand-new scenario with no Activity/Transit of its own yet has no real
+  // anchorKey to offer (ownKey comes back null from an empty trackOwnItems) —
+  // falling back to dayStart, rather than leaving anchorKey null, is what
+  // keeps buildSequence below willing to splice the { type: 'scenario-tabs' }
+  // placeholder into today's sequence at all; a null anchorKey there is read
+  // as "no scenario content exists today," which would silently drop the
+  // whole tab group (including any *other*, real-content sibling track)
+  // whenever the ideal-or-first pick happens to be the still-empty one.
+  const anchorKey = tracks.length
+    ? (idealOrFirstTrack({ scenarioTracks: tracks })?.anchorKey ?? dayStart)
+    : null;
   return { tracks, anchorKey };
 }
 
@@ -1097,6 +1143,26 @@ export function sectionActivitiesDeep(sequence: SequenceItem[]): EnrichedActivit
   });
 }
 
+// A single track's own priority-activity candidates, plus whatever its
+// nested scenario-tabs split (if any) contributes — resolveNested decides
+// which nested track(s) that comes from, so this same walk serves both the
+// build-time "planned" convention (plannedTrackCandidates below, which
+// falls through nested siblings) and a live-selection-aware caller
+// (scenarioSelection.ts's ownActiveCandidates, which follows exactly the
+// currently-active nested track) without duplicating the own-activities/
+// find-scenario-tabs-item shape twice.
+export function ownTrackCandidates(
+  track: ScenarioTrack,
+  resolveNested: (tracks: ScenarioTrack[]) => EnrichedActivity[],
+): EnrichedActivity[] {
+  const own = sectionActivities(track.sequence).filter((a) => a.priority);
+  const tabs = track.sequence.find(
+    (i): i is ScenarioTabsSequenceItem => i.type === 'scenario-tabs',
+  );
+  const nested = tabs?.tracks?.length ? resolveNested(tabs.tracks) : [];
+  return [...own, ...nested];
+}
+
 // Tries a group of sibling tracks ideal-tone-first (same convention as
 // idealOrFirstTrack), recursing into any nested scenario-tabs split each
 // track contains — but if the preferred track's own chain carries no
@@ -1113,12 +1179,7 @@ function plannedTrackCandidates(tracks: ScenarioTrack[]): EnrichedActivity[] {
   const ideal = idealOrFirstTrack({ scenarioTracks: tracks });
   const ordered = ideal ? [ideal, ...tracks.filter((t) => t !== ideal)] : tracks;
   for (const track of ordered) {
-    const own = sectionActivities(track.sequence).filter((a) => a.priority);
-    const tabs = track.sequence.find(
-      (i): i is ScenarioTabsSequenceItem => i.type === 'scenario-tabs',
-    );
-    const nested = tabs?.tracks?.length ? plannedTrackCandidates(tabs.tracks) : [];
-    const candidates = [...own, ...nested];
+    const candidates = ownTrackCandidates(track, plannedTrackCandidates);
     if (candidates.length) return candidates;
   }
   return [];
@@ -1131,7 +1192,11 @@ function titleCandidates(day: Pick<Day, 'scenarioTracks' | 'sequence'>): Enriche
   return [...fixed, ...plannedTrackCandidates(day.scenarioTracks)];
 }
 
-function deriveTitle(location: string, candidates: EnrichedActivity[]): string {
+// Exported so a live-selection-aware caller (DayBlock, via
+// scenarioSelection.ts's activeTitleCandidates) can join its own candidate
+// list the same way day.title's build-time default does, rather than
+// duplicating the priority-rank/tie-join rule.
+export function deriveTitle(location: string, candidates: EnrichedActivity[]): string {
   if (!candidates.length) return location;
   const topRank = Math.max(...candidates.map((a) => PRIORITY_RANK[a.priority as string]));
   return candidates
@@ -1158,9 +1223,14 @@ function deriveTitle(location: string, candidates: EnrichedActivity[]): string {
 // or a mid-afternoon check-in land ahead of an 8am breakfast, checkout always
 // sorts first and check-in always last: each reads as "leaving here"/"staying
 // here tonight" context for the day rather than a scheduled event competing
-// with the timeline between them. Shared by the visible day list (DayTimeline)
-// and dayMapStops below (so the computed map's last stop is always tonight's
-// actual lodging, not wherever check-in's raw timestamp happened to sort).
+// with the timeline between them. A 'Staying' night (no check-in/check-out
+// event today) reads the same way as check-in — "this is where tonight ends
+// up" — so it groups with check-in rather than sitting wherever its
+// synthetic dayStart anchor (stayEventKey) would otherwise sort it, which
+// was always the very top of the day. Shared by the visible day list
+// (DayTimeline) and dayMapStops below (so the computed map's last stop is
+// always tonight's actual lodging, not wherever check-in's raw timestamp
+// happened to sort).
 export function splitOutStayBoundaries(sequence: SequenceItem[]): {
   checkOuts: SequenceItem[];
   rest: SequenceItem[];
@@ -1169,7 +1239,9 @@ export function splitOutStayBoundaries(sequence: SequenceItem[]): {
   const checkOuts = sequence.filter(
     (item) => item.type === 'stay' && item.relation === 'Check out',
   );
-  const checkIns = sequence.filter((item) => item.type === 'stay' && item.relation === 'Check in');
+  const checkIns = sequence.filter(
+    (item) => item.type === 'stay' && (item.relation === 'Check in' || item.relation === 'Staying'),
+  );
   const rest = sequence.filter((item) => !checkOuts.includes(item) && !checkIns.includes(item));
   return { checkOuts, rest, checkIns };
 }
@@ -1217,20 +1289,20 @@ function sequenceMapLabels(
   const labels: string[] = [];
   for (const item of sequence) {
     // A 'Staying' item (every night of a multi-night Stay that isn't the
-    // actual arrival/departure day) is deliberately excluded even when
-    // lodging.name exists — dayFullRouteStops below already only anchors on
-    // Check out/Check in boundaries, and a bare lodging name geocoded as
-    // free text is exactly the "no canonical id/coords" shape this trip's
-    // data model otherwise requires for real-world places (data-model.html's
-    // Route entity note). It silently works for a fixed hotel, whose name
-    // happens to geocode near itself, but fails hard for a Stay with no
-    // fixed point at all — a cruise ship mid-voyage (lodging.placeId: null)
-    // — where Google's classic embed resolves the free-text ship name to
-    // the cruise line's corporate HQ address instead, plotting a fictional
-    // thousands-of-miles driving route on a day that's really just shore
-    // excursions. Dropping it here leaves those real, place-id-backed stops
-    // as the map's actual start/end.
-    if (item.type === 'stay' && item.relation !== 'Staying' && item.stay.lodging?.name) {
+    // actual arrival/departure day) only counts as a map stop when its
+    // lodging carries a real placeId — a fixed hotel/lodge, whose name
+    // geocodes reliably on its own. A Stay with no fixed point at all — a
+    // cruise ship mid-voyage (lodging.placeId: null) — stays excluded even
+    // on a 'Staying' night: Google's classic embed resolves the free-text
+    // ship name to the cruise line's corporate HQ address instead, plotting
+    // a fictional thousands-of-miles driving route on a day that's really
+    // just shore excursions. Check in/Check out/Overnight stay on the map
+    // by name regardless of placeId, same as before.
+    if (
+      item.type === 'stay' &&
+      item.stay.lodging?.name &&
+      (item.relation !== 'Staying' || item.stay.lodging.placeId)
+    ) {
       labels.push(item.stay.lodging.name);
     } else if (item.type === 'transit-boundary') {
       labels.push((item.phase === 'depart' ? item.transit.from : item.transit.to).label);
@@ -1282,26 +1354,147 @@ function expandScenarioTabs(sequence: SequenceItem[], track: ScenarioTrack | nul
   });
 }
 
+// A same-day "there and back" excursion — a floatplane day trip, a shuttle
+// bus past a private-vehicle closure like Denali's — shows up in a resolved
+// sequence as a pair of non-'drive' Transit boundaries: an outbound `depart`
+// whose `to` matches a later `arrive`'s own `from`. Returns each such pair's
+// own [outboundIdx, returnIdx] span. Shared by drivableRuns below, which
+// uses it to both drop each pair's own interior (the remote destination, and
+// anything that happened there) and recognize that a pair's *outer*
+// boundary — the outbound depart and the return arrive, both firmly on the
+// drivable side (the floatplane dock, the tour depot) — isn't a break in the
+// day's own drivable network, unlike a genuine one-way relocation.
+function findExcursionPairs(sequence: SequenceItem[]): Array<[number, number]> {
+  const pairs: Array<[number, number]> = [];
+  let outboundIdx: number | null = null;
+  let awaitedReturnLabel: string | null = null;
+  sequence.forEach((item, i) => {
+    if (item.type !== 'transit-boundary' || item.transit.mode === 'drive') return;
+    if (outboundIdx === null) {
+      // Not currently inside a pending excursion — only a 'depart' can open
+      // one; an 'arrive' with nothing pending is either a genuine
+      // relocation's arrival, or the day's very first non-'drive' Transit —
+      // drivableRuns below is what actually tells those apart.
+      if (item.phase === 'depart') {
+        outboundIdx = i;
+        awaitedReturnLabel = item.transit.to.label;
+      }
+      return;
+    }
+    // Already inside a pending excursion — only an 'arrive' whose own
+    // `from` matches where the outbound leg went closes it. Everything else
+    // along the way (the outbound's own arrival at that destination, the
+    // return leg's own departure from it, any interior Activities) stays
+    // inside the span once it closes — including a same-mode 'depart' here,
+    // which is the *return* leg's departure, not a fresh excursion.
+    if (item.phase === 'arrive' && item.transit.from.label === awaitedReturnLabel) {
+      pairs.push([outboundIdx, i]);
+      outboundIdx = null;
+      awaitedReturnLabel = null;
+    }
+  });
+  return pairs;
+}
+
+// Splits a resolved sequence into the maximal chronological runs that are
+// all mutually reachable by driving, dropping each same-day excursion's own
+// interior (findExcursionPairs above) along the way. A genuine relocation —
+// a non-'drive' Transit boundary that isn't part of any same-day excursion
+// pair, e.g. the one-way Anchorage -> Kotzebue flight — starts a brand new
+// run: its own `to` was never visited earlier in the current run, so
+// nothing before it and nothing after it are on the same road network, and
+// a single driving route (or the classic embed's single origin/destination
+// pair) can never legitimately span across it. An excursion's own outer
+// boundary doesn't split anything, since both ends are the same real,
+// already-drivable point (the dock you left from and the one you land back
+// at) — only its interior gets dropped. Shared by dayMapStops and
+// dayFullRouteStops so both agree on how many separate maps/routes a day
+// actually needs, and what belongs in each one.
+function drivableRuns(sequence: SequenceItem[]): SequenceItem[][] {
+  const pairs = findExcursionPairs(sequence);
+  const pairStarts = new Set(pairs.map(([start]) => start));
+  const pairEnds = new Set(pairs.map(([, end]) => end));
+  const insideExcursionInterior = (i: number) => pairs.some(([start, end]) => i > start && i < end);
+
+  const runs: SequenceItem[][] = [[]];
+  sequence.forEach((item, i) => {
+    if (insideExcursionInterior(i)) return;
+    const isGenuineRelocation =
+      item.type === 'transit-boundary' &&
+      item.transit.mode !== 'drive' &&
+      !pairStarts.has(i) &&
+      !pairEnds.has(i);
+    // An unpaired 'arrive' is landing somewhere new — nothing in the
+    // current (about-to-be-closed) run is reachable from here, so it opens
+    // the next run instead of joining this one.
+    if (isGenuineRelocation && item.phase === 'arrive') runs.push([]);
+    runs[runs.length - 1].push(item);
+    // An unpaired 'depart' is the last drivable thing before leaving the
+    // road network entirely — it stays in this run, which then closes.
+    if (isGenuineRelocation && item.phase === 'depart') runs.push([]);
+  });
+  return runs.filter((run) => run.length > 0);
+}
+
 // A branching day maps only its planned (ideal, or first) track by default —
 // same "planned by default" convention deriveSummary/deriveTitle already
 // use — rather than plotting both weather branches' places onto one
 // confusing route, unless selections names a live scenario/meal choice to
 // follow instead (see selectedTrack/resolveActivityPlace above).
-export function dayMapStops(day: Day, selections: DaySelections = {}): string[] {
+//
+// Shared by dayMapStops and dayFullRouteStops below: both split a day's
+// sequence into drivable runs (drivableRuns above), then bookend the FIRST
+// run with the Stay's own checkout/morning-anchor and the LAST with its
+// check-in — even when a relocation elsewhere in the day has split the
+// middle into more than one run — before collapsing immediate repeats (e.g.
+// a Transit arriving exactly where the next Activity already is; a real
+// detour back to an earlier place later in the day still keeps both
+// listings, just not the same stop twice in a row) and dropping any run left
+// empty once bookended. Only how a sequence maps into stops (mapSequence)
+// and how two stops compare as "the same place" (sameStop) differ between
+// the two callers — one wants plain labels, the other place-id-carrying
+// RouteStops.
+function bookendedRunSegments<T>(
+  day: Day,
+  selections: DaySelections,
+  mapSequence: (sequence: SequenceItem[]) => T[],
+  sameStop: (a: T, b: T) => boolean,
+): T[][] {
   const { checkOuts, rest, checkIns } = splitOutStayBoundaries(day.sequence);
   const track = selectedTrack(day, selections.scenarioTone);
-  const all = [
-    ...sequenceMapLabels(checkOuts, selections.mealPlaces),
-    ...sequenceMapLabels(expandScenarioTabs(rest, track), selections.mealPlaces),
-    ...sequenceMapLabels(checkIns, selections.mealPlaces),
-  ];
-  // Collapses immediate repeats (e.g. a Transit arriving exactly where the
-  // next Activity already is) — a real detour back to an earlier place later
-  // in the day still keeps both listings, just not the same stop twice in a row.
-  return all.filter((label, i) => label !== all[i - 1]);
+  // A 'Staying' night (splitOutStayBoundaries groups it into checkIns
+  // alongside a real Check in) is where the day both starts and ends — you
+  // left there this morning as much as you're going back there tonight —
+  // unlike Check in, which only ever happens once, in the evening. Relisting
+  // it here too puts that same lodging at the very front of the day's first
+  // run as well, so it reads as the actual there-and-back loop it is instead
+  // of starting from wherever the first real activity happens to be.
+  const morningStay = checkIns.filter(
+    (item) => item.type === 'stay' && item.relation === 'Staying',
+  );
+  const runs = drivableRuns(expandScenarioTabs(rest, track));
+  const segments = (runs.length ? runs : [[]]).map((run) => mapSequence(run));
+  segments[0] = [...mapSequence(morningStay), ...mapSequence(checkOuts), ...segments[0]];
+  segments[segments.length - 1] = [...segments[segments.length - 1], ...mapSequence(checkIns)];
+  return segments
+    .map((stops) => stops.filter((stop, i) => i === 0 || !sameStop(stop, stops[i - 1])))
+    .filter((stops) => stops.length > 0);
 }
 
-// Only ever plots the day's first and last stop as a route, never the ones
+// Returns one stop-list per drivable run (drivableRuns above) — almost
+// always just one, but a day that crosses a genuine relocation (a one-way
+// flight/ferry with no same-day return, e.g. Anchorage -> Kotzebue) can't
+// honestly be plotted as a single route, so it comes back as more than one.
+export function dayMapStops(day: Day, selections: DaySelections = {}): string[][] {
+  return bookendedRunSegments(
+    day,
+    selections,
+    (sequence) => sequenceMapLabels(sequence, selections.mealPlaces),
+    (a, b) => a === b,
+  );
+}
+
+// Only ever plots each run's own first and last stop, never the ones
 // between — verified by hand against this trip's own multi-stop days: this
 // keyless embed (maps.google.com/maps?...&output=embed, which redirects to
 // the un-keyed google.com/maps/embed?origin=mfe&pb=... behind the scenes)
@@ -1309,16 +1502,18 @@ export function dayMapStops(day: Day, selections: DaySelections = {}): string[] 
 // waypoints via daddr's "+to:" chaining silently mis-geocodes one of them
 // nowhere near Alaska, once sending the drawn route on a fictional 300-hour
 // detour through the Lower 48. A start→end route is still a real, useful
-// "where does today go" answer; every stop in between is already right there
-// in the day's own timeline.
-export function dayMapEmbedUrl(day: Day, selections: DaySelections = {}): string | null {
-  const stops = dayMapStops(day, selections);
-  if (!stops.length) return null;
-  if (stops.length === 1)
-    return `https://maps.google.com/maps?q=${encodeURIComponent(stops[0])}&output=embed`;
-  const start = encodeURIComponent(stops[0]);
-  const end = encodeURIComponent(stops[stops.length - 1]);
-  return `https://maps.google.com/maps?saddr=${start}&daddr=${end}&output=embed`;
+// "where does this leg of the day go" answer; every stop in between is
+// already right there in the day's own timeline. One URL per drivable run
+// (dayMapStops above) — almost always one, but never a single embed spanning
+// a relocation with no road between its two ends.
+export function dayMapEmbedUrl(day: Day, selections: DaySelections = {}): string[] {
+  return dayMapStops(day, selections).map((stops) => {
+    if (stops.length === 1)
+      return `https://maps.google.com/maps?q=${encodeURIComponent(stops[0])}&output=embed`;
+    const start = encodeURIComponent(stops[0]);
+    const end = encodeURIComponent(stops[stops.length - 1]);
+    return `https://maps.google.com/maps?saddr=${start}&daddr=${end}&output=embed`;
+  });
 }
 
 // ---------- day full-route link — a second, non-embedded map action shown
@@ -1353,6 +1548,17 @@ const MAX_ROUTE_WAYPOINTS = 9;
 interface RouteStop {
   label: string;
   placeId: string | null;
+  // Whether this label is trustworthy enough to route Directions through as
+  // a *middle* waypoint even without a resolved placeId (see
+  // dayFullRouteUrls' own candidate filter below) — true for a Stay's
+  // lodging or an Activity's place, which data-model.html requires to
+  // always name one specific point even before that point's Google Place ID
+  // gets looked up (e.g. "Rust's Flying Service"); false for a Transit's
+  // bare from/to, which can legitimately be a whole city or highway
+  // junction ("Anchorage") — precise enough as the day's own first/last
+  // stop, but too broad a target for Directions to snap to mid-route.
+  // Defaults true; only the transit-boundary call site below passes false.
+  trustedAsWaypoint: boolean;
 }
 
 // A stop's routable identity: always a label (Directions URL stops are text
@@ -1366,10 +1572,11 @@ function routeStop(
     | null
     | undefined,
   fallbackLabel?: string,
+  trustedAsWaypoint = true,
 ): RouteStop | null {
   const label = placeLike?.label ?? placeLike?.name ?? fallbackLabel ?? null;
   if (!label) return null;
-  return { label, placeId: placeLike?.id ?? placeLike?.placeId ?? null };
+  return { label, placeId: placeLike?.id ?? placeLike?.placeId ?? null, trustedAsWaypoint };
 }
 
 // A routed Transit's live-selected tone: whichever the reader has actually
@@ -1387,7 +1594,11 @@ export function activeRouteTone(
 
 // Same chronological order as dayMapStops (checkouts, the day's own
 // sequence, the planned scenario track, checkins), but every stop keeps its
-// place id when it has one so dayFullRouteUrls can route through it precisely.
+// place id when it has one so dayFullRouteUrls can route through it
+// precisely, and — same as dayMapStops — comes back as one RouteStop[] per
+// drivable run (drivableRuns above) rather than a single flat list, so a
+// genuine relocation never gets bridged by a link that has no real road to
+// offer.
 //
 // selections extends the { scenarioTone, mealPlaces } shape dayMapStops
 // takes with a third live choice this link also has to honor: routeTones
@@ -1396,20 +1607,33 @@ export function activeRouteTone(
 // away from the model's own default. All three fall back to their own model
 // default (routeInfo.selectedTone; idealOrFirstTrack; the first
 // place-bearing option) for whatever a caller didn't supply.
-function dayFullRouteStops(day: Day, selections: DaySelections = {}): RouteStop[] {
-  const { checkOuts, rest, checkIns } = splitOutStayBoundaries(day.sequence);
-  const track = selectedTrack(day, selections.scenarioTone);
-  const stops: RouteStop[] = [];
-  const pushStay = (item: SequenceItem) => {
-    if (item.type !== 'stay') return;
-    const stop = routeStop(item.stay.lodging ?? undefined);
-    if (stop) stops.push(stop);
-  };
-  const pushSequence = (sequence: SequenceItem[]) => {
+function dayFullRouteStops(day: Day, selections: DaySelections = {}): RouteStop[][] {
+  const pushSequence = (stops: RouteStop[], sequence: SequenceItem[]) => {
     for (const item of sequence) {
-      if (item.type === 'transit-boundary') {
+      if (item.type === 'stay') {
+        // Same placeId gate as sequenceMapLabels above — a 'Staying' night
+        // with no fixed point (a cruise ship mid-voyage) shouldn't route
+        // through its own free-text name every day at sea; Check out/Check
+        // in still do, unconditionally.
+        if (item.relation === 'Staying' && !item.stay.lodging?.placeId) continue;
+        const stop = routeStop(item.stay.lodging ?? undefined);
+        if (stop) stops.push(stop);
+      } else if (item.type === 'transit-boundary') {
         const place = item.phase === 'depart' ? item.transit.from : item.transit.to;
-        const stop = routeStop(place);
+        // Trusted exactly when the movement itself is scheduled/chartered
+        // (mode !== 'drive': a flight, a tour bus) — that kind of transport
+        // always has one exact departure/arrival point (an airport, a
+        // depot), unlike a 'drive' Transit's from/to, which can legitimately
+        // be a whole city ("Anchorage") with no one correct point to route a
+        // waypoint through. This never reintroduces an excursion's own
+        // remote destination as a waypoint — drivableRuns above already
+        // drops that boundary event (and everything inside it) before
+        // pushSequence ever sees it; what's left here is only an
+        // excursion's *outer* boundary, which is drivable by construction,
+        // or a genuine relocation's own boundary, which is always its own
+        // run's first or last stop (never a mid-run waypoint) by the same
+        // logic.
+        const stop = routeStop(place, undefined, item.transit.mode !== 'drive');
         if (stop) stops.push(stop);
       } else if (item.type === 'transit-stage') {
         // day.sequence carries every route variant's stages (see
@@ -1432,10 +1656,12 @@ function dayFullRouteStops(day: Day, selections: DaySelections = {}): RouteStop[
       }
     }
   };
-  checkOuts.forEach(pushStay);
-  pushSequence(expandScenarioTabs(rest, track));
-  checkIns.forEach(pushStay);
-  return stops.filter((stop, i) => i === 0 || stop.label !== stops[i - 1].label);
+  const mapSequence = (sequence: SequenceItem[]) => {
+    const stops: RouteStop[] = [];
+    pushSequence(stops, sequence);
+    return stops;
+  };
+  return bookendedRunSegments(day, selections, mapSequence, (a, b) => a.label === b.label);
 }
 
 function buildDirectionsUrl(
@@ -1462,35 +1688,41 @@ function buildDirectionsUrl(
   return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
 
-// A day with more real stops than one link can hold (see
+// A run with more real stops than one link can hold (see
 // MAX_ROUTE_WAYPOINTS) gets split into consecutive links instead of picking
 // which stops to drop: each link's destination becomes the next link's
 // origin, so every stop still ends up in some link, in the same
-// chronological order, just spread across more than one tap.
+// chronological order, just spread across more than one tap. Applied
+// independently per drivable run (dayFullRouteStops above), so a genuine
+// relocation always gets its own separate link(s) too — never one link
+// straddling a gap with no road in it.
 export function dayFullRouteUrls(day: Day, selections: DaySelections = {}): string[] {
-  const stops = dayFullRouteStops(day, selections);
-  if (stops.length < 2) return [];
-  const first = stops[0];
-  const last = stops[stops.length - 1];
-  // Only a stop with a real placeId is precise enough to route through — a
-  // city-level label like "Anchorage" (a Transit's from/to with no
-  // placeId, per data-model.html) is too ambiguous to trust as a waypoint,
-  // even though it's fine as a link's own origin/destination. Those skip
-  // this filter — they're essential regardless of whether they resolved to
-  // a place id — and pass their id via the separate _place_id parameter
-  // instead (see the section header comment above for why it can't just
-  // live inline).
-  const candidates = stops.slice(1, -1).filter((stop) => stop.placeId);
-  const points = [first, ...candidates, last];
-  const urls: string[] = [];
-  let originIndex = 0;
-  while (originIndex < points.length - 1) {
-    const destinationIndex = Math.min(originIndex + MAX_ROUTE_WAYPOINTS + 1, points.length - 1);
-    const waypoints = points.slice(originIndex + 1, destinationIndex);
-    urls.push(buildDirectionsUrl(points[originIndex], points[destinationIndex], waypoints));
-    originIndex = destinationIndex;
-  }
-  return urls;
+  return dayFullRouteStops(day, selections).flatMap((stops) => {
+    if (stops.length < 2) return [];
+    const first = stops[0];
+    const last = stops[stops.length - 1];
+    // A middle waypoint needs either a real placeId or a trustworthy label
+    // (RouteStop.trustedAsWaypoint — a Stay/Activity's own place, always one
+    // specific point per data-model.html, even before its Google Place ID
+    // gets looked up) to be precise enough to route through. A city-level
+    // label like "Anchorage" (a Transit's from/to with no placeId) is too
+    // ambiguous to trust as a waypoint, even though it's fine as a link's
+    // own origin/destination — those skip this filter entirely, essential
+    // regardless of whether they resolved to a place id, and pass their id
+    // via the separate _place_id parameter instead (see the section header
+    // comment above for why it can't just live inline).
+    const candidates = stops.slice(1, -1).filter((stop) => stop.placeId || stop.trustedAsWaypoint);
+    const points = [first, ...candidates, last];
+    const urls: string[] = [];
+    let originIndex = 0;
+    while (originIndex < points.length - 1) {
+      const destinationIndex = Math.min(originIndex + MAX_ROUTE_WAYPOINTS + 1, points.length - 1);
+      const waypoints = points.slice(originIndex + 1, destinationIndex);
+      urls.push(buildDirectionsUrl(points[originIndex], points[destinationIndex], waypoints));
+      originIndex = destinationIndex;
+    }
+    return urls;
+  });
 }
 
 function buildDay(

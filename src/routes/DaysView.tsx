@@ -8,6 +8,7 @@ import {
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
+import AltRouteIcon from '@mui/icons-material/AltRoute';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
@@ -29,7 +30,10 @@ import { FilterMenu } from '../components/day/FilterMenu';
 import { StayDetailPanel } from '../components/day/StayDetailPanel';
 import { TransitDetailPanel } from '../components/day/TransitDetailPanel';
 import { RoutesDialog } from '../components/edit/RoutesDialog';
+import { ScenarioEditDialog } from '../components/edit/ScenarioEditDialog';
+import { ScenariosDialog } from '../components/edit/ScenariosDialog';
 import { JumpToDayPicker } from '../components/pickers/JumpToDayPicker';
+import { applyScenarioDeletion, blankScenario } from '../model/editForms';
 import { dayHasVisibleContent } from '../model/filters';
 import { applyActivityReorder, type DragMeta } from '../model/reorder';
 import { formatTime } from '../model/tripModel';
@@ -40,6 +44,7 @@ import type {
   EnrichedStay,
   EnrichedTransit,
   Route,
+  Scenario,
 } from '../model/types';
 import { useEdit } from '../state/useEdit';
 import { useTripData } from '../state/useTripData';
@@ -82,6 +87,20 @@ export function DaysView() {
   const transitPanel = useDetailPanel<EnrichedTransit>((id) => openEdit('transit', id));
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [routesOpen, setRoutesOpen] = useState(false);
+  const [scenariosOpen, setScenariosOpen] = useState(false);
+  // Captured once, at the moment "Add to this day" > Scenario is clicked —
+  // not re-derived from `day` on every render, since `view.days` (and so
+  // every Day object) is rebuilt fresh on each edit; re-deriving here would
+  // hand ScenarioEditDialog a freshly-randomUUID'd draft on every unrelated
+  // re-render while it's still open.
+  const [newScenarioDraft, setNewScenarioDraft] = useState<Scenario | null>(null);
+  // A stable reference (unlike an inline arrow in the day-list map below) so
+  // it doesn't defeat DayBlock's own memo on every unrelated DaysView
+  // re-render.
+  const handleAddScenario = useCallback(
+    (day: Day) => setNewScenarioDraft(blankScenario(day.leg._id, day.date)),
+    [],
+  );
   const [askAIOpen, setAskAIOpen] = useState(false);
   // Flat while it's the page's own leading edge, shadowed only once content
   // has scrolled in underneath it — the M3 app-bar spec's own elevation rule.
@@ -144,6 +163,21 @@ export function DaysView() {
   // `overMeta`'s is what tells the two apart: dragging upward past a row
   // means the intent was to land before it, so the row's own `before`
   // field (reorder.ts's DragMeta) is used instead of its plain fields.
+  //
+  // That index comparison is only meaningful within one buildDragMeta call,
+  // though — each rendered Timeline (the top-level day, and each scenario
+  // tab) builds its own DragMeta array with its own 0-based `index`, so
+  // comparing indices across two different ones is comparing unrelated
+  // numbers. `@dnd-kit/sortable`'s useSortable stamps every row's
+  // `data.current` with its own `sortable.containerId` alongside our
+  // DragMeta fields (see its SortableData type) — that, not our own
+  // `index`, is what actually identifies which rendered Timeline a row
+  // belongs to, so it's what detects a drag that crossed from one into
+  // another. applyActivityReorder needs to know this: without it, a
+  // cross-container drop still resolves to some row's plain DragMeta and
+  // forces the dragged Activity onto that row's own instant regardless of
+  // duration, which is exactly how dragging an Activity out of a scenario
+  // tab used to scramble its displayed time.
   const handleDragEnd = (event: DragEndEvent) => {
     setDraggingId(null);
     const { active, over } = event;
@@ -152,11 +186,19 @@ export function DaysView() {
     const overMeta = over.data.current as DragMeta | undefined;
     if (!activeMeta?.activityId || !overMeta) return;
     const activityId = activeMeta.activityId;
-    const movingUp = activeMeta.index > overMeta.index;
+    const activeContainerId = (active.data.current as { sortable?: { containerId: unknown } })
+      ?.sortable?.containerId;
+    const overContainerId = (over.data.current as { sortable?: { containerId: unknown } })?.sortable
+      ?.containerId;
+    const crossContainer = activeContainerId !== overContainerId;
+    const movingUp = !crossContainer && activeMeta.index > overMeta.index;
     const dropMeta: DragMeta =
       movingUp && overMeta.before ? { ...overMeta, ...overMeta.before } : overMeta;
     const dayStart = dropMeta.containerDayStart;
-    setData((prev) => applyActivityReorder(prev, dropMeta, activityId, dayStart), ['activities']);
+    setData(
+      (prev) => applyActivityReorder(prev, dropMeta, activityId, dayStart, crossContainer),
+      ['activities'],
+    );
   };
 
   if (!view) return null;
@@ -187,6 +229,9 @@ export function DaysView() {
         <IconButton aria-label="Manage routes" onClick={() => setRoutesOpen(true)}>
           <RouteIcon />
         </IconButton>
+        <IconButton aria-label="Manage scenarios" onClick={() => setScenariosOpen(true)}>
+          <AltRouteIcon />
+        </IconButton>
         <IconButton aria-label="Ask AI" onClick={() => setAskAIOpen(true)}>
           <AutoAwesomeIcon />
         </IconButton>
@@ -216,6 +261,7 @@ export function DaysView() {
                 onOpenStay={stayPanel.onOpen}
                 onOpenTransit={transitPanel.onOpen}
                 onOpenMap={setMapDay}
+                onAddScenario={handleAddScenario}
               />
             ))}
           </Stack>
@@ -300,6 +346,50 @@ export function DaysView() {
               ['routes'],
             )
           }
+        />
+      )}
+      {data && (
+        <ScenariosDialog
+          scenarios={data.scenarios}
+          legs={data.legs}
+          activities={data.activities}
+          transits={data.transits}
+          open={scenariosOpen}
+          onClose={() => setScenariosOpen(false)}
+          onSave={(scenario: Scenario) =>
+            setData(
+              (prev) => ({
+                ...prev,
+                scenarios: prev.scenarios.some((s) => s._id === scenario._id)
+                  ? prev.scenarios.map((s) => (s._id === scenario._id ? scenario : s))
+                  : [...prev.scenarios, scenario],
+              }),
+              ['scenarios'],
+            )
+          }
+          onDelete={(id: string) =>
+            setData(
+              (prev) => applyScenarioDeletion(prev, id),
+              ['scenarios', 'activities', 'transits'],
+            )
+          }
+        />
+      )}
+      {data && newScenarioDraft && (
+        <ScenarioEditDialog
+          scenario={newScenarioDraft}
+          isNew
+          legs={data.legs}
+          allScenarios={data.scenarios}
+          onClose={() => setNewScenarioDraft(null)}
+          onSave={(scenario: Scenario) => {
+            setData(
+              (prev) => ({ ...prev, scenarios: [...prev.scenarios, scenario] }),
+              ['scenarios'],
+            );
+            setNewScenarioDraft(null);
+          }}
+          onDelete={() => setNewScenarioDraft(null)}
         />
       )}
     </Box>
