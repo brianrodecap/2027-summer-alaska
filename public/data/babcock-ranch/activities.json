@@ -1,1 +1,50 @@
-[]
+[
+  {
+    "_id": "904e3718-b842-433e-a297-977a970713bc",
+    "legId": "44637e90-ea73-4f1b-851d-cbf516620d25",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Afternoon",
+    "date": "2026-08-29",
+    "order": null,
+    "priority": null,
+    "text": "Oil change",
+    "place": {
+      "id": "ChIJZ8Dny-A_24gRHJf4v8WlPBA",
+      "label": "Valvoline Instant Oil Change"
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "f976a88d-2033-44dc-9e1b-3a025c8a2bc2",
+    "legId": "44637e90-ea73-4f1b-851d-cbf516620d25",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Afternoon",
+    "date": "2026-08-29",
+    "order": null,
+    "priority": null,
+    "text": "Grocery Store",
+    "place": {
+      "id": "ChIJix0_xL1l24gRZ8tSCiHyd8g",
+      "label": "Publix Pharmacy at Crescent B Commons"
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  }
+]

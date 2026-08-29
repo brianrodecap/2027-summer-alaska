@@ -8,7 +8,6 @@ import {
   applyStayForm,
   applyTransitForm,
   blankActivity,
-  blankScenario,
   blankStay,
   blankTransit,
   categoryForActivity,
@@ -112,11 +111,6 @@ function EditEventWizardBody({
     onStayFormChange: setStayForm,
     transitForm,
     onTransitFormChange: setTransitForm,
-    // Scenario is never a category this wizard can reach (kind is fixed to
-    // activity/stay/transit) — these exist only to satisfy the shared
-    // context's shape.
-    scenarioForm: blankScenario(entity.legId),
-    onScenarioFormChange: () => {},
     stays,
     activities,
     transits,

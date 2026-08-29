@@ -104,16 +104,6 @@ export const COLLECTION_FOR_KIND: Record<EditKind, 'activities' | 'stays' | 'tra
   transit: 'transits',
 };
 
-export function blankForKind(
-  kind: EditKind,
-  legId: string,
-  date: string,
-): Activity | Stay | Transit {
-  if (kind === 'activity') return blankActivity(legId, date);
-  if (kind === 'stay') return blankStay(legId, date);
-  return blankTransit(legId, date);
-}
-
 export function findByKind<
   T extends { activities: Activity[]; stays: Stay[]; transits: Transit[] },
 >(kind: EditKind, id: string, data: T): Activity | Stay | Transit | undefined {
@@ -425,6 +415,42 @@ export function routeSelectOptions(routes: Route[]): { value: string; label: str
   return [{ value: '', label: 'None' }, ...options];
 }
 
+export function routeVariantOptions(route: Route | null): { value: string; label: string }[] {
+  return route
+    ? route.variants.map((v) => ({ value: v.tone, label: v.label }))
+    : [{ value: '', label: '—' }];
+}
+
+// Shared closed-vocabulary <TextField select> option lists — used by both
+// the flat ActivityEditForm and the wizard's own step components, so they
+// can't silently drift apart.
+export const TIME_LABEL_OPTIONS: { value: TimeLabel | ''; label: string }[] = [
+  { value: '', label: 'None' },
+  { value: 'Morning', label: 'Morning' },
+  { value: 'Afternoon', label: 'Afternoon' },
+  { value: 'Evening', label: 'Evening' },
+  { value: 'All day', label: 'All day' },
+];
+
+export const PRIORITY_OPTIONS: { value: Priority | ''; label: string }[] = [
+  { value: '', label: 'None' },
+  { value: 'high', label: 'High' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'low', label: 'Low' },
+];
+
+export const DINING_FORMAT_OPTIONS: { value: DiningFormat | ''; label: string }[] = [
+  { value: '', label: 'None' },
+  { value: 'included', label: 'Included with the stay' },
+  { value: 'package', label: 'Covered by package' },
+  { value: 'included-with-activity', label: 'Included with another activity' },
+  { value: 'included-with-transit', label: 'Included with travel' },
+  { value: 'sit-down', label: 'Sit-down' },
+  { value: 'grab-and-go', label: 'Grab-and-go' },
+  { value: 'drivethru', label: 'Drive-thru' },
+  { value: 'self-catered', label: 'Self-catered' },
+];
+
 // ---------- Route ----------
 //
 // Route (routes.json) is reference data, not a day-list line item — a
@@ -666,6 +692,8 @@ export type WizardCategory = EditKind | 'meal' | 'scenario';
 
 export type MealDecision = 'decided' | 'undecided';
 
+// Key order doubles as the CategoryStep's display order — keep the most
+// common choice (a place to sleep) first.
 export const WIZARD_CATEGORY_META: Record<WizardCategory, { label: string; helper: string }> = {
   stay: {
     label: 'Somewhere to sleep',

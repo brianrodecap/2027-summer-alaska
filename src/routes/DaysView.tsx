@@ -36,7 +36,7 @@ import { AddEventWizard } from '../components/wizard/AddEventWizard';
 import { applyScenarioDeletion, COLLECTION_FOR_KIND, type EditKind } from '../model/editForms';
 import { dayHasVisibleContent } from '../model/filters';
 import { applyActivityReorder, type DragMeta } from '../model/reorder';
-import { formatTime } from '../model/tripModel';
+import { formatTime, todayDateStr } from '../model/tripModel';
 import type {
   Activity,
   Day,
@@ -131,6 +131,20 @@ export function DaysView() {
     el.scrollIntoView({ block: 'start' });
     scrolledDateRef.current = date;
   }, [date, viewLoaded]);
+
+  // Landing on the bare /days route (no date in the URL) — as opposed to a
+  // direct link to a specific day — defaults to today's date when today
+  // falls within the trip, so opening the day list mid-trip doesn't strand
+  // the traveler back at day one. Redirecting (rather than just scrolling)
+  // reuses the scroll effect above and leaves the URL correctly reflecting
+  // what's on screen, same as picking today from "Jump to a day" would.
+  useEffect(() => {
+    if (date || !view?.dateRange) return;
+    const today = todayDateStr();
+    if (today >= view.dateRange.startDate && today <= view.dateRange.endDate) {
+      navigate(`/${slug}/days/${today}`, { replace: true });
+    }
+  }, [date, view?.dateRange, slug, navigate]);
 
   const handleOpenActivity = useCallback(
     (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => {

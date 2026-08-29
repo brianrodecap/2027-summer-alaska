@@ -4,16 +4,14 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-import { routeSelectOptions, type TransitFormState } from '../../model/editForms';
+import {
+  routeSelectOptions,
+  routeVariantOptions,
+  type TransitFormState,
+} from '../../model/editForms';
 import type { Route } from '../../model/types';
 import { BookingFields } from './BookingFields';
 import { DateTimeFieldPair } from './DateTimeFieldPair';
-
-function routeVariantOptions(route: Route | null) {
-  return route
-    ? route.variants.map((v) => ({ value: v.tone, label: v.label }))
-    : [{ value: '', label: '—' }];
-}
 
 export function TransitEditForm({
   form,

@@ -20,17 +20,17 @@ export type { EditKind };
 
 type Entity = Activity | Stay | Transit;
 
-// `via` picks which of the two components above renders this state:
-// 'wizard' for a plain openEdit (the day-list pencils/side-sheet edit
-// button) walks the guided step-by-step EditEventWizard; 'flat' for
-// openFromDraft's AI-suggestion/import review renders the original
-// one-page EditDialog instead, since a draft already has every field
-// filled in for the user to check rather than a blank to fill in one step
-// at a time. openFromDraft's create sub-case (no overrideId) is 'flat' for
-// the same reason.
+// `via` (on the 'edit' variant only — 'create' only ever happens via a
+// draft, so it's implicitly 'flat') picks which of the two components above
+// renders this state: 'wizard' for a plain openEdit (the day-list pencils/
+// side-sheet edit button) walks the guided step-by-step EditEventWizard;
+// 'flat' for openFromDraft's AI-suggestion/import review renders the
+// original one-page EditDialog instead, since a draft already has every
+// field filled in for the user to check rather than a blank to fill in one
+// step at a time — including its create sub-case (no overrideId).
 type EditState =
   | { mode: 'edit'; kind: EditKind; id: string; seed?: Entity; via: 'wizard' | 'flat' }
-  | { mode: 'create'; kind: EditKind; entity: Entity; via: 'flat' };
+  | { mode: 'create'; kind: EditKind; entity: Entity };
 
 // Wraps the trip page in one place both the day-list's edit pencils and the
 // activity side sheet's own edit button can reach. There's no backend this
@@ -47,7 +47,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
     setState(
       overrideId
         ? { mode: 'edit', kind, id: overrideId, seed: { ...draft, _id: overrideId }, via: 'flat' }
-        : { mode: 'create', kind, entity: draft, via: 'flat' },
+        : { mode: 'create', kind, entity: draft },
     );
   const closeEdit = () => setState(null);
 
@@ -91,7 +91,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
       {children}
       {state && data && entity && (
         <Suspense fallback={null}>
-          {state.via === 'wizard' ? (
+          {state.mode === 'edit' && state.via === 'wizard' ? (
             <EditEventWizard
               kind={state.kind}
               entity={entity}

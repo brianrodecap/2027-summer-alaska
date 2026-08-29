@@ -7,7 +7,12 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 import type { ActivityFormState } from '../../model/editForms';
-import { DINING_FORMATS_WITH_INCLUDED_IN } from '../../model/editForms';
+import {
+  DINING_FORMAT_OPTIONS,
+  DINING_FORMATS_WITH_INCLUDED_IN,
+  PRIORITY_OPTIONS,
+  TIME_LABEL_OPTIONS,
+} from '../../model/editForms';
 import type {
   Activity,
   DiningFormat,
@@ -33,40 +38,12 @@ const STATUS_OPTIONS: { value: PlanStatus; label: string }[] = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
-const PRIORITY_OPTIONS: { value: Priority | ''; label: string }[] = [
-  { value: '', label: 'None' },
-  { value: 'high', label: 'High' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'low', label: 'Low' },
-];
-
-// The same closed vocabulary as tripModel.ts's TIME_LABEL_ANCHORS.
-const TIME_LABEL_OPTIONS: { value: TimeLabel | ''; label: string }[] = [
-  { value: '', label: 'None' },
-  { value: 'Morning', label: 'Morning' },
-  { value: 'Afternoon', label: 'Afternoon' },
-  { value: 'Evening', label: 'Evening' },
-  { value: 'All day', label: 'All day' },
-];
-
 const MEAL_TYPE_OPTIONS: { value: MealType | ''; label: string }[] = [
   { value: '', label: 'Not a meal' },
   { value: 'breakfast', label: 'Breakfast' },
   { value: 'lunch', label: 'Lunch' },
   { value: 'dinner', label: 'Dinner' },
   { value: 'snack', label: 'Snack' },
-];
-
-const DINING_FORMAT_OPTIONS: { value: DiningFormat | ''; label: string }[] = [
-  { value: '', label: 'None' },
-  { value: 'included', label: 'Included with the stay' },
-  { value: 'package', label: 'Covered by package' },
-  { value: 'included-with-activity', label: 'Included with another activity' },
-  { value: 'included-with-transit', label: 'Included with travel' },
-  { value: 'sit-down', label: 'Sit-down' },
-  { value: 'grab-and-go', label: 'Grab-and-go' },
-  { value: 'drivethru', label: 'Drive-thru' },
-  { value: 'self-catered', label: 'Self-catered' },
 ];
 
 export function ActivityEditForm({

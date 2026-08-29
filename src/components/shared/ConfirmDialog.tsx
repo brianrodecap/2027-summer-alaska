@@ -29,8 +29,22 @@ export function ConfirmDialog({
         <DialogContentText>{message}</DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onCancel}>Cancel</Button>
-        <Button color="error" variant="contained" onClick={onConfirm}>
+        <Button
+          onClick={(e) => {
+            e.stopPropagation();
+            onCancel();
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          color="error"
+          variant="contained"
+          onClick={(e) => {
+            e.stopPropagation();
+            onConfirm();
+          }}
+        >
           {confirmLabel}
         </Button>
       </DialogActions>

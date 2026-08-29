@@ -49,8 +49,11 @@ export interface WizardStepContext {
   onStayFormChange: (form: StayFormState) => void;
   transitForm: TransitFormState;
   onTransitFormChange: (form: TransitFormState) => void;
-  scenarioForm: Scenario;
-  onScenarioFormChange: (scenario: Scenario) => void;
+  // Only reachable via AddEventWizard (EditEventWizard's kind is always
+  // fixed to activity/stay/transit, so its category can never be
+  // 'scenario') — omitted there rather than filled with a throwaway draft.
+  scenarioForm?: Scenario;
+  onScenarioFormChange?: (scenario: Scenario) => void;
   stays: Stay[];
   activities: Activity[];
   transits: Transit[];
@@ -92,7 +95,9 @@ function renderReviewStep(ctx: WizardStepContext): ReactNode {
     case 'transit':
       return <TransitReview form={ctx.transitForm} routes={ctx.routes} />;
     case 'scenario':
-      return <ScenarioReview form={ctx.scenarioForm} />;
+      // Only AddEventWizard's category can ever reach 'scenario', and it
+      // always supplies scenarioForm.
+      return <ScenarioReview form={ctx.scenarioForm!} />;
     default:
       return <ActivityReview form={ctx.activityForm} category={ctx.category} />;
   }
@@ -168,10 +173,12 @@ export function renderWizardStep(stepId: WizardStepId, ctx: WizardStepContext): 
     case 'booking':
       return renderBookingStep(ctx);
     case 'scenarioDetails':
+      // Only AddEventWizard's category can ever reach 'scenarioDetails',
+      // and it always supplies scenarioForm/onScenarioFormChange.
       return (
         <ScenarioEditForm
-          form={ctx.scenarioForm}
-          onChange={ctx.onScenarioFormChange}
+          form={ctx.scenarioForm!}
+          onChange={ctx.onScenarioFormChange!}
           legs={ctx.legs}
           otherScenarios={ctx.otherScenarios}
         />

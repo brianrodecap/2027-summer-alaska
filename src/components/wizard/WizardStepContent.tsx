@@ -16,8 +16,12 @@ import type {
   WizardCategory,
 } from '../../model/editForms';
 import {
+  DINING_FORMAT_OPTIONS,
   DINING_FORMATS_WITH_INCLUDED_IN,
+  PRIORITY_OPTIONS,
   routeSelectOptions,
+  routeVariantOptions,
+  TIME_LABEL_OPTIONS,
   WIZARD_CATEGORY_META,
 } from '../../model/editForms';
 import { DINING_FORMAT_LABEL } from '../../model/formatting';
@@ -91,8 +95,6 @@ function ChoiceCards<T extends string>({
 
 // ---------- category / meal-branch ----------
 
-const CATEGORY_ORDER: WizardCategory[] = ['stay', 'meal', 'transit', 'activity', 'scenario'];
-
 export function CategoryStep({
   value,
   onChange,
@@ -102,7 +104,10 @@ export function CategoryStep({
 }) {
   return (
     <ChoiceCards
-      options={CATEGORY_ORDER.map((c) => ({ value: c, ...WIZARD_CATEGORY_META[c] }))}
+      options={(Object.keys(WIZARD_CATEGORY_META) as WizardCategory[]).map((c) => ({
+        value: c,
+        ...WIZARD_CATEGORY_META[c],
+      }))}
       value={value}
       onChange={onChange}
     />
@@ -244,9 +249,9 @@ export function TransitRouteStep({
           value={form.routeVariant ?? ''}
           onChange={(e) => onChange({ ...form, routeVariant: e.target.value || null })}
         >
-          {selectedRoute.variants.map((v) => (
-            <MenuItem key={v.tone} value={v.tone}>
-              {v.label}
+          {routeVariantOptions(selectedRoute).map((o) => (
+            <MenuItem key={o.value} value={o.value}>
+              {o.label}
             </MenuItem>
           ))}
         </TextField>
@@ -294,14 +299,6 @@ export function TransitWhenStep({
 
 // ---------- Activity / Meal "when" (shared — both are plain Activity
 // fields) ----------
-
-const TIME_LABEL_OPTIONS: { value: TimeLabel | ''; label: string }[] = [
-  { value: '', label: 'None' },
-  { value: 'Morning', label: 'Morning' },
-  { value: 'Afternoon', label: 'Afternoon' },
-  { value: 'Evening', label: 'Evening' },
-  { value: 'All day', label: 'All day' },
-];
 
 export function ActivityWhenStep({
   form,
@@ -370,13 +367,6 @@ export function ActivityPlaceStep({
 }) {
   return <PlacePickerField place={form.place} onChange={(place) => onChange({ ...form, place })} />;
 }
-
-const PRIORITY_OPTIONS: { value: Priority | ''; label: string }[] = [
-  { value: '', label: 'None' },
-  { value: 'high', label: 'High' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'low', label: 'Low' },
-];
 
 export function ExtrasStep({
   form,
@@ -496,18 +486,6 @@ export function MealDecisionStep({
     />
   );
 }
-
-const DINING_FORMAT_OPTIONS: { value: DiningFormat | ''; label: string }[] = [
-  { value: '', label: 'None' },
-  { value: 'included', label: 'Included with the stay' },
-  { value: 'package', label: 'Covered by package' },
-  { value: 'included-with-activity', label: 'Included with another activity' },
-  { value: 'included-with-transit', label: 'Included with travel' },
-  { value: 'sit-down', label: 'Sit-down' },
-  { value: 'grab-and-go', label: 'Grab-and-go' },
-  { value: 'drivethru', label: 'Drive-thru' },
-  { value: 'self-catered', label: 'Self-catered' },
-];
 
 export function MealPlaceStep({
   form,
