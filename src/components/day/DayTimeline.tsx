@@ -104,12 +104,14 @@ function LeadingGutter({ dragHandle }: { dragHandle?: ReactNode }) {
 
 // The row-menu counterpart to LeadingGutter above: a fixed rail at the far
 // right of every row, sitting outside TimelineContent as its own flex
-// sibling rather than inside it. Different row types give TimelineContent
-// different horizontal padding (see ActivityNode's px: 2 vs. Stay/Transit's
-// none), so a kebab button placed *inside* that padded area lands at a
-// different x-position per row type; anchoring it here instead keeps every
-// row's menu icon flush against the same right edge regardless of that
-// per-row padding.
+// sibling rather than inside it, so a kebab lands flush against this
+// Timeline's own right edge (this component's own p: 0/m: 0, see below)
+// regardless of that row's TimelineContent's horizontal padding. This only
+// holds because every *Node's TimelineRow lives directly in the same flat
+// Timeline — a nested one, like ScenarioTabsSection's own DayTimeline for a
+// scenario branch, is a second Timeline instance one level down, so it needs
+// its own wrapping content to stay unpadded too (see ScenarioTabsNode's own
+// px: 0 below) or its TrailingGutters would land inset from this one's.
 const TRAILING_GUTTER_SX = { flexShrink: 0, alignSelf: 'flex-start', display: 'flex' } as const;
 
 function TrailingGutter({ children }: { children?: ReactNode }) {
@@ -129,6 +131,13 @@ function TrailingGutter({ children }: { children?: ReactNode }) {
 // whether a dragHandle was passed, rather than exposed as its own opaque
 // itemSx prop — only a row with a drag handle needs it.
 const DEFAULT_CONTENT_SX = { pb: 3, pt: 0 };
+
+// The standard horizontal inset for a row's own text/chips content (as
+// opposed to Stay/Transit's un-inset image+text, which sits flush with the
+// dot column). ActivityNode's contentSx below and ScenarioTabsSection's own
+// chip/notes wrapper share this exact value so the two can't silently drift
+// apart the way two hand-matched literals connected only by comments could.
+export const ROW_CONTENT_PX = 2;
 
 function TimelineRow({
   dot,
@@ -365,7 +374,7 @@ const ActivityNode = memo(function ActivityNode({
     <TimelineRow
       dot={<ActivityLeading activity={activity} day={day} />}
       isLast={isLast}
-      contentSx={{ px: 2 }}
+      contentSx={{ px: ROW_CONTENT_PX }}
       dragHandle={dragHandle}
       trailing={
         <RowMenu
@@ -420,7 +429,12 @@ const ScenarioTabsNode = memo(function ScenarioTabsNode({
       // ScenarioTabsSection's own nested DayTimeline already ends in a row
       // with its standard pb: 3, so adding this node's own would double up
       // the trailing gap before whatever comes after the scenario section.
-      contentSx={{ pb: 0 }}
+      // px: 0 too, for the same reason TrailingGutter must stay unpadded
+      // (see its comment above): this content is a nested DayTimeline, which
+      // needs to be exactly as unindented as the top-level one. Scenario
+      // TabsSection re-adds the usual ROW_CONTENT_PX inset itself, scoped to
+      // just its chips/notes.
+      contentSx={{ pb: 0, px: 0 }}
     >
       <ScenarioTabsSection
         day={day}

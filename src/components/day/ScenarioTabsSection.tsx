@@ -14,7 +14,7 @@ import type {
 import { useScenarioSelection } from '../../state/useTripSelections';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
-import { DayTimeline } from './DayTimeline';
+import { DayTimeline, ROW_CONTENT_PX } from './DayTimeline';
 import { resolveActiveTrack } from './scenarioSelection';
 
 // A branching day's scenarios each become one chip; the chip group picks
@@ -70,7 +70,11 @@ export function ScenarioTabsSection({
 
   return (
     <Box sx={{ mb: 1 }}>
-      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
+      {/* ScenarioTabsNode strips this content's horizontal padding (see
+          DayTimeline.tsx's TrailingGutter/ScenarioTabsNode comments) so the
+          nested DayTimeline below stays unindented; ROW_CONTENT_PX re-adds
+          the usual inset here, scoped to just the chips/notes. */}
+      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', px: ROW_CONTENT_PX }}>
         {visible.map((t, i) => {
           const active = i === activeIndex;
           return (
@@ -85,8 +89,10 @@ export function ScenarioTabsSection({
           );
         })}
       </Stack>
-      <Box sx={{ mt: 1.5 }}>
+      <Box sx={{ mt: 1.5, px: ROW_CONTENT_PX }}>
         <NotesCluster notes={activeTrack.notes} />
+      </Box>
+      <Box sx={{ mt: 1.5 }}>
         <DayTimeline
           day={day}
           sequence={activeTrack.sequence}
