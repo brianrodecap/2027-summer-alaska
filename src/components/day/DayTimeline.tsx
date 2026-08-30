@@ -36,8 +36,10 @@ import type {
   TransitBoundarySequenceItem,
   TransitStageSequenceItem,
 } from '../../model/types';
+import { isActivitySelected } from '../../state/TripSelectionsContextObject';
 import { useEdit } from '../../state/useEdit';
 import {
+  useActivitySelection,
   useFilterSelection,
   useMealOptionSelection,
   useRouteToneSelection,
@@ -73,6 +75,17 @@ const ACTIVITY_HOVER_SX = {
     opacity: 1,
   },
 };
+
+// A row that's part of the current drag-handle multi-select (see
+// ActivitySelectionValue) — a plain background tint on just its content box
+// is enough to show membership without needing a separate checkbox
+// affordance, since the handle icon itself already switches to primary
+// color/full opacity below. Deliberately scoped to TimelineContent alone,
+// not the whole TimelineItem: painting it across the dot/connector rail and
+// drag-handle gutter too left the row's own dot looking like it "bit into"
+// the tint with an ugly notch, since the dot's own circular background sits
+// on top of it.
+const SELECTED_ROW_SX = { bgcolor: 'primary.container', borderRadius: 1.5 } as const;
 
 // The drag handle IconButton's fontSize="small" icon is 20px, plus this much
 // padding on each side — both the gutter width below and the IconButton's
@@ -145,6 +158,7 @@ function TimelineRow({
   contentSx,
   dragHandle,
   trailing,
+  selected,
   children,
 }: {
   dot: ReactNode;
@@ -152,6 +166,7 @@ function TimelineRow({
   contentSx?: { pb?: number; px?: number };
   dragHandle?: ReactNode;
   trailing?: ReactNode;
+  selected?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -161,7 +176,15 @@ function TimelineRow({
         {dot}
         {!isLast && <TimelineConnector />}
       </TimelineSeparator>
-      <TimelineContent sx={{ ...DEFAULT_CONTENT_SX, ...contentSx }}>{children}</TimelineContent>
+      <TimelineContent
+        sx={{
+          ...DEFAULT_CONTENT_SX,
+          ...contentSx,
+          ...(selected ? SELECTED_ROW_SX : undefined),
+        }}
+      >
+        {children}
+      </TimelineContent>
       {trailing && <TrailingGutter>{trailing}</TrailingGutter>}
     </TimelineItem>
   );
@@ -347,12 +370,14 @@ const ActivityNode = memo(function ActivityNode({
   isLast,
   onOpenActivity,
   dragHandle,
+  selected,
 }: {
   activity: EnrichedActivity;
   day: Day;
   isLast: boolean;
   onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
   dragHandle?: ReactNode;
+  selected?: boolean;
 }) {
   const { openEdit, deleteEntity } = useEdit();
   const { mealOptionIndex } = useMealOptionSelection();
@@ -376,6 +401,7 @@ const ActivityNode = memo(function ActivityNode({
       isLast={isLast}
       contentSx={{ px: ROW_CONTENT_PX }}
       dragHandle={dragHandle}
+      selected={selected}
       trailing={
         <RowMenu
           entity={noteTarget.entity}
@@ -564,6 +590,7 @@ export const DayTimeline = memo(function DayTimeline({
 }) {
   const { activeFilterTokens } = useFilterSelection();
   const filtered = filterSequenceItems(sequence, activeFilterTokens);
+  const { selection, toggleActivitySelection } = useActivitySelection();
 
   // Safe to run unconditionally at every level — a scenario track's own
   // sequence never contains a 'stay' item (Stay never branches), so this is
@@ -620,7 +647,7 @@ export const DayTimeline = memo(function DayTimeline({
     key: string;
     dragId: string | null;
     draggable: boolean;
-    render: (isLast: boolean, dragHandle?: ReactNode) => ReactElement;
+    render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => ReactElement;
   }
 
   const nodes: DayTimelineNode[] = flattened.flatMap((item, i): DayTimelineNode[] => {
@@ -672,13 +699,14 @@ export const DayTimeline = memo(function DayTimeline({
           key: dragId,
           dragId,
           draggable: true,
-          render: (isLast: boolean, dragHandle?: ReactNode) => (
+          render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => (
             <ActivityNode
               activity={activity}
               day={day}
               isLast={isLast}
               onOpenActivity={onOpenActivity}
               dragHandle={dragHandle}
+              selected={selected}
             />
           ),
         };
@@ -756,46 +784,57 @@ export const DayTimeline = memo(function DayTimeline({
           '& .MuiTimelineContent-root': { minWidth: 0 },
         }}
       >
-        {allNodes.map((node, i) => (
-          <Fragment key={node.key}>
-            {node.dragId ? (
-              <SortableRow
-                dragId={node.dragId}
-                disabled={!node.draggable}
-                dragMeta={dragMetaById.get(node.dragId)}
-              >
-                {(dragHandleProps) =>
-                  node.render(
-                    i === allNodes.length - 1,
-                    dragHandleProps ? (
-                      <Tooltip title="Drag to reorder">
-                        <IconButton
-                          className={DRAG_HANDLE_HOVER_CLASS}
-                          size="small"
-                          aria-label="Reorder"
-                          sx={{
-                            flexShrink: 0,
-                            cursor: 'grab',
-                            touchAction: 'none',
-                            opacity: 0,
-                            transition: 'opacity 0.15s',
-                            p: `${DRAG_HANDLE_PADDING_PX}px`,
-                          }}
-                          {...dragHandleProps.attributes}
-                          {...dragHandleProps.listeners}
+        {allNodes.map((node, i) => {
+          const meta = node.dragId ? dragMetaById.get(node.dragId) : undefined;
+          const activityId = meta?.activityId ?? null;
+          const isSelected = Boolean(
+            activityId && isActivitySelected(selection, containerId, activityId),
+          );
+          return (
+            <Fragment key={node.key}>
+              {node.dragId ? (
+                <SortableRow dragId={node.dragId} disabled={!node.draggable} dragMeta={meta}>
+                  {(dragHandleProps) =>
+                    node.render(
+                      i === allNodes.length - 1,
+                      dragHandleProps ? (
+                        <Tooltip
+                          title={isSelected ? 'Selected — drag to move group' : 'Drag to reorder'}
                         >
-                          <DragIndicatorIcon fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    ) : undefined,
-                  )
-                }
-              </SortableRow>
-            ) : (
-              node.render(i === allNodes.length - 1)
-            )}
-          </Fragment>
-        ))}
+                          <IconButton
+                            className={DRAG_HANDLE_HOVER_CLASS}
+                            size="small"
+                            aria-label={isSelected ? 'Selected, drag to move group' : 'Reorder'}
+                            color={isSelected ? 'primary' : 'default'}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              if (activityId) toggleActivitySelection(containerId, activityId);
+                            }}
+                            sx={{
+                              flexShrink: 0,
+                              cursor: 'grab',
+                              touchAction: 'none',
+                              opacity: isSelected ? 1 : 0,
+                              transition: 'opacity 0.15s',
+                              p: `${DRAG_HANDLE_PADDING_PX}px`,
+                            }}
+                            {...dragHandleProps.attributes}
+                            {...dragHandleProps.listeners}
+                          >
+                            <DragIndicatorIcon fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      ) : undefined,
+                      isSelected,
+                    )
+                  }
+                </SortableRow>
+              ) : (
+                node.render(i === allNodes.length - 1)
+              )}
+            </Fragment>
+          );
+        })}
       </Timeline>
     </SortableContext>
   );

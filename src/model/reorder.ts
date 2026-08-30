@@ -505,3 +505,48 @@ export function applyActivityReorder(
     activities: [...rest.slice(0, insertAt), updated, ...rest.slice(insertAt)],
   };
 }
+
+// Moves an entire multi-selected group of Activities together, as one
+// contiguous back-to-back block landing at dropMeta's position and keeping
+// the group's own original relative chronological order — DaysView.tsx's
+// handleDragEnd calls this instead of applyActivityReorder when the dragged
+// row was part of a DayTimeline.tsx drag-handle multi-select.
+//
+// Implemented by chaining applyActivityReorder once per Activity in
+// `orderedActivityIds` rather than re-deriving its timing/cascade rules
+// independently: the first call lands exactly like an ordinary
+// single-Activity drop at `dropMeta`. Each following call re-anchors
+// dropMeta to sit immediately after whichever Activity the previous
+// iteration just placed — same `endAt`-from-precedingEndAt contract every
+// other drop already uses — so the whole group ends up back-to-back in the
+// order it started in. `anchorActivityId` always advances to the
+// just-placed Activity even when it has no real startAt to lend (a fuzzy
+// timeLabel-only Activity): that keeps every later group member inserting
+// after it in the activities array, not before it, without forcing a
+// timing change nothing asked for. Already-placed group members are
+// stripped from later cascadeActivityIds lists, since a group member is
+// never "in the way" of itself the way a genuine bystander Activity is.
+export function applyGroupActivityReorder(
+  data: TripData,
+  dropMeta: DragMeta,
+  orderedActivityIds: string[],
+  dayStart: string,
+  crossContainer: boolean,
+): TripData {
+  const isGroupMember = new Set(orderedActivityIds);
+  let result = data;
+  let nextDropMeta = dropMeta;
+  for (const activityId of orderedActivityIds) {
+    result = applyActivityReorder(result, nextDropMeta, activityId, dayStart, crossContainer);
+    const placed = result.activities.find((a) => a._id === activityId);
+    if (!placed) continue;
+    nextDropMeta = {
+      ...nextDropMeta,
+      endAt: placed.startAt ? activityEndAt(placed.startAt, placed) : nextDropMeta.endAt,
+      anchorActivityId: placed._id,
+      kind: 'after',
+      cascadeActivityIds: nextDropMeta.cascadeActivityIds?.filter((id) => !isGroupMember.has(id)),
+    };
+  }
+  return result;
+}

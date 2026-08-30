@@ -1,5 +1,7 @@
 import { useRequiredContext } from './contextHook';
 import {
+  ActivitySelectionContext,
+  type ActivitySelectionValue,
   FilterSelectionContext,
   type FilterSelectionValue,
   MealOptionSelectionContext,
@@ -28,4 +30,8 @@ export function useMealOptionSelection(): MealOptionSelectionValue {
 
 export function useFilterSelection(): FilterSelectionValue {
   return useRequired(FilterSelectionContext, 'useFilterSelection');
+}
+
+export function useActivitySelection(): ActivitySelectionValue {
+  return useRequired(ActivitySelectionContext, 'useActivitySelection');
 }

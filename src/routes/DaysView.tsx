@@ -40,8 +40,8 @@ import {
   upsertById,
 } from '../model/editForms';
 import { dayHasVisibleContent } from '../model/filters';
-import { applyActivityReorder, type DragMeta } from '../model/reorder';
-import { formatTime, todayDateStr } from '../model/tripModel';
+import { applyActivityReorder, applyGroupActivityReorder, type DragMeta } from '../model/reorder';
+import { activitySortKey, formatTime, todayDateStr } from '../model/tripModel';
 import type {
   Activity,
   Day,
@@ -54,9 +54,10 @@ import type {
   Stay,
   Transit,
 } from '../model/types';
+import { isActivitySelected } from '../state/TripSelectionsContextObject';
 import { useEdit } from '../state/useEdit';
 import { useTripData } from '../state/useTripData';
-import { useFilterSelection } from '../state/useTripSelections';
+import { useActivitySelection, useFilterSelection } from '../state/useTripSelections';
 
 // Stay's and Transit's detail panels are both opened/closed/edited the same
 // way — a plain "which entity is open" state, with Edit clearing it and
@@ -87,6 +88,7 @@ function containerIdOf(dndData: unknown): unknown {
 export function DaysView() {
   const { view, data, setData } = useTripData();
   const { activeFilterTokens } = useFilterSelection();
+  const { selection, clearActivitySelection } = useActivitySelection();
   const { openEdit } = useEdit();
   const { slug, date } = useParams();
   const navigate = useNavigate();
@@ -170,6 +172,15 @@ export function DaysView() {
   const draggingActivity = draggingId
     ? (data?.activities.find((a) => a._id === draggingId) ?? null)
     : null;
+  // Whether the dragged row is part of a multi-select of more than one
+  // Activity (see ActivitySelectionValue) — selection is untouched for the
+  // whole drag (only cleared once handleDragEnd's group branch commits), so
+  // this can be derived straight from current state rather than snapshotted
+  // at drag-start.
+  const draggingGroupSize =
+    draggingId && selection && selection.ids.has(draggingId) && selection.ids.size > 1
+      ? selection.ids.size
+      : null;
 
   const handleDragStart = (event: DragStartEvent) => {
     const meta = event.active.data.current as DragMeta | undefined;
@@ -216,6 +227,21 @@ export function DaysView() {
     const dropMeta: DragMeta =
       movingUp && overMeta.before ? { ...overMeta, ...overMeta.before } : overMeta;
     const dayStart = dropMeta.containerDayStart;
+    const isGroupDrag =
+      isActivitySelected(selection, activeContainerId, activityId) &&
+      (selection?.ids.size ?? 0) > 1;
+    if (isGroupDrag && selection && data) {
+      const groupIds = data.activities
+        .filter((a) => selection.ids.has(a._id))
+        .sort((a, b) => activitySortKey(a, dayStart).localeCompare(activitySortKey(b, dayStart)))
+        .map((a) => a._id);
+      setData(
+        (prev) => applyGroupActivityReorder(prev, dropMeta, groupIds, dayStart, crossContainer),
+        ['activities'],
+      );
+      clearActivitySelection();
+      return;
+    }
     setData(
       (prev) => applyActivityReorder(prev, dropMeta, activityId, dayStart, crossContainer),
       ['activities'],
@@ -294,8 +320,10 @@ export function DaysView() {
               >
                 <DragIndicatorIcon fontSize="small" color="action" />
                 <Box>
-                  <Typography variant="subtitle2">{draggingActivity.text}</Typography>
-                  {draggingActivity.startAt && (
+                  <Typography variant="subtitle2">
+                    {draggingGroupSize ? `${draggingGroupSize} activities` : draggingActivity.text}
+                  </Typography>
+                  {!draggingGroupSize && draggingActivity.startAt && (
                     <Typography variant="caption" color="text.secondary">
                       {formatTime(draggingActivity.startAt)}
                     </Typography>

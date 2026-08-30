@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyActivityReorder, buildDragMeta, type DragMeta, resolveDropTiming } from './reorder';
+import {
+  applyActivityReorder,
+  applyGroupActivityReorder,
+  buildDragMeta,
+  type DragMeta,
+  resolveDropTiming,
+} from './reorder';
 import type {
   EnrichedActivity,
   EnrichedStay,
@@ -686,5 +692,61 @@ describe('applyActivityReorder', () => {
     expect(byId('explore')?.startAt).toBe('2027-07-13T10:45'); // unchanged
     expect(byId('explore')?.scenarioId).toBeNull(); // still moves out of the scenario
     expect(byId('drive')?.startAt).toBe('2027-07-13T06:00'); // untouched, no cascade
+  });
+});
+
+describe('applyGroupActivityReorder', () => {
+  // A drag-handle multi-select (DayTimeline.tsx) moving two Activities at
+  // once: they should land back-to-back, in the order handed in, starting
+  // right at the drop anchor's own endAt — the same "insert after this
+  // instant" contract a single-Activity drop already uses, just chained.
+  it('lands a multi-selected group back-to-back in the given order, cascading a downstream collision only once', () => {
+    const dropMeta: DragMeta = {
+      id: 'activity-anchor',
+      index: 0,
+      endAt: '2027-06-01T09:00',
+      containerDayStart: DAY_START,
+      legId: 'legA',
+      scenarioId: null,
+      activityId: 'anchor',
+      anchorActivityId: 'anchor',
+      kind: 'after',
+      cascadeActivityIds: ['bystander'],
+    };
+
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [],
+      activities: [
+        activity({ _id: 'anchor', startAt: '2027-06-01T08:00' }),
+        activity({ _id: 'bystander', startAt: '2027-06-01T09:15' }),
+        activity({ _id: 'g1', startAt: '2027-06-01T15:00', durationMinutes: 30 }),
+        activity({ _id: 'g2', startAt: '2027-06-01T16:00' }),
+      ],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+
+    const next = applyGroupActivityReorder(data, dropMeta, ['g1', 'g2'], DAY_START, false);
+    const byId = (id: string) => next.activities.find((a) => a._id === id);
+
+    // g1 takes over the drop anchor's own endAt; g2 chains right after g1's
+    // own end (09:00 + 30min duration), not after the original anchor again.
+    expect(byId('g1')?.startAt).toBe('2027-06-01T09:00');
+    expect(byId('g2')?.startAt).toBe('2027-06-01T09:30');
+    // The bystander only had to move once, out of g1's way — g2 lands
+    // exactly where the bystander already sits after that, so a second
+    // cascade pass over the same bystander is a no-op rather than a double
+    // shift.
+    expect(byId('bystander')?.startAt).toBe('2027-06-01T09:30');
+
+    // Array order: both group members inserted, in order, right after their
+    // shared anchor.
+    const ids = next.activities.map((a) => a._id);
+    expect(ids.indexOf('g1')).toBe(ids.indexOf('anchor') + 1);
+    expect(ids.indexOf('g2')).toBe(ids.indexOf('g1') + 1);
   });
 });
