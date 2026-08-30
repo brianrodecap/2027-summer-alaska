@@ -42,6 +42,7 @@ export function RowMenu({
       <IconButton
         aria-label="Row actions"
         size="small"
+        edge="end"
         sx={{ flexShrink: 0, ml: 0.5, mt: -0.5 }}
         onClick={openAt}
       >

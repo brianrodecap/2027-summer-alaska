@@ -79,9 +79,10 @@ const ACTIVITY_HOVER_SX = {
 // these, not just the one-off drag-handle IconButton that used to be the
 // only inline sx here).
 const LEADING_GUTTER_SX = {
-  // 32px matches the drag handle's IconButton, so rows without one still
-  // reserve its width and keep the dot column aligned.
-  width: 32,
+  // 24px matches the drag handle's IconButton (see its own tightened p: '2px'
+  // below), so rows without one still reserve its width and keep the dot
+  // column aligned.
+  width: 24,
   flexShrink: 0,
   alignSelf: 'flex-start',
   display: 'flex',
@@ -757,6 +758,9 @@ export const DayTimeline = memo(function DayTimeline({
                             touchAction: 'none',
                             opacity: 0,
                             transition: 'opacity 0.15s',
+                            // Matches LEADING_GUTTER_SX's 24px width exactly
+                            // (20px icon + 2px padding each side).
+                            p: '2px',
                           }}
                           {...dragHandleProps.attributes}
                           {...dragHandleProps.listeners}

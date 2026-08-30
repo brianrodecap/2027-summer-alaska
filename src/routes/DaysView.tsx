@@ -253,7 +253,7 @@ export function DaysView() {
         <IconButton aria-label="Manage scenarios" onClick={() => setScenariosOpen(true)}>
           <AltRouteIcon />
         </IconButton>
-        <IconButton aria-label="Ask AI" onClick={() => setAskAIOpen(true)}>
+        <IconButton edge="end" aria-label="Ask AI" onClick={() => setAskAIOpen(true)}>
           <AutoAwesomeIcon />
         </IconButton>
       </Box>

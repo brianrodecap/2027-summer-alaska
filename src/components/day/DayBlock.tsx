@@ -103,7 +103,7 @@ export const DayBlock = memo(function DayBlock({
           justifyContent: 'space-between',
           bgcolor: 'background.default',
           py: 1,
-          px: 3,
+          px: 2,
           borderBottom: 1,
           borderColor: 'divider',
         }}
@@ -116,12 +116,16 @@ export const DayBlock = memo(function DayBlock({
         </Box>
         <Box sx={{ display: 'flex', flexShrink: 0 }}>
           <AddDayNoteButton date={day.date} dateLabel={day.dateLabel} />
-          <IconButton aria-label={`Map for ${day.dateLabel}`} onClick={() => onOpenMap(day)}>
+          <IconButton
+            edge="end"
+            aria-label={`Map for ${day.dateLabel}`}
+            onClick={() => onOpenMap(day)}
+          >
             <MapIcon />
           </IconButton>
         </Box>
       </Box>
-      <Box sx={{ px: 3, py: 2 }}>
+      <Box sx={{ px: 2, py: 2 }}>
         <DayWeatherStrip day={day} />
         <NotesCluster notes={day.notes} />
         <DayTimeline
