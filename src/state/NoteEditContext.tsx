@@ -1,7 +1,7 @@
 import { type ReactNode, useState } from 'react';
 
 import { NoteEditDialog } from '../components/notes/NoteEditDialog';
-import type { Note, NoteKind, RefEntityKind } from '../model/types';
+import type { Note, NoteKind, Ref } from '../model/types';
 import { NoteEditContext, type NoteTarget } from './NoteEditContextObject';
 import { useTripData } from './useTripData';
 
@@ -14,8 +14,7 @@ export function NoteEditProvider({ children }: { children: ReactNode }) {
   const { data, setData } = useTripData();
   const [target, setTarget] = useState<NoteTarget | null>(null);
 
-  const openNoteCreate = (entity: RefEntityKind, id: string, kind: NoteKind) =>
-    setTarget({ mode: 'create', entity, id, kind });
+  const openNoteCreate = (ref: Ref, kind: NoteKind) => setTarget({ mode: 'create', ref, kind });
   const openNoteEdit = (note: Note) => setTarget({ mode: 'edit', note });
   const closeNoteEdit = () => setTarget(null);
 
@@ -28,7 +27,7 @@ export function NoteEditProvider({ children }: { children: ReactNode }) {
             _id: crypto.randomUUID(),
             kind,
             text,
-            concerns: [{ entity: target.entity, id: target.id }],
+            concerns: [target.ref],
             images: [],
           };
           return { ...prev, notes: [...prev.notes, note] };

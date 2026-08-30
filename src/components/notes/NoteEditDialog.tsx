@@ -61,9 +61,7 @@ export function NoteEditDialog({
   const [text, setText] = useState(target.mode === 'edit' ? target.note.text : '');
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const about =
-    target.mode === 'create'
-      ? describeRef({ entity: target.entity, id: target.id })
-      : describeRef(target.note.concerns[0]);
+    target.mode === 'create' ? describeRef(target.ref) : describeRef(target.note.concerns[0]);
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">

@@ -69,7 +69,7 @@ export function ScenarioTabsSection({
   };
 
   return (
-    <Box sx={{ my: 1 }}>
+    <Box sx={{ mb: 1 }}>
       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
         {visible.map((t, i) => {
           const active = i === activeIndex;

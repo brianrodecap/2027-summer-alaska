@@ -1,8 +1,10 @@
 import AddIcon from '@mui/icons-material/Add';
 import MapIcon from '@mui/icons-material/Map';
+import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import IconButton from '@mui/material/IconButton';
+import Menu from '@mui/material/Menu';
 import Typography from '@mui/material/Typography';
 import { memo } from 'react';
 
@@ -14,8 +16,11 @@ import type {
   EnrichedStay,
   EnrichedTransit,
 } from '../../model/types';
+import { useNoteEdit } from '../../state/useNoteEdit';
 import { useScenarioSelection } from '../../state/useTripSelections';
+import { AddNoteMenuItems } from '../shared/AddNoteMenuItems';
 import { NotesCluster } from '../shared/Notes';
+import { useAnchorMenu } from '../shared/useAnchorMenu';
 import { DayTimeline } from './DayTimeline';
 import { DayWeatherStrip } from './DayWeatherStrip';
 import { activeTitleCandidates } from './scenarioSelection';
@@ -31,6 +36,27 @@ function AddToDayButton({ day, onAdd }: { day: Day; onAdd: (day: Day) => void })
     <Button startIcon={<AddIcon />} onClick={() => onAdd(day)} sx={{ mt: 1 }}>
       Add to this day
     </Button>
+  );
+}
+
+// A day-level note concerns the whole date (concerns: [{ date }]) rather
+// than any one Stay/Transit/Activity row — see tripModel's notesForDay and
+// NotesCluster's rendering of day.notes above the timeline. Mirrors
+// RowMenu's own "add note" menu, just seeded with a date ref instead of an
+// entity ref.
+function AddDayNoteButton({ date, dateLabel }: { date: string; dateLabel: string }) {
+  const { anchorEl, openAt, close, pick } = useAnchorMenu();
+  const { openNoteCreate } = useNoteEdit();
+
+  return (
+    <>
+      <IconButton aria-label={`Add a note for ${dateLabel}`} onClick={openAt}>
+        <NoteAddIcon />
+      </IconButton>
+      <Menu anchorEl={anchorEl} open={!!anchorEl} onClose={close}>
+        <AddNoteMenuItems onPick={(kind) => pick(() => openNoteCreate({ date }, kind))} />
+      </Menu>
+    </>
   );
 }
 
@@ -88,9 +114,12 @@ export const DayBlock = memo(function DayBlock({
           </Typography>
           <Typography variant="h6">{title}</Typography>
         </Box>
-        <IconButton aria-label={`Map for ${day.dateLabel}`} onClick={() => onOpenMap(day)}>
-          <MapIcon />
-        </IconButton>
+        <Box sx={{ display: 'flex', flexShrink: 0 }}>
+          <AddDayNoteButton date={day.date} dateLabel={day.dateLabel} />
+          <IconButton aria-label={`Map for ${day.dateLabel}`} onClick={() => onOpenMap(day)}>
+            <MapIcon />
+          </IconButton>
+        </Box>
       </Box>
       <Box sx={{ px: 3, py: 2 }}>
         <DayWeatherStrip day={day} />

@@ -3,7 +3,6 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
 
 import type { PlaceSearchResult } from '../../model/places';
 import type { Place } from '../../model/types';
@@ -29,7 +28,13 @@ export function PlacePickerField({
   onChange: (place: Place | null) => void;
   onPicked?: (result: PlaceSearchResult) => void;
 }) {
-  const [inputValue, setInputValue] = useState(place?.label ?? '');
+  // Driven straight off `place` rather than mirrored into its own useState —
+  // a list of these (a Route variant's places[], say) can have an entry
+  // deleted out from under a given index, and React reuses that index's
+  // component instance for whichever entry shifted into it; a separate echo
+  // of `place.label` initialized only on mount would keep showing the
+  // deleted entry's text instead of picking up the shifted-in entry's.
+  const inputValue = place?.label ?? '';
   const { options, loading, error } = usePlaceSearch(inputValue);
 
   return (
@@ -42,7 +47,6 @@ export function PlacePickerField({
         filterOptions={(x) => x} // results are already server-filtered by query
         inputValue={inputValue}
         onInputChange={(_, value) => {
-          setInputValue(value);
           onChange(value ? { id: place?.id ?? null, label: value, images: place?.images } : null);
         }}
         getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
@@ -61,7 +65,6 @@ export function PlacePickerField({
         }}
         onChange={(_, value) => {
           if (value && typeof value !== 'string') {
-            setInputValue(value.label);
             onChange({ id: value.id, label: value.label, images: place?.images });
             onPicked?.(value);
           }

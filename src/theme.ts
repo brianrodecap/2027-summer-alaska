@@ -86,4 +86,25 @@ export const theme = createTheme({
   typography: {
     fontFamily: "'Roboto Serif', serif",
   },
+  components: {
+    // Native <button>s opt out of font inheritance by default (the
+    // browser's own UA stylesheet, not an MUI choice) — MUI's CssBaseline
+    // resets html/body but never touches form controls, so every
+    // ButtonBase-based component (Button, IconButton, a day-list row's own
+    // clickable ButtonBase) silently falls back to the browser's default
+    // Arial instead of this theme's Roboto Serif. Invisible where a button
+    // only ever holds Typography children (which set their own explicit
+    // font), but it skews the button's own layout metrics — e.g. it was
+    // the real reason a day-list row's leading caption sat noticeably
+    // closer to the timeline dot when the row happened to be a clickable
+    // ButtonBase (Activity) than when it was a plain non-interactive Box
+    // (Stay/Transit), even though both used identical Typography styling.
+    MuiButtonBase: {
+      styleOverrides: {
+        root: {
+          font: 'inherit',
+        },
+      },
+    },
+  },
 });

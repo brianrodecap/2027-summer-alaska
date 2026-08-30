@@ -1,6 +1,6 @@
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import DragHandleIcon from '@mui/icons-material/DragHandle';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import Timeline from '@mui/lab/Timeline';
 import TimelineConnector from '@mui/lab/TimelineConnector';
 import TimelineContent from '@mui/lab/TimelineContent';
@@ -9,6 +9,7 @@ import TimelineSeparator from '@mui/lab/TimelineSeparator';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { type CSSProperties, Fragment, memo, type ReactElement, type ReactNode } from 'react';
 
@@ -59,6 +60,96 @@ import { ScenarioTabsSection } from './ScenarioTabsSection';
 // drive's estimated arrival live — is a documented, deliberately deferred
 // refinement; every variant's own stage/arrival times still reflect the
 // model's own default meal-format guess.)
+// Applied uniformly to every row (Stay/Transit/Activity alike) so the
+// dot/image column it sits beside stays aligned down the page regardless of
+// which individual rows actually carry a drag handle (only Activity rows
+// do; see ActivityNode below).
+const DRAG_HANDLE_HOVER_CLASS = 'day-drag-handle';
+
+// ActivityNode's own hover/focus-reveal selector for the drag handle — a
+// module-level constant so it isn't rebuilt on every render.
+const ACTIVITY_HOVER_SX = {
+  [`&:hover .${DRAG_HANDLE_HOVER_CLASS}, &:focus-within .${DRAG_HANDLE_HOVER_CLASS}`]: {
+    opacity: 1,
+  },
+};
+
+// Static — hoisted so LeadingGutter/TrailingGutter don't reallocate an sx
+// object on every row's every render (every row now routes through one of
+// these, not just the one-off drag-handle IconButton that used to be the
+// only inline sx here).
+const LEADING_GUTTER_SX = {
+  // 32px matches the drag handle's IconButton, so rows without one still
+  // reserve its width and keep the dot column aligned.
+  width: 32,
+  flexShrink: 0,
+  alignSelf: 'flex-start',
+  display: 'flex',
+  justifyContent: 'center',
+  alignItems: 'flex-start',
+  pt: '1px',
+} as const;
+
+function LeadingGutter({ dragHandle }: { dragHandle?: ReactNode }) {
+  return <Box sx={LEADING_GUTTER_SX}>{dragHandle}</Box>;
+}
+
+// The row-menu counterpart to LeadingGutter above: a fixed rail at the far
+// right of every row, sitting outside TimelineContent as its own flex
+// sibling rather than inside it. Different row types give TimelineContent
+// different horizontal padding (see ActivityNode's px: 2 vs. Stay/Transit's
+// none), so a kebab button placed *inside* that padded area lands at a
+// different x-position per row type; anchoring it here instead keeps every
+// row's menu icon flush against the same right edge regardless of that
+// per-row padding.
+const TRAILING_GUTTER_SX = { flexShrink: 0, alignSelf: 'flex-start', display: 'flex' } as const;
+
+function TrailingGutter({ children }: { children?: ReactNode }) {
+  return <Box sx={TRAILING_GUTTER_SX}>{children}</Box>;
+}
+
+// Every *Node below assembles the same five pieces in the same order —
+// TimelineItem, LeadingGutter, a TimelineSeparator holding one dot plus an
+// optional connector, TimelineContent, and an optional TrailingGutter — with
+// only the dot, the content, and whether a drag handle/menu apply actually
+// varying per row type. Centralizing that wiring here means a future change
+// to the shared chrome (the gutters, the connector-suppression on the last
+// row, ...) touches one place instead of five. `contentSx` defaults to every
+// row's own { pb: 3, pt: 0 } and merges in a caller's override rather than
+// requiring each of the five callers to repeat it; the drag-handle
+// hover-reveal (ACTIVITY_HOVER_SX) is likewise wired automatically off
+// whether a dragHandle was passed, rather than exposed as its own opaque
+// itemSx prop — only a row with a drag handle needs it.
+const DEFAULT_CONTENT_SX = { pb: 3, pt: 0 };
+
+function TimelineRow({
+  dot,
+  isLast,
+  contentSx,
+  dragHandle,
+  trailing,
+  children,
+}: {
+  dot: ReactNode;
+  isLast: boolean;
+  contentSx?: { pb?: number; px?: number };
+  dragHandle?: ReactNode;
+  trailing?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <TimelineItem sx={dragHandle ? ACTIVITY_HOVER_SX : undefined}>
+      <LeadingGutter dragHandle={dragHandle} />
+      <TimelineSeparator>
+        {dot}
+        {!isLast && <TimelineConnector />}
+      </TimelineSeparator>
+      <TimelineContent sx={{ ...DEFAULT_CONTENT_SX, ...contentSx }}>{children}</TimelineContent>
+      {trailing && <TrailingGutter>{trailing}</TrailingGutter>}
+    </TimelineItem>
+  );
+}
+
 function resolvedArrivesAtFor(
   transit: EnrichedTransit,
   routeTones: Map<string, string>,
@@ -86,51 +177,47 @@ const StayNode = memo(function StayNode({
   const { openEdit, deleteEntity } = useEdit();
   const { above, mid, below } = splitNotes(stay.notes);
   return (
-    <TimelineItem>
-      <TimelineSeparator>
-        {image ? (
+    <TimelineRow
+      dot={
+        image ? (
           <Avatar src={image.uri} sx={{ width: 32, height: 32 }} />
         ) : (
           <RowLeadingDot icon="hotel" />
+        )
+      }
+      isLast={isLast}
+      trailing={
+        <RowMenu
+          entity="stay"
+          id={stay._id}
+          onEdit={() => openEdit('stay', stay._id)}
+          onDelete={() => deleteEntity('stay', stay._id)}
+        />
+      }
+    >
+      <NotesCluster notes={above} />
+      <Box sx={{ cursor: 'pointer' }} onClick={() => onOpen(stay)}>
+        <Typography variant="caption" color="text.secondary">
+          {stayRelation(stay, date)}
+        </Typography>
+        <Typography variant="subtitle1">{name}</Typography>
+        <Typography variant="body2" color="text.secondary">
+          {formatTime(stay.checkInAt)} in · {formatTime(stay.checkOutAt)} out
+        </Typography>
+        {detailBits.length > 0 && (
+          <Typography variant="body2" color="text.secondary">
+            {detailBits.join(' · ')}
+          </Typography>
         )}
-        {!isLast && <TimelineConnector />}
-      </TimelineSeparator>
-      <TimelineContent sx={{ pb: 3 }}>
-        <NotesCluster notes={above} />
-        <Box
-          sx={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer' }}
-          onClick={() => onOpen(stay)}
-        >
-          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-            <Typography variant="caption" color="text.secondary">
-              {stayRelation(stay, date)}
-            </Typography>
-            <Typography variant="subtitle1">{name}</Typography>
-            <Typography variant="body2" color="text.secondary">
-              {formatTime(stay.checkInAt)} in · {formatTime(stay.checkOutAt)} out
-            </Typography>
-            {detailBits.length > 0 && (
-              <Typography variant="body2" color="text.secondary">
-                {detailBits.join(' · ')}
-              </Typography>
-            )}
-            <NotesCluster notes={mid} />
-            {stay.booking && (
-              <Box sx={{ mt: 0.5 }}>
-                <BookingChip booking={stay.booking} />
-              </Box>
-            )}
+        <NotesCluster notes={mid} />
+        {stay.booking && (
+          <Box sx={{ mt: 0.5 }}>
+            <BookingChip booking={stay.booking} />
           </Box>
-          <RowMenu
-            entity="stay"
-            id={stay._id}
-            onEdit={() => openEdit('stay', stay._id)}
-            onDelete={() => deleteEntity('stay', stay._id)}
-          />
-        </Box>
-        <NotesCluster notes={below} />
-      </TimelineContent>
-    </TimelineItem>
+        )}
+      </Box>
+      <NotesCluster notes={below} />
+    </TimelineRow>
   );
 });
 
@@ -156,7 +243,7 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
     : { above: [], mid: [], below: [] };
 
   const boundaryContent = (
-    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+    <Box sx={{ minWidth: 0 }}>
       <Typography variant="caption" color="text.secondary">
         {time
           ? `${formatTime(time)} · ${isDepart ? 'Depart' : 'Arrive'}`
@@ -176,36 +263,36 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
   );
 
   return (
-    <TimelineItem>
-      <TimelineSeparator>
-        {image ? (
+    <TimelineRow
+      dot={
+        image ? (
           <Avatar src={image.uri} sx={{ width: 32, height: 32 }} />
         ) : (
           <RowLeadingDot icon={modeIconName} />
-        )}
-        {!isLast && <TimelineConnector />}
-      </TimelineSeparator>
-      <TimelineContent sx={{ pb: 3 }}>
-        {isDepart && <NotesCluster notes={above} />}
-        {isDepart ? (
-          <Box
-            sx={{ display: 'flex', alignItems: 'flex-start', cursor: 'pointer' }}
-            onClick={() => onOpen(transit)}
-          >
-            {boundaryContent}
-            <RowMenu
-              entity="transit"
-              id={transit._id}
-              onEdit={() => openEdit('transit', transit._id)}
-              onDelete={() => deleteEntity('transit', transit._id)}
-            />
-          </Box>
-        ) : (
-          boundaryContent
-        )}
-        {isDepart && <NotesCluster notes={below} />}
-      </TimelineContent>
-    </TimelineItem>
+        )
+      }
+      isLast={isLast}
+      trailing={
+        isDepart && (
+          <RowMenu
+            entity="transit"
+            id={transit._id}
+            onEdit={() => openEdit('transit', transit._id)}
+            onDelete={() => deleteEntity('transit', transit._id)}
+          />
+        )
+      }
+    >
+      {isDepart && <NotesCluster notes={above} />}
+      {isDepart ? (
+        <Box sx={{ cursor: 'pointer' }} onClick={() => onOpen(transit)}>
+          {boundaryContent}
+        </Box>
+      ) : (
+        boundaryContent
+      )}
+      {isDepart && <NotesCluster notes={below} />}
+    </TimelineRow>
   );
 });
 
@@ -226,20 +313,14 @@ const TransitStageNode = memo(function TransitStageNode({
   const tone = activeRouteTone(transit, routeTones);
   if (variant.tone !== tone) return null; // a non-active variant's stages simply aren't rendered
   return (
-    <TimelineItem>
-      <TimelineSeparator>
-        <RowLeadingDot icon="signpost" />
-        {!isLast && <TimelineConnector />}
-      </TimelineSeparator>
-      <TimelineContent sx={{ pb: 3 }}>
-        <Typography variant="caption" color="text.secondary">
-          {formatTime(stage.key)} · {STAGE_KIND_LABEL[stage.kind] ?? 'Via'}
-        </Typography>
-        <Typography variant="subtitle1" title={stage.note ?? undefined}>
-          {stage.label}
-        </Typography>
-      </TimelineContent>
-    </TimelineItem>
+    <TimelineRow dot={<RowLeadingDot icon="signpost" />} isLast={isLast}>
+      <Typography variant="caption" color="text.secondary">
+        {formatTime(stage.key)} · {STAGE_KIND_LABEL[stage.kind] ?? 'Via'}
+      </Typography>
+      <Typography variant="subtitle1" title={stage.note ?? undefined}>
+        {stage.label}
+      </Typography>
+    </TimelineRow>
   );
 });
 
@@ -273,26 +354,24 @@ const ActivityNode = memo(function ActivityNode({
   }
 
   return (
-    <TimelineItem>
-      <TimelineSeparator>
-        <ActivityLeading activity={activity} day={day} />
-        {!isLast && <TimelineConnector />}
-      </TimelineSeparator>
-      <TimelineContent sx={{ pb: 3, px: 2, pt: 0 }}>
-        <NotesCluster notes={above} />
-        <Box sx={{ display: 'flex', alignItems: 'flex-start' }}>
-          <ActivityRow activity={activity} day={day} onOpen={onOpenActivity} midNotes={mid} />
-          {dragHandle}
-          <RowMenu
-            entity={noteTarget.entity}
-            id={noteTarget.id}
-            onEdit={() => openEdit('activity', activity._id)}
-            onDelete={() => deleteEntity('activity', activity._id)}
-          />
-        </Box>
-        <NotesCluster notes={below} />
-      </TimelineContent>
-    </TimelineItem>
+    <TimelineRow
+      dot={<ActivityLeading activity={activity} day={day} />}
+      isLast={isLast}
+      contentSx={{ px: 2 }}
+      dragHandle={dragHandle}
+      trailing={
+        <RowMenu
+          entity={noteTarget.entity}
+          id={noteTarget.id}
+          onEdit={() => openEdit('activity', activity._id)}
+          onDelete={() => deleteEntity('activity', activity._id)}
+        />
+      }
+    >
+      <NotesCluster notes={above} />
+      <ActivityRow activity={activity} day={day} onOpen={onOpenActivity} midNotes={mid} />
+      <NotesCluster notes={below} />
+    </TimelineRow>
   );
 });
 
@@ -326,24 +405,26 @@ const ScenarioTabsNode = memo(function ScenarioTabsNode({
   const visible = visibleTracksFor(tracks, daysByDate, scenarioTone, topLevel);
   if (!visible.length) return null;
   return (
-    <TimelineItem>
-      <TimelineSeparator>
-        <RowLeadingDot icon="alt_route" />
-        {!isLast && <TimelineConnector />}
-      </TimelineSeparator>
-      <TimelineContent sx={{ pb: 3 }}>
-        <ScenarioTabsSection
-          day={day}
-          tracks={tracks}
-          visible={visible}
-          topLevel={topLevel}
-          daysByDate={daysByDate}
-          onOpenActivity={onOpenActivity}
-          onOpenStay={onOpenStay}
-          onOpenTransit={onOpenTransit}
-        />
-      </TimelineContent>
-    </TimelineItem>
+    <TimelineRow
+      dot={<RowLeadingDot icon="alt_route" />}
+      isLast={isLast}
+      // No pb here (unlike every other node's default pb: 3) —
+      // ScenarioTabsSection's own nested DayTimeline already ends in a row
+      // with its standard pb: 3, so adding this node's own would double up
+      // the trailing gap before whatever comes after the scenario section.
+      contentSx={{ pb: 0 }}
+    >
+      <ScenarioTabsSection
+        day={day}
+        tracks={tracks}
+        visible={visible}
+        topLevel={topLevel}
+        daysByDate={daysByDate}
+        onOpenActivity={onOpenActivity}
+        onOpenStay={onOpenStay}
+        onOpenTransit={onOpenTransit}
+      />
+    </TimelineRow>
   );
 });
 
@@ -665,21 +746,24 @@ export const DayTimeline = memo(function DayTimeline({
                   node.render(
                     i === allNodes.length - 1,
                     dragHandleProps ? (
-                      <IconButton
-                        size="small"
-                        aria-label="Reorder"
-                        sx={{
-                          flexShrink: 0,
-                          ml: 0.5,
-                          mt: -0.5,
-                          cursor: 'grab',
-                          touchAction: 'none',
-                        }}
-                        {...dragHandleProps.attributes}
-                        {...dragHandleProps.listeners}
-                      >
-                        <DragHandleIcon fontSize="small" />
-                      </IconButton>
+                      <Tooltip title="Drag to reorder">
+                        <IconButton
+                          className={DRAG_HANDLE_HOVER_CLASS}
+                          size="small"
+                          aria-label="Reorder"
+                          sx={{
+                            flexShrink: 0,
+                            cursor: 'grab',
+                            touchAction: 'none',
+                            opacity: 0,
+                            transition: 'opacity 0.15s',
+                          }}
+                          {...dragHandleProps.attributes}
+                          {...dragHandleProps.listeners}
+                        >
+                          <DragIndicatorIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
                     ) : undefined,
                   )
                 }

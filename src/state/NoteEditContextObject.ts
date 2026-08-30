@@ -1,13 +1,15 @@
 import { createContext } from 'react';
 
-import type { Note, NoteKind, RefEntityKind } from '../model/types';
+import type { Note, NoteKind, Ref } from '../model/types';
 
 export type NoteTarget =
-  | { mode: 'create'; entity: RefEntityKind; id: string; kind: NoteKind }
-  | { mode: 'edit'; note: Note };
+  { mode: 'create'; ref: Ref; kind: NoteKind } | { mode: 'edit'; note: Note };
 
 export interface NoteEditContextValue {
-  openNoteCreate: (entity: RefEntityKind, id: string, kind: NoteKind) => void;
+  // ref is whatever the new note should concern — an entity ref for a
+  // row-attached note (see RowMenu), or a date/dateRange ref for a
+  // whole-day one (see DayBlock's AddDayNoteButton).
+  openNoteCreate: (ref: Ref, kind: NoteKind) => void;
   openNoteEdit: (note: Note) => void;
 }
 

@@ -2,9 +2,11 @@
   {
     "_id": "route_anchorage_talkeetna",
     "from": {
+      "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
       "label": "Anchorage"
     },
     "to": {
+      "id": "ChIJoy8lnw_vy1YRc8fyP3dIJVE",
       "label": "Talkeetna"
     },
     "variants": [
@@ -12,7 +14,8 @@
         "tone": "direct",
         "label": "Glenn Highway and George Parks Highway",
         "places": [],
-        "finalLegMinutes": 123
+        "finalLegMinutes": 121,
+        "finalLegMiles": 113.6
       },
       {
         "tone": "scenic",
@@ -24,10 +27,12 @@
               "id": "ChIJe9iB48DiyFYR0c3w5-2X6No",
               "label": "Butte"
             },
-            "durationMinutes": 0
+            "durationMinutes": 47,
+            "distanceMiles": 42.1
           }
         ],
-        "finalLegMinutes": 75
+        "finalLegMinutes": 100,
+        "finalLegMiles": 90.5
       }
     ],
     "images": [
@@ -65,10 +70,12 @@
               "id": "ChIJe9iB48DiyFYR0c3w5-2X6No",
               "label": "Butte"
             },
-            "durationMinutes": 0
+            "durationMinutes": 337,
+            "distanceMiles": 270.6
           }
         ],
-        "finalLegMinutes": 90
+        "finalLegMinutes": 46,
+        "finalLegMiles": 41.9
       }
     ],
     "images": [
@@ -82,9 +89,11 @@
   {
     "_id": "route_seward_highway",
     "from": {
+      "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
       "label": "Anchorage"
     },
     "to": {
+      "id": "ChIJxf8q8m6bx1YRvxHSNsJg4Vs",
       "label": "Seward"
     },
     "variants": [
@@ -98,10 +107,12 @@
               "id": "ChIJd8zQE4t3yFYR6ON3mmwv0mw",
               "label": "Turnagain Pass"
             },
-            "durationMinutes": 25
+            "durationMinutes": 65,
+            "distanceMiles": 58.3
           }
         ],
-        "finalLegMinutes": 65
+        "finalLegMinutes": 73,
+        "finalLegMiles": 68.4
       }
     ],
     "images": [
@@ -115,9 +126,11 @@
   {
     "_id": "route_dalton_highway",
     "from": {
+      "id": "ChIJqWX9Z09FMlEROvf-CeAF2LM",
       "label": "Fairbanks"
     },
     "to": {
+      "id": "ChIJNRitFufAKFERJ0iug2SKplA",
       "label": "Coldfoot"
     },
     "variants": [
@@ -131,7 +144,8 @@
               "id": "ChIJq1HFuXaxLlERly-xPwd2LII",
               "label": "Finger Mountain"
             },
-            "durationMinutes": 230
+            "durationMinutes": 250,
+            "distanceMiles": 176.9
           },
           {
             "kind": "waypoint",
@@ -139,10 +153,12 @@
               "id": "ChIJq1OY5MlJKVERzomrV_shh1E",
               "label": "Arctic Circle Sign"
             },
-            "durationMinutes": 25
+            "durationMinutes": 27,
+            "distanceMiles": 17.4
           }
         ],
-        "finalLegMinutes": 90
+        "finalLegMinutes": 88,
+        "finalLegMiles": 59.9
       }
     ],
     "images": [
@@ -156,9 +172,11 @@
   {
     "_id": "route_parks_highway",
     "from": {
-      "label": "Denali National Park"
+      "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
+      "label": "Denali Visitor Center"
     },
     "to": {
+      "id": "ChIJqWX9Z09FMlEROvf-CeAF2LM",
       "label": "Fairbanks"
     },
     "variants": [
@@ -172,10 +190,12 @@
               "id": "ChIJhXnkIkq0MlERbxl8lVwyH-s",
               "label": "Tatlanika Gift Shop and Campground"
             },
-            "durationMinutes": 44
+            "durationMinutes": 45,
+            "distanceMiles": 40.4
           }
         ],
-        "finalLegMinutes": 88
+        "finalLegMinutes": 89,
+        "finalLegMiles": 82.9
       }
     ],
     "images": [
@@ -213,34 +233,20 @@
   {
     "_id": "route_mccarthy_road",
     "from": {
+      "id": "ChIJdT2A7HyWtVYRNWI7kTDhePA",
       "label": "Copper Center"
     },
     "to": {
-      "label": "McCarthy Road footbridge"
+      "id": "ChIJFdOBjRuFs1YRYVu1TmFM1VY",
+      "label": "McCarthy Bridge"
     },
     "variants": [
       {
         "tone": "direct",
-        "label": "Only practical route — Richardson Highway to Chitina, then the McCarthy Road",
-        "places": [
-          {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJAfrBn7Y5tFYRPe8_YnPBNj4",
-              "label": "Chitina"
-            },
-            "durationMinutes": 45
-          },
-          {
-            "kind": "via",
-            "place": {
-              "id": "ChIJ9-tzIfhxtFYRBZUt1JYCoTY",
-              "label": "McCarthy Road"
-            },
-            "durationMinutes": 115
-          }
-        ],
-        "finalLegMinutes": 110
+        "label": "Richardson Highway and McCarthy Road",
+        "places": [],
+        "finalLegMinutes": 171,
+        "finalLegMiles": 110.8
       }
     ],
     "images": [
@@ -272,7 +278,8 @@
               "id": "ChIJMQSzDXyDzlYR0kjMv9sRo-I",
               "label": "Denali Viewpoint South"
             },
-            "durationMinutes": 56
+            "durationMinutes": 53,
+            "distanceMiles": 50.4
           },
           {
             "kind": "waypoint",
@@ -280,19 +287,23 @@
               "id": "ChIJW1BnSrYwzFYRJFJvnughNoQ",
               "label": "Denali View North"
             },
-            "durationMinutes": 28
+            "durationMinutes": 28,
+            "distanceMiles": 28
           }
         ],
-        "finalLegMinutes": 36
+        "finalLegMinutes": 77,
+        "finalLegMiles": 75.5
       }
     ]
   },
   {
     "_id": "route_anchorage_whittier",
     "from": {
+      "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
       "label": "Anchorage"
     },
     "to": {
+      "id": "ChIJU5WSntkauFYR4i5djg8b1_Y",
       "label": "Whittier"
     },
     "variants": [
@@ -301,24 +312,18 @@
         "label": "Seward Highway and Whittier Access Road",
         "places": [
           {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJrZNXUGx7yFYRTbgad_F100o",
-              "label": "Girdwood"
-            },
-            "durationMinutes": 45
-          },
-          {
             "kind": "via",
             "place": {
               "id": "ChIJZyfB370NyFYR9QAqNUYxru4",
               "label": "Portage Glacier / Whittier junction"
             },
             "note": "Splits off the Seward Highway here onto the Whittier Access Road and through the tunnel",
-            "durationMinutes": 15
+            "durationMinutes": 83,
+            "distanceMiles": 61.7
           }
         ],
-        "finalLegMinutes": 0
+        "finalLegMinutes": 28,
+        "finalLegMiles": 10.3
       }
     ],
     "images": [
@@ -350,7 +355,8 @@
               "id": "ChIJq1OY5MlJKVERzomrV_shh1E",
               "label": "Arctic Circle Sign"
             },
-            "durationMinutes": 0
+            "durationMinutes": 83,
+            "distanceMiles": 59.9
           },
           {
             "kind": "waypoint",
@@ -358,10 +364,12 @@
               "id": "ChIJq1HFuXaxLlERly-xPwd2LII",
               "label": "Finger Mountain"
             },
-            "durationMinutes": 0
+            "durationMinutes": 27,
+            "distanceMiles": 17.4
           }
         ],
-        "finalLegMinutes": 0
+        "finalLegMinutes": 234,
+        "finalLegMiles": 176.9
       }
     ],
     "images": []
@@ -380,8 +388,19 @@
       {
         "tone": "direct",
         "label": "Edgerton Highway and Richardson Highway",
-        "places": [],
-        "finalLegMinutes": 0
+        "places": [
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJR4vyQQVhtlYRFITVHZkXzZQ",
+              "label": "Scenic Pullover"
+            },
+            "durationMinutes": 202,
+            "distanceMiles": 145.7
+          }
+        ],
+        "finalLegMinutes": 38,
+        "finalLegMiles": 34.5
       }
     ],
     "images": []

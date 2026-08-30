@@ -84,7 +84,7 @@ export function MealRow({
         sx={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: 1 }}
       >
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-          <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+          <Typography variant="caption" color="text.secondary">
             {timeAndMealTypeLabel(
               activity,
               selected ? mealOptionTimeLabel(activity, selected) : undefined,
