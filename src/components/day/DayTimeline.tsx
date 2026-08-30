@@ -74,15 +74,22 @@ const ACTIVITY_HOVER_SX = {
   },
 };
 
+// The drag handle IconButton's fontSize="small" icon is 20px, plus this much
+// padding on each side — both the gutter width below and the IconButton's
+// own sx (see the drag handle render further down) derive from these two
+// numbers instead of restating the resulting 24px independently.
+const DRAG_HANDLE_ICON_SIZE = 20;
+const DRAG_HANDLE_PADDING_PX = 2;
+const DRAG_HANDLE_WIDTH = DRAG_HANDLE_ICON_SIZE + DRAG_HANDLE_PADDING_PX * 2;
+
 // Static — hoisted so LeadingGutter/TrailingGutter don't reallocate an sx
 // object on every row's every render (every row now routes through one of
 // these, not just the one-off drag-handle IconButton that used to be the
 // only inline sx here).
 const LEADING_GUTTER_SX = {
-  // 24px matches the drag handle's IconButton (see its own tightened p: '2px'
-  // below), so rows without one still reserve its width and keep the dot
-  // column aligned.
-  width: 24,
+  // Matches DRAG_HANDLE_WIDTH, so rows without a drag handle still reserve
+  // its width and keep the dot column aligned.
+  width: DRAG_HANDLE_WIDTH,
   flexShrink: 0,
   alignSelf: 'flex-start',
   display: 'flex',
@@ -758,9 +765,7 @@ export const DayTimeline = memo(function DayTimeline({
                             touchAction: 'none',
                             opacity: 0,
                             transition: 'opacity 0.15s',
-                            // Matches LEADING_GUTTER_SX's 24px width exactly
-                            // (20px icon + 2px padding each side).
-                            p: '2px',
+                            p: `${DRAG_HANDLE_PADDING_PX}px`,
                           }}
                           {...dragHandleProps.attributes}
                           {...dragHandleProps.listeners}
