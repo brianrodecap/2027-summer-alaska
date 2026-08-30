@@ -13,7 +13,7 @@ import Typography from '@mui/material/Typography';
 import { type CSSProperties, Fragment, memo, type ReactElement, type ReactNode } from 'react';
 
 import { filterSequenceItems } from '../../model/filters';
-import { firstImage } from '../../model/formatting';
+import { firstImage, stayDetailBits } from '../../model/formatting';
 import { activeMealOptions, selectedMealOptionIndex } from '../../model/mealOptions';
 import { buildDragMeta, type DragMeta } from '../../model/reorder';
 import {
@@ -81,12 +81,7 @@ const StayNode = memo(function StayNode({
 }) {
   const { stay } = item;
   const name = stay.lodging?.name ?? 'Lodging still open';
-  const detailBits = [
-    stay.lodging?.roomType,
-    stay.lodging?.roomNumber && `Room/cabin ${stay.lodging.roomNumber}`,
-    stay.lodging?.campsite,
-    stay.lodging?.bedConfiguration,
-  ].filter(Boolean) as string[];
+  const detailBits = stayDetailBits(stay.lodging);
   const image = firstImage(stay);
   const { openEdit, deleteEntity } = useEdit();
   const { above, mid, below } = splitNotes(stay.notes);

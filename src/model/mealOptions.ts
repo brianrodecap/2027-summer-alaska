@@ -5,9 +5,7 @@
 // here rather than inside either's own component file.
 import { DINING_FORMAT_LABEL } from './formatting';
 import {
-  activityDurationMinutes,
-  addMinutesIso,
-  formatTime,
+  activityTimeLabel,
   overlapWarningsFor,
   sectionActivitiesDeep,
   stayRelation,
@@ -70,12 +68,7 @@ export function mealOptionTimeLabel(
   >,
   option: EnrichedMealOption,
 ): string {
-  if (!activity.startAt) return activity.timeLabel ?? 'Time TBD';
-  const minutes = activityDurationMinutes(activity, new Map([[activity._id, option.diningFormat]]));
-  const start = formatTime(activity.startAt);
-  return minutes != null
-    ? `${start}–${formatTime(addMinutesIso(activity.startAt, minutes))}`
-    : start;
+  return activityTimeLabel(activity, new Map([[activity._id, option.diningFormat]]));
 }
 
 // The stored per-activity index (TripSelectionsContext's mealOptionIndex map)

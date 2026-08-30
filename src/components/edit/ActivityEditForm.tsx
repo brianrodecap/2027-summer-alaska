@@ -10,6 +10,7 @@ import type { ActivityFormState } from '../../model/editForms';
 import {
   DINING_FORMAT_OPTIONS,
   DINING_FORMATS_WITH_INCLUDED_IN,
+  MEAL_TYPE_VALUES,
   PRIORITY_OPTIONS,
   TIME_LABEL_OPTIONS,
 } from '../../model/editForms';
@@ -40,10 +41,7 @@ const STATUS_OPTIONS: { value: PlanStatus; label: string }[] = [
 
 const MEAL_TYPE_OPTIONS: { value: MealType | ''; label: string }[] = [
   { value: '', label: 'Not a meal' },
-  { value: 'breakfast', label: 'Breakfast' },
-  { value: 'lunch', label: 'Lunch' },
-  { value: 'dinner', label: 'Dinner' },
-  { value: 'snack', label: 'Snack' },
+  ...MEAL_TYPE_VALUES,
 ];
 
 export function ActivityEditForm({

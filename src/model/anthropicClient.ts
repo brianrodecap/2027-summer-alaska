@@ -61,3 +61,12 @@ export async function callAnthropicMessages(
   }
   return body;
 }
+
+// The one part of "interpreting `content`" every caller needs identically:
+// picking out a named tool's call among the response's content blocks.
+export function findToolUse(
+  content: AnthropicContentBlock[],
+  toolName: string,
+): AnthropicContentBlock | undefined {
+  return content.find((block) => block.type === 'tool_use' && block.name === toolName);
+}

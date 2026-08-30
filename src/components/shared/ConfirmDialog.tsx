@@ -4,6 +4,17 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
+import type { MouseEvent } from 'react';
+
+// MUI portals Dialog content to document.body, but React's synthetic events
+// still bubble through the component tree — so without this, a click on
+// either button also reaches whatever row/menu opened the dialog.
+const stop =
+  (fn: () => void) =>
+  (e: MouseEvent): void => {
+    e.stopPropagation();
+    fn();
+  };
 
 // Shared "are you sure?" gate for destructive actions — currently just the
 // Activity/Stay/Transit and Route edit dialogs' own Delete buttons.
@@ -29,22 +40,8 @@ export function ConfirmDialog({
         <DialogContentText>{message}</DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button
-          onClick={(e) => {
-            e.stopPropagation();
-            onCancel();
-          }}
-        >
-          Cancel
-        </Button>
-        <Button
-          color="error"
-          variant="contained"
-          onClick={(e) => {
-            e.stopPropagation();
-            onConfirm();
-          }}
-        >
+        <Button onClick={stop(onCancel)}>Cancel</Button>
+        <Button color="error" variant="contained" onClick={stop(onConfirm)}>
           {confirmLabel}
         </Button>
       </DialogActions>

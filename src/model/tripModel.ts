@@ -36,6 +36,7 @@ import type {
   LiveRouteOverrides,
   Money,
   Note,
+  Package,
   Place,
   Ref,
   RefEntityKind,
@@ -311,14 +312,19 @@ export function transitRouteLabel(endpoints: {
   return `${endpoints.from.label || '?'} → ${endpoints.to.label || '?'}`;
 }
 
+// formatOverrides threads through to activityDurationMinutes for a still-
+// open meal recomputing its span against a specific candidate's diningFormat
+// rather than the Activity's own stored one — see mealOptions.ts's
+// mealOptionTimeLabel, the only caller that ever passes it.
 export function activityTimeLabel(
   activity: Pick<
     Activity,
     '_id' | 'startAt' | 'durationMinutes' | 'timeLabel' | 'mealType' | 'diningFormat' | 'options'
   >,
+  formatOverrides?: Map<string, DiningFormat>,
 ): string {
   if (activity.startAt) {
-    const minutes = activityDurationMinutes(activity);
+    const minutes = activityDurationMinutes(activity, formatOverrides);
     const end = minutes != null ? addMinutesIso(activity.startAt, minutes) : null;
     return formatTime(activity.startAt) + (end ? `–${formatTime(end)}` : '');
   }
@@ -2422,7 +2428,7 @@ function travelersById(tripTravelers: Traveler[]): Map<string, string> {
 function resolveMealTravelers(
   tripTravelers: Traveler[],
   includedIn: Ref | null | undefined,
-  packagesById: Map<string, import('./types').Package>,
+  packagesById: Map<string, Package>,
 ): string[] | null {
   if (!includedIn || !('entity' in includedIn) || includedIn.entity !== 'package') return null;
   const everyone = tripTravelers.map((t) => t.name);

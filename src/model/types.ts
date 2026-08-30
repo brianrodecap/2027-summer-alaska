@@ -280,7 +280,6 @@ export interface Activity {
   durationMinutes: number | null; // null when unknown/point-in-time; see activityDurationMinutes
   timeLabel: TimeLabel | null;
   date: string | null; // set only when startAt is null
-  order: number | null; // vestigial — nothing reads this
   priority: Priority | null;
   text: string;
   place: Place | null;
@@ -317,7 +316,7 @@ export interface TripsIndexEntry {
 
 // ---------- enriched entities, as buildTripView produces them ----------
 
-export interface EnrichedMealOption extends Omit<MealOption, never> {
+export interface EnrichedMealOption extends MealOption {
   travelers: string[] | null; // resolved display names, not ids
   notes: Note[]; // this candidate's own notes, not the Activity's — only shown while it's the selected option
 }

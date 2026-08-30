@@ -47,7 +47,6 @@ function pushMinimalActivity(data: TripData, overrides: Partial<TripData['activi
     durationMinutes: null,
     timeLabel: null,
     date: null,
-    order: null,
     priority: null,
     text: 'Test activity',
     place: null,

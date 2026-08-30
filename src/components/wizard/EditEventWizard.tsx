@@ -12,6 +12,7 @@ import {
   blankTransit,
   categoryForActivity,
   type EditKind,
+  type Entity,
   type MealDecision,
   mealDecisionForActivity,
   stayFormFrom,
@@ -26,8 +27,6 @@ import type { Activity, Route, Stay, Transit, Traveler } from '../../model/types
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { renderWizardStep, type WizardStepContext } from './renderWizardStep';
 import { WizardShell, type WizardStep } from './WizardShell';
-
-type Entity = Activity | Stay | Transit;
 
 const EDIT_TITLE: Record<EditKind, string> = {
   activity: 'Edit activity',
@@ -116,8 +115,6 @@ function EditEventWizardBody({
     transits,
     tripTravelers,
     routes,
-    legs: [],
-    otherScenarios: [],
   };
 
   const steps: WizardStep[] = stepIds.map((id) => ({

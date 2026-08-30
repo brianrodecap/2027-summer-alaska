@@ -15,7 +15,7 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import type { ReactNode } from 'react';
+import { type ReactNode, useMemo } from 'react';
 
 import { firstImage } from '../../model/formatting';
 import { formatDateRangeLabel, formatMoney, tripDayCount } from '../../model/tripModel';
@@ -66,7 +66,7 @@ function DayGroup({
 // Consecutive single-day groups share one plain list; a run of 2+ days at
 // the same location becomes its own collapsible accordion.
 function LegDayList({ days, onSelectDay }: { days: Day[]; onSelectDay: (date: string) => void }) {
-  const groups = groupDaysByLocation(days);
+  const groups = useMemo(() => groupDaysByLocation(days), [days]);
   const blocks: ReactNode[] = [];
   let pending: Day[] = [];
   const flushPending = (key: string) => {

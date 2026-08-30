@@ -40,6 +40,11 @@ function TripHero() {
 
   const { trip } = view;
   const heroImage = trip.images[0];
+  const heroIconSx = heroImage ? { color: 'inherit' } : undefined;
+  const heroChipSx = heroImage
+    ? { color: 'inherit', borderColor: 'rgba(255,255,255,0.7)' }
+    : undefined;
+  const heroChipVariant = heroImage ? 'outlined' : 'filled';
 
   return (
     <Box
@@ -62,11 +67,7 @@ function TripHero() {
       }}
     >
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
-        <IconButton
-          aria-label="Back to trips"
-          onClick={() => navigate('/')}
-          sx={heroImage ? { color: 'inherit' } : undefined}
-        >
+        <IconButton aria-label="Back to trips" onClick={() => navigate('/')} sx={heroIconSx}>
           <ArrowBackIcon />
         </IconButton>
         <Typography variant="h4" sx={{ flexGrow: 1 }}>
@@ -76,7 +77,7 @@ function TripHero() {
           <IconButton
             aria-label="Export edits"
             onClick={() => exportEdits(data, dirtyCollections)}
-            sx={heroImage ? { color: 'inherit' } : undefined}
+            sx={heroIconSx}
           >
             <DownloadIcon />
           </IconButton>
@@ -89,8 +90,8 @@ function TripHero() {
             component={Link}
             to={`/${slug}/days`}
             clickable
-            sx={heroImage ? { color: 'inherit', borderColor: 'rgba(255,255,255,0.7)' } : undefined}
-            variant={heroImage ? 'outlined' : 'filled'}
+            sx={heroChipSx}
+            variant={heroChipVariant}
           />
         )}
         <Chip
@@ -98,8 +99,8 @@ function TripHero() {
           component={Link}
           to={`/${slug}/budget`}
           clickable
-          sx={heroImage ? { color: 'inherit', borderColor: 'rgba(255,255,255,0.7)' } : undefined}
-          variant={heroImage ? 'outlined' : 'filled'}
+          sx={heroChipSx}
+          variant={heroChipVariant}
         />
       </Stack>
     </Box>

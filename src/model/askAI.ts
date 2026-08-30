@@ -5,7 +5,7 @@
 // either way nothing is ever applied automatically — a proposal only opens
 // the existing EditDialog (via EditContext's openFromDraft), pre-filled, for
 // a human to review and Save exactly like a manual add/edit.
-import { type AnthropicTool, callAnthropicMessages } from './anthropicClient';
+import { type AnthropicTool, callAnthropicMessages, findToolUse } from './anthropicClient';
 import {
   draftEntityFromExtraction,
   ENTITY_SCHEMA,
@@ -262,10 +262,6 @@ const PROPOSE_DAY_PLAN_TOOL: AnthropicTool = {
   },
 };
 
-function parseDayPlan(input: unknown): ProposedDayPlan {
-  return input as ProposedDayPlan;
-}
-
 export async function askAI(
   history: AskAIMessage[],
   question: string,
@@ -310,14 +306,10 @@ export async function askAI(
     .map((block) => block.text)
     .join('\n')
     .trim();
-  const editUse = body.content.find(
-    (block) => block.type === 'tool_use' && block.name === PROPOSE_EDIT_TOOL.name,
-  );
-  const planUse = body.content.find(
-    (block) => block.type === 'tool_use' && block.name === PROPOSE_DAY_PLAN_TOOL.name,
-  );
+  const editUse = findToolUse(body.content, PROPOSE_EDIT_TOOL.name);
+  const planUse = findToolUse(body.content, PROPOSE_DAY_PLAN_TOOL.name);
   const proposal = editUse ? parseProposal(editUse.input) : undefined;
-  const dayPlan = planUse ? parseDayPlan(planUse.input) : undefined;
+  const dayPlan = planUse ? (planUse.input as ProposedDayPlan) : undefined;
 
   return {
     role: 'assistant',

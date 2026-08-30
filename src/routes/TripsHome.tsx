@@ -12,7 +12,7 @@ import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { BookingProgressBar } from '../components/shared/BookingProgressBar';
@@ -44,6 +44,24 @@ export function TripsHome() {
       cancelled = true;
     };
   }, []);
+
+  // Trips with a computed range (from their own Stays/Transits/Activities)
+  // sort chronologically; a trip with nothing dated yet has no range to sort
+  // by, so it sorts last. Computed once per trip (not per comparison, and
+  // not again in the render below) and reused for the date chip.
+  const sortedTrips = useMemo(() => {
+    if (!trips) return [];
+    const withRange = trips.map((entry) => ({
+      ...entry,
+      range: tripDateRange(entry.stays, entry.transits, entry.activities),
+    }));
+    return withRange.sort((a, b) => {
+      if (!a.range && !b.range) return 0;
+      if (!a.range) return 1;
+      if (!b.range) return -1;
+      return a.range.startDate.localeCompare(b.range.startDate);
+    });
+  }, [trips]);
 
   if (!trips) {
     return (
@@ -93,18 +111,6 @@ export function TripsHome() {
   const editing =
     dialogState?.mode === 'edit' ? trips.find((t) => t.slug === dialogState.slug) : undefined;
 
-  // Trips with a computed range (from their own Stays/Transits/Activities)
-  // sort chronologically; a trip with nothing dated yet has no range to sort
-  // by, so it sorts last.
-  const sortedTrips = [...trips].sort((a, b) => {
-    const rangeA = tripDateRange(a.stays, a.transits, a.activities);
-    const rangeB = tripDateRange(b.stays, b.transits, b.activities);
-    if (!rangeA && !rangeB) return 0;
-    if (!rangeA) return 1;
-    if (!rangeB) return -1;
-    return rangeA.startDate.localeCompare(rangeB.startDate);
-  });
-
   return (
     <Box sx={{ maxWidth: 960, mx: 'auto', p: 3 }}>
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
@@ -114,9 +120,8 @@ export function TripsHome() {
         </Button>
       </Stack>
       <Grid container spacing={2}>
-        {sortedTrips.map(({ slug, trip, legs, stays, transits, activities }) => {
+        {sortedTrips.map(({ slug, trip, legs, stays, transits, activities, range }) => {
           const image = firstImage(trip);
-          const range = tripDateRange(stays, transits, activities);
           const { progress, percent } = tripBookingSummary(legs, stays, transits, activities);
           return (
             <Grid key={slug} size={{ xs: 12, sm: 6 }} sx={{ display: 'flex' }}>

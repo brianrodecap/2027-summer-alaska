@@ -10,7 +10,12 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-import { DINING_FORMATS_WITH_INCLUDED_IN, swapItems } from '../../model/editForms';
+import {
+  blankMealOption,
+  DINING_FORMAT_OPTIONS,
+  DINING_FORMATS_WITH_INCLUDED_IN,
+  swapItems,
+} from '../../model/editForms';
 import { DINING_FORMAT_LABEL } from '../../model/formatting';
 import type { Activity, DiningFormat, MealOption, Stay, Transit } from '../../model/types';
 import { BookingFields } from './BookingFields';
@@ -18,26 +23,11 @@ import { bookingFormValueFrom, readBookingFormValue } from './bookingFormValue';
 import { IncludedInField } from './IncludedInField';
 import { PlacePickerField } from './PlacePickerField';
 
-const MEAL_OPTION_DINING_FORMAT_VALUES: DiningFormat[] = [
-  'included',
-  'package',
-  'included-with-activity',
-  'included-with-transit',
-  'sit-down',
-  'grab-and-go',
-  'drivethru',
-  'self-catered',
-];
-
-function emptyOption(): MealOption {
-  return {
-    _id: crypto.randomUUID(),
-    diningFormat: 'sit-down',
-    place: null,
-    includedIn: null,
-    booking: null,
-  };
-}
+// A meal candidate is always committed to one format (unlike the single-
+// choice ActivityEditForm's own dropdown, this list has no "None" entry).
+const MEAL_OPTION_DINING_FORMAT_VALUES = DINING_FORMAT_OPTIONS.filter((o) => o.value).map(
+  (o) => o.value as DiningFormat,
+);
 
 // One MealOption candidate row — an add/remove/reorder list, the same
 // bordered-card shape as a Route variant's own place list. Reordering
@@ -187,7 +177,7 @@ export function MealOptionList({
           onMoveDown={() => moveDown(i)}
         />
       ))}
-      <Button startIcon={<AddIcon />} onClick={() => onChange([...options, emptyOption()])}>
+      <Button startIcon={<AddIcon />} onClick={() => onChange([...options, blankMealOption()])}>
         Add candidate
       </Button>
     </Box>

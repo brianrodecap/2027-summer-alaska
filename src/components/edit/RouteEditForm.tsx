@@ -11,7 +11,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
 import { lookupDriveInfo } from '../../model/directions';
-import { swapItems as swap } from '../../model/editForms';
+import { blankRoutePlaceEntry, blankRouteVariant, swapItems as swap } from '../../model/editForms';
 import type { Route, RoutePlaceEntry, RouteVariant } from '../../model/types';
 import { PlacePickerField } from './PlacePickerField';
 
@@ -268,10 +268,7 @@ export function RouteEditForm({
               onClick={() =>
                 updateVariant(vi, {
                   ...variant,
-                  places: [
-                    ...variant.places,
-                    { kind: 'waypoint', place: { id: null, label: '' }, durationMinutes: 0 },
-                  ],
+                  places: [...variant.places, blankRoutePlaceEntry()],
                 })
               }
             >
@@ -288,10 +285,7 @@ export function RouteEditForm({
         onClick={() =>
           onChange({
             ...form,
-            variants: [
-              ...form.variants,
-              { tone: 'direct', label: '', places: [], finalLegMinutes: 0 },
-            ],
+            variants: [...form.variants, blankRouteVariant()],
           })
         }
       >

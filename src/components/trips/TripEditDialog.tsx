@@ -38,6 +38,7 @@ import {
 import { AUTHORITY_OPTIONS } from '../../model/formatting';
 import { slugify } from '../../model/slug';
 import type { Leg, Trip } from '../../model/types';
+import { ApiKeyField } from '../shared/ApiKeyField';
 
 const KIND_LABEL: Record<ExtractedFields['kind'], string> = {
   activity: 'Activity',
@@ -225,14 +226,7 @@ export function TripEditDialog({
                   }}
                 />
               </Button>
-              <TextField
-                label="Anthropic API key"
-                type="password"
-                fullWidth
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                helperText="Kept only in this browser's local storage — never committed or sent anywhere but api.anthropic.com."
-              />
+              <ApiKeyField value={apiKey} onChange={setApiKey} />
               {importStatus !== 'success' && (
                 <Button
                   variant="contained"

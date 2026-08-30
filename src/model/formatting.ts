@@ -3,7 +3,7 @@
 // scoped to just one of those surfaces (see docs/data-model.html for the
 // entity shapes these draw on).
 import { activityTimeLabel } from './tripModel';
-import type { DiningFormat, Image, Leg, MealOption, MealType } from './types';
+import type { DiningFormat, Image, Leg, Lodging, MealOption, MealType } from './types';
 
 // ---------- leg skeleton-authority vocabulary ----------
 
@@ -29,6 +29,18 @@ export const AUTHORITY_OPTIONS: {
 // photos can coexist. Rendering only ever draws the first entry. ----------
 export function firstImage(entity: { images?: Image[] | null } | null | undefined): Image | null {
   return entity?.images?.[0] ?? null;
+}
+
+// The room/campsite/bed-configuration bits a Stay's lodging can carry —
+// shared by the day-list's own inline StayNode and the StayDetailPanel side
+// sheet, which both show the same "whatever's filled in" summary.
+export function stayDetailBits(lodging: Lodging | null | undefined): string[] {
+  return [
+    lodging?.roomType,
+    lodging?.roomNumber && `Room/cabin ${lodging.roomNumber}`,
+    lodging?.campsite,
+    lodging?.bedConfiguration,
+  ].filter((bit): bit is string => Boolean(bit));
 }
 
 // ---------- dining-format / meal-slot vocabulary ----------

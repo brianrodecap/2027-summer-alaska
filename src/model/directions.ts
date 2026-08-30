@@ -6,7 +6,7 @@
 // for PLACES_API_KEY too, or every lookup here fails closed (the route
 // editor just leaves the fields as they were when that happens, same as a
 // failed place search).
-import { PLACES_API_KEY } from '../config/places';
+import { googleApiFetch } from './googleApiFetch';
 
 const FIELD_MASK = 'routes.duration,routes.distanceMeters';
 const METERS_PER_MILE = 1609.344;
@@ -24,21 +24,13 @@ export async function lookupDriveInfo(
   originPlaceId: string,
   destinationPlaceId: string,
 ): Promise<DriveInfo | null> {
-  const res = await fetch('https://routes.googleapis.com/directions/v2:computeRoutes', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': PLACES_API_KEY,
-      'X-Goog-FieldMask': FIELD_MASK,
-    },
-    body: JSON.stringify({
-      origin: { placeId: originPlaceId },
-      destination: { placeId: destinationPlaceId },
-      travelMode: 'DRIVE',
-    }),
+  const { routes } = await googleApiFetch<{
+    routes?: { duration?: string; distanceMeters?: number }[];
+  }>('Routes API', 'https://routes.googleapis.com/directions/v2:computeRoutes', FIELD_MASK, {
+    origin: { placeId: originPlaceId },
+    destination: { placeId: destinationPlaceId },
+    travelMode: 'DRIVE',
   });
-  if (!res.ok) throw new Error(`Routes API error ${res.status}`);
-  const { routes } = await res.json();
   const duration: string | undefined = routes?.[0]?.duration;
   const distanceMeters: number | undefined = routes?.[0]?.distanceMeters;
   if (!duration || distanceMeters == null) return null;

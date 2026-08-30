@@ -12,6 +12,7 @@ import {
   blankStay,
   blankTransit,
   type EditKind,
+  type Entity,
   type MealDecision,
   stayFormFrom,
   type StayFormState,
@@ -24,8 +25,6 @@ import {
 import type { Activity, Leg, Route, Scenario, Stay, Transit, Traveler } from '../../model/types';
 import { renderWizardStep, type WizardStepContext } from './renderWizardStep';
 import { WizardShell, type WizardStep } from './WizardShell';
-
-type Entity = Activity | Stay | Transit;
 
 // The "Add to this day" wizard — unlike EditEventWizard, the kind isn't
 // fixed going in (that's what the category step decides), so this owns a

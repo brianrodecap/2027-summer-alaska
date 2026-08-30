@@ -1,7 +1,12 @@
 import { lazy, type ReactNode, Suspense, useState } from 'react';
 
-import { COLLECTION_FOR_KIND, type EditKind, findByKind } from '../model/editForms';
-import type { Activity, Stay, Transit } from '../model/types';
+import {
+  COLLECTION_FOR_KIND,
+  type EditKind,
+  type Entity,
+  findByKind,
+  upsertById,
+} from '../model/editForms';
 import { EditContext } from './EditContextObject';
 import { useTripData } from './useTripData';
 
@@ -17,8 +22,6 @@ const EditEventWizard = lazy(() =>
 );
 
 export type { EditKind };
-
-type Entity = Activity | Stay | Transit;
 
 // `via` (on the 'edit' variant only — 'create' only ever happens via a
 // draft, so it's implicitly 'flat') picks which of the two components above
@@ -53,15 +56,11 @@ export function EditProvider({ children }: { children: ReactNode }) {
 
   const handleSave = (updated: Entity) => {
     if (!state) return;
-    const { kind } = state;
-    const isNew = state.mode === 'create';
-    const collection = COLLECTION_FOR_KIND[kind];
+    const collection = COLLECTION_FOR_KIND[state.kind];
     setData(
       (prev) => ({
         ...prev,
-        [collection]: isNew
-          ? [...(prev[collection] as Entity[]), updated]
-          : (prev[collection] as Entity[]).map((e) => (e._id === updated._id ? updated : e)),
+        [collection]: upsertById(prev[collection] as Entity[], updated),
       }),
       [collection],
     );

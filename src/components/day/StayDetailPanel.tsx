@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
-import { firstImage } from '../../model/formatting';
+import { firstImage, stayDetailBits } from '../../model/formatting';
 import { formatTime } from '../../model/tripModel';
 import type { EnrichedStay } from '../../model/types';
 import { BookingChip } from '../shared/BookingChip';
@@ -28,12 +28,7 @@ export function StayDetailPanel({
   if (!stay) return null;
 
   const image = firstImage(stay);
-  const detailBits = [
-    stay.lodging?.roomType,
-    stay.lodging?.roomNumber && `Room/cabin ${stay.lodging.roomNumber}`,
-    stay.lodging?.campsite,
-    stay.lodging?.bedConfiguration,
-  ].filter(Boolean) as string[];
+  const detailBits = stayDetailBits(stay.lodging);
 
   return (
     <DetailSideSheet

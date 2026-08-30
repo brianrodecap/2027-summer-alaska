@@ -21,6 +21,8 @@ import type {
   Priority,
   Ref,
   Route,
+  RoutePlaceEntry,
+  RouteVariant,
   Scenario,
   Stay,
   TimeLabel,
@@ -46,7 +48,6 @@ export function blankActivity(legId: string, date: string): Activity {
     durationMinutes: null,
     timeLabel: null,
     date,
-    order: null,
     priority: null,
     text: '',
     place: null,
@@ -98,6 +99,10 @@ export function blankTransit(legId: string, date: string): Transit {
 
 export type EditKind = 'activity' | 'stay' | 'transit';
 
+// The union every editable-entity kind resolves to — shared by EditContext,
+// EditDialog, and both wizard components rather than each re-spelling it.
+export type Entity = Activity | Stay | Transit;
+
 export const COLLECTION_FOR_KIND: Record<EditKind, 'activities' | 'stays' | 'transits'> = {
   activity: 'activities',
   stay: 'stays',
@@ -106,13 +111,20 @@ export const COLLECTION_FOR_KIND: Record<EditKind, 'activities' | 'stays' | 'tra
 
 export function findByKind<
   T extends { activities: Activity[]; stays: Stay[]; transits: Transit[] },
->(kind: EditKind, id: string, data: T): Activity | Stay | Transit | undefined {
-  return (data[COLLECTION_FOR_KIND[kind]] as (Activity | Stay | Transit)[]).find(
-    (e) => e._id === id,
-  );
+>(kind: EditKind, id: string, data: T): Entity | undefined {
+  return (data[COLLECTION_FOR_KIND[kind]] as Entity[]).find((e) => e._id === id);
 }
 
-export function entityLabel(kind: EditKind, entity: Activity | Stay | Transit): string {
+// Shared "replace by _id, else append" used by every collection's own
+// onSave (Route/Scenario dialogs, EditContext) so the two shapes can't
+// silently diverge.
+export function upsertById<T extends { _id: string }>(list: T[], item: T): T[] {
+  return list.some((existing) => existing._id === item._id)
+    ? list.map((existing) => (existing._id === item._id ? item : existing))
+    : [...list, item];
+}
+
+export function entityLabel(kind: EditKind, entity: Entity): string {
   if (kind === 'stay') return (entity as Stay).lodging?.name || 'Untitled stay';
   if (kind === 'transit') return transitRouteLabel(entity as Transit);
   return (entity as Activity).text || 'Untitled activity';
@@ -147,6 +159,16 @@ export interface IncludedInOption {
   label: string;
   date: string; // ISO date, for grouping
   sortKey: string; // ISO datetime, for chronological order within a group
+}
+
+export function blankMealOption(): MealOption {
+  return {
+    _id: crypto.randomUUID(),
+    diningFormat: 'sit-down',
+    place: null,
+    includedIn: null,
+    booking: null,
+  };
 }
 
 // The only diningFormat values whose meaning actually depends on an
@@ -451,6 +473,18 @@ export const DINING_FORMAT_OPTIONS: { value: DiningFormat | ''; label: string }[
   { value: 'self-catered', label: 'Self-catered' },
 ];
 
+// The real meal types, with no "none" entry — each caller prepends its own
+// contextually-appropriate empty-value label (ActivityEditForm's "not a
+// meal at all" reads differently from the wizard meal flow's "not sure
+// which meal yet"), so that difference can't be flattened away by sharing
+// a single option list wholesale.
+export const MEAL_TYPE_VALUES: { value: MealType; label: string }[] = [
+  { value: 'breakfast', label: 'Breakfast' },
+  { value: 'lunch', label: 'Lunch' },
+  { value: 'dinner', label: 'Dinner' },
+  { value: 'snack', label: 'Snack' },
+];
+
 // ---------- Route ----------
 //
 // Route (routes.json) is reference data, not a day-list line item — a
@@ -461,6 +495,14 @@ export const DINING_FORMAT_OPTIONS: { value: DiningFormat | ''; label: string }[
 
 export function routeFormFrom(route: Route): Route {
   return structuredClone(route);
+}
+
+export function blankRoutePlaceEntry(): RoutePlaceEntry {
+  return { kind: 'waypoint', place: { id: null, label: '' }, durationMinutes: 0 };
+}
+
+export function blankRouteVariant(): RouteVariant {
+  return { tone: 'direct', label: '', places: [], finalLegMinutes: 0 };
 }
 
 // Mirrors docs/js/edit.js's own applyRouteEdit validation: every place entry

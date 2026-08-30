@@ -24,7 +24,6 @@ function activity(overrides: Partial<EnrichedActivity>): EnrichedActivity {
     durationMinutes: null,
     timeLabel: null,
     date: null,
-    order: null,
     priority: null,
     text: 'Test activity',
     place: null,

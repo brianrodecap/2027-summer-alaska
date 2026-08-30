@@ -11,6 +11,7 @@
 // rating/reviews — those are Enterprise+Atmosphere and add review
 // display/attribution obligations on top of the extra cost).
 import { PLACES_API_KEY } from '../config/places';
+import { googleApiFetch } from './googleApiFetch';
 
 export interface PlaceOpeningHours {
   openNow?: boolean;
@@ -50,14 +51,11 @@ const cache = new Map<string, Promise<PlaceDetails>>();
 // coordinate lookup below, which needs the same endpoint/auth/error-handling
 // but a different (cheaper) field mask than this module's own FIELD_MASK.
 export async function fetchPlaceFields<T>(id: string, fieldMask: string): Promise<T> {
-  const res = await fetch(`https://places.googleapis.com/v1/places/${id}`, {
-    headers: {
-      'X-Goog-Api-Key': PLACES_API_KEY,
-      'X-Goog-FieldMask': fieldMask,
-    },
-  });
-  if (!res.ok) throw new Error(`Places API error ${res.status}`);
-  return res.json();
+  return googleApiFetch<T>(
+    'Places API',
+    `https://places.googleapis.com/v1/places/${id}`,
+    fieldMask,
+  );
 }
 
 export async function fetchPlace(id: string): Promise<PlaceDetails> {
@@ -82,28 +80,17 @@ export function getPlace(id: string): Promise<PlaceDetails> {
 const SEARCH_FIELD_MASK = ['places.id', 'places.displayName', 'places.formattedAddress'].join(',');
 
 export async function searchPlaces(query: string): Promise<PlaceSearchResult[]> {
-  const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': PLACES_API_KEY,
-      'X-Goog-FieldMask': SEARCH_FIELD_MASK,
-    },
-    body: JSON.stringify({ textQuery: query, maxResultCount: 5 }),
+  const { places } = await googleApiFetch<{
+    places?: { id: string; displayName?: { text?: string }; formattedAddress?: string }[];
+  }>('Places API', 'https://places.googleapis.com/v1/places:searchText', SEARCH_FIELD_MASK, {
+    textQuery: query,
+    maxResultCount: 5,
   });
-  if (!res.ok) throw new Error(`Places API error ${res.status}`);
-  const { places } = await res.json();
-  return (places ?? []).map(
-    (p: {
-      id: string;
-      displayName?: { text?: string };
-      formattedAddress?: string;
-    }): PlaceSearchResult => ({
-      id: p.id,
-      label: p.displayName?.text ?? '',
-      address: p.formattedAddress ?? '',
-    }),
-  );
+  return (places ?? []).map((p): PlaceSearchResult => ({
+    id: p.id,
+    label: p.displayName?.text ?? '',
+    address: p.formattedAddress ?? '',
+  }));
 }
 
 export function isPlacesApiKeyConfigured(): boolean {

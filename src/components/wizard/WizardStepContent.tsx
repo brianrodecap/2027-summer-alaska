@@ -18,6 +18,7 @@ import type {
 import {
   DINING_FORMAT_OPTIONS,
   DINING_FORMATS_WITH_INCLUDED_IN,
+  MEAL_TYPE_VALUES,
   PRIORITY_OPTIONS,
   routeSelectOptions,
   routeVariantOptions,
@@ -95,6 +96,13 @@ function ChoiceCards<T extends string>({
 
 // ---------- category / meal-branch ----------
 
+// Computed once from WIZARD_CATEGORY_META's own key order (see that
+// object's doc comment), rather than per-render, since it never changes.
+const CATEGORY_OPTIONS = (Object.keys(WIZARD_CATEGORY_META) as WizardCategory[]).map((c) => ({
+  value: c,
+  ...WIZARD_CATEGORY_META[c],
+}));
+
 export function CategoryStep({
   value,
   onChange,
@@ -102,16 +110,7 @@ export function CategoryStep({
   value: WizardCategory;
   onChange: (value: WizardCategory) => void;
 }) {
-  return (
-    <ChoiceCards
-      options={(Object.keys(WIZARD_CATEGORY_META) as WizardCategory[]).map((c) => ({
-        value: c,
-        ...WIZARD_CATEGORY_META[c],
-      }))}
-      value={value}
-      onChange={onChange}
-    />
-  );
+  return <ChoiceCards options={CATEGORY_OPTIONS} value={value} onChange={onChange} />;
 }
 
 export function MealBranchStep({
@@ -425,10 +424,7 @@ export function ExtrasStep({
 
 const MEAL_TYPE_OPTIONS: { value: MealType | ''; label: string }[] = [
   { value: '', label: 'Not sure yet' },
-  { value: 'breakfast', label: 'Breakfast' },
-  { value: 'lunch', label: 'Lunch' },
-  { value: 'dinner', label: 'Dinner' },
-  { value: 'snack', label: 'Snack' },
+  ...MEAL_TYPE_VALUES,
 ];
 
 export function MealWhatStep({

@@ -1,7 +1,7 @@
 import ListSubheader from '@mui/material/ListSubheader';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
-import { useRef } from 'react';
+import { useMemo, useRef } from 'react';
 
 import { includedInOptions, includedInValue, parseIncludedIn } from '../../model/editForms';
 import { formatDateLabel } from '../../model/tripModel';
@@ -29,7 +29,10 @@ export function IncludedInField({
   onChange: (value: Ref | null) => void;
   jumpToDate: string | null;
 }) {
-  const options = includedInOptions(diningFormat, stays, activities, transits);
+  const options = useMemo(
+    () => includedInOptions(diningFormat, stays, activities, transits),
+    [diningFormat, stays, activities, transits],
+  );
   const groupRefs = useRef(new Map<string, HTMLLIElement>());
 
   const handleOpen = () => {

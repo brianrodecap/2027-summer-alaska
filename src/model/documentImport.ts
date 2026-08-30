@@ -3,7 +3,7 @@
 // src/config/aiKey.ts for why this key is never hardcoded like config/places.ts's Google
 // key). Modeled on src/model/places.ts's style — a bare fetch() against the REST API, no
 // SDK dependency.
-import { type AnthropicTool, callAnthropicMessages } from './anthropicClient';
+import { type AnthropicTool, callAnthropicMessages, findToolUse } from './anthropicClient';
 import {
   blankActivity,
   blankStay,
@@ -158,9 +158,7 @@ async function callExtractionTool(
     (message) => new DocumentImportError(message),
     'Claude declined to process this document.',
   );
-  const toolUse = body.content.find(
-    (block) => block.type === 'tool_use' && block.name === tool.name,
-  );
+  const toolUse = findToolUse(body.content, tool.name);
   if (!toolUse) {
     throw new DocumentImportError('Claude did not return a structured result for this document.');
   }

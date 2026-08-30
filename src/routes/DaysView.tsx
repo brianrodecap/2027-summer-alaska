@@ -33,7 +33,12 @@ import { RoutesDialog } from '../components/edit/RoutesDialog';
 import { ScenariosDialog } from '../components/edit/ScenariosDialog';
 import { JumpToDayPicker } from '../components/pickers/JumpToDayPicker';
 import { AddEventWizard } from '../components/wizard/AddEventWizard';
-import { applyScenarioDeletion, COLLECTION_FOR_KIND, type EditKind } from '../model/editForms';
+import {
+  applyScenarioDeletion,
+  COLLECTION_FOR_KIND,
+  type EditKind,
+  upsertById,
+} from '../model/editForms';
 import { dayHasVisibleContent } from '../model/filters';
 import { applyActivityReorder, type DragMeta } from '../model/reorder';
 import { formatTime, todayDateStr } from '../model/tripModel';
@@ -73,6 +78,10 @@ function useDetailPanel<T extends { _id: string }>(openEdit: (id: string) => voi
         }
       : undefined,
   };
+}
+
+function containerIdOf(dndData: unknown): unknown {
+  return (dndData as { sortable?: { containerId: unknown } } | undefined)?.sortable?.containerId;
 }
 
 export function DaysView() {
@@ -200,10 +209,8 @@ export function DaysView() {
     const overMeta = over.data.current as DragMeta | undefined;
     if (!activeMeta?.activityId || !overMeta) return;
     const activityId = activeMeta.activityId;
-    const activeContainerId = (active.data.current as { sortable?: { containerId: unknown } })
-      ?.sortable?.containerId;
-    const overContainerId = (over.data.current as { sortable?: { containerId: unknown } })?.sortable
-      ?.containerId;
+    const activeContainerId = containerIdOf(active.data.current);
+    const overContainerId = containerIdOf(over.data.current);
     const crossContainer = activeContainerId !== overContainerId;
     const movingUp = !crossContainer && activeMeta.index > overMeta.index;
     const dropMeta: DragMeta =
@@ -344,15 +351,7 @@ export function DaysView() {
           open={routesOpen}
           onClose={() => setRoutesOpen(false)}
           onSave={(route: Route) =>
-            setData(
-              (prev) => ({
-                ...prev,
-                routes: prev.routes.some((r) => r._id === route._id)
-                  ? prev.routes.map((r) => (r._id === route._id ? route : r))
-                  : [...prev.routes, route],
-              }),
-              ['routes'],
-            )
+            setData((prev) => ({ ...prev, routes: upsertById(prev.routes, route) }), ['routes'])
           }
           onDelete={(id: string) =>
             setData(
@@ -372,12 +371,7 @@ export function DaysView() {
           onClose={() => setScenariosOpen(false)}
           onSave={(scenario: Scenario) =>
             setData(
-              (prev) => ({
-                ...prev,
-                scenarios: prev.scenarios.some((s) => s._id === scenario._id)
-                  ? prev.scenarios.map((s) => (s._id === scenario._id ? scenario : s))
-                  : [...prev.scenarios, scenario],
-              }),
+              (prev) => ({ ...prev, scenarios: upsertById(prev.scenarios, scenario) }),
               ['scenarios'],
             )
           }

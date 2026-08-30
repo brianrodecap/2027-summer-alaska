@@ -1,7 +1,17 @@
 import type { CollectionName } from '../state/TripDataContextObject';
 import type { StagedTripEntities } from './documentImport';
 import { loadTripData } from './tripModel';
-import type { Leg, Trip, TripData, TripsIndexEntry } from './types';
+import type {
+  Activity,
+  Leg,
+  Note,
+  Scenario,
+  Stay,
+  Transit,
+  Trip,
+  TripData,
+  TripsIndexEntry,
+} from './types';
 
 function downloadJson(filename: string, data: unknown): void {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -11,6 +21,34 @@ function downloadJson(filename: string, data: unknown): void {
   a.download = filename;
   a.click();
   URL.revokeObjectURL(url);
+}
+
+// The complete per-trip file set, shared by exportNewTrip and
+// exportTripRename (both produce the whole seven-file bundle a trip's own
+// public/data/<slug>/ directory holds).
+function downloadTripBundle(bundle: {
+  trip: Trip;
+  legs: Leg[];
+  stays: Stay[];
+  transits: Transit[];
+  activities: Activity[];
+  scenarios: Scenario[];
+  notes: Note[];
+}): void {
+  downloadJson('trip.json', bundle.trip);
+  downloadJson('legs.json', bundle.legs);
+  downloadJson('stays.json', bundle.stays);
+  downloadJson('transits.json', bundle.transits);
+  downloadJson('activities.json', bundle.activities);
+  downloadJson('scenarios.json', bundle.scenarios);
+  downloadJson('notes.json', bundle.notes);
+}
+
+function downloadManifest(manifest: TripsIndexEntry[]): void {
+  downloadJson(
+    'trips.json',
+    manifest.map((entry) => ({ slug: entry.slug })),
+  );
 }
 
 // There's no backend this can write to — a static site served from
@@ -38,17 +76,16 @@ export function exportNewTrip(
   staged: StagedTripEntities,
   manifest: TripsIndexEntry[],
 ): void {
-  downloadJson('trip.json', trip);
-  downloadJson('legs.json', legs);
-  downloadJson('stays.json', staged.stays);
-  downloadJson('transits.json', staged.transits);
-  downloadJson('activities.json', staged.activities);
-  downloadJson('scenarios.json', []);
-  downloadJson('notes.json', []);
-  downloadJson(
-    'trips.json',
-    manifest.map((entry) => ({ slug: entry.slug })),
-  );
+  downloadTripBundle({
+    trip,
+    legs,
+    stays: staged.stays,
+    transits: staged.transits,
+    activities: staged.activities,
+    scenarios: [],
+    notes: [],
+  });
+  downloadManifest(manifest);
 }
 
 // Same manual-copy-back path, for editing an existing trip's own top-level
@@ -81,15 +118,6 @@ export async function exportTripRename(
   manifest: TripsIndexEntry[],
 ): Promise<void> {
   const { stays, transits, activities, scenarios, notes } = await loadTripData(oldSlug);
-  downloadJson('trip.json', trip);
-  downloadJson('legs.json', legs);
-  downloadJson('stays.json', stays);
-  downloadJson('transits.json', transits);
-  downloadJson('activities.json', activities);
-  downloadJson('scenarios.json', scenarios);
-  downloadJson('notes.json', notes);
-  downloadJson(
-    'trips.json',
-    manifest.map((entry) => ({ slug: entry.slug })),
-  );
+  downloadTripBundle({ trip, legs, stays, transits, activities, scenarios, notes });
+  downloadManifest(manifest);
 }

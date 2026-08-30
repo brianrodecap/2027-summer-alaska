@@ -449,7 +449,8 @@ function averageForMonthDay(years: ClimateDay[], monthDay: string): PlaceForecas
 // getDayWeather composes the three.
 async function getPlaceWeather(placeId: string, date: string): Promise<PlaceForecast | null> {
   const coords = await getCoordinates(placeId);
-  if (daysFromToday(date) >= 0 && daysFromToday(date) < FORECAST_WINDOW_DAYS) {
+  const daysAway = daysFromToday(date);
+  if (daysAway >= 0 && daysAway < FORECAST_WINDOW_DAYS) {
     const forecast = await fetchForecastDay(coords, date);
     if (forecast) return forecast;
   }
@@ -490,8 +491,8 @@ async function fetchAirQuality(coords: Coordinates, date: string): Promise<numbe
 
 async function getAirQuality(placeId: string | null, date: string): Promise<number | null> {
   if (!placeId || !isPlacesApiKeyConfigured()) return null;
-  if (daysFromToday(date) < 0 || daysFromToday(date) >= AIR_QUALITY_FORECAST_WINDOW_DAYS)
-    return null;
+  const daysAway = daysFromToday(date);
+  if (daysAway < 0 || daysAway >= AIR_QUALITY_FORECAST_WINDOW_DAYS) return null;
   const coords = await getCoordinates(placeId);
   return fetchAirQuality(coords, date);
 }
@@ -511,17 +512,26 @@ interface MarineDailyBlock {
 }
 
 const MARINE_FORECAST_WINDOW_DAYS = FORECAST_WINDOW_DAYS;
+const waveHeightCache = new Map<string, Promise<number | null>>();
+
+function fetchWaveHeightFt(coords: Coordinates, date: string): Promise<number | null> {
+  const key = `${coords.lat.toFixed(2)},${coords.lng.toFixed(2)}|${date}`;
+  return memoizeAsync(waveHeightCache, key, async () => {
+    const url =
+      `https://marine-api.open-meteo.com/v1/marine?latitude=${coords.lat}&longitude=${coords.lng}` +
+      `&daily=wave_height_max&length_unit=imperial&timezone=auto&start_date=${date}&end_date=${date}`;
+    const daily = await fetchOpenMeteoDaily<MarineDailyBlock>(url);
+    if (!daily?.wave_height_max?.length) return null;
+    return Math.round(daily.wave_height_max[0] * 10) / 10;
+  });
+}
 
 async function getWaveHeightFt(placeId: string | null, date: string): Promise<number | null> {
   if (!placeId || !isPlacesApiKeyConfigured()) return null;
-  if (daysFromToday(date) < 0 || daysFromToday(date) >= MARINE_FORECAST_WINDOW_DAYS) return null;
-  const { lat, lng } = await getCoordinates(placeId);
-  const url =
-    `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lng}` +
-    `&daily=wave_height_max&length_unit=imperial&timezone=auto&start_date=${date}&end_date=${date}`;
-  const daily = await fetchOpenMeteoDaily<MarineDailyBlock>(url);
-  if (!daily?.wave_height_max?.length) return null;
-  return Math.round(daily.wave_height_max[0] * 10) / 10;
+  const daysAway = daysFromToday(date);
+  if (daysAway < 0 || daysAway >= MARINE_FORECAST_WINDOW_DAYS) return null;
+  const coords = await getCoordinates(placeId);
+  return fetchWaveHeightFt(coords, date);
 }
 
 // The place ids a Day resolves for its weather strip (see Day's own
