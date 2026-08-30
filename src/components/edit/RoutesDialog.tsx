@@ -6,18 +6,27 @@ import DialogTitle from '@mui/material/DialogTitle';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
+import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 
 import { transitRouteLabel as routeLabel } from '../../model/tripModel';
 import type { Route } from '../../model/types';
+import { WarningBadge } from '../shared/WarningBadge';
 import { RouteEditDialog } from './RouteEditDialog';
 
 function nextRouteId(routes: Route[]): string {
   let n = routes.length + 1;
   while (routes.some((r) => r._id === `route_new_${n}`)) n += 1;
   return `route_new_${n}`;
+}
+
+// A route with variants but no places on any of them is just a bare
+// From->To leg — flagged as likely-unfinished data entry. A route with no
+// variants yet has nothing to check places on, so it's left unflagged.
+function hasNoPlaces(route: Route): boolean {
+  return route.variants.length > 0 && route.variants.every((v) => v.places.length === 0);
 }
 
 // routes.json is reference data shared across trips, not scoped to any one
@@ -72,7 +81,14 @@ export function RoutesDialog({
             <List disablePadding>
               {filtered.map((route) => (
                 <ListItemButton key={route._id} onClick={() => setEditing(route)}>
-                  <ListItemText primary={routeLabel(route)} />
+                  <ListItemText
+                    primary={
+                      <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+                        <span>{routeLabel(route)}</span>
+                        {hasNoPlaces(route) && <WarningBadge title="No places on any variant" />}
+                      </Stack>
+                    }
+                  />
                 </ListItemButton>
               ))}
             </List>

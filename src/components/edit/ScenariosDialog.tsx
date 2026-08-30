@@ -1,4 +1,3 @@
-import WarningIcon from '@mui/icons-material/Warning';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -11,7 +10,6 @@ import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
-import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 
@@ -19,6 +17,7 @@ import { blankScenario } from '../../model/editForms';
 import { formatDateLabel } from '../../model/tripModel';
 import type { Activity, Leg, Scenario, Transit } from '../../model/types';
 import { renderMaterialIcon } from '../shared/materialIcon';
+import { WarningBadge } from '../shared/WarningBadge';
 import { ScenarioEditDialog } from './ScenarioEditDialog';
 
 // scenarios.json is reference data pointed at by Activity/Transit's own
@@ -109,9 +108,7 @@ export function ScenariosDialog({
                       <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
                         <span>{scenario.label}</span>
                         {!scenarioIdsInUse.has(scenario._id) && (
-                          <Tooltip title="No activities or transits use this scenario yet">
-                            <WarningIcon fontSize="small" sx={{ color: 'error.main' }} />
-                          </Tooltip>
+                          <WarningBadge title="No activities or transits use this scenario yet" />
                         )}
                       </Stack>
                     }
