@@ -32,6 +32,11 @@ export interface WizardStep {
 // meal-decided-vs-undecided, whether a route was picked, etc.) — this
 // component just clamps the current position back into range whenever that
 // list gets shorter out from under it.
+//
+// Non-linear: every step label is clickable regardless of direction, and
+// the Finish/Save/Add action (`onFinish`) is available on every step, not
+// gated to the last one — so a save can happen from wherever the user is,
+// rather than forcing a march through every screen first.
 export function WizardShell({
   title,
   steps,
@@ -72,12 +77,7 @@ export function WizardShell({
         <Stepper activeStep={activeStep} orientation="vertical" nonLinear>
           {steps.map((step, index) => (
             <Step key={step.id}>
-              <StepLabel
-                onClick={() => {
-                  if (index < activeStep) setRawActiveStep(index);
-                }}
-                sx={index < activeStep ? { cursor: 'pointer' } : undefined}
-              >
+              <StepLabel onClick={() => setRawActiveStep(index)} sx={{ cursor: 'pointer' }}>
                 {WIZARD_STEP_LABEL[step.id]}
               </StepLabel>
               <StepContent>
@@ -91,11 +91,14 @@ export function WizardShell({
                   <Button onClick={onCancel}>Cancel</Button>
                   <Box sx={{ flex: 1 }} />
                   {index > 0 && <Button onClick={() => setRawActiveStep(index - 1)}>Back</Button>}
-                  {isLastStep ? (
-                    <Button variant="contained" onClick={onFinish}>
-                      {finishLabel}
-                    </Button>
-                  ) : (
+                  <Button
+                    variant={isLastStep ? 'contained' : 'outlined'}
+                    disabled={step.canProceed === false}
+                    onClick={onFinish}
+                  >
+                    {finishLabel}
+                  </Button>
+                  {!isLastStep && (
                     <Button
                       variant="contained"
                       disabled={step.canProceed === false}

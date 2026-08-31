@@ -4,6 +4,7 @@ import {
   buildTripView,
   dayFullRouteUrls,
   dayMapStops,
+  diffMinutesIso,
   splitOutStayBoundaries,
   tripDateRange,
   tripDayCount,
@@ -642,5 +643,23 @@ describe('dayMapStops', () => {
     expect(urls.length).toBe(2);
     expect(new URL(urls[0]).searchParams.get('destination')).toBe('Origin Airport');
     expect(new URL(urls[1]).searchParams.get('origin')).toBe('Destination Airport');
+  });
+});
+
+describe('diffMinutesIso', () => {
+  it('returns positive minutes when b is later than a', () => {
+    expect(diffMinutesIso('2027-06-01T08:00', '2027-06-01T09:30')).toBe(90);
+  });
+
+  it('returns negative minutes when b is earlier than a', () => {
+    expect(diffMinutesIso('2027-06-01T09:30', '2027-06-01T08:00')).toBe(-90);
+  });
+
+  it('returns zero for the same instant', () => {
+    expect(diffMinutesIso('2027-06-01T08:00', '2027-06-01T08:00')).toBe(0);
+  });
+
+  it('crosses a calendar day boundary correctly', () => {
+    expect(diffMinutesIso('2027-06-01T23:30', '2027-06-02T00:15')).toBe(45);
   });
 });

@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applyActivityReorder,
+  applyBlockReorder,
   applyGroupActivityReorder,
+  applyTransitReorder,
   buildDragMeta,
   type DragMeta,
   resolveDropTiming,
@@ -11,6 +13,7 @@ import type {
   EnrichedActivity,
   EnrichedStay,
   EnrichedTransit,
+  ScenarioTrack,
   SequenceItem,
   TripData,
 } from './types';
@@ -48,6 +51,33 @@ function activity(overrides: Partial<EnrichedActivity>): EnrichedActivity {
   };
 }
 
+// Returns an EnrichedTransit, shared by every describe block below that
+// needs a Transit fixture (applyTransitReorder, applyBlockReorder) —
+// mirrors activity()'s own module-scope convention rather than each block
+// keeping its own copy.
+function transit(overrides: Partial<EnrichedTransit>): EnrichedTransit {
+  return {
+    _id: 'transit1',
+    legId: 'legA',
+    journeyId: null,
+    scenarioId: null,
+    status: 'planning',
+    mode: 'drive',
+    from: { id: null, label: 'A' },
+    to: { id: null, label: 'B' },
+    departsAt: '2027-06-01T08:00',
+    routeId: null,
+    routeVariant: null,
+    booking: null,
+    images: [],
+    routeInfo: null,
+    arrivesAt: '2027-06-01T09:30',
+    notes: [],
+    hasWarningNote: false,
+    ...overrides,
+  };
+}
+
 describe('resolveDropTiming', () => {
   it('anchors exactly at the preceding item', () => {
     expect(resolveDropTiming('2027-06-01T12:00', DAY_START, '2027-06-01T08:00')).toEqual({
@@ -64,47 +94,51 @@ describe('resolveDropTiming', () => {
   it('falls back to the container day start only when the Activity has no time of its own either', () => {
     expect(resolveDropTiming(null, DAY_START, null)).toEqual({ startAt: DAY_START });
   });
+
+  // The empty-target-day bug: dropping onto a day with nothing scheduled
+  // yet has no real anchor (precedingEndAt is null) — but unlike a same-day
+  // "no real anchor" drop, this still has to relocate the Activity onto the
+  // new date, not silently strand it on its old one.
+  it('re-bases a real ownStartAt onto the destination day when the drop crosses days, keeping its own time-of-day', () => {
+    expect(resolveDropTiming(null, '2027-07-13T00:00', '2027-06-01T08:00', true)).toEqual({
+      startAt: '2027-07-13T08:00',
+    });
+  });
+
+  it('falls back to the destination day start for a crossing drop when the Activity has no time of its own either', () => {
+    expect(resolveDropTiming(null, '2027-07-13T00:00', null, true)).toEqual({
+      startAt: '2027-07-13T00:00',
+    });
+  });
+
+  it('still prefers a real preceding anchor over re-basing, even when the drop crosses days', () => {
+    expect(
+      resolveDropTiming('2027-07-13T09:00', '2027-07-13T00:00', '2027-06-01T08:00', true),
+    ).toEqual({ startAt: '2027-07-13T09:00' });
+  });
 });
 
 describe('buildDragMeta', () => {
-  it('anchors exactly on an instantaneous Transit boundary’s own key, with no anchorActivityId', () => {
+  it('anchors exactly on an instantaneous Transit boundary’s own key, with no anchorEntityId', () => {
     // No nudge needed: mergeByTime's own tie-break (stays-then-transits-
     // then-activities array order) already resolves an exact tie in favor
     // of the Transit sorting first, for free.
-    const transit: EnrichedTransit = {
-      _id: 'transit1',
-      legId: 'legA',
-      journeyId: null,
-      scenarioId: null,
-      status: 'planning',
-      mode: 'drive',
-      from: { id: null, label: 'A' },
-      to: { id: null, label: 'B' },
-      departsAt: '2027-06-01T08:00',
-      routeId: null,
-      routeVariant: null,
-      booking: null,
-      images: [],
-      routeInfo: null,
-      arrivesAt: '2027-06-01T09:30',
-      notes: [],
-      hasWarningNote: false,
-    };
+    const t = transit({});
     const flattened: SequenceItem[] = [
-      { type: 'transit-boundary', transit, phase: 'arrive', key: '2027-06-01T09:30' },
+      { type: 'transit-boundary', transit: t, phase: 'arrive', key: '2027-06-01T09:30' },
     ];
-    const dragMeta = buildDragMeta(flattened, null, DAY_START);
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     expect(dragMeta[0].endAt).toBe('2027-06-01T09:30');
-    expect(dragMeta[0].anchorActivityId).toBeNull();
+    expect(dragMeta[0].anchorEntityId).toBeNull();
   });
 
-  it('anchors exactly on a non-meal Activity’s own startAt when it has no duration, and names it as anchorActivityId', () => {
+  it('anchors exactly on a non-meal Activity’s own startAt when it has no duration, and names it as anchorEntityId', () => {
     const flattened: SequenceItem[] = [
       { type: 'section', activities: [activity({ _id: 'act1', startAt: '2027-06-01T10:00' })] },
     ];
-    const dragMeta = buildDragMeta(flattened, null, DAY_START);
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     expect(dragMeta[0].endAt).toBe('2027-06-01T10:00');
-    expect(dragMeta[0].anchorActivityId).toBe('act1');
+    expect(dragMeta[0].anchorEntityId).toEqual({ kind: 'activity', id: 'act1' });
   });
 
   it('uses an explicit durationMinutes as the anchor end, with no extra cushion', () => {
@@ -114,7 +148,7 @@ describe('buildDragMeta', () => {
         activities: [activity({ startAt: '2027-06-01T09:00', durationMinutes: 60 })],
       },
     ];
-    const dragMeta = buildDragMeta(flattened, null, DAY_START);
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     expect(dragMeta[0].endAt).toBe('2027-06-01T10:00');
   });
 
@@ -131,9 +165,201 @@ describe('buildDragMeta', () => {
         ],
       },
     ];
-    const dragMeta = buildDragMeta(flattened, null, DAY_START);
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     // 'sit-down' -> 60 minutes, tripModel.ts's DEFAULT_MEAL_DURATION_MINUTES.
     expect(dragMeta[0].endAt).toBe('2027-06-01T11:15');
+  });
+
+  it('only the Depart boundary carries a transitId — Arrive does not', () => {
+    const t = transit({});
+    const flattened: SequenceItem[] = [
+      { type: 'transit-boundary', transit: t, phase: 'depart', key: '2027-06-01T08:00' },
+      { type: 'transit-boundary', transit: t, phase: 'arrive', key: '2027-06-01T09:30' },
+    ];
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
+    const depart = dragMeta.find((d) => d.id === 'transit-transit1-depart')!;
+    const arrive = dragMeta.find((d) => d.id === 'transit-transit1-arrive')!;
+    expect(depart.transitId).toBe('transit1');
+    expect(arrive.transitId).toBeFalsy();
+  });
+
+  it('gives the scenario-tabs row a scenarioGroup naming every Activity/Transit across every branch, including nested children, deduplicating a Transit named by more than one of its own rows', () => {
+    const idealTransit = transit({
+      _id: 'idealTransit',
+      scenarioId: 'ideal',
+      arrivesAt: '2027-06-01T09:00',
+    });
+    const tracks: ScenarioTrack[] = [
+      {
+        scenario: {
+          _id: 'ideal',
+          legId: 'legA',
+          tone: 'ideal',
+          label: 'Ideal',
+          icon: 'sunny',
+          images: [],
+        },
+        notes: [],
+        anchorKey: '2027-06-01T08:00',
+        realAnchorKey: '2027-06-01T08:00',
+        sequence: [
+          {
+            type: 'transit-boundary',
+            transit: idealTransit,
+            phase: 'depart',
+            key: '2027-06-01T08:00',
+          },
+          // Same transit, second row (its own Arrive boundary) — names the
+          // same idealTransit._id a second time, so the assertion below on
+          // transitIds' length actually exercises collectScenarioGroupMembers'
+          // Set-based dedup rather than trivially passing with only one
+          // reference to begin with.
+          {
+            type: 'transit-boundary',
+            transit: idealTransit,
+            phase: 'arrive',
+            key: '2027-06-01T09:00',
+          },
+          {
+            type: 'section',
+            activities: [
+              activity({ _id: 'idealAct', scenarioId: 'ideal', startAt: '2027-06-01T10:00' }),
+            ],
+          },
+        ],
+      },
+      {
+        scenario: {
+          _id: 'alt',
+          legId: 'legA',
+          tone: 'alternate',
+          label: 'Alt',
+          icon: 'rainy',
+          images: [],
+        },
+        notes: [],
+        anchorKey: '2027-06-01T08:00',
+        realAnchorKey: '2027-06-01T08:00',
+        sequence: [
+          {
+            type: 'section',
+            activities: [
+              activity({ _id: 'altAct', scenarioId: 'alt', startAt: '2027-06-01T09:00' }),
+            ],
+          },
+          {
+            type: 'scenario-tabs',
+            key: '2027-06-01T13:00',
+            tracks: [
+              {
+                scenario: {
+                  _id: 'nested',
+                  legId: 'legA',
+                  tone: 'alternate',
+                  label: 'Nested',
+                  icon: 'cloud',
+                  images: [],
+                  parentScenarioId: 'alt',
+                },
+                notes: [],
+                anchorKey: '2027-06-01T13:00',
+                realAnchorKey: '2027-06-01T13:00',
+                sequence: [
+                  {
+                    type: 'section',
+                    activities: [
+                      activity({
+                        _id: 'nestedAct',
+                        scenarioId: 'nested',
+                        startAt: '2027-06-01T13:00',
+                      }),
+                    ],
+                  },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const flattened: SequenceItem[] = [{ type: 'scenario-tabs', key: '2027-06-01T08:00', tracks }];
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
+    expect(dragMeta).toHaveLength(1);
+    expect(dragMeta[0].scenarioGroup?.activityIds.sort()).toEqual([
+      'altAct',
+      'idealAct',
+      'nestedAct',
+    ]);
+    expect(dragMeta[0].scenarioGroup?.transitIds).toEqual(['idealTransit']);
+  });
+
+  it("falls back to the day's own scenarioTracks for a top-level scenario-tabs placeholder, which (per tripModel.ts's buildSequence) carries no tracks of its own", () => {
+    const tracks: ScenarioTrack[] = [
+      {
+        scenario: {
+          _id: 'ideal',
+          legId: 'legA',
+          tone: 'ideal',
+          label: 'Ideal',
+          icon: 'sunny',
+          images: [],
+        },
+        notes: [],
+        anchorKey: '2027-06-01T08:00',
+        realAnchorKey: '2027-06-01T08:00',
+        sequence: [
+          {
+            type: 'section',
+            activities: [
+              activity({ _id: 'idealAct', scenarioId: 'ideal', startAt: '2027-06-01T08:00' }),
+            ],
+          },
+        ],
+      },
+    ];
+    const flattened: SequenceItem[] = [{ type: 'scenario-tabs', key: '2027-06-01T08:00' }];
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA', tracks);
+    expect(dragMeta).toHaveLength(1);
+    expect(dragMeta[0].scenarioGroup?.activityIds).toEqual(['idealAct']);
+  });
+
+  it('gives a scenario-tabs row a dragId unique per calendar day, not just per local row index, since every DayTimeline instance shares one DndContext', () => {
+    // Two different days, each with a scenario-tabs item sitting at local
+    // index 0 of its own flattened array — the same shape the real trip
+    // data hits on 2027-07-10/11/12, where every day's own scenario-tabs
+    // group used to collide on the identical id `scenario-tabs-0`.
+    const dayOne = buildDragMeta(
+      [{ type: 'scenario-tabs', key: '2027-06-01T08:00', tracks: [] }],
+      null,
+      '2027-06-01T00:00',
+      'legA',
+    );
+    const dayTwo = buildDragMeta(
+      [{ type: 'scenario-tabs', key: '2027-06-02T08:00', tracks: [] }],
+      null,
+      '2027-06-02T00:00',
+      'legA',
+    );
+    expect(dayOne[0].id).not.toBe(dayTwo[0].id);
+  });
+
+  it('gives two scenario-tabs rows on the SAME day distinct dragIds — a top-level group and a nested scenario tab’s own sub-group', () => {
+    // Both at local index 0 of their own respective flattened arrays (one
+    // top-level, scenarioId null; one inside a scenario tab, a real
+    // scenarioId) — date alone isn't enough to disambiguate these two.
+    const topLevel = buildDragMeta(
+      [{ type: 'scenario-tabs', key: '2027-06-01T08:00', tracks: [] }],
+      null,
+      DAY_START,
+      'legA',
+    );
+    const nested = buildDragMeta(
+      [{ type: 'scenario-tabs', key: '2027-06-01T08:00', tracks: [] }],
+      'scenario_jul1_alt',
+      DAY_START,
+      'legA',
+    );
+    expect(topLevel[0].id).not.toBe(nested[0].id);
   });
 });
 
@@ -169,7 +395,7 @@ describe('Stay Check-out/Check-in drop targets', () => {
         ],
       },
     ];
-    const dragMeta = buildDragMeta(flattened, null, DAY_START);
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     const checkout = dragMeta.find((d) => d.kind === 'day-start');
     expect(checkout?.endAt).toBe('2027-06-01T09:00');
     expect(checkout?.cascadeActivityIds).toEqual(['act1', 'act2']);
@@ -186,7 +412,7 @@ describe('Stay Check-out/Check-in drop targets', () => {
         ],
       },
     ];
-    const dragMeta = buildDragMeta(flattened, null, DAY_START);
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     const checkout = dragMeta.find((d) => d.kind === 'day-start')!;
 
     const data: TripData = {
@@ -216,7 +442,7 @@ describe('Stay Check-out/Check-in drop targets', () => {
       { type: 'stay', stay: enrichedStay({}), relation: 'Check out', key: '2027-06-01T11:00' },
       { type: 'section', activities: [activity({ _id: 'act1', startAt: '2027-06-01T09:00' })] },
     ];
-    const dragMeta = buildDragMeta(flattened, null, DAY_START);
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     const checkout = dragMeta.find((d) => d.kind === 'day-start')!;
 
     const data: TripData = {
@@ -250,14 +476,14 @@ describe('Stay Check-out/Check-in drop targets', () => {
       // the anchor should still come from that Activity, not checkInAt.
       { type: 'stay', stay: enrichedStay({}), relation: 'Check in', key: '2027-06-01T20:00' },
     ];
-    const dragMeta = buildDragMeta(flattened, null, DAY_START);
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     const checkin = dragMeta.find((d) => d.id.startsWith('stay-'))!;
     expect(checkin.kind).toBe('after');
     expect(checkin.endAt).toBe('2027-06-01T11:00');
     // Names the real last Activity as the tie-break anchor, even though
     // this DragMeta's own activityId is null (the Check-in row itself
     // isn't draggable).
-    expect(checkin.anchorActivityId).toBe('act2');
+    expect(checkin.anchorEntityId).toEqual({ kind: 'activity', id: 'act2' });
   });
 
   it('Check-out on a day with no real top-level content has a null endAt, and a drop there keeps the dragged Activity’s own time', () => {
@@ -267,7 +493,7 @@ describe('Stay Check-out/Check-in drop targets', () => {
       { type: 'stay', stay: enrichedStay({}), relation: 'Check out', key: '2027-06-01T11:00' },
       { type: 'scenario-tabs', key: '2027-06-01T08:00' },
     ];
-    const dragMeta = buildDragMeta(flattened, null, DAY_START);
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     const checkout = dragMeta.find((d) => d.kind === 'day-start')!;
     expect(checkout.endAt).toBeNull();
     expect(checkout.cascadeActivityIds).toEqual([]);
@@ -293,7 +519,7 @@ describe('Stay Check-out/Check-in drop targets', () => {
       { type: 'stay', stay: enrichedStay({}), relation: 'Staying', key: DAY_START },
       { type: 'scenario-tabs', key: '2027-06-01T08:00' },
     ];
-    const dragMeta = buildDragMeta(flattened, null, DAY_START);
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     const staying = dragMeta.find((d) => d.id.startsWith('stay-'))!;
     expect(staying.kind).toBe('after');
     expect(staying.endAt).toBeNull();
@@ -305,11 +531,13 @@ describe('Stay Check-out/Check-in drop targets', () => {
       [{ type: 'stay', stay, relation: 'Staying', key: '2027-06-01T00:00' }],
       null,
       '2027-06-01T00:00',
+      'legA',
     );
     const checkOutDay = buildDragMeta(
       [{ type: 'stay', stay, relation: 'Check out', key: '2027-06-02T11:00' }],
       null,
       '2027-06-02T00:00',
+      'legA',
     );
     expect(nightOne[0].id).not.toBe(checkOutDay[0].id);
     expect(nightOne[0].containerDayStart).toBe('2027-06-01T00:00');
@@ -326,8 +554,10 @@ describe('Stay Check-out/Check-in drop targets', () => {
         ],
       },
     ];
-    const dragMeta = buildDragMeta(flattened, null, DAY_START);
-    const act1Anchor = dragMeta.find((d) => d.anchorActivityId === 'act1')!;
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
+    const act1Anchor = dragMeta.find(
+      (d) => d.anchorEntityId?.kind === 'activity' && d.anchorEntityId.id === 'act1',
+    )!;
     expect(act1Anchor.endAt).toBe('2027-06-01T09:00');
 
     const data: TripData = {
@@ -386,7 +616,7 @@ describe('applyActivityReorder', () => {
         key: '2027-06-01T09:30',
       },
     ];
-    const dragMeta = buildDragMeta(flattened, null, DAY_START);
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     expect(dragMeta).toHaveLength(1);
 
     const data: TripData = {
@@ -447,7 +677,7 @@ describe('applyActivityReorder', () => {
         ],
       },
     ];
-    const dragMeta = buildDragMeta(flattened, null, '2027-06-27T09:00');
+    const dragMeta = buildDragMeta(flattened, null, '2027-06-27T09:00', 'legA');
     const arrivalAnchor = dragMeta.find((d) => d.id === 'transit-transit1-arrive')!;
     expect(arrivalAnchor.cascadeActivityIds).toEqual(['checkin', 'westrib']);
 
@@ -492,7 +722,7 @@ describe('applyActivityReorder', () => {
         ],
       },
     ];
-    const dragMeta = buildDragMeta(flattened, null, '2027-06-27T00:00');
+    const dragMeta = buildDragMeta(flattened, null, '2027-06-27T00:00', 'legA');
     const checkinMeta = dragMeta.find((d) => d.activityId === 'checkin')!;
     const flightseeingMeta = dragMeta.find((d) => d.activityId === 'flightseeing')!;
     expect(checkinMeta.before?.endAt).toBe('2027-06-27T09:00');
@@ -543,7 +773,7 @@ describe('applyActivityReorder', () => {
         ],
       },
     ];
-    const dragMeta = buildDragMeta(flattened, null, '2027-07-13T00:00');
+    const dragMeta = buildDragMeta(flattened, null, '2027-07-13T00:00', 'legA');
     const driveMeta = dragMeta.find((d) => d.activityId === 'drive')!;
     expect(driveMeta.before?.kind).toBe('front-takeover');
     expect(driveMeta.before?.endAt).toBe('2027-07-13T06:00');
@@ -588,7 +818,7 @@ describe('applyActivityReorder', () => {
         ],
       },
     ];
-    const dragMeta = buildDragMeta(flattened, null, '2027-06-27T00:00');
+    const dragMeta = buildDragMeta(flattened, null, '2027-06-27T00:00', 'legA');
     const checkinMeta = dragMeta.find((d) => d.activityId === 'checkin')!;
     expect(checkinMeta.before?.kind).toBe('front-takeover');
 
@@ -629,7 +859,7 @@ describe('applyActivityReorder', () => {
       legId: 'legB',
       scenarioId: 'scenario-new',
       activityId: null,
-      anchorActivityId: null,
+      anchorEntityId: null,
       kind: 'after',
     };
 
@@ -651,6 +881,48 @@ describe('applyActivityReorder', () => {
     expect(moved?.startAt).toBe('2027-06-01T08:00'); // untouched — no real anchor to take a time from
   });
 
+  // The reported empty-target-day bug: DayTimeline's own EmptyDropZone
+  // builds exactly this shape for a day with nothing scheduled on it at all
+  // (endAt: null, same as the empty-scenario case above) — but unlike that
+  // case, this drop is landing on a genuinely different calendar day, not
+  // just a different container on the same day. `preserveOwnTiming` is
+  // false here (DaysView.tsx only ever sets it for a same-day container
+  // crossing), so this has to fall through to resolveDropTiming's own
+  // crossesDay re-basing rather than leaving the Activity stranded on its
+  // old date.
+  it('dropping an Activity onto a genuinely empty destination day still relocates it onto that day', () => {
+    const emptyDayMeta: DragMeta = {
+      id: 'empty-2027-07-13',
+      index: 0,
+      endAt: null,
+      containerDayStart: '2027-07-13T00:00',
+      legId: 'legB',
+      scenarioId: null,
+      activityId: null,
+      anchorEntityId: null,
+      kind: 'after',
+    };
+
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [],
+      activities: [
+        activity({ _id: 'act1', legId: 'legA', startAt: '2027-06-01T08:00', durationMinutes: 30 }),
+      ],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+
+    const next = applyActivityReorder(data, emptyDayMeta, 'act1', '2027-07-13T00:00');
+    const moved = next.activities.find((a) => a._id === 'act1');
+    expect(moved?.legId).toBe('legB');
+    // Relocated onto the destination day, keeping its original time-of-day.
+    expect(moved?.startAt).toBe('2027-07-13T08:00');
+  });
+
   // The actual Homer-Spit bug: dragging an Activity out of a scenario tab
   // into the top-level day list (or between two scenario tabs) is a
   // cross-container drag — DragMeta's own `index`/`before` are only
@@ -667,7 +939,7 @@ describe('applyActivityReorder', () => {
         activities: [activity({ _id: 'drive', startAt: '2027-07-13T06:00' })],
       },
     ];
-    const dragMeta = buildDragMeta(flattened, null, '2027-07-13T00:00');
+    const dragMeta = buildDragMeta(flattened, null, '2027-07-13T00:00', 'legA');
     const driveMeta = dragMeta.find((d) => d.activityId === 'drive')!;
 
     const data: TripData = {
@@ -695,6 +967,412 @@ describe('applyActivityReorder', () => {
   });
 });
 
+describe('applyTransitReorder', () => {
+  it('shifts arrivesAt by the same delta as departsAt for an unrouted Transit, preserving its duration', () => {
+    const dropMeta: DragMeta = {
+      id: 'activity-anchor',
+      index: 0,
+      endAt: '2027-06-01T12:00',
+      containerDayStart: DAY_START,
+      legId: 'legA',
+      scenarioId: null,
+      activityId: null,
+      anchorEntityId: null,
+      kind: 'after',
+    };
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [transit({})],
+      activities: [],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+    const next = applyTransitReorder(data, dropMeta, 'transit1', DAY_START);
+    const moved = next.transits.find((t) => t._id === 'transit1');
+    // Original duration was 90 minutes (08:00 -> 09:30); dropped at 12:00 ->
+    // arrivesAt must land at 13:30 to preserve it.
+    expect(moved?.departsAt).toBe('2027-06-01T12:00');
+    expect(moved?.arrivesAt).toBe('2027-06-01T13:30');
+  });
+
+  it('leaves arrivesAt alone for a routed Transit - buildTripView recomputes it from the new departsAt', () => {
+    const dropMeta: DragMeta = {
+      id: 'activity-anchor',
+      index: 0,
+      endAt: '2027-06-01T12:00',
+      containerDayStart: DAY_START,
+      legId: 'legA',
+      scenarioId: null,
+      activityId: null,
+      anchorEntityId: null,
+      kind: 'after',
+    };
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [transit({ routeId: 'route1', arrivesAt: null })],
+      activities: [],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+    const next = applyTransitReorder(data, dropMeta, 'transit1', DAY_START);
+    const moved = next.transits.find((t) => t._id === 'transit1');
+    expect(moved?.departsAt).toBe('2027-06-01T12:00');
+    expect(moved?.arrivesAt).toBeNull();
+  });
+
+  it('reassigns legId and scenarioId to the drop target', () => {
+    const dropMeta: DragMeta = {
+      id: 'activity-anchor',
+      index: 0,
+      endAt: '2027-06-01T12:00',
+      containerDayStart: DAY_START,
+      legId: 'legB',
+      scenarioId: 'scenario1',
+      activityId: null,
+      anchorEntityId: null,
+      kind: 'after',
+    };
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [transit({ legId: 'legA', scenarioId: null })],
+      activities: [],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+    const next = applyTransitReorder(data, dropMeta, 'transit1', DAY_START);
+    const moved = next.transits.find((t) => t._id === 'transit1');
+    expect(moved?.legId).toBe('legB');
+    expect(moved?.scenarioId).toBe('scenario1');
+  });
+
+  it('rebases onto the destination day, keeping time-of-day, on a cross-day drop with no real anchor', () => {
+    const dropMeta: DragMeta = {
+      id: 'empty-2027-07-13',
+      index: 0,
+      endAt: null,
+      containerDayStart: '2027-07-13T00:00',
+      legId: 'legB',
+      scenarioId: null,
+      activityId: null,
+      anchorEntityId: null,
+      kind: 'after',
+    };
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [transit({ departsAt: '2027-06-01T08:00', arrivesAt: '2027-06-01T09:30' })],
+      activities: [],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+    const next = applyTransitReorder(data, dropMeta, 'transit1', '2027-07-13T00:00');
+    const moved = next.transits.find((t) => t._id === 'transit1');
+    expect(moved?.departsAt).toBe('2027-07-13T08:00');
+    expect(moved?.arrivesAt).toBe('2027-07-13T09:30');
+  });
+
+  it("a same-day cross-container drop preserves the Transit's own timing when preserveOwnTiming is set", () => {
+    const dropMeta: DragMeta = {
+      id: 'activity-anchor',
+      index: 0,
+      endAt: '2027-06-01T15:00',
+      containerDayStart: DAY_START,
+      legId: 'legA',
+      scenarioId: 'scenario2',
+      activityId: null,
+      anchorEntityId: null,
+      kind: 'after',
+    };
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [transit({})],
+      activities: [],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+    const next = applyTransitReorder(data, dropMeta, 'transit1', DAY_START, true);
+    const moved = next.transits.find((t) => t._id === 'transit1');
+    expect(moved?.departsAt).toBe('2027-06-01T08:00'); // untouched
+    expect(moved?.arrivesAt).toBe('2027-06-01T09:30'); // untouched
+    expect(moved?.scenarioId).toBe('scenario2'); // still reassigned
+  });
+
+  it('repositions the Transit in data.transits right after anchorEntityId when it names another transit', () => {
+    const dropMeta: DragMeta = {
+      id: 'transit-transit2-arrive',
+      index: 0,
+      endAt: '2027-06-01T12:00',
+      containerDayStart: DAY_START,
+      legId: 'legA',
+      scenarioId: null,
+      activityId: null,
+      anchorEntityId: { kind: 'transit', id: 'transit2' },
+      kind: 'after',
+    };
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [
+        transit({ _id: 'transit1' }),
+        transit({ _id: 'transit2', departsAt: '2027-06-01T10:00', arrivesAt: '2027-06-01T11:00' }),
+      ],
+      activities: [],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+    const next = applyTransitReorder(data, dropMeta, 'transit1', DAY_START);
+    const ids = next.transits.map((t) => t._id);
+    expect(ids.indexOf('transit1')).toBe(ids.indexOf('transit2') + 1);
+  });
+});
+
+describe('applyBlockReorder', () => {
+  it("shifts every member by the same delta, computed from the block's earliest member", () => {
+    const dropMeta: DragMeta = {
+      id: 'scenario-tabs-0',
+      index: 0,
+      endAt: '2027-06-01T10:00', // the block's earliest member (transit1, 08:00) lands here
+      containerDayStart: DAY_START,
+      legId: 'legA',
+      scenarioId: null,
+      activityId: null,
+      anchorEntityId: null,
+      kind: 'after',
+    };
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [transit({ scenarioId: 'ideal', arrivesAt: '2027-06-01T09:00' })],
+      activities: [
+        activity({ _id: 'idealAct', scenarioId: 'ideal', startAt: '2027-06-01T10:00' }),
+        activity({ _id: 'altAct', scenarioId: 'alt', startAt: '2027-06-01T09:00' }),
+        activity({ _id: 'bystander', scenarioId: null, startAt: '2027-06-01T20:00' }),
+      ],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+    const next = applyBlockReorder(
+      data,
+      dropMeta,
+      { activityIds: ['idealAct', 'altAct'], transitIds: ['transit1'] },
+      DAY_START,
+    );
+    const byId = (id: string) => next.activities.find((a) => a._id === id);
+    const transitById = next.transits.find((t) => t._id === 'transit1');
+    // delta = 10:00 - 08:00 = +120 minutes, applied to every member.
+    expect(transitById?.departsAt).toBe('2027-06-01T10:00');
+    expect(transitById?.arrivesAt).toBe('2027-06-01T11:00'); // duration preserved
+    expect(byId('idealAct')?.startAt).toBe('2027-06-01T12:00');
+    expect(byId('altAct')?.startAt).toBe('2027-06-01T11:00');
+    expect(byId('bystander')?.startAt).toBe('2027-06-01T20:00'); // untouched — not a member
+  });
+
+  it('reassigns legId for every member but never touches scenarioId', () => {
+    const dropMeta: DragMeta = {
+      id: 'scenario-tabs-0',
+      index: 0,
+      endAt: '2027-06-01T10:00',
+      containerDayStart: DAY_START,
+      legId: 'legB',
+      scenarioId: null,
+      activityId: null,
+      anchorEntityId: null,
+      kind: 'after',
+    };
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [transit({ legId: 'legA' })],
+      activities: [
+        activity({
+          _id: 'idealAct',
+          legId: 'legA',
+          scenarioId: 'ideal',
+          startAt: '2027-06-01T08:00',
+        }),
+      ],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+    const next = applyBlockReorder(
+      data,
+      dropMeta,
+      { activityIds: ['idealAct'], transitIds: ['transit1'] },
+      DAY_START,
+    );
+    const moved = next.activities.find((a) => a._id === 'idealAct');
+    const movedTransit = next.transits.find((t) => t._id === 'transit1');
+    expect(moved?.legId).toBe('legB');
+    expect(moved?.scenarioId).toBe('ideal'); // untouched
+    expect(movedTransit?.legId).toBe('legB');
+  });
+
+  it('reassigns legId even for a member with no real startAt to shift', () => {
+    const dropMeta: DragMeta = {
+      id: 'scenario-tabs-0',
+      index: 0,
+      endAt: '2027-06-01T10:00',
+      containerDayStart: DAY_START,
+      legId: 'legB',
+      scenarioId: null,
+      activityId: null,
+      anchorEntityId: null,
+      kind: 'after',
+    };
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [transit({})],
+      activities: [
+        activity({
+          _id: 'idealAct',
+          legId: 'legA',
+          scenarioId: 'ideal',
+          startAt: '2027-06-01T08:00',
+        }),
+        activity({
+          _id: 'fuzzyAct',
+          legId: 'legA',
+          scenarioId: 'ideal',
+          startAt: null,
+          timeLabel: 'Sometime',
+        }),
+      ],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+    const next = applyBlockReorder(
+      data,
+      dropMeta,
+      { activityIds: ['idealAct', 'fuzzyAct'], transitIds: ['transit1'] },
+      DAY_START,
+    );
+    const fuzzy = next.activities.find((a) => a._id === 'fuzzyAct');
+    expect(fuzzy?.legId).toBe('legB');
+    expect(fuzzy?.startAt).toBeNull(); // no time to shift, but legId still moves
+  });
+
+  it('still reassigns legId for every member when the WHOLE block is fuzzy Activities with zero Transits — no real anchor time to shift from at all', () => {
+    const dropMeta: DragMeta = {
+      id: 'scenario-tabs-0',
+      index: 0,
+      endAt: '2027-06-01T10:00',
+      containerDayStart: DAY_START,
+      legId: 'legB',
+      scenarioId: null,
+      activityId: null,
+      anchorEntityId: null,
+      kind: 'after',
+    };
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [],
+      activities: [
+        activity({
+          _id: 'fuzzyOne',
+          legId: 'legA',
+          scenarioId: 'ideal',
+          startAt: null,
+          timeLabel: 'Sometime',
+        }),
+        activity({
+          _id: 'fuzzyTwo',
+          legId: 'legA',
+          scenarioId: 'alt',
+          startAt: null,
+          timeLabel: 'Sometime else',
+        }),
+      ],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+    const next = applyBlockReorder(
+      data,
+      dropMeta,
+      { activityIds: ['fuzzyOne', 'fuzzyTwo'], transitIds: [] },
+      DAY_START,
+    );
+    const one = next.activities.find((a) => a._id === 'fuzzyOne');
+    const two = next.activities.find((a) => a._id === 'fuzzyTwo');
+    expect(one?.legId).toBe('legB');
+    expect(two?.legId).toBe('legB');
+    expect(one?.startAt).toBeNull(); // no time invented for either
+    expect(two?.startAt).toBeNull();
+    // Each keeps its own scenarioId (which branch it's in) — only legId
+    // reassigns, same as every other applyBlockReorder case.
+    expect(one?.scenarioId).toBe('ideal');
+    expect(two?.scenarioId).toBe('alt');
+  });
+
+  it('rebases the block onto a different calendar day when dropped there', () => {
+    const dropMeta: DragMeta = {
+      id: 'empty-2027-07-13',
+      index: 0,
+      endAt: null,
+      containerDayStart: '2027-07-13T00:00',
+      legId: 'legB',
+      scenarioId: null,
+      activityId: null,
+      anchorEntityId: null,
+      kind: 'after',
+    };
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [],
+      activities: [
+        activity({
+          _id: 'idealAct',
+          legId: 'legA',
+          scenarioId: 'ideal',
+          startAt: '2027-06-01T08:00',
+        }),
+        activity({ _id: 'altAct', legId: 'legA', scenarioId: 'alt', startAt: '2027-06-01T09:00' }),
+      ],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+    const next = applyBlockReorder(
+      data,
+      dropMeta,
+      { activityIds: ['idealAct', 'altAct'], transitIds: [] },
+      '2027-07-13T00:00',
+    );
+    const byId = (id: string) => next.activities.find((a) => a._id === id);
+    // No real anchor, but this crosses days — re-bases onto 2027-07-13,
+    // keeping each member's own time-of-day and relative offset.
+    expect(byId('idealAct')?.startAt).toBe('2027-07-13T08:00');
+    expect(byId('altAct')?.startAt).toBe('2027-07-13T09:00');
+  });
+});
+
 describe('applyGroupActivityReorder', () => {
   // A drag-handle multi-select (DayTimeline.tsx) moving two Activities at
   // once: they should land back-to-back, in the order handed in, starting
@@ -709,7 +1387,7 @@ describe('applyGroupActivityReorder', () => {
       legId: 'legA',
       scenarioId: null,
       activityId: 'anchor',
-      anchorActivityId: 'anchor',
+      anchorEntityId: { kind: 'activity', id: 'anchor' },
       kind: 'after',
       cascadeActivityIds: ['bystander'],
     };
@@ -730,7 +1408,7 @@ describe('applyGroupActivityReorder', () => {
       routes: [],
     };
 
-    const next = applyGroupActivityReorder(data, dropMeta, ['g1', 'g2'], DAY_START, false);
+    const next = applyGroupActivityReorder(data, dropMeta, ['g1', 'g2'], DAY_START, () => false);
     const byId = (id: string) => next.activities.find((a) => a._id === id);
 
     // g1 takes over the drop anchor's own endAt; g2 chains right after g1's
@@ -748,5 +1426,69 @@ describe('applyGroupActivityReorder', () => {
     const ids = next.activities.map((a) => a._id);
     expect(ids.indexOf('g1')).toBe(ids.indexOf('anchor') + 1);
     expect(ids.indexOf('g2')).toBe(ids.indexOf('g1') + 1);
+  });
+
+  // A multi-day selection (TripSelectionsContextObject.ts's ActivitySelection
+  // now records each selected Activity's own origin container) can mix
+  // members that are and aren't crossing into the drop's own container —
+  // `shouldPreserveOwnTiming` is asked per Activity rather than once for the
+  // whole group. DaysView.tsx only ever answers `true` for a *same-day*
+  // container crossing (g1 here: dragged in from a scenario tab on the same
+  // date, so its own time-of-day should carry over untouched, only legId/
+  // scenarioId moving) — a member whose origin is a genuinely different
+  // calendar day (g2: still gets `false`, same as any real cross-day member
+  // would) instead takes over the position, landing right after whatever the
+  // previous group member ended up at.
+  it('asks shouldPreserveOwnTiming per group member, so only a same-day crossing skips the time takeover', () => {
+    const dropMeta: DragMeta = {
+      id: 'activity-anchor',
+      index: 0,
+      endAt: '2027-06-01T09:00',
+      containerDayStart: DAY_START,
+      legId: 'legB',
+      scenarioId: null,
+      activityId: null,
+      anchorEntityId: null,
+      kind: 'after',
+      cascadeActivityIds: [],
+    };
+
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [],
+      activities: [
+        // Same calendar day as the drop (2027-06-01), just a different
+        // scenario container — a realistic `preserveOwnTiming: true` case.
+        activity({ _id: 'g1', legId: 'legA', scenarioId: 'sc1', startAt: '2027-06-01T20:00' }),
+        // A genuinely different calendar day — a realistic
+        // `preserveOwnTiming: false` case, same as any cross-day member.
+        activity({ _id: 'g2', legId: 'legA', startAt: '2027-06-05T15:00', durationMinutes: 30 }),
+      ],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+
+    const next = applyGroupActivityReorder(
+      data,
+      dropMeta,
+      ['g1', 'g2'],
+      DAY_START,
+      (id) => id === 'g1',
+    );
+    const byId = (id: string) => next.activities.find((a) => a._id === id);
+
+    // g1's same-day crossing left its own time untouched, only legId/
+    // scenarioId moved.
+    expect(byId('g1')?.startAt).toBe('2027-06-01T20:00');
+    expect(byId('g1')?.legId).toBe('legB');
+    expect(byId('g1')?.scenarioId).toBeNull();
+
+    // g2 crossed days: it takes over right after g1's own (untouched) start,
+    // landing on the destination day rather than staying on its old date.
+    expect(byId('g2')?.startAt).toBe('2027-06-01T20:00');
+    expect(byId('g2')?.legId).toBe('legB');
   });
 });

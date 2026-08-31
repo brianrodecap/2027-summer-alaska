@@ -1,5 +1,7 @@
 import { createContext } from 'react';
 
+import type { ReorderMembers } from '../model/reorder';
+
 // Four independent contexts rather than one combined value: with a single
 // context, picking a meal option anywhere recreates one shared value object,
 // which re-renders every consumer of *any* selection everywhere in the
@@ -29,37 +31,51 @@ export interface FilterSelectionValue {
   clearFilterTokens: () => void;
 }
 
-// A multi-select of Activity drag handles, scoped to a single rendered
-// DayTimeline (containerId) at a time — clicking a handle in a different
-// container replaces the selection outright rather than merging into it, so
-// a group drag (DaysView.tsx's handleDragStart/handleDragEnd) never has to
-// reason about moving activities out of two different containers at once.
-export interface ActivitySelection {
+// A multi-select of drag handles — a plain Activity row, a Transit's own
+// Depart row, or a whole scenario-tabs bundle — that can span more than one
+// rendered DayTimeline — picking a handle on one day, then another on a
+// different day (or a different scenario branch), adds to the same
+// selection rather than resetting it, so a group drag can move rows from
+// several different days/branches at once. Each selected row's own resolved
+// membership (`members`: which Activity/Transit ids it actually contributes
+// — a single id for a plain Activity/Transit row, the whole bundle for a
+// scenario-tabs row) is captured at selection time via `toggleRowSelection`,
+// rather than re-derived at drop time — a scenario-tabs row's own DragMeta
+// only exists while its owning DayTimeline is rendered, so there'd be
+// nothing to look back up for a member selected on a day that isn't the one
+// a later drag actually starts from. `containerId` is kept per row for the
+// same reason the old Activity-only selection kept it: DaysView.tsx's
+// handleDragEnd needs each member's own origin container to decide, for a
+// pure-Activity group drag, whether that particular member's drop is
+// crossing into a different container (see applyGroupActivityReorder in
+// reorder.ts).
+export type RowSelectionMembers = ReorderMembers;
+
+export interface SelectedRow {
   containerId: string;
-  ids: Set<string>;
+  members: RowSelectionMembers;
 }
 
-export interface ActivitySelectionValue {
-  selection: ActivitySelection | null;
-  toggleActivitySelection: (containerId: string, activityId: string) => void;
-  clearActivitySelection: () => void;
+export interface RowSelection {
+  rows: Map<string, SelectedRow>; // dragId -> selected row
+}
+
+export interface RowSelectionValue {
+  selection: RowSelection | null;
+  toggleRowSelection: (dragId: string, containerId: string, members: RowSelectionMembers) => void;
+  clearRowSelection: () => void;
 }
 
 // Shared by DayTimeline.tsx (per-row highlight) and DaysView.tsx (deciding
-// whether a drag is a group drag) so both read "is this activity part of the
-// active selection for this container" the same way.
-export function isActivitySelected(
-  selection: ActivitySelection | null,
-  containerId: unknown,
-  activityId: string,
-): boolean {
-  return (
-    selection !== null && selection.containerId === containerId && selection.ids.has(activityId)
-  );
+// whether a drag is a group drag) so both read "is this row part of the
+// active selection" the same way — selection membership no longer depends
+// on which container is asking, since a selection can now span several.
+export function isRowSelected(selection: RowSelection | null, dragId: string): boolean {
+  return selection !== null && selection.rows.has(dragId);
 }
 
 export const ScenarioSelectionContext = createContext<ScenarioSelectionValue | null>(null);
 export const RouteToneSelectionContext = createContext<RouteToneSelectionValue | null>(null);
 export const MealOptionSelectionContext = createContext<MealOptionSelectionValue | null>(null);
 export const FilterSelectionContext = createContext<FilterSelectionValue | null>(null);
-export const ActivitySelectionContext = createContext<ActivitySelectionValue | null>(null);
+export const RowSelectionContext = createContext<RowSelectionValue | null>(null);

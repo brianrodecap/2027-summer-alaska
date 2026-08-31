@@ -1,13 +1,13 @@
 import { useRequiredContext } from './contextHook';
 import {
-  ActivitySelectionContext,
-  type ActivitySelectionValue,
   FilterSelectionContext,
   type FilterSelectionValue,
   MealOptionSelectionContext,
   type MealOptionSelectionValue,
   RouteToneSelectionContext,
   type RouteToneSelectionValue,
+  RowSelectionContext,
+  type RowSelectionValue,
   ScenarioSelectionContext,
   type ScenarioSelectionValue,
 } from './TripSelectionsContextObject';
@@ -32,6 +32,6 @@ export function useFilterSelection(): FilterSelectionValue {
   return useRequired(FilterSelectionContext, 'useFilterSelection');
 }
 
-export function useActivitySelection(): ActivitySelectionValue {
-  return useRequired(ActivitySelectionContext, 'useActivitySelection');
+export function useRowSelection(): RowSelectionValue {
+  return useRequired(RowSelectionContext, 'useRowSelection');
 }

@@ -11,12 +11,19 @@ import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
-import { type CSSProperties, Fragment, memo, type ReactElement, type ReactNode } from 'react';
+import {
+  type CSSProperties,
+  Fragment,
+  memo,
+  type ReactElement,
+  type ReactNode,
+  useMemo,
+} from 'react';
 
 import { filterSequenceItems } from '../../model/filters';
 import { firstImage, stayDetailBits } from '../../model/formatting';
 import { activeMealOptions, selectedMealOptionIndex } from '../../model/mealOptions';
-import { buildDragMeta, type DragMeta } from '../../model/reorder';
+import { buildDragMeta, type DragMeta, scenarioTabsDragId } from '../../model/reorder';
 import {
   activeRouteTone,
   formatTime,
@@ -36,13 +43,13 @@ import type {
   TransitBoundarySequenceItem,
   TransitStageSequenceItem,
 } from '../../model/types';
-import { isActivitySelected } from '../../state/TripSelectionsContextObject';
+import { isRowSelected, type RowSelectionMembers } from '../../state/TripSelectionsContextObject';
 import { useEdit } from '../../state/useEdit';
 import {
-  useActivitySelection,
   useFilterSelection,
   useMealOptionSelection,
   useRouteToneSelection,
+  useRowSelection,
   useScenarioSelection,
 } from '../../state/useTripSelections';
 import { BookingChip } from '../shared/BookingChip';
@@ -64,8 +71,10 @@ import { ScenarioTabsSection } from './ScenarioTabsSection';
 // model's own default meal-format guess.)
 // Applied uniformly to every row (Stay/Transit/Activity alike) so the
 // dot/image column it sits beside stays aligned down the page regardless of
-// which individual rows actually carry a drag handle (only Activity rows
-// do; see ActivityNode below).
+// which individual rows actually carry a drag handle — an Activity row
+// (ActivityNode below), a Transit's own Depart row (TransitBoundaryNode),
+// and the scenario-tabs row (ScenarioTabsNode) do; a Stay row and a
+// Transit's Arrive/stage rows never do.
 const DRAG_HANDLE_HOVER_CLASS = 'day-drag-handle';
 
 // ActivityNode's own hover/focus-reveal selector for the drag handle — a
@@ -77,7 +86,7 @@ const ACTIVITY_HOVER_SX = {
 };
 
 // A row that's part of the current drag-handle multi-select (see
-// ActivitySelectionValue) — a plain background tint on just its content box
+// RowSelectionValue) — a plain background tint on just its content box
 // is enough to show membership without needing a separate checkbox
 // affordance, since the handle icon itself already switches to primary
 // color/full opacity below. Deliberately scoped to TimelineContent alone,
@@ -265,10 +274,14 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
   item,
   isLast,
   onOpen,
+  dragHandle,
+  selected,
 }: {
   item: TransitBoundarySequenceItem;
   isLast: boolean;
   onOpen: (transit: EnrichedTransit) => void;
+  dragHandle?: ReactNode;
+  selected?: boolean;
 }) {
   const { routeTones } = useRouteToneSelection();
   const { transit, phase } = item;
@@ -312,6 +325,8 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
         )
       }
       isLast={isLast}
+      dragHandle={dragHandle}
+      selected={selected}
       trailing={
         isDepart && (
           <RowMenu
@@ -427,6 +442,8 @@ const ScenarioTabsNode = memo(function ScenarioTabsNode({
   onOpenActivity,
   onOpenStay,
   onOpenTransit,
+  dragHandle,
+  selected,
 }: {
   day: Day;
   tracks: ScenarioTrack[];
@@ -436,6 +453,8 @@ const ScenarioTabsNode = memo(function ScenarioTabsNode({
   onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
   onOpenStay: (stay: EnrichedStay) => void;
   onOpenTransit: (transit: EnrichedTransit) => void;
+  dragHandle?: ReactNode;
+  selected?: boolean;
 }) {
   const { scenarioTone } = useScenarioSelection();
   // Mirrors ScenarioTabsSection's own emptiness check — a gated child track
@@ -451,6 +470,8 @@ const ScenarioTabsNode = memo(function ScenarioTabsNode({
     <TimelineRow
       dot={<RowLeadingDot icon="alt_route" />}
       isLast={isLast}
+      dragHandle={dragHandle}
+      selected={selected}
       // No pb here (unlike every other node's default pb: 3) —
       // ScenarioTabsSection's own nested DayTimeline already ends in a row
       // with its standard pb: 3, so adding this node's own would double up
@@ -477,22 +498,27 @@ const ScenarioTabsNode = memo(function ScenarioTabsNode({
 });
 
 // Wraps every drop-target-eligible row (Stay/Transit boundary or stage, or
-// an Activity) in dnd-kit's useSortable — a Stay/Transit row stays
-// `disabled` (can't be picked up) but still gets measured, so an Activity
-// can still be dropped immediately before or after it. Only a non-disabled
-// row's drag-handle listeners actually get attached to anything visible
-// (ActivityNode's own handle icon, via the `children` render-prop below),
-// matching this app's existing per-row icon-button convention rather than
-// making the whole row a drag target — that would fight the row's own
-// click-to-open handler.
+// an Activity) in dnd-kit's useSortable — a Stay row and a Transit's
+// Arrive/stage rows stay `disabled` (can't be picked up) but still get
+// measured, so an Activity can still be dropped immediately before or
+// after them; a Transit's own Depart row and the scenario-tabs row are
+// `disabled: false` (real drag sources), the latter also passing
+// `droppable: false` since it's never a valid drop target (see DragMeta's
+// own note in reorder.ts). Only a non-disabled row's drag-handle listeners
+// actually get attached to anything visible (each node's own handle icon,
+// via the `children` render-prop below), matching this app's existing
+// per-row icon-button convention rather than making the whole row a drag
+// target — that would fight the row's own click-to-open handler.
 function SortableRow({
   dragId,
   disabled,
+  droppable = true,
   dragMeta,
   children,
 }: {
   dragId: string;
   disabled: boolean;
+  droppable?: boolean;
   dragMeta?: DragMeta;
   children: (
     dragHandleProps: {
@@ -505,11 +531,13 @@ function SortableRow({
   const { setNodeRef, transform, transition, attributes, listeners, isDragging, isOver } =
     useSortable({
       id: dragId,
-      // A plain boolean here disables both draggable AND droppable (dnd-kit's
-      // own normalizeDisabled) — a Stay/Transit row must stay non-draggable
-      // but still droppable, so an Activity can land immediately before/after
-      // it (see this function's own note above).
-      disabled: { draggable: disabled, droppable: false },
+      // Must stay the object form, not a plain boolean — dnd-kit's own
+      // normalizeDisabled treats `disabled: someBoolean` as disabling BOTH
+      // draggable and droppable together, which would make `droppable`
+      // above unable to control drop-eligibility independently of
+      // drag-eligibility (e.g. a Stay/Transit boundary row: not draggable,
+      // but still droppable).
+      disabled: { draggable: disabled, droppable: !droppable },
       data: dragMeta,
     });
   const style: CSSProperties = {
@@ -589,16 +617,32 @@ export const DayTimeline = memo(function DayTimeline({
   onOpenTransit: (transit: EnrichedTransit) => void;
 }) {
   const { activeFilterTokens } = useFilterSelection();
-  const filtered = filterSequenceItems(sequence, activeFilterTokens);
-  const { selection, toggleActivitySelection } = useActivitySelection();
+  const filtered = useMemo(
+    () => filterSequenceItems(sequence, activeFilterTokens),
+    [sequence, activeFilterTokens],
+  );
+  const { selection, toggleRowSelection } = useRowSelection();
 
   // Safe to run unconditionally at every level — a scenario track's own
   // sequence never contains a 'stay' item (Stay never branches), so this is
   // a no-op there; only the top-level day.sequence actually has boundaries
   // to pull out.
-  const { checkOuts, rest, checkIns } = splitOutStayBoundaries(filtered);
-  const flattened = [...checkOuts, ...rest, ...checkIns];
+  const flattened = useMemo(() => {
+    const { checkOuts, rest, checkIns } = splitOutStayBoundaries(filtered);
+    return [...checkOuts, ...rest, ...checkIns];
+  }, [filtered]);
   const dayStart = `${day.date}T00:00`;
+
+  // Kept a stable reference across renders the filter/selection/scenario
+  // contexts trigger elsewhere in the (unvirtualized, ~28-day) list — every
+  // DayTimeline instance shares those contexts, so without this a toggle on
+  // one day recomputes every other day's buildDragMeta (including its own
+  // recursive collectScenarioGroupMembers walk) for nothing.
+  const dragMeta = useMemo(
+    () => buildDragMeta(flattened, scenarioId, dayStart, day.leg._id, day.scenarioTracks),
+    [flattened, scenarioId, dayStart, day.leg._id, day.scenarioTracks],
+  );
+  const dragMetaById = useMemo(() => new Map(dragMeta.map((d) => [d.id, d])), [dragMeta]);
 
   if (!flattened.length) {
     // Filtering everything out of an otherwise non-empty sequence renders
@@ -619,7 +663,7 @@ export const DayTimeline = memo(function DayTimeline({
       legId: day.leg._id,
       scenarioId,
       activityId: null,
-      anchorActivityId: null,
+      anchorEntityId: null,
       kind: 'after',
     };
     return (
@@ -633,9 +677,6 @@ export const DayTimeline = memo(function DayTimeline({
     );
   }
 
-  const dragMeta = buildDragMeta(flattened, scenarioId, dayStart);
-  const dragMetaById = new Map(dragMeta.map((d) => [d.id, d]));
-
   // A 'section' item bundles several same-moment activities into one array —
   // flatten it to one timeline row per activity so the connector runs
   // through every image/icon on the day, not just past the section as a
@@ -647,6 +688,7 @@ export const DayTimeline = memo(function DayTimeline({
     key: string;
     dragId: string | null;
     draggable: boolean;
+    droppable: boolean;
     render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => ReactElement;
   }
 
@@ -662,6 +704,7 @@ export const DayTimeline = memo(function DayTimeline({
           key: dragId,
           dragId,
           draggable: false,
+          droppable: true,
           render: (isLast: boolean) => (
             <StayNode item={item} date={day.date} isLast={isLast} onOpen={onOpenStay} />
           ),
@@ -674,9 +717,16 @@ export const DayTimeline = memo(function DayTimeline({
         {
           key: dragId,
           dragId,
-          draggable: false,
-          render: (isLast: boolean) => (
-            <TransitBoundaryNode item={item} isLast={isLast} onOpen={onOpenTransit} />
+          draggable: item.phase === 'depart',
+          droppable: true,
+          render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => (
+            <TransitBoundaryNode
+              item={item}
+              isLast={isLast}
+              onOpen={onOpenTransit}
+              dragHandle={item.phase === 'depart' ? dragHandle : undefined}
+              selected={item.phase === 'depart' ? selected : undefined}
+            />
           ),
         },
       ];
@@ -688,6 +738,7 @@ export const DayTimeline = memo(function DayTimeline({
           key: dragId,
           dragId,
           draggable: false,
+          droppable: true,
           render: (isLast: boolean) => <TransitStageNode item={item} isLast={isLast} />,
         },
       ];
@@ -699,6 +750,7 @@ export const DayTimeline = memo(function DayTimeline({
           key: dragId,
           dragId,
           draggable: true,
+          droppable: true,
           render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => (
             <ActivityNode
               activity={activity}
@@ -712,13 +764,19 @@ export const DayTimeline = memo(function DayTimeline({
         };
       });
     }
-    // scenario-tabs
+    // scenario-tabs — id must match buildDragMeta's own id scheme exactly
+    // (reorder.ts): namespaced by calendar day AND scenarioId, not just `i`
+    // alone, since every DayTimeline instance shares one DndContext
+    // (DaysView.tsx) and a bare local index collides across different days'
+    // (or a nested group's own) scenario-tabs rows.
+    const scenarioDragId = scenarioTabsDragId(dayStart, scenarioId, i);
     return [
       {
-        key: `scenario-tabs-${i}`,
-        dragId: null,
-        draggable: false,
-        render: (isLast: boolean) => (
+        key: scenarioDragId,
+        dragId: scenarioDragId,
+        draggable: true,
+        droppable: false,
+        render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => (
           <ScenarioTabsNode
             day={day}
             tracks={item.tracks ?? day.scenarioTracks}
@@ -728,6 +786,8 @@ export const DayTimeline = memo(function DayTimeline({
             onOpenActivity={onOpenActivity}
             onOpenStay={onOpenStay}
             onOpenTransit={onOpenTransit}
+            dragHandle={dragHandle}
+            selected={selected}
           />
         ),
       },
@@ -742,15 +802,15 @@ export const DayTimeline = memo(function DayTimeline({
   // in (dragMeta/dnd-kit, the map/route stops, and reorder.ts's drop
   // targeting all key off that single occurrence) — this adds a second,
   // purely decorative copy at the very top for the "woke up here" half,
-  // outside the sortable list entirely (dragId: null, same as a
-  // scenario-tabs row) so it never becomes a second drop target or a second
-  // map/route stop for the same lodging.
+  // outside the sortable list entirely (dragId: null) so it never becomes a
+  // second drop target or a second map/route stop for the same lodging.
   const morningStayNodes: DayTimelineNode[] = flattened
     .filter((item): item is StaySequenceItem => item.type === 'stay' && item.relation === 'Staying')
     .map((item) => ({
       key: `stay-${item.stay._id}-${day.date}-morning`,
       dragId: null,
       draggable: false,
+      droppable: false,
       render: (isLast: boolean) => (
         <StayNode item={item} date={day.date} isLast={isLast} onOpen={onOpenStay} />
       ),
@@ -786,14 +846,26 @@ export const DayTimeline = memo(function DayTimeline({
       >
         {allNodes.map((node, i) => {
           const meta = node.dragId ? dragMetaById.get(node.dragId) : undefined;
-          const activityId = meta?.activityId ?? null;
-          const isSelected = Boolean(
-            activityId && isActivitySelected(selection, containerId, activityId),
-          );
+          const isSelected = Boolean(meta && isRowSelected(selection, meta.id));
+          // What this row itself contributes to a group drag: the whole
+          // bundle for a scenario-tabs row, or its own single id for a
+          // plain Activity/Transit row — see RowSelectionMembers' own note
+          // in TripSelectionsContextObject.ts.
+          const rowMembers: RowSelectionMembers | null = meta
+            ? (meta.scenarioGroup ?? {
+                activityIds: meta.activityId ? [meta.activityId] : [],
+                transitIds: meta.transitId ? [meta.transitId] : [],
+              })
+            : null;
           return (
             <Fragment key={node.key}>
               {node.dragId ? (
-                <SortableRow dragId={node.dragId} disabled={!node.draggable} dragMeta={meta}>
+                <SortableRow
+                  dragId={node.dragId}
+                  disabled={!node.draggable}
+                  droppable={node.droppable}
+                  dragMeta={meta}
+                >
                   {(dragHandleProps) =>
                     node.render(
                       i === allNodes.length - 1,
@@ -806,10 +878,14 @@ export const DayTimeline = memo(function DayTimeline({
                             size="small"
                             aria-label={isSelected ? 'Selected, drag to move group' : 'Reorder'}
                             color={isSelected ? 'primary' : 'default'}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              if (activityId) toggleActivitySelection(containerId, activityId);
-                            }}
+                            onClick={
+                              meta && rowMembers
+                                ? (event) => {
+                                    event.stopPropagation();
+                                    toggleRowSelection(meta.id, containerId, rowMembers);
+                                  }
+                                : undefined
+                            }
                             sx={{
                               flexShrink: 0,
                               cursor: 'grab',

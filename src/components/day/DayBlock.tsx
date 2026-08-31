@@ -1,12 +1,15 @@
 import AddIcon from '@mui/icons-material/Add';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import MapIcon from '@mui/icons-material/Map';
 import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
+import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import Menu from '@mui/material/Menu';
 import Typography from '@mui/material/Typography';
-import { memo } from 'react';
+import { memo, useState } from 'react';
 
 import { deriveTitle } from '../../model/tripModel';
 import type {
@@ -91,6 +94,7 @@ export const DayBlock = memo(function DayBlock({
 }) {
   const { scenarioTone } = useScenarioSelection();
   const title = deriveTitle(day.location, activeTitleCandidates(day, daysByDate, scenarioTone));
+  const [collapsed, setCollapsed] = useState(false);
   return (
     <Box component="section" id={`day-${day.date}`} sx={{ scrollMarginTop: '4.5rem' }}>
       <Box
@@ -108,11 +112,28 @@ export const DayBlock = memo(function DayBlock({
           borderColor: 'divider',
         }}
       >
-        <Box>
-          <Typography variant="caption" color="text.secondary">
-            {day.dateLabel}
-          </Typography>
-          <Typography variant="h6">{title}</Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+          <IconButton
+            aria-label={collapsed ? `Expand ${day.dateLabel}` : `Collapse ${day.dateLabel}`}
+            onClick={() => setCollapsed((c) => !c)}
+            size="small"
+            sx={{ mr: 1 }}
+          >
+            {collapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
+          </IconButton>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography variant="caption" color="text.secondary">
+              {day.dateLabel}
+            </Typography>
+            <Typography variant="h6" noWrap={collapsed}>
+              {title}
+            </Typography>
+            {collapsed && (
+              <Typography variant="body2" color="text.secondary" noWrap>
+                {day.summary}
+              </Typography>
+            )}
+          </Box>
         </Box>
         <Box sx={{ display: 'flex', flexShrink: 0 }}>
           <AddDayNoteButton date={day.date} dateLabel={day.dateLabel} />
@@ -125,20 +146,22 @@ export const DayBlock = memo(function DayBlock({
           </IconButton>
         </Box>
       </Box>
-      <Box sx={{ px: 2, py: 2 }}>
-        <DayWeatherStrip day={day} />
-        <NotesCluster notes={day.notes} />
-        <DayTimeline
-          day={day}
-          sequence={day.sequence}
-          containerId={day.date}
-          daysByDate={daysByDate}
-          onOpenActivity={onOpenActivity}
-          onOpenStay={onOpenStay}
-          onOpenTransit={onOpenTransit}
-        />
-        <AddToDayButton day={day} onAdd={onAddEvent} />
-      </Box>
+      <Collapse in={!collapsed} timeout="auto" unmountOnExit>
+        <Box sx={{ px: 2, py: 2 }}>
+          <DayWeatherStrip day={day} />
+          <NotesCluster notes={day.notes} />
+          <DayTimeline
+            day={day}
+            sequence={day.sequence}
+            containerId={day.date}
+            daysByDate={daysByDate}
+            onOpenActivity={onOpenActivity}
+            onOpenStay={onOpenStay}
+            onOpenTransit={onOpenTransit}
+          />
+          <AddToDayButton day={day} onAdd={onAddEvent} />
+        </Box>
+      </Collapse>
     </Box>
   );
 });

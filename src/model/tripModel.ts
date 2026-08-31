@@ -116,7 +116,7 @@ const FULL_MONTHS = [
   'December',
 ];
 
-function dateOnly(iso: string): string {
+export function dateOnly(iso: string): string {
   return iso.slice(0, 10);
 }
 
@@ -602,6 +602,10 @@ export function formatWallClock(ms: number): string {
 
 export function addMinutesIso(iso: string, minutes: number): string {
   return formatWallClock(wallClockMs(iso) + minutes * 60000);
+}
+
+export function diffMinutesIso(a: string, b: string): number {
+  return (wallClockMs(b) - wallClockMs(a)) / 60000;
 }
 
 // A meal Activity reached mid-drive is exempt from the transit-overlap

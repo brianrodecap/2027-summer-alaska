@@ -19,7 +19,7 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import useScrollTrigger from '@mui/material/useScrollTrigger';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { ActivityDetailPanel } from '../components/activity/ActivityDetailPanel';
@@ -40,7 +40,13 @@ import {
   upsertById,
 } from '../model/editForms';
 import { dayHasVisibleContent } from '../model/filters';
-import { applyActivityReorder, applyGroupActivityReorder, type DragMeta } from '../model/reorder';
+import {
+  applyActivityReorder,
+  applyBlockReorder,
+  applyGroupActivityReorder,
+  applyTransitReorder,
+  type DragMeta,
+} from '../model/reorder';
 import { activitySortKey, formatTime, todayDateStr } from '../model/tripModel';
 import type {
   Activity,
@@ -54,10 +60,9 @@ import type {
   Stay,
   Transit,
 } from '../model/types';
-import { isActivitySelected } from '../state/TripSelectionsContextObject';
 import { useEdit } from '../state/useEdit';
 import { useTripData } from '../state/useTripData';
-import { useActivitySelection, useFilterSelection } from '../state/useTripSelections';
+import { useFilterSelection, useRowSelection } from '../state/useTripSelections';
 
 // Stay's and Transit's detail panels are both opened/closed/edited the same
 // way — a plain "which entity is open" state, with Edit clearing it and
@@ -85,10 +90,35 @@ function containerIdOf(dndData: unknown): unknown {
   return (dndData as { sortable?: { containerId: unknown } } | undefined)?.sortable?.containerId;
 }
 
+// A container's own leading date — DayTimeline.tsx builds a top-level
+// day's containerId as exactly its date ("2027-06-26") and a scenario
+// tab's as `${date}::${scenarioId}`, so splitting on '::' recovers the
+// calendar date either way. Comparing dates (not raw containerId) is what
+// tells a same-day scenario-boundary crossing (reorder.ts's
+// `preserveOwnTiming` — the dragged Activity's own time should carry over
+// untouched) apart from a genuine cross-day move (where landing on the new
+// day's own anchor position, date included, is the entire point of the
+// drag).
+function dayOfContainer(containerId: unknown): string | null {
+  return typeof containerId === 'string' ? containerId.split('::')[0] : null;
+}
+
+// The shared chrome every DragOverlay body below renders — only the
+// content (a plain label, or an Activity's text + time) actually varies
+// per drag kind.
+function DragOverlayChip({ children }: { children: ReactNode }) {
+  return (
+    <Paper elevation={3} sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 1 }}>
+      <DragIndicatorIcon fontSize="small" color="action" />
+      {children}
+    </Paper>
+  );
+}
+
 export function DaysView() {
   const { view, data, setData } = useTripData();
   const { activeFilterTokens } = useFilterSelection();
-  const { selection, clearActivitySelection } = useActivitySelection();
+  const { selection, clearRowSelection } = useRowSelection();
   const { openEdit } = useEdit();
   const { slug, date } = useParams();
   const navigate = useNavigate();
@@ -168,23 +198,33 @@ export function DaysView() {
   // pointer sensor is what lets a plain tap still open a row's detail sheet
   // instead of every click starting a drag.
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const draggingActivity = draggingId
-    ? (data?.activities.find((a) => a._id === draggingId) ?? null)
+  const [draggingMeta, setDraggingMeta] = useState<DragMeta | null>(null);
+  const draggingActivity = draggingMeta?.activityId
+    ? (data?.activities.find((a) => a._id === draggingMeta.activityId) ?? null)
     : null;
-  // Whether the dragged row is part of a multi-select of more than one
-  // Activity (see ActivitySelectionValue) — selection is untouched for the
-  // whole drag (only cleared once handleDragEnd's group branch commits), so
-  // this can be derived straight from current state rather than snapshotted
-  // at drag-start.
-  const draggingGroupSize =
-    draggingId && selection && selection.ids.has(draggingId) && selection.ids.size > 1
-      ? selection.ids.size
-      : null;
+  const draggingTransit = draggingMeta?.transitId
+    ? (data?.transits.find((t) => t._id === draggingMeta.transitId) ?? null)
+    : null;
+  // The DragOverlay's own "N items" chip count — a multi-select of more
+  // than one row (of any kind: a plain Activity, a Transit's Depart row, or
+  // a whole scenario-tabs bundle; see RowSelectionValue) takes priority
+  // when active (selection is untouched for the whole drag, only cleared
+  // once handleDragEnd's group branch commits, so this can be derived
+  // straight from current state rather than snapshotted at drag-start);
+  // otherwise a lone scenario-tabs drag shows its own bundle size.
+  // draggingMeta's activityId/transitId/scenarioGroup are mutually
+  // exclusive per row, so falling back to scenarioGroup here never masks a
+  // single Activity/Transit drag.
+  const draggingItemCount =
+    draggingMeta?.id && selection && selection.rows.has(draggingMeta.id) && selection.rows.size > 1
+      ? selection.rows.size
+      : draggingMeta?.scenarioGroup
+        ? draggingMeta.scenarioGroup.activityIds.length +
+          draggingMeta.scenarioGroup.transitIds.length
+        : null;
 
   const handleDragStart = (event: DragStartEvent) => {
-    const meta = event.active.data.current as DragMeta | undefined;
-    setDraggingId(meta?.activityId ?? null);
+    setDraggingMeta((event.active.data.current as DragMeta | undefined) ?? null);
   };
 
   // Only onDragEnd is handled — see reorder.ts's own note on why this
@@ -208,42 +248,127 @@ export function DaysView() {
   // `index`, is what actually identifies which rendered Timeline a row
   // belongs to, so it's what detects a drag that crossed from one into
   // another. applyActivityReorder needs to know this: without it, a
-  // cross-container drop still resolves to some row's plain DragMeta and
-  // forces the dragged Activity onto that row's own instant regardless of
-  // duration, which is exactly how dragging an Activity out of a scenario
-  // tab used to scramble its displayed time.
+  // same-day cross-container drop still resolves to some row's plain
+  // DragMeta and forces the dragged Activity onto that row's own instant
+  // regardless of duration, which is exactly how dragging an Activity out
+  // of a scenario tab used to scramble its displayed time. A drop that
+  // crosses onto a *different calendar day* is deliberately NOT treated
+  // this way — see `dayOfContainer`/`preserveOwnTiming` below — since
+  // relocating onto the new day's own real anchor timestamp (date
+  // included) is the entire point of that drag, not something to guard
+  // against the way an ambiguous same-day "before vs. after" is.
   const handleDragEnd = (event: DragEndEvent) => {
-    setDraggingId(null);
+    setDraggingMeta(null);
     const { active, over } = event;
     if (!over || active.id === over.id) return;
     const activeMeta = active.data.current as DragMeta | undefined;
     const overMeta = over.data.current as DragMeta | undefined;
-    if (!activeMeta?.activityId || !overMeta) return;
-    const activityId = activeMeta.activityId;
+    if (!activeMeta || !overMeta) return;
     const activeContainerId = containerIdOf(active.data.current);
     const overContainerId = containerIdOf(over.data.current);
-    const crossContainer = activeContainerId !== overContainerId;
-    const movingUp = !crossContainer && activeMeta.index > overMeta.index;
+    const containerChanged = activeContainerId !== overContainerId;
+    // Only a same-day container crossing should leave the dragged
+    // Activity's own time untouched (reorder.ts's `preserveOwnTiming`) — a
+    // containerChanged drop that also lands on a different calendar day
+    // needs the normal takeover so the destination day's own anchor
+    // timestamp (and therefore the new date) actually applies.
+    const preserveOwnTiming =
+      containerChanged && dayOfContainer(activeContainerId) === dayOfContainer(overContainerId);
+    const movingUp = !containerChanged && activeMeta.index > overMeta.index;
     const dropMeta: DragMeta =
       movingUp && overMeta.before ? { ...overMeta, ...overMeta.before } : overMeta;
     const dayStart = dropMeta.containerDayStart;
-    const isGroupDrag =
-      isActivitySelected(selection, activeContainerId, activityId) &&
-      (selection?.ids.size ?? 0) > 1;
-    if (isGroupDrag && selection && data) {
-      const groupIds = data.activities
-        .filter((a) => selection.ids.has(a._id))
-        .sort((a, b) => activitySortKey(a, dayStart).localeCompare(activitySortKey(b, dayStart)))
-        .map((a) => a._id);
-      setData(
-        (prev) => applyGroupActivityReorder(prev, dropMeta, groupIds, dayStart, crossContainer),
-        ['activities'],
+
+    // A drag of a row that's itself part of a real (>1) multi-select moves
+    // every selected row together, regardless of container or day — takes
+    // priority over the single-row branches below. Dragging some other,
+    // unselected row while a selection exists elsewhere still falls through
+    // to those (a normal single-row drag; the selection is left untouched).
+    if (selection && selection.rows.has(activeMeta.id) && selection.rows.size > 1 && data) {
+      const rows = [...selection.rows.values()];
+      // A selection made up entirely of plain Activity rows keeps the
+      // original insertion-chaining behavior (applyGroupActivityReorder,
+      // each member anchored right after the previous one) — this is
+      // established, tested behavior, unchanged from before mixed
+      // selections existed. A selection that includes a Transit row and/or
+      // a scenario-group bundle instead moves as one rigid formation
+      // (applyBlockReorder — every member shifted by the same delta,
+      // preserving each member's own offset from the rest of the group),
+      // since that's the only sensible way to keep e.g. a scenario's own
+      // Depart/Arrive/Activities and a plain Activity selected alongside it
+      // (a dinner right after) in the same relative arrangement on drop.
+      const isPureActivitySelection = rows.every(
+        (row) => row.members.transitIds.length === 0 && row.members.activityIds.length === 1,
       );
-      clearActivitySelection();
+      if (isPureActivitySelection) {
+        const originContainerByActivityId = new Map(
+          rows.map((row) => [row.members.activityIds[0], row.containerId]),
+        );
+        const groupIds = data.activities
+          .filter((a) => originContainerByActivityId.has(a._id))
+          .sort((a, b) => activitySortKey(a, dayStart).localeCompare(activitySortKey(b, dayStart)))
+          .map((a) => a._id);
+        // Each group member's own origin container may differ from the row
+        // that was actually dragged (a multi-day selection) — so whether a
+        // given member's own drop should preserve its own timing has to be
+        // asked per Activity, against that Activity's own recorded origin
+        // day, rather than reusing the single `preserveOwnTiming` flag
+        // derived from just the dragged row above.
+        setData(
+          (prev) =>
+            applyGroupActivityReorder(prev, dropMeta, groupIds, dayStart, (id) => {
+              const originContainerId = originContainerByActivityId.get(id);
+              return (
+                originContainerId !== overContainerId &&
+                dayOfContainer(originContainerId) === dayOfContainer(overContainerId)
+              );
+            }),
+          ['activities'],
+        );
+      } else {
+        const activityIds = new Set<string>();
+        const transitIds = new Set<string>();
+        for (const row of rows) {
+          row.members.activityIds.forEach((id) => activityIds.add(id));
+          row.members.transitIds.forEach((id) => transitIds.add(id));
+        }
+        setData(
+          (prev) =>
+            applyBlockReorder(
+              prev,
+              dropMeta,
+              { activityIds: [...activityIds], transitIds: [...transitIds] },
+              dayStart,
+            ),
+          ['activities', 'transits'],
+        );
+      }
+      clearRowSelection();
       return;
     }
+
+    if (activeMeta.scenarioGroup) {
+      const members = activeMeta.scenarioGroup;
+      setData(
+        (prev) => applyBlockReorder(prev, dropMeta, members, dayStart),
+        ['activities', 'transits'],
+      );
+      return;
+    }
+
+    if (activeMeta.transitId) {
+      const transitId = activeMeta.transitId;
+      setData(
+        (prev) => applyTransitReorder(prev, dropMeta, transitId, dayStart, preserveOwnTiming),
+        ['transits'],
+      );
+      return;
+    }
+
+    if (!activeMeta.activityId) return;
+    const activityId = activeMeta.activityId;
     setData(
-      (prev) => applyActivityReorder(prev, dropMeta, activityId, dayStart, crossContainer),
+      (prev) => applyActivityReorder(prev, dropMeta, activityId, dayStart, preserveOwnTiming),
       ['activities'],
     );
   };
@@ -313,24 +438,28 @@ export function DaysView() {
             ))}
           </Stack>
           <DragOverlay>
-            {draggingActivity && (
-              <Paper
-                elevation={3}
-                sx={{ display: 'flex', alignItems: 'center', gap: 1, px: 1.5, py: 1 }}
-              >
-                <DragIndicatorIcon fontSize="small" color="action" />
+            {draggingItemCount !== null ? (
+              <DragOverlayChip>
+                <Typography variant="subtitle2">{draggingItemCount} items</Typography>
+              </DragOverlayChip>
+            ) : draggingActivity ? (
+              <DragOverlayChip>
                 <Box>
-                  <Typography variant="subtitle2">
-                    {draggingGroupSize ? `${draggingGroupSize} activities` : draggingActivity.text}
-                  </Typography>
-                  {!draggingGroupSize && draggingActivity.startAt && (
+                  <Typography variant="subtitle2">{draggingActivity.text}</Typography>
+                  {draggingActivity.startAt && (
                     <Typography variant="caption" color="text.secondary">
                       {formatTime(draggingActivity.startAt)}
                     </Typography>
                   )}
                 </Box>
-              </Paper>
-            )}
+              </DragOverlayChip>
+            ) : draggingTransit ? (
+              <DragOverlayChip>
+                <Typography variant="subtitle2">
+                  {draggingTransit.from.label} → {draggingTransit.to.label}
+                </Typography>
+              </DragOverlayChip>
+            ) : null}
           </DragOverlay>
         </DndContext>
       )}
