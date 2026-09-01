@@ -7,6 +7,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import { useState } from 'react';
 
 import { applyScenarioForm, scenarioFormFrom } from '../../model/editForms';
+import type { ScenarioDateInfo } from '../../model/tripModel';
 import type { Leg, Scenario } from '../../model/types';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { ScenarioEditForm } from './ScenarioEditForm';
@@ -20,6 +21,7 @@ export function ScenarioEditDialog({
   isNew,
   legs,
   allScenarios,
+  dateInfoById,
   onClose,
   onSave,
   onDelete,
@@ -28,6 +30,11 @@ export function ScenarioEditDialog({
   isNew: boolean;
   legs: Leg[];
   allScenarios: Scenario[];
+  // Same resolved-date info ScenariosDialog's own list groups by — reused
+  // here so the "Requires one of"/"Parent scenario" pickers can group their
+  // otherwise-identical-looking candidates (same "Flight goes"/"Grounded"
+  // duplication the list view has) under the same date headers.
+  dateInfoById: Map<string, ScenarioDateInfo>;
   onClose: () => void;
   onSave: (scenario: Scenario) => void;
   onDelete: (id: string) => void;
@@ -62,6 +69,7 @@ export function ScenarioEditDialog({
           onChange={setForm}
           legs={legs}
           otherScenarios={otherScenarios}
+          dateInfoById={dateInfoById}
         />
       </DialogContent>
       <DialogActions sx={{ justifyContent: 'space-between', px: 3 }}>

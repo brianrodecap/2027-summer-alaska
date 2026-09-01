@@ -144,6 +144,118 @@ function formatFullDate(dateStr: string): string {
   return `${FULL_MONTHS[m - 1]} ${d}`;
 }
 
+export interface ScenarioDateInfo {
+  date: string | null;
+  tentative: boolean;
+}
+
+// A Scenario carries no reliable date of its own to sort/group a flat
+// management list by: `date` is only a placement hint consulted while no
+// real content exists yet (see that field's own comment on Scenario), and
+// even the _id/label are just authoring artifacts that can drift from
+// where the scenario actually ends up (e.g. `scenario_jul6_ideal`'s real
+// Activities land on Jul 8, not Jul 6). This answers a different question
+// than buildScenarioTracks (below) does — that function only ever asks "is
+// this scenario visible on date X, and where does it anchor within that
+// one day," never "what single date does this scenario resolve to across
+// the whole trip" — so its own precedence is defined fresh here rather than
+// reused: a scenario's own linked Activity/Transit content, then a
+// parentScenarioId child's own content, then a followsScenarioDate guess
+// (marked tentative — it's only "the day after whatever this follows", not
+// necessarily where it'll really land), then the placement hint.
+export function resolveScenarioDates(
+  scenarios: Scenario[],
+  activities: Activity[],
+  transits: Transit[],
+): Map<string, ScenarioDateInfo> {
+  const ownDates = new Map<string, string[]>();
+  const pushOwn = (id: string | null, date: string) => {
+    if (!id) return;
+    const list = ownDates.get(id);
+    if (list) list.push(date);
+    else ownDates.set(id, [date]);
+  };
+  for (const a of activities) {
+    const raw = a.startAt ?? a.date;
+    if (raw) pushOwn(a.scenarioId, dateOnly(raw));
+  }
+  for (const t of transits) pushOwn(t.scenarioId, dateOnly(t.departsAt));
+
+  const childrenOf = new Map<string, Scenario[]>();
+  for (const s of scenarios) {
+    if (!s.parentScenarioId) continue;
+    const list = childrenOf.get(s.parentScenarioId);
+    if (list) list.push(s);
+    else childrenOf.set(s.parentScenarioId, [s]);
+  }
+  const byId = new Map(scenarios.map((s) => [s._id, s]));
+  const memo = new Map<string, ScenarioDateInfo>();
+  const visiting = new Set<string>();
+
+  function resolve(id: string): ScenarioDateInfo {
+    const cached = memo.get(id);
+    if (cached) return cached;
+    if (visiting.has(id)) return { date: null, tentative: false };
+    visiting.add(id);
+
+    let result: ScenarioDateInfo = { date: null, tentative: false };
+    const own = ownDates.get(id);
+    if (own?.length) {
+      result = { date: [...own].sort()[0], tentative: false };
+    } else {
+      const childDates = (childrenOf.get(id) ?? [])
+        .map((child) => resolve(child._id))
+        .filter((info): info is ScenarioDateInfo & { date: string } => info.date !== null)
+        .sort((a, b) => a.date.localeCompare(b.date));
+      const scenario = byId.get(id);
+      if (childDates.length) {
+        result = childDates[0];
+      } else if (scenario?.followsScenarioDate) {
+        result = { date: addDaysStr(scenario.followsScenarioDate, 1), tentative: true };
+      } else if (scenario?.date) {
+        result = { date: scenario.date, tentative: false };
+      }
+    }
+
+    visiting.delete(id);
+    memo.set(id, result);
+    return result;
+  }
+
+  for (const s of scenarios) resolve(s._id);
+  return memo;
+}
+
+// Shared date-bucketing for scenario pickers/lists that need to disambiguate
+// otherwise-identical-looking candidates — ScenariosDialog's own management
+// list and the "Requires one of"/"Parent scenario" pickers in
+// ScenarioEditForm all group by this same resolved date instead of each
+// re-deriving their own grouping. Chronological by date, unscheduled (null)
+// last; each bucket orders its ideal branch before its alternate, then by
+// label, so a same-day ideal/alternate pair reads in a stable order.
+export function groupScenariosByDate<T extends Pick<Scenario, '_id' | 'label' | 'tone'>>(
+  scenarios: T[],
+  dateInfoById: Map<string, ScenarioDateInfo>,
+): { date: string | null; scenarios: T[] }[] {
+  const byDate = new Map<string | null, T[]>();
+  for (const s of scenarios) {
+    const key = dateInfoById.get(s._id)?.date ?? null;
+    const list = byDate.get(key);
+    if (list) list.push(s);
+    else byDate.set(key, [s]);
+  }
+  for (const list of byDate.values()) {
+    list.sort(
+      (a, b) =>
+        (a.tone === 'ideal' ? 0 : 1) - (b.tone === 'ideal' ? 0 : 1) ||
+        a.label.localeCompare(b.label),
+    );
+  }
+  return [...byDate.entries()]
+    .sort(([a], [b]) => (a ?? '9999-99-99').localeCompare(b ?? '9999-99-99'))
+    .map(([date, list]) => ({ date, scenarios: list }));
+}
+
 // Neither Trip nor Leg authors its own date span — each is computed as the
 // outer bound of whichever Stay/Transit/Activity documents actually fall
 // under it, same as everything else this file derives instead of

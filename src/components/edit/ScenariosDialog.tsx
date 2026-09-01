@@ -7,18 +7,28 @@ import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
+import ListSubheader from '@mui/material/ListSubheader';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useMemo, useState } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 
 import { blankScenario } from '../../model/editForms';
-import { formatDateLabel } from '../../model/tripModel';
+import { formatDateLabel, groupScenariosByDate, resolveScenarioDates } from '../../model/tripModel';
 import type { Activity, Leg, Scenario, Transit } from '../../model/types';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { WarningBadge } from '../shared/WarningBadge';
 import { ScenarioEditDialog } from './ScenarioEditDialog';
+
+// A scenario's own `date`/`_id`/label carry no reliable date to group or
+// sort by (see resolveScenarioDates) — real content, not authoring intent,
+// decides where a scenario lands. So this list groups by that resolved date
+// (chronological, nested parentScenarioId children folded under their
+// parent's row) instead of the flat alphabetical list it used to be, which
+// left same-day ideal/alt pairs like "Flight goes"/"Grounded" repeating
+// under identical-looking labels with nothing but a stale `_id` to tell
+// them apart.
 
 // scenarios.json is reference data pointed at by Activity/Transit's own
 // scenarioId, not scoped to any one date the way a day-list drill-down is —
@@ -55,15 +65,85 @@ export function ScenariosDialog({
     return ids;
   }, [activities, transits]);
 
+  const dateInfoById = useMemo(
+    () => resolveScenarioDates(scenarios, activities, transits),
+    [scenarios, activities, transits],
+  );
+
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return scenarios
-      .filter((s) => !needle || s.label.toLowerCase().includes(needle))
-      .filter((s) => !legFilter || s.legId === legFilter)
-      .sort((a, b) => a.label.localeCompare(b.label));
-  }, [scenarios, query, legFilter]);
+    return scenarios.filter((s) => {
+      if (legFilter && s.legId !== legFilter) return false;
+      if (!needle) return true;
+      const date = dateInfoById.get(s._id)?.date;
+      return (
+        s.label.toLowerCase().includes(needle) ||
+        (!!date && formatDateLabel(date).toLowerCase().includes(needle))
+      );
+    });
+  }, [scenarios, query, legFilter, dateInfoById]);
+
+  // Nested (parentScenarioId) children fold under their parent's own row
+  // instead of getting a top-level slot in the date grouping below — unless
+  // the search/leg filters dropped the parent, in which case a matching
+  // child still needs somewhere to render.
+  const sections = useMemo(() => {
+    const filteredIds = new Set(filtered.map((s) => s._id));
+    const childrenByParent = new Map<string, Scenario[]>();
+    const topLevel: Scenario[] = [];
+    for (const s of filtered) {
+      if (s.parentScenarioId && filteredIds.has(s.parentScenarioId)) {
+        const list = childrenByParent.get(s.parentScenarioId);
+        if (list) list.push(s);
+        else childrenByParent.set(s.parentScenarioId, [s]);
+      } else {
+        topLevel.push(s);
+      }
+    }
+
+    const sortSiblings = (list: Scenario[]) =>
+      [...list].sort(
+        (a, b) =>
+          (a.tone === 'ideal' ? 0 : 1) - (b.tone === 'ideal' ? 0 : 1) ||
+          a.label.localeCompare(b.label),
+      );
+
+    return groupScenariosByDate(topLevel, dateInfoById).map(({ date, scenarios: list }) => ({
+      date,
+      items: list.map((scenario) => ({
+        scenario,
+        children: sortSiblings(childrenByParent.get(scenario._id) ?? []),
+      })),
+    }));
+  }, [filtered, dateInfoById]);
 
   const legName = (legId: string) => legs.find((l) => l._id === legId)?.name ?? legId;
+
+  const renderScenarioRow = (scenario: Scenario, nested: boolean) => {
+    const info = dateInfoById.get(scenario._id);
+    return (
+      <ListItemButton
+        key={scenario._id}
+        onClick={() => setEditing(scenario)}
+        sx={nested ? { pl: 5 } : undefined}
+      >
+        <ListItemIcon>{renderMaterialIcon(scenario.icon)}</ListItemIcon>
+        <ListItemText
+          primary={
+            <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
+              <span>{scenario.label}</span>
+              {!scenarioIdsInUse.has(scenario._id) && (
+                <WarningBadge title="No activities or transits use this scenario yet" />
+              )}
+            </Stack>
+          }
+          secondary={[legName(scenario.legId), scenario.tone, info?.tentative && 'estimated date']
+            .filter(Boolean)
+            .join(' · ')}
+        />
+      </ListItemButton>
+    );
+  };
 
   return (
     <>
@@ -94,34 +174,24 @@ export function ScenariosDialog({
               </MenuItem>
             ))}
           </TextField>
-          {filtered.length === 0 ? (
+          {sections.length === 0 ? (
             <Typography variant="body2" color="text.secondary">
               No scenarios yet.
             </Typography>
           ) : (
             <List disablePadding>
-              {filtered.map((scenario) => (
-                <ListItemButton key={scenario._id} onClick={() => setEditing(scenario)}>
-                  <ListItemIcon>{renderMaterialIcon(scenario.icon)}</ListItemIcon>
-                  <ListItemText
-                    primary={
-                      <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center' }}>
-                        <span>{scenario.label}</span>
-                        {!scenarioIdsInUse.has(scenario._id) && (
-                          <WarningBadge title="No activities or transits use this scenario yet" />
-                        )}
-                      </Stack>
-                    }
-                    secondary={[
-                      legName(scenario.legId),
-                      scenario.tone,
-                      scenario.followsScenarioDate &&
-                        `follows ${formatDateLabel(scenario.followsScenarioDate)}`,
-                    ]
-                      .filter(Boolean)
-                      .join(' · ')}
-                  />
-                </ListItemButton>
+              {sections.map((section) => (
+                <Fragment key={section.date ?? 'unscheduled'}>
+                  <ListSubheader disableSticky sx={{ bgcolor: 'transparent', lineHeight: 2.5 }}>
+                    {section.date ? formatDateLabel(section.date) : 'Not yet scheduled'}
+                  </ListSubheader>
+                  {section.items.map(({ scenario, children }) => (
+                    <Fragment key={scenario._id}>
+                      {renderScenarioRow(scenario, false)}
+                      {children.map((child) => renderScenarioRow(child, true))}
+                    </Fragment>
+                  ))}
+                </Fragment>
               ))}
             </List>
           )}
@@ -142,6 +212,7 @@ export function ScenariosDialog({
           isNew={!scenarios.some((s) => s._id === editing._id)}
           legs={legs}
           allScenarios={scenarios}
+          dateInfoById={dateInfoById}
           onClose={() => setEditing(null)}
           onSave={(scenario) => {
             onSave(scenario);

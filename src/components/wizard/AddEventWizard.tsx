@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import {
   activityFormFrom,
@@ -22,6 +22,7 @@ import {
   wizardStepCanProceed,
   wizardStepsForCategory,
 } from '../../model/editForms';
+import { resolveScenarioDates } from '../../model/tripModel';
 import type { Activity, Leg, Route, Scenario, Stay, Transit, Traveler } from '../../model/types';
 import { renderWizardStep, type WizardStepContext } from './renderWizardStep';
 import { WizardShell, type WizardStep } from './WizardShell';
@@ -73,6 +74,10 @@ export function AddEventWizard({
     transitFormFrom(blankTransit(legId, date)),
   );
   const [scenarioForm, setScenarioForm] = useState<Scenario>(() => blankScenario(legId, date));
+  const dateInfoById = useMemo(
+    () => resolveScenarioDates(scenarios, activities, transits),
+    [scenarios, activities, transits],
+  );
 
   const stepIds = wizardStepsForCategory(category, {
     mealDecision,
@@ -100,6 +105,7 @@ export function AddEventWizard({
     routes,
     legs,
     otherScenarios: scenarios,
+    dateInfoById,
   };
 
   const steps: WizardStep[] = stepIds.map((id) => ({

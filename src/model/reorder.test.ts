@@ -1329,6 +1329,67 @@ describe('applyBlockReorder', () => {
     expect(two?.scenarioId).toBe('alt');
   });
 
+  it("retargets a fuzzy (date-only, no startAt) member's date to the destination day", () => {
+    // Regression: a scenario-group bundle where every member is date-only
+    // (e.g. a "Morning" timeLabel Activity with no real startAt) has no
+    // real anchor time for the delta shift to touch, but each member still
+    // needs to land on the drop's destination day — activitiesByDate (the
+    // model's own day-grouping) reads `date`, not startAt, for a member in
+    // this state. Leaving `date` at the block's original day here used to
+    // strand every member behind on drop, even though legId moved.
+    const dropMeta: DragMeta = {
+      id: 'scenario-tabs-0',
+      index: 0,
+      endAt: null,
+      containerDayStart: '2027-07-13T00:00',
+      legId: 'legB',
+      scenarioId: null,
+      activityId: null,
+      anchorEntityId: null,
+      kind: 'after',
+    };
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [],
+      activities: [
+        activity({
+          _id: 'idealFuzzy',
+          legId: 'legA',
+          scenarioId: 'ideal',
+          startAt: null,
+          timeLabel: 'Morning',
+          date: '2027-07-12',
+        }),
+        activity({
+          _id: 'altFuzzy',
+          legId: 'legA',
+          scenarioId: 'alt',
+          startAt: null,
+          timeLabel: 'Morning',
+          date: '2027-07-12',
+        }),
+      ],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+    const next = applyBlockReorder(
+      data,
+      dropMeta,
+      { activityIds: ['idealFuzzy', 'altFuzzy'], transitIds: [] },
+      '2027-07-13T00:00',
+    );
+    const byId = (id: string) => next.activities.find((a) => a._id === id);
+    expect(byId('idealFuzzy')?.date).toBe('2027-07-13');
+    expect(byId('altFuzzy')?.date).toBe('2027-07-13');
+    // Still no invented time, and timeLabel/legId behave as before.
+    expect(byId('idealFuzzy')?.startAt).toBeNull();
+    expect(byId('idealFuzzy')?.timeLabel).toBe('Morning');
+    expect(byId('idealFuzzy')?.legId).toBe('legB');
+  });
+
   it('rebases the block onto a different calendar day when dropped there', () => {
     const dropMeta: DragMeta = {
       id: 'empty-2027-07-13',

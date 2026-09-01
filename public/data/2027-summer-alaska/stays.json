@@ -192,8 +192,8 @@
   {
     "_id": "stay_kotzebue",
     "legId": "leg_parks",
-    "checkInAt": "2027-07-06T11:00",
-    "checkOutAt": "2027-07-09T11:00",
+    "checkInAt": "2027-07-08T11:00",
+    "checkOutAt": "2027-07-10T11:00",
     "status": "planning",
     "lodging": {
       "placeId": "ChIJo6lg1JGXyFYR5CruzmerxY8",
@@ -204,8 +204,8 @@
     },
     "booking": {
       "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
+      "confirmationNumber": null,
+      "cost": null
     },
     "packages": null,
     "images": []
@@ -213,7 +213,7 @@
   {
     "_id": "stay_anchorage_2",
     "legId": "leg_parks",
-    "checkInAt": "2027-07-09T15:00",
+    "checkInAt": "2027-07-10T15:00",
     "checkOutAt": "2027-07-17T11:00",
     "status": "planning",
     "lodging": {
@@ -225,8 +225,8 @@
     },
     "booking": {
       "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
+      "confirmationNumber": null,
+      "cost": null
     },
     "packages": null,
     "images": []
@@ -250,7 +250,7 @@
     "booking": {
       "status": "booked",
       "cost": {
-        "amount": 9336.00,
+        "amount": 9336,
         "currency": "USD"
       },
       "confirmationNumber": "MWVV6Q"

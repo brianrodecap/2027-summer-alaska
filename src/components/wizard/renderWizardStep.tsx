@@ -8,6 +8,7 @@ import type {
   WizardCategory,
   WizardStepId,
 } from '../../model/editForms';
+import type { ScenarioDateInfo } from '../../model/tripModel';
 import type { Activity, Leg, Route, Scenario, Stay, Transit, Traveler } from '../../model/types';
 import { ScenarioEditForm } from '../edit/ScenarioEditForm';
 import {
@@ -63,6 +64,7 @@ export interface WizardStepContext {
   routes: Route[];
   legs?: Leg[];
   otherScenarios?: Scenario[];
+  dateInfoById?: Map<string, ScenarioDateInfo>;
 }
 
 function renderBookingStep(ctx: WizardStepContext): ReactNode {
@@ -184,6 +186,7 @@ export function renderWizardStep(stepId: WizardStepId, ctx: WizardStepContext): 
           onChange={ctx.onScenarioFormChange!}
           legs={ctx.legs ?? []}
           otherScenarios={ctx.otherScenarios ?? []}
+          dateInfoById={ctx.dateInfoById ?? new Map()}
         />
       );
     case 'review':

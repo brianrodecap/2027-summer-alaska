@@ -771,11 +771,23 @@ export function applyBlockReorder(
 
   return {
     ...data,
+    // A fuzzy (date-only, no startAt) member has no real time for the delta
+    // shift above to touch — but it still needs to land on the destination
+    // day: `date` (not startAt) is what activitiesByDate's own day grouping
+    // reads for a member in that state, so leaving it at the block's
+    // original day here would silently strand that member behind on drag,
+    // even though its own timeLabel/legId otherwise moved. Every member of
+    // one day's scenario-group bundle is already on `dayStart`'s own date if
+    // fuzzy (buildScenarioTracks only ever folds a day's own same-date
+    // Activities into its tracks), so retargeting unconditionally to
+    // dateOnly(dayStart) is always correct, not just on an actual
+    // day-crossing drop.
     activities: data.activities.map((a) => {
       if (!activityIds.has(a._id)) return a;
       return {
         ...a,
         startAt: a.startAt ? addMinutesIso(a.startAt, deltaMinutes) : a.startAt,
+        date: a.startAt ? a.date : dateOnly(dayStart),
         legId: dropMeta.legId,
       };
     }),
