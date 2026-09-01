@@ -1865,10 +1865,11 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
 
 { _id: 'scenario_jul1_ideal', legId: 'leg_parks', tone: 'ideal',
   label: 'Relaxed drive-back day', icon: 'flight_takeoff',
-  followsScenarioDate: '2027-06-30',  // optional — this branch's default tab
-                                       // selection tracks whichever tone is
-                                       // active on the named date, instead of
-                                       // always defaulting to the first branch
+  followsScenarioId: 'scenario_jun30_ideal',  // optional — this branch's default
+                                               // tab selection tracks whichever tone
+                                               // is active on the *named scenario's*
+                                               // own day, instead of always
+                                               // defaulting to the first branch
   images: [] }</code></pre>
         <ul class="rationale">
           <li>
@@ -1881,13 +1882,29 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
             fixed-plan item — the same behavior as a single-variant day skipping its chip today.
           </li>
           <li>
-            <strong>followsScenarioDate replaces spelling the condition out in the label.</strong>
+            <strong>followsScenarioId replaces spelling the condition out in the label.</strong>
             Jul 1's backup-attempt day used to be labeled "If June 30's flight went (relaxed
             drive-back day)" / "...was weathered out (last-chance backup day)" — accurate but too
-            long to read as a tab. Naming the day it depends on lets the label shrink to just the
-            day's own character ("Relaxed drive-back day"), while the presentation tier
-            (day-render.js's <code>wireScenarioFollowers</code>) does the conditional part: Jul 1's
-            tabs default to, and stay synced with, whichever tone is currently active on Jun 30.
+            long to read as a tab. Naming a scenario on the day it depends on lets the label shrink
+            to just the day's own character ("Relaxed drive-back day"), while the presentation tier
+            (<code>tripModel.ts</code>'s <code>resolveScenarioDates</code>/<code
+              >followedScenarioId</code
+            >
+            and <code>scenarioSelection.ts</code>'s <code>resolveActiveTrack</code>) does the
+            conditional part: Jul 1's tabs default to, and stay synced with, whichever tone is
+            currently active on whatever date <code>scenario_jun30_ideal</code>'s own content
+            actually resolves to. A gated scenario (one with <code>requiresScenarioId</code>) never
+            needs its own <code>followsScenarioId</code> at all — the first entry of
+            <code>requiresScenarioId</code> already names a scenario on the day it follows.
+          </li>
+          <li>
+            <strong>Referenced by id, not copied as a date.</strong> An earlier version of this
+            field stored a literal calendar date (<code>followsScenarioDate</code>), which had to be
+            hand-updated any time the followed scenario's own Activities/Transits moved to a new
+            date — miss that update and the day list's tab gating silently breaks (every sibling
+            branch renders instead of just the one already decided). Naming the scenario instead of
+            copying its date means the reference is always correct, however far its real content has
+            drifted from wherever it was first authored.
           </li>
         </ul>
       </article>

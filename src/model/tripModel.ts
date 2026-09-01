@@ -149,6 +149,22 @@ export interface ScenarioDateInfo {
   tentative: boolean;
 }
 
+// The scenario this one narratively follows, as an id rather than a literal
+// date — an explicit followsScenarioId if the authoring set one (an ungated
+// "always follows this day" scenario, with no requiresScenarioId of its own
+// to borrow), otherwise the first entry of requiresScenarioId itself (a
+// gated scenario already names exactly which prior-day scenario it depends
+// on, so that doubles as "which day I follow" for free — every sibling in a
+// requiresScenarioId list lives on the same followed day, so any single
+// entry resolves to the right date). Resolving *through* an id like this,
+// rather than trusting a hand-typed calendar date, is what keeps a follower
+// correct automatically when the followed scenario's own content moves to a
+// new date — see resolveScenarioDates below and scenarioSelection.ts's own
+// use of this same helper for the day-list's live tab gating.
+export function followedScenarioId(scenario: Scenario): string | null {
+  return scenario.followsScenarioId ?? scenario.requiresScenarioId?.[0] ?? null;
+}
+
 // A Scenario carries no reliable date of its own to sort/group a flat
 // management list by: `date` is only a placement hint consulted while no
 // real content exists yet (see that field's own comment on Scenario), and
@@ -160,9 +176,12 @@ export interface ScenarioDateInfo {
 // one day," never "what single date does this scenario resolve to across
 // the whole trip" — so its own precedence is defined fresh here rather than
 // reused: a scenario's own linked Activity/Transit content, then a
-// parentScenarioId child's own content, then a followsScenarioDate guess
-// (marked tentative — it's only "the day after whatever this follows", not
-// necessarily where it'll really land), then the placement hint.
+// parentScenarioId child's own content, then whatever date the scenario
+// named by followedScenarioId itself resolves to plus one day (marked
+// tentative — it's only "the day after whatever this follows," not
+// necessarily where it'll really land, and recurses through this same
+// resolve() so a multi-day chain of followers all stay correct together),
+// then the placement hint.
 export function resolveScenarioDates(
   scenarios: Scenario[],
   activities: Activity[],
@@ -210,10 +229,14 @@ export function resolveScenarioDates(
       const scenario = byId.get(id);
       if (childDates.length) {
         result = childDates[0];
-      } else if (scenario?.followsScenarioDate) {
-        result = { date: addDaysStr(scenario.followsScenarioDate, 1), tentative: true };
-      } else if (scenario?.date) {
-        result = { date: scenario.date, tentative: false };
+      } else {
+        const followedId = scenario ? followedScenarioId(scenario) : null;
+        const followedDate = followedId ? resolve(followedId).date : null;
+        if (followedDate) {
+          result = { date: addDaysStr(followedDate, 1), tentative: true };
+        } else if (scenario?.date) {
+          result = { date: scenario.date, tentative: false };
+        }
       }
     }
 

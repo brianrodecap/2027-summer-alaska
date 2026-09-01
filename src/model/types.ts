@@ -210,7 +210,17 @@ export interface Scenario {
   // date takes over as the real anchor and this is ignored, same as
   // Activity.date is superseded the moment a real startAt exists.
   date?: string;
-  followsScenarioDate?: string;
+  // Names a scenario on the day this one narratively follows — resolved
+  // dynamically (tripModel.ts's followedScenarioId/resolveScenarioDates)
+  // against whatever date that scenario's own content actually lands on, so
+  // moving the followed scenario's Activities/Transits to a new date can
+  // never leave this reference stale the way a hand-typed calendar date
+  // could. Only needed when requiresScenarioId doesn't already name a
+  // scenario to follow (an ungated "always follows this day" case, e.g. a
+  // relaxed-vs-backup day after a fixed flightseeing day) — a gated
+  // scenario's own requiresScenarioId[0] already answers "which day do I
+  // follow," so this stays unset there.
+  followsScenarioId?: string;
   requiresScenarioId?: string[];
   parentScenarioId?: string;
   images: Image[];

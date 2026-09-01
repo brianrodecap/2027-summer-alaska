@@ -538,7 +538,7 @@ export function applyRouteForm(route: Route, form: Route): string | null {
 //
 // Scenario, like Route, isn't a day-list line item scoped to one entity id —
 // it's reference data an Activity/Transit points at via scenarioId, and
-// several scenarios can share a followsScenarioDate/requiresScenarioId chain
+// several scenarios can share a followsScenarioId/requiresScenarioId chain
 // that spans days. So this mirrors routeFormFrom/applyRouteForm's shape (the
 // form state is a working clone of the Scenario itself) rather than the
 // per-field FormState shape Activity/Stay/Transit use.
@@ -582,7 +582,10 @@ export function applyScenarioForm(
   scenario.tone = form.tone;
   scenario.label = label;
   scenario.icon = form.icon || 'help_outline';
-  scenario.followsScenarioDate = form.followsScenarioDate || undefined;
+  scenario.followsScenarioId =
+    form.followsScenarioId && validIds.has(form.followsScenarioId)
+      ? form.followsScenarioId
+      : undefined;
   const requires = (form.requiresScenarioId ?? []).filter((id) => validIds.has(id));
   scenario.requiresScenarioId = requires.length ? requires : undefined;
   scenario.parentScenarioId =
@@ -611,9 +614,12 @@ export function applyScenarioDeletion<
       .map((s) => {
         const requires = (s.requiresScenarioId ?? []).filter((id) => id !== scenarioId);
         const parentScenarioId = s.parentScenarioId === scenarioId ? undefined : s.parentScenarioId;
+        const followsScenarioId =
+          s.followsScenarioId === scenarioId ? undefined : s.followsScenarioId;
         if (
           requires.length === (s.requiresScenarioId ?? []).length &&
-          parentScenarioId === s.parentScenarioId
+          parentScenarioId === s.parentScenarioId &&
+          followsScenarioId === s.followsScenarioId
         ) {
           return s;
         }
@@ -621,6 +627,7 @@ export function applyScenarioDeletion<
           ...s,
           requiresScenarioId: requires.length ? requires : undefined,
           parentScenarioId,
+          followsScenarioId,
         };
       }),
     activities: data.activities.map((a) =>

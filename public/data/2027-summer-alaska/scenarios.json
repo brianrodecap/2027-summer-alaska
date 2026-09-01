@@ -61,7 +61,7 @@
     "tone": "ideal",
     "label": "Relaxed drive-back day",
     "icon": "flight_takeoff",
-    "followsScenarioDate": "2027-06-30",
+    "followsScenarioId": "scenario_jun30_ideal",
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG",
@@ -76,7 +76,7 @@
     "tone": "alternate",
     "label": "Last-chance backup day",
     "icon": "cloud",
-    "followsScenarioDate": "2027-06-30",
+    "followsScenarioId": "scenario_jun30_ideal",
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/GatesofArctic.jpg",
@@ -149,7 +149,6 @@
     "tone": "ideal",
     "label": "Bonus flightseeing goes",
     "icon": "flight_takeoff",
-    "followsScenarioDate": "2027-07-06",
     "requiresScenarioId": [
       "scenario_jul6_ideal"
     ],
@@ -167,7 +166,6 @@
     "tone": "alternate",
     "label": "Bonus flight grounded",
     "icon": "cloud",
-    "followsScenarioDate": "2027-07-06",
     "requiresScenarioId": [
       "scenario_jul6_ideal"
     ],
@@ -185,7 +183,6 @@
     "tone": "ideal",
     "label": "Flight goes",
     "icon": "flight_takeoff",
-    "followsScenarioDate": "2027-07-06",
     "requiresScenarioId": [
       "scenario_jul6_alt"
     ],
@@ -203,7 +200,6 @@
     "tone": "alternate",
     "label": "Weathered out again",
     "icon": "cloud",
-    "followsScenarioDate": "2027-07-06",
     "requiresScenarioId": [
       "scenario_jul6_alt"
     ],
@@ -221,11 +217,9 @@
     "tone": "ideal",
     "label": "Flight goes",
     "icon": "flight_takeoff",
-    "followsScenarioDate": "2027-07-07",
     "requiresScenarioId": [
       "scenario_jul7_bonus_alt",
-      "scenario_jul7_retry_ideal",
-      "scenario_jul7_retry_alt"
+      "scenario_jul7_retry_ideal"
     ],
     "images": [
       {
@@ -241,10 +235,42 @@
     "tone": "alternate",
     "label": "Grounded",
     "icon": "cloud",
-    "followsScenarioDate": "2027-07-07",
     "requiresScenarioId": [
       "scenario_jul7_bonus_alt",
-      "scenario_jul7_retry_ideal",
+      "scenario_jul7_retry_ideal"
+    ],
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/A_drizzly_day_of_trekking_in_the_Central_Brooks_Range_%289840778333%29.jpg",
+        "credit": "Photo by Paxson Woelber / Expedition Arguk, CC BY 2.0",
+        "caption": "Drizzly, low-cloud day in the Central Brooks Range"
+      }
+    ]
+  },
+  {
+    "_id": "scenario_jul8_lastchance_ideal",
+    "legId": "leg_parks",
+    "tone": "ideal",
+    "label": "Flight goes",
+    "icon": "flight_takeoff",
+    "requiresScenarioId": [
+      "scenario_jul7_retry_alt"
+    ],
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg",
+        "credit": "Photo by LCGS Russ / CC BY-SA 3.0",
+        "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park"
+      }
+    ]
+  },
+  {
+    "_id": "scenario_jul8_lastchance_alt",
+    "legId": "leg_parks",
+    "tone": "alternate",
+    "label": "Grounded",
+    "icon": "cloud",
+    "requiresScenarioId": [
       "scenario_jul7_retry_alt"
     ],
     "images": [
@@ -261,7 +287,6 @@
     "tone": "ideal",
     "label": "Bonus day — both flights secured",
     "icon": "redeem",
-    "followsScenarioDate": "2027-07-07",
     "requiresScenarioId": [
       "scenario_jul7_bonus_ideal"
     ],

@@ -2875,6 +2875,64 @@
     "date": "2027-07-10"
   },
   {
+    "_id": "act_jul8_lastchance",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jul8_lastchance_ideal",
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Morning",
+    "priority": "high",
+    "text": "Kobuk Valley flightseeing — last chance",
+    "place": {
+      "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
+      "label": "Golden Eagle Outfitters",
+      "images": []
+    },
+    "booking": {
+      "status": "planning",
+      "confirmationNumber": null,
+      "cost": null
+    },
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [
+      {
+        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/KobukDunes.jpg",
+        "credit": "Photo by LCGS Russ / CC BY-SA 3.0",
+        "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park"
+      }
+    ],
+    "date": "2027-07-10"
+  },
+  {
+    "_id": "act_jul8_lastchance_heritage",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jul8_lastchance_alt",
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Morning",
+    "priority": null,
+    "text": "Northwest Arctic Heritage Center",
+    "place": {
+      "id": "ChIJg65tX1cXzVAR9z2Gr7xJSN4",
+      "label": "Northwest Arctic Heritage Center",
+      "images": []
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [],
+    "date": "2027-07-10"
+  },
+  {
     "_id": "act_jul8_bonusday",
     "legId": "leg_parks",
     "scenarioId": "scenario_jul8_bonusday",

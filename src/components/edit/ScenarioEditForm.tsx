@@ -6,8 +6,6 @@ import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import dayjs from 'dayjs';
 
 import type { ScenarioDateInfo } from '../../model/tripModel';
 import { formatDateLabel, groupScenariosByDate } from '../../model/tripModel';
@@ -19,6 +17,26 @@ const TONE_OPTIONS: { value: Scenario['tone']; label: string }[] = [
   { value: 'alternate', label: 'Alternate' },
 ];
 
+// The "Follows"/"Requires one of"/"Parent scenario" pickers below all offer
+// the same flat, date-grouped scenario list — differing only in the value
+// each MenuItem's own body renders (a plain label/tone pair vs. one with a
+// leading checkbox for the multi-select "Requires" case).
+function groupedScenarioMenuItems(
+  groupedOtherScenarios: { date: string | null; scenarios: Scenario[] }[],
+  renderItem: (scenario: Scenario) => React.ReactNode,
+) {
+  return groupedOtherScenarios.flatMap(({ date, scenarios: group }) => [
+    <ListSubheader key={`header-${date ?? 'none'}`}>
+      {date ? formatDateLabel(date) : 'Not yet scheduled'}
+    </ListSubheader>,
+    ...group.map((s) => (
+      <MenuItem key={s._id} value={s._id}>
+        {renderItem(s)}
+      </MenuItem>
+    )),
+  ]);
+}
+
 export function ScenarioEditForm({
   form,
   onChange,
@@ -29,7 +47,7 @@ export function ScenarioEditForm({
   form: Scenario;
   onChange: (scenario: Scenario) => void;
   legs: Leg[];
-  // Every other scenario in the trip, for the followsScenarioDate,
+  // Every other scenario in the trip, for the followsScenarioId,
   // requiresScenarioId, and parentScenarioId pickers below — never includes
   // this scenario itself, so it can't require or parent itself.
   otherScenarios: Scenario[];
@@ -110,20 +128,27 @@ export function ScenarioEditForm({
       </Stack>
 
       <Typography variant="caption" color="text.secondary">
-        Branching — leave "Follows date" blank for a scenario that isn't gated by another day's
-        outcome.
+        Branching — "Follows" only needs setting explicitly when "Requires one of" below is empty; a
+        gated scenario already follows whichever day its own requirement lives on.
       </Typography>
-      <DatePicker
-        label="Follows date (optional)"
-        value={form.followsScenarioDate ? dayjs(form.followsScenarioDate, 'YYYY-MM-DD') : null}
-        onChange={(value) =>
-          onChange({
-            ...form,
-            followsScenarioDate: value?.isValid() ? value.format('YYYY-MM-DD') : undefined,
-          })
-        }
-        slotProps={{ textField: { size: 'small' } }}
-      />
+      <TextField
+        select
+        label="Follows (optional)"
+        size="small"
+        value={form.followsScenarioId ?? ''}
+        onChange={(e) => onChange({ ...form, followsScenarioId: e.target.value || undefined })}
+        slotProps={{
+          select: {
+            renderValue: (value): string =>
+              otherScenarios.find((s) => s._id === value)?.label ?? 'None',
+          },
+        }}
+      >
+        <MenuItem value="">None</MenuItem>
+        {groupedScenarioMenuItems(groupedOtherScenarios, (s) => (
+          <ListItemText primary={s.label} secondary={s.tone} />
+        ))}
+      </TextField>
       <TextField
         select
         label="Requires one of (optional)"
@@ -151,17 +176,12 @@ export function ScenarioEditForm({
           },
         }}
       >
-        {groupedOtherScenarios.flatMap(({ date, scenarios: group }) => [
-          <ListSubheader key={`requires-header-${date ?? 'none'}`}>
-            {date ? formatDateLabel(date) : 'Not yet scheduled'}
-          </ListSubheader>,
-          ...group.map((s) => (
-            <MenuItem key={s._id} value={s._id}>
-              <Checkbox size="small" checked={requiresValue.includes(s._id)} />
-              <ListItemText primary={s.label} secondary={s.tone} />
-            </MenuItem>
-          )),
-        ])}
+        {groupedScenarioMenuItems(groupedOtherScenarios, (s) => (
+          <>
+            <Checkbox size="small" checked={requiresValue.includes(s._id)} />
+            <ListItemText primary={s.label} secondary={s.tone} />
+          </>
+        ))}
       </TextField>
       <TextField
         select
@@ -177,16 +197,9 @@ export function ScenarioEditForm({
         }}
       >
         <MenuItem value="">None — a top-level scenario</MenuItem>
-        {groupedOtherScenarios.flatMap(({ date, scenarios: group }) => [
-          <ListSubheader key={`parent-header-${date ?? 'none'}`}>
-            {date ? formatDateLabel(date) : 'Not yet scheduled'}
-          </ListSubheader>,
-          ...group.map((s) => (
-            <MenuItem key={s._id} value={s._id}>
-              <ListItemText primary={s.label} secondary={s.tone} />
-            </MenuItem>
-          )),
-        ])}
+        {groupedScenarioMenuItems(groupedOtherScenarios, (s) => (
+          <ListItemText primary={s.label} secondary={s.tone} />
+        ))}
       </TextField>
     </Stack>
   );
