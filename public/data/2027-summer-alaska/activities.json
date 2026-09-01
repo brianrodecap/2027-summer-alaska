@@ -2413,7 +2413,7 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-06T07:00",
+    "startAt": "2027-07-08T07:00",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -2451,7 +2451,7 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-06T11:00",
+    "startAt": "2027-07-08T11:00",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -2474,7 +2474,7 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-06T11:30",
+    "startAt": "2027-07-08T11:30",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -2503,7 +2503,7 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-06T11:45",
+    "startAt": "2027-07-08T11:45",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -2572,7 +2572,7 @@
         "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park"
       }
     ],
-    "date": "2027-07-06"
+    "date": "2027-07-08"
   },
   {
     "_id": "act_jul6_5",
@@ -2602,14 +2602,14 @@
     "options": null,
     "travelers": null,
     "images": [],
-    "date": "2027-07-06"
+    "date": "2027-07-08"
   },
   {
     "_id": "act_jul6_6",
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-06T18:30",
+    "startAt": "2027-07-08T18:30",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -2638,7 +2638,7 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-07T07:30",
+    "startAt": "2027-07-09T07:30",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -2688,7 +2688,7 @@
     "options": null,
     "travelers": null,
     "images": [],
-    "date": "2027-07-07"
+    "date": "2027-07-09"
   },
   {
     "_id": "act_jul7_retry_alt_free",
@@ -2708,7 +2708,7 @@
     "options": null,
     "travelers": null,
     "images": [],
-    "date": "2027-07-07"
+    "date": "2027-07-09"
   },
   {
     "_id": "act_jul7_bonus",
@@ -2742,7 +2742,7 @@
         "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park"
       }
     ],
-    "date": "2027-07-07"
+    "date": "2027-07-09"
   },
   {
     "_id": "act_jul7_bonus_heritage",
@@ -2772,14 +2772,14 @@
     "options": null,
     "travelers": null,
     "images": [],
-    "date": "2027-07-07"
+    "date": "2027-07-09"
   },
   {
     "_id": "act_jul7_lunch",
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-07T12:00",
+    "startAt": "2027-07-09T12:00",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -2798,7 +2798,7 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-07T18:00",
+    "startAt": "2027-07-09T18:00",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -2815,25 +2815,6 @@
     "travelers": null,
     "images": [],
     "date": null
-  },
-  {
-    "_id": "act_jul8_breakfast",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-08T07:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Grab-and-go breakfast, in case an early flight window opens",
-    "place": null,
-    "booking": null,
-    "mealType": "breakfast",
-    "diningFormat": "grab-and-go",
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
   },
   {
     "_id": "act_jul8_1",
@@ -2867,7 +2848,7 @@
         "caption": "Great Kobuk Sand Dunes in Kobuk Valley National Park"
       }
     ],
-    "date": "2027-07-08"
+    "date": "2027-07-10"
   },
   {
     "_id": "act_jul8_2",
@@ -2891,7 +2872,7 @@
     "options": null,
     "travelers": null,
     "images": [],
-    "date": "2027-07-08"
+    "date": "2027-07-10"
   },
   {
     "_id": "act_jul8_bonusday",
@@ -2915,82 +2896,14 @@
     "options": null,
     "travelers": null,
     "images": [],
-    "date": "2027-07-08"
-  },
-  {
-    "_id": "act_jul8_lunch",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-08T12:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Flexible lunch, kept loose around today's flight window",
-    "place": null,
-    "booking": null,
-    "mealType": "lunch",
-    "diningFormat": "self-catered",
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jul8_dinner",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-08T18:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Dinner at Empress Chinese Restaurant",
-    "place": {
-      "id": "ChIJ5Zp8oFYXzVARlNVi2f7GvyQ",
-      "label": "Empress Chinese Restaurant",
-      "images": []
-    },
-    "booking": null,
-    "mealType": "dinner",
-    "diningFormat": "sit-down",
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jul9_1",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": null,
-    "durationMinutes": null,
-    "timeLabel": "Morning",
-    "priority": "high",
-    "text": "Flex morning in Kotzebue",
-    "place": null,
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Kotzebue%2C_Alaska.jpg",
-        "credit": "U.S. Fish and Wildlife Service, public domain",
-        "caption": "Aerial view of Kotzebue on the Chukchi Sea coast"
-      }
-    ],
-    "date": "2027-07-09"
+    "date": "2027-07-10"
   },
   {
     "_id": "act_jul9_breakfast",
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-09T08:00",
+    "startAt": "2027-07-10T08:00",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -3013,7 +2926,7 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-09T12:30",
+    "startAt": "2027-07-10T12:30",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -3036,7 +2949,7 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-09T19:15",
+    "startAt": "2027-07-10T19:15",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -4937,7 +4850,7 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "date": "2027-07-08",
+    "date": "2027-07-10",
     "priority": "high",
     "text": "Bonus day in Kotzebue",
     "place": {

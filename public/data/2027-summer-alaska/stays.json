@@ -171,8 +171,8 @@
   {
     "_id": "stay_anchorage_1",
     "legId": "leg_parks",
-    "checkInAt": "2027-07-05T15:00",
-    "checkOutAt": "2027-07-06T11:00",
+    "checkInAt": "2027-07-07T15:00",
+    "checkOutAt": "2027-07-08T11:00",
     "status": "planning",
     "lodging": {
       "placeId": "ChIJoUUNNIG9yFYRT1rea_yflgI",
@@ -183,8 +183,8 @@
     },
     "booking": {
       "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
+      "confirmationNumber": null,
+      "cost": null
     },
     "packages": null,
     "images": []

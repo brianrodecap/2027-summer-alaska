@@ -194,8 +194,8 @@
     "to": {
       "label": "Kotzebue (OTZ)"
     },
-    "departsAt": "2027-07-06T08:40",
-    "arrivesAt": "2027-07-06T10:30",
+    "departsAt": "2027-07-08T08:40",
+    "arrivesAt": "2027-07-08T10:30",
     "routeId": null,
     "routeVariant": null,
     "booking": {
@@ -224,8 +224,8 @@
     "to": {
       "label": "Ted Stevens Anchorage International (ANC)"
     },
-    "departsAt": "2027-07-09T17:00",
-    "arrivesAt": "2027-07-09T18:40",
+    "departsAt": "2027-07-10T17:00",
+    "arrivesAt": "2027-07-10T18:40",
     "routeId": null,
     "routeVariant": null,
     "booking": {
