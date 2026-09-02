@@ -9,7 +9,7 @@ import {
   bookingFormValueFrom,
   readBookingFormValue,
 } from '../components/edit/bookingFormValue';
-import { transitRouteLabel } from './tripModel';
+import { dateOnly, transitRouteLabel } from './tripModel';
 import type {
   Activity,
   DiningFormat,
@@ -201,7 +201,7 @@ export function includedInOptions(
       options.push({
         value: `stay:${stay._id}`,
         label: stay.lodging?.name ?? stay._id,
-        date: stay.checkInAt.slice(0, 10),
+        date: dateOnly(stay.checkInAt),
         sortKey: stay.checkInAt,
       });
     }
@@ -211,7 +211,7 @@ export function includedInOptions(
         options.push({
           value: `package:${pkg._id}`,
           label: pkg.name,
-          date: stay.checkInAt.slice(0, 10),
+          date: dateOnly(stay.checkInAt),
           sortKey: stay.checkInAt,
         });
       }
@@ -219,7 +219,7 @@ export function includedInOptions(
   } else if (diningFormat === 'included-with-activity') {
     for (const activity of activities) {
       if (activity.mealType) continue;
-      const date = activity.startAt ? activity.startAt.slice(0, 10) : activity.date;
+      const date = activity.startAt ? dateOnly(activity.startAt) : activity.date;
       if (date == null) continue;
       options.push({
         value: `activity:${activity._id}`,
@@ -233,7 +233,7 @@ export function includedInOptions(
       options.push({
         value: `transit:${transit._id}`,
         label: transitRouteLabel(transit),
-        date: transit.departsAt.slice(0, 10),
+        date: dateOnly(transit.departsAt),
         sortKey: transit.departsAt,
       });
     }
@@ -276,7 +276,7 @@ export interface ActivityFormState {
 // Starts' date field carries activity.date when there's no startAt — the
 // only way a fuzzy-timeLabel activity's date ever reaches the form at all.
 export function activityFormFrom(activity: Activity): ActivityFormState {
-  const startsDate = activity.startAt ? activity.startAt.slice(0, 10) : (activity.date ?? null);
+  const startsDate = activity.startAt ? dateOnly(activity.startAt) : (activity.date ?? null);
   const startsTime = activity.startAt ? activity.startAt.slice(11, 16) : null;
   return {
     startsDate,
@@ -355,9 +355,9 @@ export interface StayFormState {
 export function stayFormFrom(stay: Stay): StayFormState {
   return {
     lodgingName: stay.lodging?.name ?? '',
-    checkInDate: stay.checkInAt.slice(0, 10),
+    checkInDate: dateOnly(stay.checkInAt),
     checkInTime: stay.checkInAt.slice(11, 16),
-    checkOutDate: stay.checkOutAt.slice(0, 10),
+    checkOutDate: dateOnly(stay.checkOutAt),
     checkOutTime: stay.checkOutAt.slice(11, 16),
     booking: bookingFormValueFrom(stay.booking),
   };
@@ -394,9 +394,9 @@ export function transitFormFrom(transit: Transit): TransitFormState {
   return {
     fromLabel: transit.from.label,
     toLabel: transit.to.label,
-    departsDate: transit.departsAt.slice(0, 10),
+    departsDate: dateOnly(transit.departsAt),
     departsTime: transit.departsAt.slice(11, 16),
-    arrivesDate: transit.arrivesAt ? transit.arrivesAt.slice(0, 10) : null,
+    arrivesDate: transit.arrivesAt ? dateOnly(transit.arrivesAt) : null,
     arrivesTime: transit.arrivesAt ? transit.arrivesAt.slice(11, 16) : null,
     routeId: transit.routeId,
     routeVariant: transit.routeVariant,

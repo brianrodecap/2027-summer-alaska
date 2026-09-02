@@ -10,7 +10,7 @@
 // the site happens to be opened, never baked in as of whenever this code
 // shipped.
 import { fetchPlaceFields, isPlacesApiKeyConfigured } from './places';
-import { formatTime, todayDateStr } from './tripModel';
+import { addDaysStr, formatTime, todayDateStr } from './tripModel';
 
 export interface DayWeather {
   sunrise: string | null;
@@ -345,9 +345,7 @@ const climateCache = new Map<string, Promise<ClimateDay[]>>();
 // the prior year): Open-Meteo's archive API just wants a valid contiguous
 // start/end pair, not a range confined to one year.
 function shiftMonthDayInYear(year: number, monthDay: string, offsetDays: number): string {
-  const [mm, dd] = monthDay.split('-').map(Number);
-  const shifted = new Date(Date.UTC(year, mm - 1, dd) + offsetDays * 86_400_000);
-  return shifted.toISOString().slice(0, 10);
+  return addDaysStr(`${year}-${monthDay}`, offsetDays);
 }
 
 // One archive request *per year*, each narrowed to just the ±CLIMATE_WINDOW_

@@ -47,7 +47,7 @@ import {
   applyTransitReorder,
   type DragMeta,
 } from '../model/reorder';
-import { activitySortKey, formatTime, todayDateStr } from '../model/tripModel';
+import { activitySortKey, formatTime, todayDateStr, transitRouteLabel } from '../model/tripModel';
 import type {
   Activity,
   Day,
@@ -455,9 +455,7 @@ export function DaysView() {
               </DragOverlayChip>
             ) : draggingTransit ? (
               <DragOverlayChip>
-                <Typography variant="subtitle2">
-                  {draggingTransit.from.label} → {draggingTransit.to.label}
-                </Typography>
+                <Typography variant="subtitle2">{transitRouteLabel(draggingTransit)}</Typography>
               </DragOverlayChip>
             ) : null}
           </DragOverlay>

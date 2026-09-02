@@ -12,7 +12,7 @@ import {
   type EditKind,
 } from './editForms';
 import { DINING_FORMAT_LABEL } from './formatting';
-import { wallClockMs } from './tripModel';
+import { dateOnly, wallClockMs } from './tripModel';
 import type { Activity, Booking, Day, DiningFormat, MealType, Stay, Transit } from './types';
 
 // The only DiningFormat values the AI is allowed to set — the ones that don't
@@ -255,7 +255,7 @@ export function dateRangeFromExtractedEntities(
   const dates = entities
     .flatMap((f) => [f.startAt, f.endAt, f.checkInAt, f.checkOutAt])
     .filter((v): v is string => Boolean(v))
-    .map((v) => v.slice(0, 10));
+    .map(dateOnly);
   if (!dates.length) return null;
   return {
     startDate: dates.reduce((a, b) => (a < b ? a : b)),
@@ -303,7 +303,7 @@ export function resolveLegAndDateForFields(
     (v): v is string => Boolean(v),
   );
   for (const candidate of candidates) {
-    const date = candidate.slice(0, 10);
+    const date = dateOnly(candidate);
     const day = days.find((d) => d.date === date);
     if (day) return { legId: day.leg._id, date: day.date };
   }

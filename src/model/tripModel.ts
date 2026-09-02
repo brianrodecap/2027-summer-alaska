@@ -256,6 +256,18 @@ export function resolveScenarioDates(
 // re-deriving their own grouping. Chronological by date, unscheduled (null)
 // last; each bucket orders its ideal branch before its alternate, then by
 // label, so a same-day ideal/alternate pair reads in a stable order.
+// Ideal branch before alternate, then by label — the stable order a same-day
+// (or same-parent) ideal/alternate pair reads in, shared by groupScenariosByDate
+// below and ScenariosDialog's own sibling sort.
+export function compareScenariosByToneAndLabel<T extends Pick<Scenario, 'label' | 'tone'>>(
+  a: T,
+  b: T,
+): number {
+  return (
+    (a.tone === 'ideal' ? 0 : 1) - (b.tone === 'ideal' ? 0 : 1) || a.label.localeCompare(b.label)
+  );
+}
+
 export function groupScenariosByDate<T extends Pick<Scenario, '_id' | 'label' | 'tone'>>(
   scenarios: T[],
   dateInfoById: Map<string, ScenarioDateInfo>,
@@ -268,11 +280,7 @@ export function groupScenariosByDate<T extends Pick<Scenario, '_id' | 'label' | 
     else byDate.set(key, [s]);
   }
   for (const list of byDate.values()) {
-    list.sort(
-      (a, b) =>
-        (a.tone === 'ideal' ? 0 : 1) - (b.tone === 'ideal' ? 0 : 1) ||
-        a.label.localeCompare(b.label),
-    );
+    list.sort(compareScenariosByToneAndLabel);
   }
   return [...byDate.entries()]
     .sort(([a], [b]) => (a ?? '9999-99-99').localeCompare(b ?? '9999-99-99'))
@@ -2463,20 +2471,35 @@ function totalsFor(rows: BudgetRow[]): BudgetTotals {
   return totals;
 }
 
+function groupRowsBy<K>(rows: BudgetRow[], keyOf: (row: BudgetRow) => K): Map<K, BudgetRow[]> {
+  const byKey = new Map<K, BudgetRow[]>();
+  for (const row of rows) {
+    const key = keyOf(row);
+    const list = byKey.get(key);
+    if (list) list.push(row);
+    else byKey.set(key, [row]);
+  }
+  return byKey;
+}
+
 function groupBudgetByLeg(legs: Leg[], rows: BudgetRow[]): BudgetLegGroup[] {
+  const rowsByLeg = groupRowsBy(rows, (r) => r.legId);
   return legs
     .map((leg) => {
-      const legRows = rows.filter((r) => r.legId === leg._id);
+      const legRows = rowsByLeg.get(leg._id) ?? [];
       return { leg, totals: totalsFor(legRows), rows: legRows };
     })
     .filter((g) => g.rows.length);
 }
 
 function groupBudgetByDay(days: Day[], rows: BudgetRow[]): BudgetDayGroup[] {
-  const datedRows = rows.filter((r) => r.date);
+  const rowsByDate = groupRowsBy(
+    rows.filter((r) => r.date),
+    (r) => r.date as string,
+  );
   return days
     .map((day) => {
-      const dayRows = datedRows.filter((r) => r.date === day.date);
+      const dayRows = rowsByDate.get(day.date) ?? [];
       return { day, totals: totalsFor(dayRows), rows: dayRows };
     })
     .filter((g) => g.rows.length);
@@ -2566,6 +2589,7 @@ function travelersById(tripTravelers: Traveler[]): Map<string, string> {
 
 function resolveMealTravelers(
   tripTravelers: Traveler[],
+  nameById: Map<string, string>,
   includedIn: Ref | null | undefined,
   packagesById: Map<string, Package>,
 ): string[] | null {
@@ -2573,18 +2597,16 @@ function resolveMealTravelers(
   const everyone = tripTravelers.map((t) => t.name);
   const pkg = packagesById.get(includedIn.id);
   if (!pkg?.travelers?.length) return everyone;
-  const byId = travelersById(tripTravelers);
-  const names = pkg.travelers.map((id) => byId.get(id)).filter((n): n is string => Boolean(n));
+  const names = pkg.travelers.map((id) => nameById.get(id)).filter((n): n is string => Boolean(n));
   return names.length ? names : everyone;
 }
 
 function resolveExcursionTravelers(
-  tripTravelers: Traveler[],
+  nameById: Map<string, string>,
   travelerIds: string[] | null | undefined,
 ): string[] | null {
   if (!travelerIds?.length) return null;
-  const byId = travelersById(tripTravelers);
-  const names = travelerIds.map((id) => byId.get(id)).filter((n): n is string => Boolean(n));
+  const names = travelerIds.map((id) => nameById.get(id)).filter((n): n is string => Boolean(n));
   return names.length ? names : null;
 }
 
@@ -2595,6 +2617,7 @@ export function buildTripView(data: TripData): TripView {
   const scenariosById = new Map(scenarios.map((s) => [s._id, s]));
   const routesById = new Map((routes ?? []).map((r) => [r._id, r]));
   const packagesById = new Map(stays.flatMap((s) => s.packages ?? []).map((p) => [p._id, p]));
+  const travelerNameById = travelersById(trip.travelers);
 
   const enrichedActivities: EnrichedActivity[] = activities.map((a) => {
     // A meal starting mid-drive is exempt — see DEFAULT_MEAL_DURATION_MINUTES
@@ -2613,12 +2636,17 @@ export function buildTripView(data: TripData): TripView {
       transitOverlapWarning,
       activityOverlapWarning,
       travelers: a.mealType
-        ? resolveMealTravelers(trip.travelers, a.includedIn, packagesById)
-        : resolveExcursionTravelers(trip.travelers, a.travelers),
+        ? resolveMealTravelers(trip.travelers, travelerNameById, a.includedIn, packagesById)
+        : resolveExcursionTravelers(travelerNameById, a.travelers),
       options: a.options
         ? a.options.map((o): EnrichedMealOption => ({
             ...o,
-            travelers: resolveMealTravelers(trip.travelers, o.includedIn, packagesById),
+            travelers: resolveMealTravelers(
+              trip.travelers,
+              travelerNameById,
+              o.includedIn,
+              packagesById,
+            ),
             notes: notesForEntity(notes, 'mealOption', o._id),
           }))
         : a.options,
@@ -2692,12 +2720,19 @@ export function buildTripView(data: TripData): TripView {
     return 0;
   });
 
+  const daysByLegId = new Map<string, Day[]>();
+  for (const day of days) {
+    const list = daysByLegId.get(day.leg._id);
+    if (list) list.push(day);
+    else daysByLegId.set(day.leg._id, [day]);
+  }
+
   const legSummaries: LegSummary[] = sortedLegs.map((leg) => {
     const { progress, percent } = legBookingSummary(leg, stays, transits, activities);
     return {
       leg,
       dateRange: legDateRanges.get(leg._id) ?? null,
-      days: days.filter((d) => d.leg._id === leg._id),
+      days: daysByLegId.get(leg._id) ?? [],
       notes: notesForEntity(notes, 'leg', leg._id),
       bookingProgress: progress,
       bookingPercent: percent,

@@ -35,9 +35,9 @@ function resolveFollowedDay(
 // dropped outright, not just deselected.
 function visibleTracks(
   tracks: ScenarioTrack[],
+  gated: boolean,
   followedActiveScenarioId: string | null,
 ): ScenarioTrack[] {
-  const gated = tracks.some((t) => t.scenario.requiresScenarioId);
   if (!gated || !followedActiveScenarioId) return tracks;
   return tracks.filter(
     (t) =>
@@ -81,7 +81,7 @@ export function resolveActiveTrack(
   }
 
   const gated = tracks.some((t) => t.scenario.requiresScenarioId);
-  const visible = visibleTracks(tracks, followedActiveScenarioId);
+  const visible = visibleTracks(tracks, gated, followedActiveScenarioId);
   if (!visible.length) return null;
 
   if (topLevel) {
@@ -170,5 +170,6 @@ export function visibleTracksFor(
     scenarioTone,
     true,
   );
-  return visibleTracks(tracks, followedActive?.scenario._id ?? null);
+  const gated = tracks.some((t) => t.scenario.requiresScenarioId);
+  return visibleTracks(tracks, gated, followedActive?.scenario._id ?? null);
 }

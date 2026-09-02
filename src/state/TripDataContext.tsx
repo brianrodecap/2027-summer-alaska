@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 
 import { buildTripView, loadTripData } from '../model/tripModel';
 import type { TripData } from '../model/types';
@@ -63,27 +63,25 @@ export function TripDataProvider({ slug, children }: { slug: string; children: R
 
   const view = useMemo(() => (data ? buildTripView(data) : null), [data]);
 
-  const setData = (updater: (prev: TripData) => TripData, dirty: CollectionName[] = []) => {
-    setResult((prev) => {
-      if (prev.slug !== slug || !prev.data) return prev;
-      const next: LoadResult = { ...prev, data: updater(prev.data) };
-      if (dirty.length) {
-        next.dirtyCollections = new Set(prev.dirtyCollections);
-        dirty.forEach((d) => next.dirtyCollections.add(d));
-      }
-      return next;
-    });
-  };
+  const setData = useCallback(
+    (updater: (prev: TripData) => TripData, dirty: CollectionName[] = []) => {
+      setResult((prev) => {
+        if (prev.slug !== slug || !prev.data) return prev;
+        const next: LoadResult = { ...prev, data: updater(prev.data) };
+        if (dirty.length) {
+          next.dirtyCollections = new Set(prev.dirtyCollections);
+          dirty.forEach((d) => next.dirtyCollections.add(d));
+        }
+        return next;
+      });
+    },
+    [slug],
+  );
 
-  const value: TripDataContextValue = {
-    slug,
-    data,
-    view,
-    loading,
-    error,
-    dirtyCollections,
-    setData,
-  };
+  const value: TripDataContextValue = useMemo(
+    () => ({ slug, data, view, loading, error, dirtyCollections, setData }),
+    [slug, data, view, loading, error, dirtyCollections, setData],
+  );
 
   return <TripDataContext.Provider value={value}>{children}</TripDataContext.Provider>;
 }

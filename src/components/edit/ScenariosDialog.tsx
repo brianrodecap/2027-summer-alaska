@@ -15,7 +15,12 @@ import Typography from '@mui/material/Typography';
 import { Fragment, useMemo, useState } from 'react';
 
 import { blankScenario } from '../../model/editForms';
-import { formatDateLabel, groupScenariosByDate, resolveScenarioDates } from '../../model/tripModel';
+import {
+  compareScenariosByToneAndLabel,
+  formatDateLabel,
+  groupScenariosByDate,
+  resolveScenarioDates,
+} from '../../model/tripModel';
 import type { Activity, Leg, Scenario, Transit } from '../../model/types';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { WarningBadge } from '../shared/WarningBadge';
@@ -101,12 +106,7 @@ export function ScenariosDialog({
       }
     }
 
-    const sortSiblings = (list: Scenario[]) =>
-      [...list].sort(
-        (a, b) =>
-          (a.tone === 'ideal' ? 0 : 1) - (b.tone === 'ideal' ? 0 : 1) ||
-          a.label.localeCompare(b.label),
-      );
+    const sortSiblings = (list: Scenario[]) => [...list].sort(compareScenariosByToneAndLabel);
 
     return groupScenariosByDate(topLevel, dateInfoById).map(({ date, scenarios: list }) => ({
       date,

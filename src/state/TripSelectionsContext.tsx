@@ -1,4 +1,4 @@
-import { type ReactNode, useMemo, useState } from 'react';
+import { type ReactNode, useCallback, useMemo, useState } from 'react';
 
 import {
   FilterSelectionContext,
@@ -27,37 +27,38 @@ function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
   return next;
 }
 
+// The scenario/route-tone/meal-option selections below all keep the same
+// shape of state — a Map from some entity id to the tab currently picked for
+// it — differing only in the key/value types, so they share this one hook
+// rather than each hand-rolling its own useState + immutable-set updater.
+function useMapSlot<K, V>(): [Map<K, V>, (key: K, value: V) => void] {
+  const [map, setMap] = useState<Map<K, V>>(() => new Map());
+  const set = useCallback((key: K, value: V) => {
+    setMap((prev) => new Map(prev).set(key, value));
+  }, []);
+  return [map, set];
+}
+
 export function TripSelectionsProvider({ children }: { children: ReactNode }) {
-  const [scenarioTone, setScenarioTone] = useState<Map<string, string>>(new Map());
-  const [routeTones, setRouteTones] = useState<Map<string, string>>(new Map());
-  const [mealOptionIndex, setMealOptionIndex] = useState<Map<string, number>>(new Map());
+  const [scenarioTone, setScenarioTone] = useMapSlot<string, string>();
+  const [routeTones, setRouteTones] = useMapSlot<string, string>();
+  const [mealOptionIndex, setMealOptionIndex] = useMapSlot<string, number>();
   const [activeFilterTokens, setActiveFilterTokens] = useState<Set<string>>(new Set());
   const [rowSelection, setRowSelection] = useState<RowSelection | null>(null);
 
   const scenarioValue = useMemo<ScenarioSelectionValue>(
-    () => ({
-      scenarioTone,
-      selectScenario: (date, tone) => setScenarioTone((prev) => new Map(prev).set(date, tone)),
-    }),
-    [scenarioTone],
+    () => ({ scenarioTone, selectScenario: setScenarioTone }),
+    [scenarioTone, setScenarioTone],
   );
 
   const routeToneValue = useMemo<RouteToneSelectionValue>(
-    () => ({
-      routeTones,
-      selectRouteTone: (transitId, tone) =>
-        setRouteTones((prev) => new Map(prev).set(transitId, tone)),
-    }),
-    [routeTones],
+    () => ({ routeTones, selectRouteTone: setRouteTones }),
+    [routeTones, setRouteTones],
   );
 
   const mealOptionValue = useMemo<MealOptionSelectionValue>(
-    () => ({
-      mealOptionIndex,
-      selectMealOption: (activityId, index) =>
-        setMealOptionIndex((prev) => new Map(prev).set(activityId, index)),
-    }),
-    [mealOptionIndex],
+    () => ({ mealOptionIndex, selectMealOption: setMealOptionIndex }),
+    [mealOptionIndex, setMealOptionIndex],
   );
 
   const filterValue = useMemo<FilterSelectionValue>(

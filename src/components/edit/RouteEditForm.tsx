@@ -102,6 +102,18 @@ export function RouteEditForm({
     onChange({ ...form, variants: form.variants.map((v, i) => (i === index ? variant : v)) });
   };
 
+  const updatePlace = (
+    vi: number,
+    variant: RouteVariant,
+    pi: number,
+    updater: (place: RoutePlaceEntry) => RoutePlaceEntry,
+  ) => {
+    updateVariant(vi, {
+      ...variant,
+      places: variant.places.map((p, i) => (i === pi ? updater(p) : p)),
+    });
+  };
+
   // Recomputes every variant's durationMinutes/finalLegMinutes from scratch —
   // used after From/To itself changes, since that shifts the origin every
   // first-place duration (and a places-less variant's finalLegMinutes) is
@@ -198,8 +210,7 @@ export function RouteEditForm({
                     value={place.kind}
                     onChange={(e) => {
                       const kind = e.target.value as RoutePlaceEntry['kind'];
-                      const next = variant.places.map((p, i) => (i === pi ? { ...p, kind } : p));
-                      updateVariant(vi, { ...variant, places: next });
+                      updatePlace(vi, variant, pi, (p) => ({ ...p, kind }));
                     }}
                   >
                     {PLACE_KIND_OPTIONS.map((o) => (
@@ -211,10 +222,7 @@ export function RouteEditForm({
                   <PlacePickerField
                     place={place.place ?? null}
                     onChange={(picked) => {
-                      const next = variant.places.map((p, i) =>
-                        i === pi ? { ...p, place: picked ?? undefined } : p,
-                      );
-                      updateVariant(vi, { ...variant, places: next });
+                      updatePlace(vi, variant, pi, (p) => ({ ...p, place: picked ?? undefined }));
                     }}
                     onPicked={async (result) => {
                       const nextPlaces = variant.places.map((p, i) =>
@@ -235,10 +243,8 @@ export function RouteEditForm({
                       size="small"
                       value={place.note ?? ''}
                       onChange={(e) => {
-                        const next = variant.places.map((p, i) =>
-                          i === pi ? { ...p, note: e.target.value || null } : p,
-                        );
-                        updateVariant(vi, { ...variant, places: next });
+                        const note = e.target.value || null;
+                        updatePlace(vi, variant, pi, (p) => ({ ...p, note }));
                       }}
                       fullWidth
                     />

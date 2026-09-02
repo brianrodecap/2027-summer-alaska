@@ -37,6 +37,7 @@ import {
 } from '../../model/editForms';
 import { AUTHORITY_OPTIONS } from '../../model/formatting';
 import { slugify } from '../../model/slug';
+import { todayDateStr } from '../../model/tripModel';
 import type { Leg, Trip } from '../../model/types';
 import { ApiKeyField } from '../shared/ApiKeyField';
 
@@ -177,8 +178,7 @@ export function TripEditDialog({
       ? draftTripEntities(
           importedEntities,
           legResult.leg._id,
-          dateRangeFromExtractedEntities(importedEntities)?.startDate ??
-            new Date().toISOString().slice(0, 10),
+          dateRangeFromExtractedEntities(importedEntities)?.startDate ?? todayDateStr(),
         )
       : { activities: [], stays: [], transits: [] };
     onSave(result.slug, result.trip, [legResult.leg], staged);

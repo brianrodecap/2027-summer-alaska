@@ -1,4 +1,4 @@
-import { lazy, type ReactNode, Suspense, useState } from 'react';
+import { lazy, type ReactNode, Suspense, useCallback, useMemo, useState } from 'react';
 
 import {
   COLLECTION_FOR_KIND,
@@ -44,40 +44,51 @@ export function EditProvider({ children }: { children: ReactNode }) {
   const { data, setData } = useTripData();
   const [state, setState] = useState<EditState | null>(null);
 
-  const openEdit = (kind: EditKind, id: string) =>
-    setState({ mode: 'edit', kind, id, via: 'wizard' });
-  const openFromDraft = (kind: EditKind, draft: Entity, overrideId?: string) =>
-    setState(
-      overrideId
-        ? { mode: 'edit', kind, id: overrideId, seed: { ...draft, _id: overrideId }, via: 'flat' }
-        : { mode: 'create', kind, entity: draft },
-    );
-  const closeEdit = () => setState(null);
+  const openEdit = useCallback(
+    (kind: EditKind, id: string) => setState({ mode: 'edit', kind, id, via: 'wizard' }),
+    [],
+  );
+  const openFromDraft = useCallback(
+    (kind: EditKind, draft: Entity, overrideId?: string) =>
+      setState(
+        overrideId
+          ? { mode: 'edit', kind, id: overrideId, seed: { ...draft, _id: overrideId }, via: 'flat' }
+          : { mode: 'create', kind, entity: draft },
+      ),
+    [],
+  );
+  const closeEdit = useCallback(() => setState(null), []);
 
-  const handleSave = (updated: Entity) => {
-    if (!state) return;
-    const collection = COLLECTION_FOR_KIND[state.kind];
-    setData(
-      (prev) => ({
-        ...prev,
-        [collection]: upsertById(prev[collection] as Entity[], updated),
-      }),
-      [collection],
-    );
-    closeEdit();
-  };
+  const handleSave = useCallback(
+    (updated: Entity) => {
+      if (!state) return;
+      const collection = COLLECTION_FOR_KIND[state.kind];
+      setData(
+        (prev) => ({
+          ...prev,
+          [collection]: upsertById(prev[collection] as Entity[], updated),
+        }),
+        [collection],
+      );
+      closeEdit();
+    },
+    [state, setData, closeEdit],
+  );
 
-  const handleDelete = (kind: EditKind, id: string) => {
-    const collection = COLLECTION_FOR_KIND[kind];
-    setData(
-      (prev) => ({
-        ...prev,
-        [collection]: (prev[collection] as Entity[]).filter((e) => e._id !== id),
-      }),
-      [collection],
-    );
-    closeEdit();
-  };
+  const handleDelete = useCallback(
+    (kind: EditKind, id: string) => {
+      const collection = COLLECTION_FOR_KIND[kind];
+      setData(
+        (prev) => ({
+          ...prev,
+          [collection]: (prev[collection] as Entity[]).filter((e) => e._id !== id),
+        }),
+        [collection],
+      );
+      closeEdit();
+    },
+    [setData, closeEdit],
+  );
 
   const entity = state
     ? state.mode === 'create'
@@ -85,39 +96,35 @@ export function EditProvider({ children }: { children: ReactNode }) {
       : (state.seed ?? (data ? findByKind(state.kind, state.id, data) : undefined))
     : undefined;
 
+  const contextValue = useMemo(
+    () => ({ openEdit, openFromDraft, deleteEntity: handleDelete }),
+    [openEdit, openFromDraft, handleDelete],
+  );
+
   return (
-    <EditContext.Provider value={{ openEdit, openFromDraft, deleteEntity: handleDelete }}>
+    <EditContext.Provider value={contextValue}>
       {children}
       {state && data && entity && (
         <Suspense fallback={null}>
-          {state.mode === 'edit' && state.via === 'wizard' ? (
-            <EditEventWizard
-              kind={state.kind}
-              entity={entity}
-              stays={data.stays}
-              activities={data.activities}
-              transits={data.transits}
-              tripTravelers={data.trip.travelers}
-              routes={data.routes}
-              onClose={closeEdit}
-              onSave={handleSave}
-              onDelete={handleDelete}
-            />
-          ) : (
-            <EditDialog
-              kind={state.kind}
-              entity={entity}
-              isNew={state.mode === 'create'}
-              stays={data.stays}
-              activities={data.activities}
-              transits={data.transits}
-              tripTravelers={data.trip.travelers}
-              routes={data.routes}
-              onClose={closeEdit}
-              onSave={handleSave}
-              onDelete={handleDelete}
-            />
-          )}
+          {(() => {
+            const sharedProps = {
+              kind: state.kind,
+              entity,
+              stays: data.stays,
+              activities: data.activities,
+              transits: data.transits,
+              tripTravelers: data.trip.travelers,
+              routes: data.routes,
+              onClose: closeEdit,
+              onSave: handleSave,
+              onDelete: handleDelete,
+            };
+            return state.mode === 'edit' && state.via === 'wizard' ? (
+              <EditEventWizard {...sharedProps} />
+            ) : (
+              <EditDialog {...sharedProps} isNew={state.mode === 'create'} />
+            );
+          })()}
         </Suspense>
       )}
     </EditContext.Provider>

@@ -648,7 +648,7 @@ export function TransitReview({ form, routes }: { form: TransitFormState; routes
   return (
     <ReviewSection>
       <Typography variant="subtitle1">
-        {form.fromLabel || '?'} → {form.toLabel || '?'}
+        {transitRouteLabel({ from: { label: form.fromLabel }, to: { label: form.toLabel } })}
       </Typography>
       <ReviewRow label="Departs" value={whenLabel(form.departsDate, form.departsTime)} />
       <ReviewRow
