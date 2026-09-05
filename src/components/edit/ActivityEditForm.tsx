@@ -30,6 +30,7 @@ import { DateTimeFieldPair } from './DateTimeFieldPair';
 import { DurationSelect } from './DurationSelect';
 import { IncludedInField } from './IncludedInField';
 import { MealOptionList } from './MealOptionList';
+import { PlaceConditionsToggles } from './PlaceConditionsToggles';
 import { PlacePickerField } from './PlacePickerField';
 
 const STATUS_OPTIONS: { value: PlanStatus; label: string }[] = [
@@ -99,6 +100,7 @@ export function ActivityEditForm({
             Place
           </Typography>
           <PlacePickerField place={form.place} onChange={(place) => onChange({ ...form, place })} />
+          {form.place && <PlaceConditionsToggles form={form} onChange={onChange} />}
         </>
       )}
 

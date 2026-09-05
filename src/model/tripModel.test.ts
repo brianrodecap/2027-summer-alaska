@@ -644,6 +644,57 @@ describe('dayMapStops', () => {
     expect(new URL(urls[0]).searchParams.get('destination')).toBe('Origin Airport');
     expect(new URL(urls[1]).searchParams.get('origin')).toBe('Destination Airport');
   });
+
+  // An overnight Transit (e.g. a late ferry/drive) has its Depart boundary
+  // land on the departure day's sequence and its Arrive boundary land on the
+  // next day's (see transitItemsOnDate in tripModel.ts) — so a map/route link
+  // built from either day's own sequence must still widen out to the
+  // Transit's full origin-to-destination stop list, never truncate at
+  // whichever endpoint fell on the day being mapped.
+  it('includes both endpoints of a midnight-crossing Transit on the map for both the departure day and the arrival day', () => {
+    const data = minimalTripData();
+    pushMinimalStay(data, { lodging: { placeId: 'place_lodge', name: 'Test Lodge' } });
+    pushMinimalTransit(data, {
+      _id: 'test_overnight',
+      from: { id: 'place_origin', label: 'Origin Port' },
+      to: { id: 'place_dest', label: 'Destination Port' },
+      departsAt: '2027-06-02T23:00',
+      arrivesAt: '2027-06-03T01:00',
+    });
+    const view = buildTripView(data);
+    const departureDay = view.days.find((d) => d.date === '2027-06-02')!;
+    const arrivalDay = view.days.find((d) => d.date === '2027-06-03')!;
+
+    expect(dayMapStops(departureDay).flat()).toEqual(
+      expect.arrayContaining(['Origin Port', 'Destination Port']),
+    );
+    expect(dayMapStops(arrivalDay).flat()).toEqual(
+      expect.arrayContaining(['Origin Port', 'Destination Port']),
+    );
+  });
+
+  it("routes a midnight-crossing Transit's full-route link through both its real endpoints as waypoints, from either day", () => {
+    const data = minimalTripData();
+    // No bookending Stay here — this Transit is the whole day, so its own
+    // endpoints (not a Stay's lodging) become the link's origin/destination.
+    pushMinimalTransit(data, {
+      _id: 'test_overnight',
+      from: { id: 'place_origin', label: 'Origin Port' },
+      to: { id: 'place_dest', label: 'Destination Port' },
+      departsAt: '2027-06-02T23:00',
+      arrivesAt: '2027-06-03T01:00',
+    });
+    const view = buildTripView(data);
+    const departureDay = view.days.find((d) => d.date === '2027-06-02')!;
+    const arrivalDay = view.days.find((d) => d.date === '2027-06-03')!;
+
+    for (const day of [departureDay, arrivalDay]) {
+      const urls = dayFullRouteUrls(day);
+      expect(urls.length).toBe(1);
+      expect(new URL(urls[0]).searchParams.get('origin')).toBe('Origin Port');
+      expect(new URL(urls[0]).searchParams.get('destination')).toBe('Destination Port');
+    }
+  });
 });
 
 describe('diffMinutesIso', () => {

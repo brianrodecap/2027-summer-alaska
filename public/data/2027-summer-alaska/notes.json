@@ -1811,5 +1811,17 @@
       }
     ],
     "images": []
+  },
+  {
+    "_id": "b0c05335-18bf-4385-878f-6c4d67517faa",
+    "kind": "info",
+    "text": "Closes at 11:00 PM.  There are no fully 24-hour traditional grocery stores currently operating in Anchorage, Alaska.",
+    "concerns": [
+      {
+        "entity": "activity",
+        "id": "1ff3c71e-3995-4fbd-97b0-62ee8eb32d6b"
+      }
+    ],
+    "images": []
   }
 ]

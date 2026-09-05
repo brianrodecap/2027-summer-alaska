@@ -9,7 +9,11 @@
 // refetched from scratch on every visit, so it's only ever as of whenever
 // the site happens to be opened, never baked in as of whenever this code
 // shipped.
-import { fetchPlaceFields, isPlacesApiKeyConfigured } from './places';
+import { memoizeAsync, persisted } from './asyncCache';
+import { parseIsoDateUTC, parseMonthDayUTC } from './isoDate';
+import { fetchOpenMeteoJson } from './openMeteoClient';
+import { type Coordinates, getCoordinates } from './placeCoordinates';
+import { isPlacesApiKeyConfigured } from './places';
 import { addDaysStr, formatTime, todayDateStr } from './tripModel';
 
 export interface DayWeather {
@@ -56,11 +60,6 @@ interface PlaceForecast {
   windMph: number | null;
 }
 
-interface Coordinates {
-  lat: number;
-  lng: number;
-}
-
 // Open-Meteo's forecast model only covers a rolling window from today —
 // this must match what the trip actually means by "the 10-day forecast".
 const FORECAST_WINDOW_DAYS = 10;
@@ -75,98 +74,21 @@ const CLIMATE_YEARS = 5;
 // the trade-off this width encodes.
 const CLIMATE_WINDOW_DAYS = 3;
 
+// Versions this file's own persisted cache entries (climate averages) — see
+// placeCoordinates.ts/elevation.ts for their own independent versions of the
+// same idea, since coordinates/elevation moved out to their own modules.
 const CACHE_VERSION = 'v3';
 
-// Wraps localStorage so a lookup already resolved on a previous visit
-// doesn't cost a network round-trip at all, not even a cached-but-still-async
-// one — coordinates and climate history are looked up once per place here
-// and read back synchronously-ish (still a Promise, but already resolved)
-// on every later visit. Swallows quota/availability errors (Safari private
-// browsing throws on write) since this is purely an optimization: losing it
-// just means falling back to the in-memory-only behavior for that session.
-function loadPersisted<T>(key: string, maxAgeMs: number): T | null {
-  try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
-    const { value, savedAt } = JSON.parse(raw) as { value: T; savedAt: number };
-    if (Date.now() - savedAt > maxAgeMs) return null;
-    return value;
-  } catch {
-    return null;
-  }
-}
-
-function savePersisted<T>(key: string, value: T): void {
-  try {
-    localStorage.setItem(key, JSON.stringify({ value, savedAt: Date.now() }));
-  } catch {
-    // best-effort — see loadPersisted's note above
-  }
-}
-
-// Get-or-compute-and-cache the in-flight/resolved promise for `key` — the
-// one "cache by key, store the promise" shape every lookup below shares
-// (coordinates, forecasts, climate averages, air quality), so a repeat
-// lookup within one page load never re-fires the underlying fetch.
-function memoizeAsync<K, V>(
-  cache: Map<K, Promise<V>>,
-  key: K,
-  compute: () => Promise<V>,
-): Promise<V> {
-  if (!cache.has(key)) cache.set(key, compute());
-  return cache.get(key) as Promise<V>;
-}
-
-// Layers loadPersisted/savePersisted around a compute function — shared by
-// the two lookups (coordinates, climate averages) that are also worth
-// surviving a page reload, not just deduping within one.
-function persisted<T>(storageKey: string, ttlMs: number, compute: () => Promise<T>): Promise<T> {
-  const cached = loadPersisted<T>(storageKey, ttlMs);
-  if (cached !== null) return Promise.resolve(cached);
-  return compute().then((value) => {
-    savePersisted(storageKey, value);
-    return value;
-  });
-}
-
-// Place coordinates never change, so once persisted they're reused forever
-// (well, until CACHE_VERSION bumps) rather than expiring on a timer.
-const COORDINATE_CACHE_TTL_MS = Infinity;
 // Climate history shifts slowly — a month is a comfortable margin against
 // re-pulling the whole archive every single session, while still picking up
 // each new year's data reasonably promptly after it rolls in.
 const CLIMATE_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-const coordinateCache = new Map<string, Promise<Coordinates>>();
-
-async function fetchCoordinates(placeId: string): Promise<Coordinates> {
-  const { location } = await fetchPlaceFields<{
-    location: { latitude: number; longitude: number };
-  }>(placeId, 'location');
-  return { lat: location.latitude, lng: location.longitude };
-}
-
-// Cached by place id, same pattern as places.ts's own getPlace — a Stay
-// spanning several nights (or a Transit's endpoint reused day to day) would
-// otherwise re-resolve the same place's coordinates on every one of those days.
-// Also persisted to localStorage so a repeat visit skips the Places API call
-// entirely rather than just deduping within one page load.
-function getCoordinates(placeId: string): Promise<Coordinates> {
-  const storageKey = `weather-coords:${CACHE_VERSION}:${placeId}`;
-  return memoizeAsync(coordinateCache, placeId, () =>
-    persisted(storageKey, COORDINATE_CACHE_TTL_MS, () => fetchCoordinates(placeId)),
-  );
-}
-
 // Whole-day difference between `date` and the real wall-clock "today" (via
 // tripModel's own todayDateStr, so this shares one definition of "today"
-// with the rest of the app rather than re-deriving it), computed via
-// Date.UTC on the date-only parts (never local Date parsing of an ISO
-// string) so a viewer's own timezone can't shift the day boundary.
+// with the rest of the app rather than re-deriving it).
 function daysFromToday(date: string): number {
-  const [y, m, d] = date.split('-').map(Number);
-  const [ty, tm, td] = todayDateStr().split('-').map(Number);
-  return Math.round((Date.UTC(y, m - 1, d) - Date.UTC(ty, tm - 1, td)) / 86_400_000);
+  return Math.round((parseIsoDateUTC(date) - parseIsoDateUTC(todayDateStr())) / 86_400_000);
 }
 
 interface DailyBlock {
@@ -181,101 +103,6 @@ interface DailyBlock {
   cloud_cover_mean?: number[];
   precipitation_probability_max?: number[];
   wind_speed_10m_max?: number[];
-}
-
-// Open-Meteo's free tier rate-limits bursts of concurrent requests — an
-// unvirtualized day list can easily resolve several dozen distinct places at
-// once (every Stay/Transit endpoint, plus every priority Activity's own
-// place now that the temperature follows the header title), which trips a
-// 429 on its own well before that many places finish. Every call funnels
-// through this queue — one request in flight at a time, each spaced at
-// least MIN_DISPATCH_INTERVAL_MS after the previous one *started* — with a
-// backoff retry on 429 as a fallback, rather than each Day firing its own
-// fetch the moment it renders. Concurrency alone (running N at once) still
-// lets a burst of N hit the API in the same instant; the spacing is what
-// actually paces the request *rate*, which is what Open-Meteo enforces.
-const MAX_CONCURRENT_OPEN_METEO_REQUESTS = 1;
-const MIN_DISPATCH_INTERVAL_MS = 300;
-let activeOpenMeteoRequests = 0;
-let lastDispatchAt = 0;
-const openMeteoQueue: (() => void)[] = [];
-
-function runQueued<T>(task: () => Promise<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const run = () => {
-      const wait = Math.max(0, lastDispatchAt + MIN_DISPATCH_INTERVAL_MS - Date.now());
-      lastDispatchAt = Date.now() + wait;
-      activeOpenMeteoRequests++;
-      setTimeout(() => {
-        task()
-          .then(resolve, reject)
-          .finally(() => {
-            activeOpenMeteoRequests--;
-            openMeteoQueue.shift()?.();
-          });
-      }, wait);
-    };
-    if (activeOpenMeteoRequests < MAX_CONCURRENT_OPEN_METEO_REQUESTS) run();
-    else openMeteoQueue.push(run);
-  });
-}
-
-// A 429 from Open-Meteo means two different things, and only one of them is
-// worth retrying. A *minutely* burst limit is exactly what the queue above
-// already exists to ride out — a short backoff and another attempt is likely
-// to succeed. An *hourly*/*daily* quota is a wall that doesn't move no
-// matter how many times it's asked; retrying just spends the backoff budget
-// hammering an API that's already refusing everyone, and — worse — every
-// other viewport-triggered place lookup hits the same wall independently
-// and repeats the whole retry ladder on its own. quotaCooldownMs reads the
-// API's own `reason` text to tell the two apart: null means "transient,
-// let the retry loop below handle it"; a duration means "stop calling
-// Open-Meteo altogether until this much time has passed."
-//
-// TODO(you): tune this. The API's wording ("...try again in the next
-// hour") suggests waiting until the top of the next hour would minimize
-// wasted calls once the real quota resets — but that requires trusting
-// Open-Meteo's window boundary lines up with wall-clock hours, which isn't
-// documented. A flat cooldown is simpler and recovers on a schedule we
-// control, at the cost of possibly still being blocked (or leaving quota
-// unused) when it expires. Below is a placeholder flat 60-minute cooldown
-// for both hourly and daily reasons — worth reconsidering once real usage
-// shows how often this actually trips.
-const QUOTA_COOLDOWN_MS = 60 * 60 * 1000;
-
-function quotaCooldownMs(reason: string): number | null {
-  if (!/request limit exceeded/i.test(reason)) return null;
-  return QUOTA_COOLDOWN_MS;
-}
-
-let quotaBlockedUntil = 0;
-
-// Raw-JSON fetch/retry/cooldown, shared by every Open-Meteo-family host
-// (forecast/archive, air-quality, marine) — each has its own rate limit, but
-// they all speak the same "429, or a JSON body with an `error`/`reason`"
-// shape, so one retry ladder and one quota-cooldown check covers all three.
-async function fetchOpenMeteoJsonWithRetry(url: string, attempt = 0): Promise<unknown> {
-  const res = await fetch(url);
-  const json = await res.json().catch(() => null);
-  if ((json as { error?: boolean } | null)?.error) {
-    const cooldown = quotaCooldownMs((json as { reason?: string }).reason ?? '');
-    if (cooldown !== null) {
-      quotaBlockedUntil = Date.now() + cooldown;
-      return null;
-    }
-    if (attempt < 9) {
-      await new Promise((resolve) => setTimeout(resolve, Math.min(1000 * 2 ** attempt, 20_000)));
-      return fetchOpenMeteoJsonWithRetry(url, attempt + 1);
-    }
-    return null;
-  }
-  if (!res.ok) throw new Error(`Open-Meteo error ${res.status}`);
-  return json;
-}
-
-function fetchOpenMeteoJson(url: string): Promise<unknown> {
-  if (Date.now() < quotaBlockedUntil) return Promise.resolve(null);
-  return runQueued(() => fetchOpenMeteoJsonWithRetry(url));
 }
 
 // Every Open-Meteo daily-block response (forecast, archive, marine) nests
@@ -407,11 +234,9 @@ function getClimateYears(coords: Coordinates, monthDay: string): Promise<Climate
 
 function averageForMonthDay(years: ClimateDay[], monthDay: string): PlaceForecast | null {
   if (!years.length) return null;
-  const [mm, dd] = monthDay.split('-').map(Number);
-  const target = Date.UTC(2001, mm - 1, dd); // arbitrary non-leap reference year
+  const target = parseMonthDayUTC(monthDay, 2001); // arbitrary non-leap reference year
   const matches = years.filter((y) => {
-    const [ym, yd] = y.monthDay.split('-').map(Number);
-    const yearDate = Date.UTC(2001, ym - 1, yd);
+    const yearDate = parseMonthDayUTC(y.monthDay, 2001);
     const diff = Math.abs(yearDate - target) / 86_400_000;
     return Math.min(diff, 365 - diff) <= CLIMATE_WINDOW_DAYS;
   });
@@ -455,6 +280,26 @@ async function getPlaceWeather(placeId: string, date: string): Promise<PlaceFore
   const monthDay = date.slice(5);
   const years = await getClimateYears(coords, monthDay);
   return averageForMonthDay(years, monthDay);
+}
+
+export interface PlaceTemperature {
+  highF: number;
+  lowF: number;
+  isForecast: boolean;
+}
+
+// Single-place high/low + forecast-vs-average flag, for a per-entity "show
+// weather at this place" row (see PlaceConditionsLine) — same forecast-
+// window/climate-average fallback as the day header's own temperature row
+// (getPlaceWeather above), narrowed to just the fields that row needs.
+export async function getPlaceTemperature(
+  placeId: string,
+  date: string,
+): Promise<PlaceTemperature | null> {
+  if (!isPlacesApiKeyConfigured()) return null;
+  const weather = await getPlaceWeather(placeId, date);
+  if (!weather || weather.highF === null || weather.lowF === null) return null;
+  return { highF: weather.highF, lowF: weather.lowF, isForecast: weather.isForecast };
 }
 
 // ---- air quality — US AQI, for every day the caller resolves a place for

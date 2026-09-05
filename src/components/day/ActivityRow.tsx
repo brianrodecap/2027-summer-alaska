@@ -15,6 +15,7 @@ import { OverlapWarnings } from '../shared/OverlapWarnings';
 import { RowLeadingDot } from '../shared/RowLeadingDot';
 import { TravelerChips } from '../shared/TravelerChips';
 import { MealRow, MealRowLeading } from './MealRow';
+import { PlaceConditionsLine } from './PlaceConditionsLine';
 
 // Activities don't carry an explicit category field — a committed meal's
 // diningFormat is the only synchronous signal richer than "does this
@@ -74,6 +75,12 @@ export function ActivityRow({
         <Typography variant="body1">
           <LinkifiedText text={activity.text} />
         </Typography>
+        <PlaceConditionsLine
+          place={activity.place}
+          date={day.date}
+          showWeather={Boolean(activity.showWeatherAtPlace)}
+          showElevation={Boolean(activity.showElevationAtPlace)}
+        />
         <NotesCluster notes={midNotes} />
         <TravelerChips names={activity.travelers} />
         {activity.booking && (

@@ -51,6 +51,8 @@ export function blankActivity(legId: string, date: string): Activity {
     priority: null,
     text: '',
     place: null,
+    showWeatherAtPlace: false,
+    showElevationAtPlace: false,
     booking: null,
     mealType: null,
     diningFormat: null,
@@ -267,6 +269,8 @@ export interface ActivityFormState {
   mealType: MealType | '';
   diningFormat: DiningFormat | '';
   place: Place | null;
+  showWeatherAtPlace: boolean;
+  showElevationAtPlace: boolean;
   includedIn: Ref | null;
   options: MealOption[];
   travelerIds: string[];
@@ -289,6 +293,8 @@ export function activityFormFrom(activity: Activity): ActivityFormState {
     mealType: activity.mealType ?? '',
     diningFormat: activity.diningFormat ?? '',
     place: activity.place,
+    showWeatherAtPlace: activity.showWeatherAtPlace ?? false,
+    showElevationAtPlace: activity.showElevationAtPlace ?? false,
     includedIn: activity.includedIn,
     options: activity.options ?? [],
     travelerIds: activity.travelers ?? [],
@@ -336,6 +342,10 @@ export function applyActivityForm(activity: Activity, form: ActivityFormState): 
     activity.diningFormat = form.diningFormat || null;
     activity.includedIn = form.includedIn;
   }
+  // Both toggles are meaningless without a place, regardless of which branch
+  // above ran — enforced here once rather than in each branch.
+  activity.showWeatherAtPlace = Boolean(activity.place) && form.showWeatherAtPlace;
+  activity.showElevationAtPlace = Boolean(activity.place) && form.showElevationAtPlace;
   activity.travelers = form.travelerIds.length ? form.travelerIds : null;
   activity.booking = readBookingFormValue(form.booking, activity.booking);
   return null;

@@ -404,5 +404,45 @@
       }
     ],
     "images": []
+  },
+  {
+    "_id": "route_new_12",
+    "from": {
+      "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
+      "label": "Anchorage"
+    },
+    "to": {
+      "id": "ChIJ-0i_GVHfzFYRRg-PNt-u2nw",
+      "label": "Denali Park"
+    },
+    "variants": [
+      {
+        "tone": "direct",
+        "label": "George Parks Highway",
+        "places": [
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJMQSzDXyDzlYR0kjMv9sRo-I",
+              "label": "Denali Viewpoint South"
+            },
+            "durationMinutes": 142,
+            "distanceMiles": 135.9
+          },
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJW1BnSrYwzFYRJFJvnughNoQ",
+              "label": "Denali View North"
+            },
+            "durationMinutes": 28,
+            "distanceMiles": 28
+          }
+        ],
+        "finalLegMinutes": 66,
+        "finalLegMiles": 67.7
+      }
+    ],
+    "images": []
   }
 ]

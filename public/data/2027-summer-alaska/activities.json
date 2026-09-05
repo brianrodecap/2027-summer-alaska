@@ -56,7 +56,7 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-06-26T22:15",
+    "startAt": "2027-06-26T23:15",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -98,7 +98,8 @@
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jun27_ideal_2",
@@ -5275,6 +5276,29 @@
     "place": {
       "id": null,
       "label": "Anchorage"
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "1ff3c71e-3995-4fbd-97b0-62ee8eb32d6b",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": "2027-06-26T22:15",
+    "durationMinutes": 60,
+    "timeLabel": null,
+    "date": null,
+    "priority": null,
+    "text": "Walmart Supercenter",
+    "place": {
+      "id": "ChIJ-ThFGNCZyFYRE9YZ2gxC9Pw",
+      "label": "Walmart Supercenter"
     },
     "booking": null,
     "mealType": null,

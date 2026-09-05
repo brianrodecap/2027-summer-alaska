@@ -45,6 +45,7 @@ import { DateTimeFieldPair } from '../edit/DateTimeFieldPair';
 import { DurationSelect } from '../edit/DurationSelect';
 import { IncludedInField } from '../edit/IncludedInField';
 import { MealOptionList } from '../edit/MealOptionList';
+import { PlaceConditionsToggles } from '../edit/PlaceConditionsToggles';
 import { PlacePickerField } from '../edit/PlacePickerField';
 
 // ---------- shared "pick one of a few cards" control, used by the category
@@ -364,7 +365,12 @@ export function ActivityPlaceStep({
   form: ActivityFormState;
   onChange: (form: ActivityFormState) => void;
 }) {
-  return <PlacePickerField place={form.place} onChange={(place) => onChange({ ...form, place })} />;
+  return (
+    <Stack spacing={1}>
+      <PlacePickerField place={form.place} onChange={(place) => onChange({ ...form, place })} />
+      {form.place && <PlaceConditionsToggles form={form} onChange={onChange} />}
+    </Stack>
+  );
 }
 
 export function ExtrasStep({

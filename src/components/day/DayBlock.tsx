@@ -24,6 +24,7 @@ import { useScenarioSelection } from '../../state/useTripSelections';
 import { AddNoteMenuItems } from '../shared/AddNoteMenuItems';
 import { NotesCluster } from '../shared/Notes';
 import { useAnchorMenu } from '../shared/useAnchorMenu';
+import { DayAlertsBanner } from './DayAlertsBanner';
 import { DayTimeline } from './DayTimeline';
 import { DayWeatherStrip } from './DayWeatherStrip';
 import { activeTitleCandidates } from './scenarioSelection';
@@ -97,6 +98,7 @@ export const DayBlock = memo(function DayBlock({
   const [collapsed, setCollapsed] = useState(false);
   return (
     <Box component="section" id={`day-${day.date}`} sx={{ scrollMarginTop: '4.5rem' }}>
+      <DayAlertsBanner day={day} />
       <Box
         sx={{
           position: 'sticky',

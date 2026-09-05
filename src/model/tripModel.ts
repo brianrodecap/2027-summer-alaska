@@ -931,10 +931,54 @@ function transitItemsOnDate(
   transit: EnrichedTransit,
   date: string,
 ): (TransitBoundarySequenceItem | TransitStageSequenceItem)[] {
-  const departDayStart = `${dateOnly(transit.departsAt)}T00:00`;
-  return transitSequenceItems(transit, departDayStart).filter(
+  return transitSequenceItems(transit, transitDepartDayStart(transit)).filter(
     (item) => dateOnly(item.key) === date,
   );
+}
+
+// The midnight that opens a Transit's own departure day — transitSequenceItems'
+// `dayStart` parameter, used both to compute a day's own filtered items
+// (transitItemsOnDate above) and to re-derive a spanning Transit's full item
+// list (dayFullRouteStops below).
+function transitDepartDayStart(transit: EnrichedTransit): string {
+  return `${dateOnly(transit.departsAt)}T00:00`;
+}
+
+// True for a Transit whose Depart and Arrive land on different calendar
+// dates (an overnight ferry/drive) — transitItemsOnDate above splits such a
+// Transit's own items across the two day blocks it renders under, but a
+// Google Maps link still needs every stop from the real origin through the
+// real destination, never just whichever half fell on the day currently
+// being mapped. sequenceMapLabels/dayFullRouteStops below use this to widen
+// out to the Transit's full item list the first time either half of a
+// spanning Transit shows up in a day's stops, instead of the day-filtered
+// slice that arrived on day.sequence.
+function transitSpansMidnight(transit: EnrichedTransit): boolean {
+  return (
+    Boolean(transit.arrivesAt) &&
+    dateOnly(transit.departsAt) !== dateOnly(transit.arrivesAt as string)
+  );
+}
+
+// Widens one transit-boundary/transit-stage item out to its owning
+// Transit's full item list the first time either half of a spanning Transit
+// (transitSpansMidnight above) is seen in one walk over a day's stops —
+// shared by sequenceMapLabels and dayFullRouteStops below, each passing its
+// own fresh `handled` Set, so the map/route link built from either the
+// departure day's sequence or the arrival day's still reaches every real
+// stop from origin to destination, never truncated at whichever half landed
+// on the day being walked. A non-spanning Transit's own item comes back
+// unwidened (`[item]`); a spanning Transit's later items (once `handled`
+// already has its id) come back empty, so its full span isn't pushed more
+// than once within one walk.
+function widenSpanningTransitItems(
+  item: TransitBoundarySequenceItem | TransitStageSequenceItem,
+  handled: Set<string>,
+): (TransitBoundarySequenceItem | TransitStageSequenceItem)[] {
+  if (!transitSpansMidnight(item.transit)) return [item];
+  if (handled.has(item.transit._id)) return [];
+  handled.add(item.transit._id);
+  return transitSequenceItems(item.transit, transitDepartDayStart(item.transit));
 }
 
 interface Keyed {
@@ -1437,7 +1481,8 @@ function selectedTrack(
 
 function sequenceMapLabels(
   sequence: SequenceItem[],
-  mealPlaces?: Map<string, Place | null>,
+  mealPlaces: Map<string, Place | null> | undefined,
+  handledSpanningTransitIds: Set<string>,
 ): string[] {
   const labels: string[] = [];
   for (const item of sequence) {
@@ -1458,7 +1503,18 @@ function sequenceMapLabels(
     ) {
       labels.push(item.stay.lodging.name);
     } else if (item.type === 'transit-boundary') {
-      labels.push((item.phase === 'depart' ? item.transit.from : item.transit.to).label);
+      // A spanning Transit (transitSpansMidnight above) only ever shows one
+      // boundary phase per day block — the Depart on the departure day, the
+      // Arrive on the next — so widenSpanningTransitItems widens out to both
+      // boundary phases the first (and only) time either is seen this day,
+      // instead of just the one phase that landed on day.sequence.
+      for (const boundaryItem of widenSpanningTransitItems(item, handledSpanningTransitIds)) {
+        if (boundaryItem.type !== 'transit-boundary') continue; // stages excluded, see below
+        labels.push(
+          (boundaryItem.phase === 'depart' ? boundaryItem.transit.from : boundaryItem.transit.to)
+            .label,
+        );
+      }
       // transit-stage (a route's interim places) is deliberately skipped —
       // not a data-quality concern (every place now resolves to a real Place
       // ID or explicit coordinates; see data-model.html's Route entity), but
@@ -1639,10 +1695,11 @@ function bookendedRunSegments<T>(
 // flight/ferry with no same-day return, e.g. Anchorage -> Kotzebue) can't
 // honestly be plotted as a single route, so it comes back as more than one.
 export function dayMapStops(day: Day, selections: DaySelections = {}): string[][] {
+  const handledSpanningTransitIds = new Set<string>();
   return bookendedRunSegments(
     day,
     selections,
-    (sequence) => sequenceMapLabels(sequence, selections.mealPlaces),
+    (sequence) => sequenceMapLabels(sequence, selections.mealPlaces, handledSpanningTransitIds),
     (a, b) => a === b,
   );
 }
@@ -1760,7 +1817,49 @@ export function activeRouteTone(
 // away from the model's own default. All three fall back to their own model
 // default (routeInfo.selectedTone; idealOrFirstTrack; the first
 // place-bearing option) for whatever a caller didn't supply.
+// Pushes one transit-boundary/transit-stage item's own stop, honoring the
+// live route-tone selection for a stage — shared between dayFullRouteStops'
+// normal per-item walk and its spanning-Transit widen-out below, which feeds
+// this the Transit's full item list instead of just the day-filtered slice.
+function pushTransitItemStop(
+  stops: RouteStop[],
+  item: TransitBoundarySequenceItem | TransitStageSequenceItem,
+  selections: DaySelections,
+): void {
+  if (item.type === 'transit-boundary') {
+    const place = item.phase === 'depart' ? item.transit.from : item.transit.to;
+    // Trusted exactly when the movement itself is scheduled/chartered
+    // (mode !== 'drive': a flight, a tour bus) — that kind of transport
+    // always has one exact departure/arrival point (an airport, a
+    // depot), unlike a 'drive' Transit's from/to, which can legitimately
+    // be a whole city ("Anchorage") with no one correct point to route a
+    // waypoint through. This never reintroduces an excursion's own
+    // remote destination as a waypoint — drivableRuns above already
+    // drops that boundary event (and everything inside it) before
+    // pushSequence ever sees it; what's left here is only an
+    // excursion's *outer* boundary, which is drivable by construction,
+    // or a genuine relocation's own boundary, which is always its own
+    // run's first or last stop (never a mid-run waypoint) by the same
+    // logic.
+    const stop = routeStop(place, undefined, item.transit.mode !== 'drive');
+    if (stop) stops.push(stop);
+  } else {
+    // day.sequence carries every route variant's stages (see
+    // routeStageItems), each just tagged hidden for the live-selection
+    // toggle — so without this filter a Transit with 2+ variants (e.g.
+    // New vs. Old Glenn Highway) would mix both routes' via-points into
+    // one link. Prefer whichever tone the reader actually has selected
+    // (selections.routeTones); only fall back to routeInfo's own
+    // default when the caller didn't pass one.
+    const tone = activeRouteTone(item.transit, selections.routeTones);
+    if (item.variant.tone !== tone) return;
+    const stop = routeStop({ id: item.stage.placeId, label: item.stage.label });
+    if (stop) stops.push(stop);
+  }
+}
+
 function dayFullRouteStops(day: Day, selections: DaySelections = {}): RouteStop[][] {
+  const handledSpanningTransitIds = new Set<string>();
   const pushSequence = (stops: RouteStop[], sequence: SequenceItem[]) => {
     for (const item of sequence) {
       if (item.type === 'stay') {
@@ -1771,35 +1870,23 @@ function dayFullRouteStops(day: Day, selections: DaySelections = {}): RouteStop[
         if (item.relation === 'Staying' && !item.stay.lodging?.placeId) continue;
         const stop = routeStop(item.stay.lodging ?? undefined);
         if (stop) stops.push(stop);
-      } else if (item.type === 'transit-boundary') {
-        const place = item.phase === 'depart' ? item.transit.from : item.transit.to;
-        // Trusted exactly when the movement itself is scheduled/chartered
-        // (mode !== 'drive': a flight, a tour bus) — that kind of transport
-        // always has one exact departure/arrival point (an airport, a
-        // depot), unlike a 'drive' Transit's from/to, which can legitimately
-        // be a whole city ("Anchorage") with no one correct point to route a
-        // waypoint through. This never reintroduces an excursion's own
-        // remote destination as a waypoint — drivableRuns above already
-        // drops that boundary event (and everything inside it) before
-        // pushSequence ever sees it; what's left here is only an
-        // excursion's *outer* boundary, which is drivable by construction,
-        // or a genuine relocation's own boundary, which is always its own
-        // run's first or last stop (never a mid-run waypoint) by the same
-        // logic.
-        const stop = routeStop(place, undefined, item.transit.mode !== 'drive');
-        if (stop) stops.push(stop);
-      } else if (item.type === 'transit-stage') {
-        // day.sequence carries every route variant's stages (see
-        // routeStageItems), each just tagged hidden for the live-selection
-        // toggle — so without this filter a Transit with 2+ variants (e.g.
-        // New vs. Old Glenn Highway) would mix both routes' via-points into
-        // one link. Prefer whichever tone the reader actually has selected
-        // (selections.routeTones); only fall back to routeInfo's own
-        // default when the caller didn't pass one.
-        const tone = activeRouteTone(item.transit, selections.routeTones);
-        if (item.variant.tone !== tone) continue;
-        const stop = routeStop({ id: item.stage.placeId, label: item.stage.label });
-        if (stop) stops.push(stop);
+      } else if (item.type === 'transit-boundary' || item.type === 'transit-stage') {
+        // A spanning Transit (transitSpansMidnight above) only ever has
+        // half its items land in any one day's sequence — the Depart
+        // boundary (and any pre-midnight stages) on the departure day, the
+        // rest on the next. widenSpanningTransitItems widens out to the
+        // Transit's own full item list the first time any piece of it shows
+        // up in this day's run, so the link this day produces still routes
+        // through every real stop from origin to destination — both the
+        // departure day's and the arrival day's own dayFullRouteStops call
+        // do this independently (each starts with its own fresh
+        // handledSpanningTransitIds), so each day's link ends up complete on
+        // its own; that Set only guards against the same Transit's other
+        // boundary/stage items re-triggering a second, redundant expansion
+        // later in this same day's run.
+        for (const widenedItem of widenSpanningTransitItems(item, handledSpanningTransitIds)) {
+          pushTransitItemStop(stops, widenedItem, selections);
+        }
       } else if (item.type === 'section') {
         for (const activity of item.activities) {
           const place = resolveActivityPlace(activity, selections.mealPlaces);

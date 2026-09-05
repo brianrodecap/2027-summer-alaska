@@ -293,6 +293,12 @@ export interface Activity {
   priority: Priority | null;
   text: string;
   place: Place | null;
+  // Opt-in per entity (not per Place, since the same physical place can show
+  // conditions on one entry but not another), and only meaningful when place
+  // is set — see PlaceConditionsLine. Absent/false is "off"; there's no
+  // separate unset state to distinguish from off.
+  showWeatherAtPlace?: boolean;
+  showElevationAtPlace?: boolean;
   booking: Booking | null;
   mealType: MealType | null;
   diningFormat: DiningFormat | null;
