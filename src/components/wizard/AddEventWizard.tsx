@@ -13,7 +13,9 @@ import {
   blankTransit,
   type EditKind,
   type Entity,
+  findDuplicateMealActivity,
   type MealDecision,
+  mergeMealOptionIntoActivity,
   stayFormFrom,
   type StayFormState,
   transitFormFrom,
@@ -63,6 +65,7 @@ export function AddEventWizard({
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<WizardCategory>('activity');
   const [mealDecision, setMealDecision] = useState<MealDecision>('decided');
+  const [mergeIntoDuplicate, setMergeIntoDuplicate] = useState(true);
 
   const [activityForm, setActivityForm] = useState<ActivityFormState>(() =>
     activityFormFrom(blankActivity(legId, date)),
@@ -78,11 +81,23 @@ export function AddEventWizard({
     () => resolveScenarioDates(scenarios, activities, transits),
     [scenarios, activities, transits],
   );
+  const duplicateMealActivity = useMemo(
+    () =>
+      findDuplicateMealActivity(
+        activities,
+        activityForm.mealType,
+        activityForm.startsDate,
+        activityForm.startsTime,
+      ),
+    [activities, activityForm.mealType, activityForm.startsDate, activityForm.startsTime],
+  );
 
   const stepIds = wizardStepsForCategory(category, {
     mealDecision,
     hasTravelers: tripTravelers.length > 0,
     lead: 'category',
+    duplicateMealActivity,
+    mergeIntoDuplicate,
   });
 
   const ctx: WizardStepContext = {
@@ -90,6 +105,9 @@ export function AddEventWizard({
     onCategoryChange: setCategory,
     mealDecision,
     onMealDecisionChange: setMealDecision,
+    duplicateMealActivity,
+    mergeIntoDuplicate,
+    onMergeIntoDuplicateChange: setMergeIntoDuplicate,
     activityForm,
     onActivityFormChange: setActivityForm,
     stayForm,
@@ -149,6 +167,13 @@ export function AddEventWizard({
     const message = applyActivityForm(entity, activityForm);
     if (message) {
       setError(message);
+      return;
+    }
+    // Merging reuses the duplicate Activity's own id, so onSaveEntity's
+    // upsert (DaysView.tsx) replaces it in place rather than adding entity
+    // as a second, competing Activity.
+    if (category === 'meal' && duplicateMealActivity && mergeIntoDuplicate) {
+      onSaveEntity('activity', mergeMealOptionIntoActivity(duplicateMealActivity, activityForm));
       return;
     }
     onSaveEntity('activity', entity);

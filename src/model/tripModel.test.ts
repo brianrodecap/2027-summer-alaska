@@ -520,6 +520,7 @@ describe('dayMapStops', () => {
     data.stays.push({
       _id: 'test_stay',
       legId: 'leg_test',
+      scenarioId: null,
       checkInAt: '2027-06-01T15:00',
       checkOutAt: '2027-06-05T11:00',
       status: 'planning',

@@ -21,6 +21,7 @@ import {
   ExtrasStep,
   MealBranchStep,
   MealDecisionStep,
+  MealDuplicateStep,
   MealOptionsStep,
   MealPlaceStep,
   MealWhatStep,
@@ -57,6 +58,12 @@ export interface WizardStepContext {
   // filled with throwaway drafts/empty arrays.
   scenarioForm?: Scenario;
   onScenarioFormChange?: (scenario: Scenario) => void;
+  // Only AddEventWizard's 'meal' category ever populates these (see
+  // findDuplicateMealActivity) — EditEventWizard never reaches the
+  // 'mealDuplicate' step, so it has nothing to supply here.
+  duplicateMealActivity?: Activity | null;
+  mergeIntoDuplicate?: boolean;
+  onMergeIntoDuplicateChange?: (merge: boolean) => void;
   stays: Stay[];
   activities: Activity[];
   transits: Transit[];
@@ -152,6 +159,14 @@ export function renderWizardStep(stepId: WizardStepId, ctx: WizardStepContext): 
       return <MealWhatStep form={ctx.activityForm} onChange={ctx.onActivityFormChange} />;
     case 'mealWhen':
       return <ActivityWhenStep form={ctx.activityForm} onChange={ctx.onActivityFormChange} />;
+    case 'mealDuplicate':
+      return (
+        <MealDuplicateStep
+          activity={ctx.duplicateMealActivity!}
+          merge={ctx.mergeIntoDuplicate ?? true}
+          onChange={ctx.onMergeIntoDuplicateChange!}
+        />
+      );
     case 'mealDecision':
       return <MealDecisionStep decision={ctx.mealDecision} onChange={ctx.onMealDecisionChange} />;
     case 'mealPlace':

@@ -40,14 +40,8 @@ import {
   upsertById,
 } from '../model/editForms';
 import { dayHasVisibleContent } from '../model/filters';
-import {
-  applyActivityReorder,
-  applyBlockReorder,
-  applyGroupActivityReorder,
-  applyTransitReorder,
-  type DragMeta,
-} from '../model/reorder';
-import { activitySortKey, formatTime, todayDateStr, transitRouteLabel } from '../model/tripModel';
+import { applyGroupDragEnd, applySingleRowDragEnd, type DragMeta } from '../model/reorder';
+import { formatTime, todayDateStr, transitRouteLabel } from '../model/tripModel';
 import type {
   Activity,
   Day,
@@ -60,6 +54,7 @@ import type {
   Stay,
   Transit,
 } from '../model/types';
+import type { CollectionName } from '../state/TripDataContextObject';
 import { useEdit } from '../state/useEdit';
 import { useTripData } from '../state/useTripData';
 import { useFilterSelection, useRowSelection } from '../state/useTripSelections';
@@ -86,21 +81,20 @@ function useDetailPanel<T extends { _id: string }>(openEdit: (id: string) => voi
   };
 }
 
+// dnd-kit's own `data.current` is typed `unknown` — this just unwraps the
+// `sortable.containerId` it stamps on every row alongside our own DragMeta
+// fields (see SortableData); call sites normalize the result to
+// `string | null` before handing it to reorder.ts. The same-day-vs-cross-day
+// resolution that used to live here (dayOfContainer/preserveOwnTiming) has
+// moved into reorder.ts's own resolveDragEndPlacement, since it's business
+// logic, not dnd-kit wiring — see that function's own comment for the
+// reasoning.
 function containerIdOf(dndData: unknown): unknown {
   return (dndData as { sortable?: { containerId: unknown } } | undefined)?.sortable?.containerId;
 }
 
-// A container's own leading date — DayTimeline.tsx builds a top-level
-// day's containerId as exactly its date ("2027-06-26") and a scenario
-// tab's as `${date}::${scenarioId}`, so splitting on '::' recovers the
-// calendar date either way. Comparing dates (not raw containerId) is what
-// tells a same-day scenario-boundary crossing (reorder.ts's
-// `preserveOwnTiming` — the dragged Activity's own time should carry over
-// untouched) apart from a genuine cross-day move (where landing on the new
-// day's own anchor position, date included, is the entire point of the
-// drag).
-function dayOfContainer(containerId: unknown): string | null {
-  return typeof containerId === 'string' ? containerId.split('::')[0] : null;
+function normalizeContainerId(containerId: unknown): string | null {
+  return typeof containerId === 'string' ? containerId : null;
 }
 
 // The shared chrome every DragOverlay body below renders — only the
@@ -199,12 +193,15 @@ export function DaysView() {
   // instead of every click starting a drag.
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const [draggingMeta, setDraggingMeta] = useState<DragMeta | null>(null);
-  const draggingActivity = draggingMeta?.activityId
-    ? (data?.activities.find((a) => a._id === draggingMeta.activityId) ?? null)
-    : null;
-  const draggingTransit = draggingMeta?.transitId
-    ? (data?.transits.find((t) => t._id === draggingMeta.transitId) ?? null)
-    : null;
+  const draggingSource = draggingMeta?.source ?? null;
+  const draggingActivity =
+    draggingSource?.kind === 'activity'
+      ? (data?.activities.find((a) => a._id === draggingSource.id) ?? null)
+      : null;
+  const draggingTransit =
+    draggingSource?.kind === 'transit'
+      ? (data?.transits.find((t) => t._id === draggingSource.id) ?? null)
+      : null;
   // The DragOverlay's own "N items" chip count — a multi-select of more
   // than one row (of any kind: a plain Activity, a Transit's Depart row, or
   // a whole scenario-tabs bundle; see RowSelectionValue) takes priority
@@ -212,165 +209,66 @@ export function DaysView() {
   // once handleDragEnd's group branch commits, so this can be derived
   // straight from current state rather than snapshotted at drag-start);
   // otherwise a lone scenario-tabs drag shows its own bundle size.
-  // draggingMeta's activityId/transitId/scenarioGroup are mutually
-  // exclusive per row, so falling back to scenarioGroup here never masks a
-  // single Activity/Transit drag.
+  // draggingMeta.source is a tagged union naming exactly one kind, so
+  // falling back to its 'scenario-group' case here never masks a single
+  // Activity/Transit drag.
   const draggingItemCount =
     draggingMeta?.id && selection && selection.rows.has(draggingMeta.id) && selection.rows.size > 1
       ? selection.rows.size
-      : draggingMeta?.scenarioGroup
-        ? draggingMeta.scenarioGroup.activityIds.length +
-          draggingMeta.scenarioGroup.transitIds.length
+      : draggingMeta?.source?.kind === 'scenario-group'
+        ? draggingMeta.source.members.activityIds.length +
+          draggingMeta.source.members.transitIds.length
         : null;
 
   const handleDragStart = (event: DragStartEvent) => {
     setDraggingMeta((event.active.data.current as DragMeta | undefined) ?? null);
   };
 
-  // Only onDragEnd is handled — see reorder.ts's own note on why this
-  // skips live cross-container reflow. Dropping directly onto a row is
-  // read as "insert immediately after this row" when the drag moved the
-  // Activity later (down past its own start), but dnd-kit's own `over`
-  // never distinguishes "onto, meaning before" from "onto, meaning after" —
-  // it just names whichever row the pointer is over. Comparing
-  // `activeMeta`'s own index (its position before the drag) against
-  // `overMeta`'s is what tells the two apart: dragging upward past a row
-  // means the intent was to land before it, so the row's own `before`
-  // field (reorder.ts's DragMeta) is used instead of its plain fields.
-  //
-  // That index comparison is only meaningful within one buildDragMeta call,
-  // though — each rendered Timeline (the top-level day, and each scenario
-  // tab) builds its own DragMeta array with its own 0-based `index`, so
-  // comparing indices across two different ones is comparing unrelated
-  // numbers. `@dnd-kit/sortable`'s useSortable stamps every row's
-  // `data.current` with its own `sortable.containerId` alongside our
-  // DragMeta fields (see its SortableData type) — that, not our own
-  // `index`, is what actually identifies which rendered Timeline a row
-  // belongs to, so it's what detects a drag that crossed from one into
-  // another. applyActivityReorder needs to know this: without it, a
-  // same-day cross-container drop still resolves to some row's plain
-  // DragMeta and forces the dragged Activity onto that row's own instant
-  // regardless of duration, which is exactly how dragging an Activity out
-  // of a scenario tab used to scramble its displayed time. A drop that
-  // crosses onto a *different calendar day* is deliberately NOT treated
-  // this way — see `dayOfContainer`/`preserveOwnTiming` below — since
-  // relocating onto the new day's own real anchor timestamp (date
-  // included) is the entire point of that drag, not something to guard
-  // against the way an ambiguous same-day "before vs. after" is.
+  // A thin dispatcher — the actual drag/direction/timing resolution
+  // (movingUp, preserveOwnTiming, dropMeta) and the dispatch onto the right
+  // applyXReorder now live in reorder.ts's own applySingleRowDragEnd/
+  // applyGroupDragEnd (see their own comments for the Homer-Spit/same-day-
+  // vs-cross-day reasoning); this just unwraps dnd-kit's event, decides
+  // single-row vs. multi-select, and commits the result via setData.
   const handleDragEnd = (event: DragEndEvent) => {
     setDraggingMeta(null);
     const { active, over } = event;
-    if (!over || active.id === over.id) return;
+    if (!over || active.id === over.id || !data) return;
     const activeMeta = active.data.current as DragMeta | undefined;
     const overMeta = over.data.current as DragMeta | undefined;
     if (!activeMeta || !overMeta) return;
-    const activeContainerId = containerIdOf(active.data.current);
-    const overContainerId = containerIdOf(over.data.current);
-    const containerChanged = activeContainerId !== overContainerId;
-    // Only a same-day container crossing should leave the dragged
-    // Activity's own time untouched (reorder.ts's `preserveOwnTiming`) — a
-    // containerChanged drop that also lands on a different calendar day
-    // needs the normal takeover so the destination day's own anchor
-    // timestamp (and therefore the new date) actually applies.
-    const preserveOwnTiming =
-      containerChanged && dayOfContainer(activeContainerId) === dayOfContainer(overContainerId);
-    const movingUp = !containerChanged && activeMeta.index > overMeta.index;
-    const dropMeta: DragMeta =
-      movingUp && overMeta.before ? { ...overMeta, ...overMeta.before } : overMeta;
-    const dayStart = dropMeta.containerDayStart;
+    const activeContainerId = normalizeContainerId(containerIdOf(active.data.current));
+    const overContainerId = normalizeContainerId(containerIdOf(over.data.current));
 
     // A drag of a row that's itself part of a real (>1) multi-select moves
     // every selected row together, regardless of container or day — takes
-    // priority over the single-row branches below. Dragging some other,
+    // priority over the single-row case below. Dragging some other,
     // unselected row while a selection exists elsewhere still falls through
-    // to those (a normal single-row drag; the selection is left untouched).
-    if (selection && selection.rows.has(activeMeta.id) && selection.rows.size > 1 && data) {
+    // to that (a normal single-row drag; the selection is left untouched).
+    if (selection && selection.rows.has(activeMeta.id) && selection.rows.size > 1) {
       const rows = [...selection.rows.values()];
-      // A selection made up entirely of plain Activity rows keeps the
-      // original insertion-chaining behavior (applyGroupActivityReorder,
-      // each member anchored right after the previous one) — this is
-      // established, tested behavior, unchanged from before mixed
-      // selections existed. A selection that includes a Transit row and/or
-      // a scenario-group bundle instead moves as one rigid formation
-      // (applyBlockReorder — every member shifted by the same delta,
-      // preserving each member's own offset from the rest of the group),
-      // since that's the only sensible way to keep e.g. a scenario's own
-      // Depart/Arrive/Activities and a plain Activity selected alongside it
-      // (a dinner right after) in the same relative arrangement on drop.
-      const isPureActivitySelection = rows.every(
-        (row) => row.members.transitIds.length === 0 && row.members.activityIds.length === 1,
+      const result = applyGroupDragEnd(
+        data,
+        activeMeta,
+        overMeta,
+        activeContainerId,
+        overContainerId,
+        rows,
       );
-      if (isPureActivitySelection) {
-        const originContainerByActivityId = new Map(
-          rows.map((row) => [row.members.activityIds[0], row.containerId]),
-        );
-        const groupIds = data.activities
-          .filter((a) => originContainerByActivityId.has(a._id))
-          .sort((a, b) => activitySortKey(a, dayStart).localeCompare(activitySortKey(b, dayStart)))
-          .map((a) => a._id);
-        // Each group member's own origin container may differ from the row
-        // that was actually dragged (a multi-day selection) — so whether a
-        // given member's own drop should preserve its own timing has to be
-        // asked per Activity, against that Activity's own recorded origin
-        // day, rather than reusing the single `preserveOwnTiming` flag
-        // derived from just the dragged row above.
-        setData(
-          (prev) =>
-            applyGroupActivityReorder(prev, dropMeta, groupIds, dayStart, (id) => {
-              const originContainerId = originContainerByActivityId.get(id);
-              return (
-                originContainerId !== overContainerId &&
-                dayOfContainer(originContainerId) === dayOfContainer(overContainerId)
-              );
-            }),
-          ['activities'],
-        );
-      } else {
-        const activityIds = new Set<string>();
-        const transitIds = new Set<string>();
-        for (const row of rows) {
-          row.members.activityIds.forEach((id) => activityIds.add(id));
-          row.members.transitIds.forEach((id) => transitIds.add(id));
-        }
-        setData(
-          (prev) =>
-            applyBlockReorder(
-              prev,
-              dropMeta,
-              { activityIds: [...activityIds], transitIds: [...transitIds] },
-              dayStart,
-            ),
-          ['activities', 'transits'],
-        );
-      }
+      setData(() => result.data, result.collections as CollectionName[]);
       clearRowSelection();
       return;
     }
 
-    if (activeMeta.scenarioGroup) {
-      const members = activeMeta.scenarioGroup;
-      setData(
-        (prev) => applyBlockReorder(prev, dropMeta, members, dayStart),
-        ['activities', 'transits'],
-      );
-      return;
-    }
-
-    if (activeMeta.transitId) {
-      const transitId = activeMeta.transitId;
-      setData(
-        (prev) => applyTransitReorder(prev, dropMeta, transitId, dayStart, preserveOwnTiming),
-        ['transits'],
-      );
-      return;
-    }
-
-    if (!activeMeta.activityId) return;
-    const activityId = activeMeta.activityId;
-    setData(
-      (prev) => applyActivityReorder(prev, dropMeta, activityId, dayStart, preserveOwnTiming),
-      ['activities'],
+    const result = applySingleRowDragEnd(
+      data,
+      activeMeta,
+      overMeta,
+      activeContainerId,
+      overContainerId,
     );
+    if (!result) return;
+    setData(() => result.data, result.collections as CollectionName[]);
   };
 
   if (!view) return null;
@@ -555,7 +453,12 @@ export function DaysView() {
             setData(
               (prev) => ({
                 ...prev,
-                [collection]: [...(prev[collection] as (Activity | Stay | Transit)[]), entity],
+                // Upsert rather than a plain append — a brand-new entity's id
+                // is never already present, but merging a duplicate meal into
+                // an existing Activity (see AddEventWizard's meal-duplicate
+                // step) reuses that Activity's own id and needs to replace it
+                // in place instead of adding a second copy.
+                [collection]: upsertById(prev[collection] as (Activity | Stay | Transit)[], entity),
               }),
               [collection],
             );

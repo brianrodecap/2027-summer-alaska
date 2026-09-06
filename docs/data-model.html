@@ -838,6 +838,9 @@
         <pre class="schema"><code>{
   _id: 'stay_talkeetna',
   legId: 'leg_parks',
+  scenarioId: null,        // set when this lodging only exists on one Scenario
+                            // branch — e.g. a short-day-to-Talkeetna alternate
+                            // whose overnight the long-drive-day branch skips
   checkInAt:  '2027-06-26T15:00',
   checkOutAt: '2027-06-28T11:00',
   status: 'active',           // planning | active | completed | cancelled
@@ -854,6 +857,7 @@
         <pre class="schema"><code>{
   _id: 'stay_cruise',
   legId: 'leg_cruise',
+  scenarioId: null,
   checkInAt:  '2027-07-17T15:00',
   checkOutAt: '2027-07-24T07:30',
   status: 'planning',
@@ -913,6 +917,7 @@
         <pre class="schema"><code>{
   _id: 'stay_lc_katmai',
   legId: 'leg_parks',
+  scenarioId: null,
   checkInAt: '2027-07-12T00:00', checkOutAt: '2027-07-17T00:00',
   status: 'planning',
   lodging: null,
@@ -923,6 +928,7 @@
         <pre class="schema"><code>{
   _id: 'stay_pullout_camp',
   legId: 'leg_parks',
+  scenarioId: null,
   checkInAt: '2027-07-06T21:00', checkOutAt: '2027-07-07T07:00',
   status: 'planning',
   lodging: { placeId: null, name: 'Roadside pullout, Denali Highway' },
@@ -936,6 +942,7 @@
         <pre class="schema"><code>{
   _id: 'stay_example_scorpion',
   legId: 'leg_example',
+  scenarioId: null,
   checkInAt:  '2026-06-22T12:00',
   checkOutAt: '2026-06-23T11:00',
   status: 'planning',
@@ -955,6 +962,7 @@
         <pre class="schema"><code>{
   _id: 'stay_example_pacific',
   legId: 'leg_example',
+  scenarioId: null,
   checkInAt:  '2026-06-17T16:00',
   checkOutAt: '2026-06-19T11:00',
   status: 'planning',
@@ -982,6 +990,16 @@
           <li>
             <strong>checkInAt/checkOutAt are real timestamps</strong>, not dates — check-in is 3pm,
             checkout is 11am, rarely midnight.
+          </li>
+          <li>
+            <strong>scenarioId is the same reference <code>Activity</code>/<code>Transit</code>
+            already carry</strong>, added once a branching day needed two different overnights
+            instead of two different events — e.g. a long-drive-day branch that reaches its
+            lodging that same night versus a short-day branch that overnights somewhere short of
+            it first. Its own checkInAt/checkOutAt stay real, authored booking facts either way;
+            only which Scenario branch it belongs to is what this field answers. <code>null</code>
+            for the (overwhelmingly common) Stay every branch, or no branching day at all, agrees
+            on.
           </li>
           <li>
             <strong>lodging mirrors the Place reference pattern</strong> (external id + label) plus

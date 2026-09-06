@@ -67,6 +67,7 @@ export function blankStay(legId: string, date: string): Stay {
   return {
     _id: crypto.randomUUID(),
     legId,
+    scenarioId: null,
     checkInAt: `${date}T15:00`,
     checkOutAt: `${date}T15:00`,
     status: 'planning',
@@ -173,6 +174,74 @@ export function blankMealOption(): MealOption {
   };
 }
 
+// The date an Activity falls on, however it's timed — shared by
+// includedInOptions, activityFormFrom, and duplicate-meal matching so all
+// three agree on which day a fuzzy-timeLabel activity shows up under.
+function activityDateOnly(activity: Activity): string | null {
+  return activity.startAt ? dateOnly(activity.startAt) : activity.date;
+}
+
+// Finds an existing Activity that the wizard's in-progress meal would
+// otherwise sit alongside as an unmodeled duplicate — breakfast/lunch/dinner
+// match on day + meal type alone (any two Lunches that day are the same
+// undecided lunch, whatever time each was given); a Snack only matches an
+// exact same startAt, since snacks are looser and more frequent than a
+// day's three main meals, so same-day-and-type alone would over-match.
+export function findDuplicateMealActivity(
+  activities: Activity[],
+  mealType: MealType | '',
+  startsDate: string | null,
+  startsTime: string | null,
+): Activity | null {
+  if (!mealType || !startsDate) return null;
+  if (mealType === 'snack') {
+    if (!startsTime) return null;
+    const startAt = `${startsDate}T${startsTime}`;
+    return activities.find((a) => a.mealType === 'snack' && a.startAt === startAt) ?? null;
+  }
+  return (
+    activities.find((a) => a.mealType === mealType && activityDateOnly(a) === startsDate) ?? null
+  );
+}
+
+// Folds the wizard's in-progress "decided" meal fields into `duplicate` as
+// one more MealOption, instead of letting it become a second, competing
+// Activity. If `duplicate` isn't already undecided, its own decided
+// place/diningFormat/includedIn/booking become candidate zero first — same
+// "promote to a candidate" shape applyActivityForm already uses in reverse
+// when a form's options list empties back out.
+function toMealOption(fields: Omit<MealOption, '_id'>): MealOption {
+  return { _id: crypto.randomUUID(), ...fields };
+}
+
+export function mergeMealOptionIntoActivity(
+  duplicate: Activity,
+  form: ActivityFormState,
+): Activity {
+  const merged = structuredClone(duplicate);
+  const newOption = toMealOption({
+    diningFormat: form.diningFormat || 'sit-down',
+    place: form.place,
+    includedIn: form.includedIn,
+    booking: readBookingFormValue(form.booking, null),
+  });
+  if (merged.options?.length) {
+    merged.options = [...merged.options, newOption];
+  } else {
+    const existingOption = toMealOption({
+      diningFormat: merged.diningFormat ?? 'sit-down',
+      place: merged.place,
+      includedIn: merged.includedIn,
+      booking: merged.booking,
+    });
+    merged.options = [existingOption, newOption];
+    merged.place = null;
+    merged.diningFormat = null;
+    merged.includedIn = null;
+  }
+  return merged;
+}
+
 // The only diningFormat values whose meaning actually depends on an
 // includedIn ref — the same set includedInOptions below branches on, shared
 // so every includedIn-showing form (the single-choice ActivityEditForm path
@@ -221,7 +290,7 @@ export function includedInOptions(
   } else if (diningFormat === 'included-with-activity') {
     for (const activity of activities) {
       if (activity.mealType) continue;
-      const date = activity.startAt ? dateOnly(activity.startAt) : activity.date;
+      const date = activityDateOnly(activity);
       if (date == null) continue;
       options.push({
         value: `activity:${activity._id}`,
@@ -280,7 +349,7 @@ export interface ActivityFormState {
 // Starts' date field carries activity.date when there's no startAt — the
 // only way a fuzzy-timeLabel activity's date ever reaches the form at all.
 export function activityFormFrom(activity: Activity): ActivityFormState {
-  const startsDate = activity.startAt ? dateOnly(activity.startAt) : (activity.date ?? null);
+  const startsDate = activityDateOnly(activity);
   const startsTime = activity.startAt ? activity.startAt.slice(11, 16) : null;
   return {
     startsDate,
@@ -608,14 +677,14 @@ export function applyScenarioForm(
 // tripModel.ts's buildScenarioTracks only ever builds a track for a
 // scenarioId still present in scenariosById (see its own top-of-function
 // comment) — and day.sequence is built from everything *without* a
-// scenarioId. So an Activity/Transit left pointing at a deleted scenario
+// scenarioId. So a Stay/Activity/Transit left pointing at a deleted scenario
 // doesn't fall back into the day's plain sequence, it silently stops
 // rendering anywhere. Deleting a scenario therefore has to clear that
-// scenarioId back to null on every Activity/Transit that carried it (same
-// fail-closed spirit applyScenarioForm already applies to
+// scenarioId back to null on every Stay/Activity/Transit that carried it
+// (same fail-closed spirit applyScenarioForm already applies to
 // requires/parentScenarioId above), not just remove the scenario itself.
 export function applyScenarioDeletion<
-  T extends { scenarios: Scenario[]; activities: Activity[]; transits: Transit[] },
+  T extends { scenarios: Scenario[]; stays: Stay[]; activities: Activity[]; transits: Transit[] },
 >(data: T, scenarioId: string): T {
   return {
     ...data,
@@ -640,6 +709,7 @@ export function applyScenarioDeletion<
           followsScenarioId,
         };
       }),
+    stays: data.stays.map((s) => (s.scenarioId === scenarioId ? { ...s, scenarioId: null } : s)),
     activities: data.activities.map((a) =>
       a.scenarioId === scenarioId ? { ...a, scenarioId: null } : a,
     ),
@@ -803,6 +873,7 @@ export type WizardStepId =
   | 'extras'
   | 'mealWhat'
   | 'mealWhen'
+  | 'mealDuplicate'
   | 'mealDecision'
   | 'mealPlace'
   | 'mealOptions'
@@ -824,6 +895,7 @@ export const WIZARD_STEP_LABEL: Record<WizardStepId, string> = {
   extras: 'A few more details',
   mealWhat: 'What meal?',
   mealWhen: 'When',
+  mealDuplicate: 'Already planned?',
   mealDecision: 'Do you know where yet?',
   mealPlace: 'Where',
   mealOptions: 'The candidates',
@@ -844,6 +916,8 @@ export const WIZARD_STEP_TIP: Partial<Record<WizardStepId, string>> = {
   activityWhen: 'No exact time yet? Leave Starts time blank and pick a fuzzy time of day instead.',
   activityPlace: "Leave this blank if there's no specific real-world location.",
   mealWhen: 'No exact time yet? Leave Starts time blank and pick a fuzzy time of day instead.',
+  mealDuplicate:
+    'Merging keeps every candidate as one switchable set of choices instead of two entries that look like they overlap.',
   mealDecision:
     'Still choosing between a few restaurants? Say so — you can list every candidate next.',
   mealOptions: "Add every place still in the running; each gets its own tab on the day's list.",
@@ -864,6 +938,11 @@ export function wizardStepsForCategory(
     mealDecision: MealDecision;
     hasTravelers: boolean;
     lead: 'category' | 'mealBranch' | null;
+    // Only AddEventWizard ever has a duplicate to find (see
+    // findDuplicateMealActivity) — EditEventWizard leaves both unset, which
+    // reads the same as "no duplicate found".
+    duplicateMealActivity?: Activity | null;
+    mergeIntoDuplicate?: boolean;
   },
 ): WizardStepId[] {
   const lead: WizardStepId[] = opts.lead ? [opts.lead] : [];
@@ -883,17 +962,28 @@ export function wizardStepsForCategory(
         'booking',
         'review',
       ];
-    case 'meal':
+    case 'meal': {
+      const duplicateStep: WizardStepId[] = opts.duplicateMealActivity ? ['mealDuplicate'] : [];
+      // Merging folds the in-progress form straight into the existing
+      // Activity as one more candidate (mergeMealOptionIntoActivity) — the
+      // decided/undecided branch and its own candidate list don't apply,
+      // since this meal's "still deciding among a few" state already lives
+      // on the Activity being merged into.
+      const decisionSteps: WizardStepId[] =
+        opts.duplicateMealActivity && opts.mergeIntoDuplicate
+          ? ['mealPlace']
+          : ['mealDecision', opts.mealDecision === 'decided' ? 'mealPlace' : 'mealOptions'];
       return [
         ...lead,
         'mealWhat',
         'mealWhen',
-        'mealDecision',
-        opts.mealDecision === 'decided' ? 'mealPlace' : 'mealOptions',
+        ...duplicateStep,
+        ...decisionSteps,
         ...extras,
         'booking',
         'review',
       ];
+    }
     case 'scenario':
       return [...lead, 'scenarioDetails', 'review'];
   }

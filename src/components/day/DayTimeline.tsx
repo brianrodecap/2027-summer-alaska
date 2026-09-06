@@ -23,7 +23,13 @@ import {
 import { filterSequenceItems } from '../../model/filters';
 import { firstImage, stayDetailBits } from '../../model/formatting';
 import { activeMealOptions, selectedMealOptionIndex } from '../../model/mealOptions';
-import { buildDragMeta, type DragMeta, scenarioTabsDragId } from '../../model/reorder';
+import {
+  beforeScenarioSplitDragId,
+  buildDragMeta,
+  type DragMeta,
+  rowMembersOf,
+  scenarioTabsDragId,
+} from '../../model/reorder';
 import {
   activeRouteTone,
   formatTime,
@@ -213,11 +219,15 @@ const StayNode = memo(function StayNode({
   date,
   isLast,
   onOpen,
+  dragHandle,
+  selected,
 }: {
   item: StaySequenceItem;
   date: string;
   isLast: boolean;
   onOpen: (stay: EnrichedStay) => void;
+  dragHandle?: ReactNode;
+  selected?: boolean;
 }) {
   const { stay } = item;
   const name = stay.lodging?.name ?? 'Lodging still open';
@@ -235,6 +245,8 @@ const StayNode = memo(function StayNode({
         )
       }
       isLast={isLast}
+      dragHandle={dragHandle}
+      selected={selected}
       trailing={
         <RowMenu
           entity="stay"
@@ -591,6 +603,26 @@ const EmptyDropZone = memo(function EmptyDropZone({
   );
 });
 
+// The one droppable row a container needs when it has nothing real
+// preceding its own scenario-tabs split (reorder.ts's own note on
+// beforeScenarioSplitDragId/realAnchorIdx) — a branch whose entire content
+// is one nested scenario-tabs split would otherwise have zero droppable
+// rows, since the scenario-tabs row itself never is one. Kept visually
+// minimal, unlike EmptyDropZone's dashed box: this container isn't actually
+// empty, it just has nothing to fall back to for a drop meant to land right
+// before the split.
+const ScenarioSplitDropSpacer = memo(function ScenarioSplitDropSpacer({
+  isLast,
+}: {
+  isLast: boolean;
+}) {
+  return (
+    <TimelineRow dot={<RowLeadingDot icon={null} />} isLast={isLast} contentSx={{ pb: 1 }}>
+      <Box sx={{ height: 4 }} />
+    </TimelineRow>
+  );
+});
+
 export const DayTimeline = memo(function DayTimeline({
   day,
   sequence,
@@ -623,10 +655,12 @@ export const DayTimeline = memo(function DayTimeline({
   );
   const { selection, toggleRowSelection } = useRowSelection();
 
-  // Safe to run unconditionally at every level — a scenario track's own
-  // sequence never contains a 'stay' item (Stay never branches), so this is
-  // a no-op there; only the top-level day.sequence actually has boundaries
-  // to pull out.
+  // Safe to run unconditionally at every level — a scenario track whose own
+  // branch carries no scenario-scoped Stay has nothing for this to touch, so
+  // it's a no-op there, same as the top-level day.sequence case; a branch
+  // that does carry one (Stay.scenarioId) gets its own Check-in/Check-out
+  // pulled to the front/back of that branch's own timeline exactly like the
+  // top level's.
   const flattened = useMemo(() => {
     const { checkOuts, rest, checkIns } = splitOutStayBoundaries(filtered);
     return [...checkOuts, ...rest, ...checkIns];
@@ -662,7 +696,7 @@ export const DayTimeline = memo(function DayTimeline({
       containerDayStart: dayStart,
       legId: day.leg._id,
       scenarioId,
-      activityId: null,
+      source: null,
       anchorEntityId: null,
       kind: 'after',
     };
@@ -699,14 +733,26 @@ export const DayTimeline = memo(function DayTimeline({
       // every night under one shared DndContext (DaysView.tsx), and `i` alone
       // can collide across different days' rows.
       const dragId = `stay-${item.stay._id}-${day.date}`;
+      // Only Check-in is a drag source (mirrors Transit's Depart-row-is-the-
+      // handle convention) — dropping it onto a scenario tab (or back out to
+      // the top-level day) reassigns the whole Stay's scenarioId, same as
+      // dragging any other row into/out of a branch. See applyStayReorder.
+      const draggable = item.relation === 'Check in';
       return [
         {
           key: dragId,
           dragId,
-          draggable: false,
+          draggable,
           droppable: true,
-          render: (isLast: boolean) => (
-            <StayNode item={item} date={day.date} isLast={isLast} onOpen={onOpenStay} />
+          render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => (
+            <StayNode
+              item={item}
+              date={day.date}
+              isLast={isLast}
+              onOpen={onOpenStay}
+              dragHandle={draggable ? dragHandle : undefined}
+              selected={draggable ? selected : undefined}
+            />
           ),
         },
       ];
@@ -770,28 +816,48 @@ export const DayTimeline = memo(function DayTimeline({
     // (DaysView.tsx) and a bare local index collides across different days'
     // (or a nested group's own) scenario-tabs rows.
     const scenarioDragId = scenarioTabsDragId(dayStart, scenarioId, i);
-    return [
-      {
-        key: scenarioDragId,
-        dragId: scenarioDragId,
-        draggable: true,
-        droppable: false,
-        render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => (
-          <ScenarioTabsNode
-            day={day}
-            tracks={item.tracks ?? day.scenarioTracks}
-            topLevel={!item.tracks}
-            isLast={isLast}
-            daysByDate={daysByDate}
-            onOpenActivity={onOpenActivity}
-            onOpenStay={onOpenStay}
-            onOpenTransit={onOpenTransit}
-            dragHandle={dragHandle}
-            selected={selected}
-          />
-        ),
-      },
-    ];
+    const scenarioNode: DayTimelineNode = {
+      key: scenarioDragId,
+      dragId: scenarioDragId,
+      draggable: true,
+      droppable: false,
+      render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => (
+        <ScenarioTabsNode
+          day={day}
+          tracks={item.tracks ?? day.scenarioTracks}
+          topLevel={!item.tracks}
+          isLast={isLast}
+          daysByDate={daysByDate}
+          onOpenActivity={onOpenActivity}
+          onOpenStay={onOpenStay}
+          onOpenTransit={onOpenTransit}
+          dragHandle={dragHandle}
+          selected={selected}
+        />
+      ),
+    };
+    // buildDragMeta (reorder.ts) already decided whether this container has
+    // nothing real preceding this split — that's exactly when it emits a
+    // beforeScenarioSplitDragId entry alongside the scenario-tabs one, so
+    // rather than re-detecting the same condition here, just check whether
+    // its id is present. A branch whose entire content is one nested
+    // scenario-tabs split would otherwise have zero droppable rows, since
+    // this scenario-tabs row never is one itself; this spacer is the one
+    // droppable anchor that case needs.
+    const spacerId = beforeScenarioSplitDragId(scenarioDragId);
+    if (dragMetaById.has(spacerId)) {
+      return [
+        {
+          key: spacerId,
+          dragId: spacerId,
+          draggable: false,
+          droppable: true,
+          render: (isLast: boolean) => <ScenarioSplitDropSpacer isLast={isLast} />,
+        },
+        scenarioNode,
+      ];
+    }
+    return [scenarioNode];
   });
 
   // A 'Staying' night (relation 'Staying') is lodging that bookends the
@@ -849,14 +915,9 @@ export const DayTimeline = memo(function DayTimeline({
           const isSelected = Boolean(meta && isRowSelected(selection, meta.id));
           // What this row itself contributes to a group drag: the whole
           // bundle for a scenario-tabs row, or its own single id for a
-          // plain Activity/Transit row — see RowSelectionMembers' own note
-          // in TripSelectionsContextObject.ts.
-          const rowMembers: RowSelectionMembers | null = meta
-            ? (meta.scenarioGroup ?? {
-                activityIds: meta.activityId ? [meta.activityId] : [],
-                transitIds: meta.transitId ? [meta.transitId] : [],
-              })
-            : null;
+          // plain Activity/Transit/Stay row — see RowSelectionMembers' own
+          // note in TripSelectionsContextObject.ts.
+          const rowMembers: RowSelectionMembers | null = meta ? rowMembersOf(meta) : null;
           return (
             <Fragment key={node.key}>
               {node.dragId ? (

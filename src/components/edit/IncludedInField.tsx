@@ -40,7 +40,8 @@ export function IncludedInField({
     requestAnimationFrame(() => {
       const dates = [...groupRefs.current.keys()].sort();
       const target = dates.find((d) => d >= jumpToDate) ?? dates.at(-1);
-      if (target) groupRefs.current.get(target)?.scrollIntoView({ block: 'start' });
+      if (target)
+        groupRefs.current.get(target)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
     });
   };
 

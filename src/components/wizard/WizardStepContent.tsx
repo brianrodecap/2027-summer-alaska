@@ -466,6 +466,46 @@ export function MealWhatStep({
   );
 }
 
+// Shown only when findDuplicateMealActivity (editForms.ts) has already found
+// a same-day, same-meal-type Activity — offers to fold this in-progress meal
+// into that one's options instead of letting it become a second, competing
+// Activity (see mergeMealOptionIntoActivity).
+export function MealDuplicateStep({
+  activity,
+  merge,
+  onChange,
+}: {
+  activity: Activity;
+  merge: boolean;
+  onChange: (merge: boolean) => void;
+}) {
+  return (
+    <Stack spacing={2}>
+      <Typography variant="body2" color="text.secondary">
+        There's already a {activity.mealType} on this day: <strong>{activity.text}</strong>
+        {activity.startAt ? ` (${formatTime(activity.startAt)})` : ''}.
+      </Typography>
+      <ChoiceCards
+        options={[
+          {
+            value: 'merge' as const,
+            label: `Add as another option for "${activity.text}"`,
+            helper:
+              'Both show up as switchable choices on one row instead of two separate entries.',
+          },
+          {
+            value: 'separate' as const,
+            label: 'Keep this as a separate item',
+            helper: "They're genuinely two different things, even though they share a meal type.",
+          },
+        ]}
+        value={merge ? 'merge' : 'separate'}
+        onChange={(v) => onChange(v === 'merge')}
+      />
+    </Stack>
+  );
+}
+
 export function MealDecisionStep({
   decision,
   onChange,

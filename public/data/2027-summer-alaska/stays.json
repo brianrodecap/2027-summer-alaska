@@ -2,6 +2,7 @@
   {
     "_id": "stay_talkeetna",
     "legId": "leg_parks",
+    "scenarioId": null,
     "checkInAt": "2027-06-27T15:00",
     "checkOutAt": "2027-06-28T11:00",
     "status": "planning",
@@ -23,6 +24,7 @@
   {
     "_id": "stay_westmark_fbx_1",
     "legId": "leg_parks",
+    "scenarioId": null,
     "checkInAt": "2027-06-28T15:00",
     "checkOutAt": "2027-06-29T11:00",
     "status": "planning",
@@ -50,6 +52,7 @@
   {
     "_id": "stay_coldfoot",
     "legId": "leg_parks",
+    "scenarioId": null,
     "checkInAt": "2027-06-29T15:00",
     "checkOutAt": "2027-07-01T11:00",
     "status": "planning",
@@ -77,6 +80,7 @@
   {
     "_id": "stay_westmark_fbx_2",
     "legId": "leg_parks",
+    "scenarioId": null,
     "checkInAt": "2027-07-01T15:00",
     "checkOutAt": "2027-07-02T11:00",
     "status": "planning",
@@ -104,6 +108,7 @@
   {
     "_id": "stay_copper_river",
     "legId": "leg_parks",
+    "scenarioId": null,
     "checkInAt": "2027-07-02T15:00",
     "checkOutAt": "2027-07-03T11:00",
     "status": "planning",
@@ -131,6 +136,7 @@
   {
     "_id": "stay_kennicott",
     "legId": "leg_parks",
+    "scenarioId": null,
     "checkInAt": "2027-07-03T15:00",
     "checkOutAt": "2027-07-05T11:00",
     "status": "planning",
@@ -171,6 +177,7 @@
   {
     "_id": "stay_anchorage_1",
     "legId": "leg_parks",
+    "scenarioId": null,
     "checkInAt": "2027-07-07T15:00",
     "checkOutAt": "2027-07-08T11:00",
     "status": "planning",
@@ -192,6 +199,7 @@
   {
     "_id": "stay_kotzebue",
     "legId": "leg_parks",
+    "scenarioId": null,
     "checkInAt": "2027-07-08T11:00",
     "checkOutAt": "2027-07-10T11:00",
     "status": "planning",
@@ -213,6 +221,7 @@
   {
     "_id": "stay_anchorage_2",
     "legId": "leg_parks",
+    "scenarioId": null,
     "checkInAt": "2027-07-10T15:00",
     "checkOutAt": "2027-07-17T11:00",
     "status": "planning",
@@ -234,6 +243,7 @@
   {
     "_id": "stay_cruise",
     "legId": "leg_cruise",
+    "scenarioId": null,
     "checkInAt": "2027-07-17T15:00",
     "checkOutAt": "2027-07-24T07:30",
     "status": "planning",

@@ -627,15 +627,15 @@ export function stayRelation(stay: Stay, date: string): StayRelation {
 // check-out events, Transits, and Activities by real timestamp, then
 // re-collapse consecutive Activities into one list-worthy section.
 //
-// Only Activity and Transit carry scenarioId (Stay never branches — see
-// data-model.html's Transit entity for why scenarioId was added there too).
-// day.sequence is built from everything *without* a scenarioId — Stay events
-// plus any non-branching Activity/Transit — so it's the material that's true
-// regardless of which branch happens; day.scenarioTracks holds one entry per
-// distinct scenario present today (in scenarios.json's own declared order),
-// each with just that branch's own Transits/Activities. In the current data
-// no day mixes a scenario-less Activity with a scenario-tagged one, so a
-// branching day's backbone reduces to Stay events only.
+// Activity, Transit, and Stay can all carry scenarioId (see data-model.html's
+// Transit entity for why scenarioId was added there, and Stay's own entry
+// for why it followed — a branching day can need two different overnights,
+// not just two different events). day.sequence is built from everything
+// *without* a scenarioId — Stay/Transit/Activity events every branch shares
+// — so it's the material that's true regardless of which branch happens;
+// day.scenarioTracks holds one entry per distinct scenario present today (in
+// scenarios.json's own declared order), each with just that branch's own
+// Stays/Transits/Activities.
 //
 // A Stay with no check-in/check-out event today (already occupied, or
 // occupied for the rest of the day) has no instant to sort by — it's
@@ -709,6 +709,20 @@ function stayEventKey(stay: Stay, relation: StayRelation, dayStart: string): str
   if (relation === 'Check out') return stay.checkOutAt;
   if (relation === 'Staying') return dayStart;
   return stay.checkInAt; // 'Check in' or 'Overnight' both anchor on arrival
+}
+
+// Shared by buildSequence and buildScenarioTracks's trackOwnItems/realOwnKey
+// below — each just needs a differently-filtered subset of dayStays (no
+// scenarioId, or one particular scenarioId) turned into keyed stay items.
+function stayEventItems(
+  stays: EnrichedStay[],
+  date: string,
+  dayStart: string,
+): { type: 'stay'; stay: EnrichedStay; relation: StayRelation; key: string }[] {
+  return stays.map((stay) => {
+    const relation = stayRelation(stay, date);
+    return { type: 'stay' as const, stay, relation, key: stayEventKey(stay, relation, dayStart) };
+  });
 }
 
 function transitSortKey(transit: Transit, dayStart: string): string {
@@ -1077,10 +1091,11 @@ function buildSequence(
   scenarioAnchorKey: string | null,
 ): SequenceItem[] {
   const items: PreSequenceItem[] = [
-    ...dayStays.map((stay) => {
-      const relation = stayRelation(stay, date);
-      return { type: 'stay' as const, stay, relation, key: stayEventKey(stay, relation, dayStart) };
-    }),
+    ...stayEventItems(
+      dayStays.filter((stay) => !stay.scenarioId),
+      date,
+      dayStart,
+    ),
     ...transitsForSequence
       .filter((t) => !t.scenarioId)
       .flatMap((transit) => transitItemsOnDate(transit, date)),
@@ -1107,6 +1122,7 @@ function buildSequence(
 // the parent panel regardless of when their own content actually falls, the
 // same bug that placeholder was built to avoid one level up.
 function buildScenarioTracks(
+  dayStays: EnrichedStay[],
   transitsForSequence: EnrichedTransit[],
   dayActivities: EnrichedActivity[],
   scenariosById: Map<string, Scenario>,
@@ -1115,14 +1131,25 @@ function buildScenarioTracks(
   dayStart: string,
 ): { tracks: ScenarioTrack[]; anchorKey: string | null } {
   const present = new Set([
+    ...dayStays.map((s) => s.scenarioId).filter((id): id is string => Boolean(id)),
     ...transitsForSequence.map((t) => t.scenarioId).filter((id): id is string => Boolean(id)),
     ...dayActivities.map((a) => a.scenarioId).filter((id): id is string => Boolean(id)),
   ]);
 
   function trackOwnItems(
     scenarioId: string,
-  ): (TransitBoundarySequenceItem | TransitStageSequenceItem | KeyedActivity)[] {
+  ): (
+    | { type: 'stay'; stay: EnrichedStay; relation: StayRelation; key: string }
+    | TransitBoundarySequenceItem
+    | TransitStageSequenceItem
+    | KeyedActivity
+  )[] {
     return [
+      ...stayEventItems(
+        dayStays.filter((s) => s.scenarioId === scenarioId),
+        date,
+        dayStart,
+      ),
       ...transitsForSequence
         .filter((t) => t.scenarioId === scenarioId)
         .flatMap((transit) => transitItemsOnDate(transit, date)),
@@ -1150,13 +1177,18 @@ function buildScenarioTracks(
   // actually been running since yesterday shouldn't out-rank a same-day 7am
   // event just because its clamped key reads as "start of day".
   function realOwnKey(scenarioId: string): string | null {
+    const stayKeys = stayEventItems(
+      dayStays.filter((s) => s.scenarioId === scenarioId),
+      date,
+      dayStart,
+    ).map((item) => item.key);
     const transitKeys = transitsForSequence
       .filter((t) => t.scenarioId === scenarioId)
       .map((t) => t.departsAt);
     const activityKeys = dayActivities
       .filter((a) => a.scenarioId === scenarioId)
       .map((a) => activitySortKey(a, dayStart));
-    return earliestKey([...transitKeys, ...activityKeys].map((key) => ({ key })));
+    return earliestKey([...stayKeys, ...transitKeys, ...activityKeys].map((key) => ({ key })));
   }
 
   function buildTrack(scenarioId: string, scenario: Scenario): ScenarioTrack {
@@ -2030,6 +2062,7 @@ function buildDay(
     primaryStay?.lodging?.placeId ?? arrivingTransit?.to?.id ?? dayTransits[0]?.from?.id ?? null;
 
   const { tracks: scenarioTracks, anchorKey: scenarioAnchorKey } = buildScenarioTracks(
+    dayStays,
     transitsForSequence,
     dayActivities,
     scenariosById,

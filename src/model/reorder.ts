@@ -32,7 +32,7 @@ import {
   dateOnly,
   diffMinutesIso,
 } from './tripModel';
-import type { Activity, ScenarioTrack, SequenceItem, Transit, TripData } from './types';
+import type { Activity, ScenarioTrack, SequenceItem, Stay, Transit, TripData } from './types';
 
 // Names the specific Activity or Transit a DragMeta/RealAnchor entry refers
 // to — an Activity's own id is unambiguous on its own, but a Transit's
@@ -41,13 +41,50 @@ import type { Activity, ScenarioTrack, SequenceItem, Transit, TripData } from '.
 // "insert after this Transit" wherever the two could otherwise collide.
 type AnchorEntity = { kind: 'activity' | 'transit'; id: string };
 
-// The Activity/Transit ids a scenario-group drag moves together — shared
-// with TripSelectionsContextObject.ts's RowSelectionMembers (a multi-select
-// can include a scenario-tabs row, whose own members are exactly this
-// shape), so that file re-exports this type rather than redefining it.
+// The Activity/Transit/Stay ids a scenario-group drag moves together —
+// shared with TripSelectionsContextObject.ts's RowSelectionMembers (a
+// multi-select can include a scenario-tabs row, whose own members are
+// exactly this shape), so that file re-exports this type rather than
+// redefining it. stayIds is near-always empty — most days have no
+// scenario-scoped Stay at all — but a block move (applyBlockReorder) or a
+// mixed multi-select drag still needs to know about one when a branch does
+// carry one, so its own legId reassigns along with the rest of the group
+// (see applyBlockReorder's own note on why its checkInAt/checkOutAt never
+// do).
 export interface ReorderMembers {
   activityIds: string[];
   transitIds: string[];
+  stayIds: string[];
+}
+
+// What a DragMeta row actually is as a drag source, replacing four mutually-
+// exclusive optional fields (activityId/transitId/stayId/scenarioGroup) with
+// one tagged union — a row is drag-sourced by exactly one entity kind (or
+// none at all: `null` on DragMeta.source for a row that's a drop target
+// only). See DragMeta.source's own note for exactly which rows that is.
+export type DragSource =
+  | { kind: 'activity'; id: string }
+  | { kind: 'transit'; id: string }
+  | { kind: 'stay'; id: string }
+  | { kind: 'scenario-group'; members: ReorderMembers };
+
+// The ReorderMembers a row's own drag bundle contains — a lone id wrapped up
+// to the same shape a scenario-group's own multi-entity bundle already is,
+// so DayTimeline.tsx's multi-select wiring (which needs "what does dragging
+// this row move" regardless of row kind) doesn't have to re-derive it
+// ad hoc from whichever of the four old fields happened to be set.
+export function rowMembersOf(meta: DragMeta): ReorderMembers {
+  if (!meta.source) return { activityIds: [], transitIds: [], stayIds: [] };
+  switch (meta.source.kind) {
+    case 'scenario-group':
+      return meta.source.members;
+    case 'activity':
+      return { activityIds: [meta.source.id], transitIds: [], stayIds: [] };
+    case 'transit':
+      return { activityIds: [], transitIds: [meta.source.id], stayIds: [] };
+    case 'stay':
+      return { activityIds: [], transitIds: [], stayIds: [meta.source.id] };
+  }
 }
 
 type ActivityTiming = Pick<
@@ -76,8 +113,9 @@ function activityAnchorEndAt(activity: ActivityTiming, dayStart: string): string
 // valid drop *target*: it's a whole nested sub-timeline, not a single point
 // in time, so the nearest real row above or below is still what catches a
 // drop there. It IS a drag *source*, though — its own DragMeta entry's
-// `scenarioGroup` field (below) names every Activity/Transit under its
-// whole subtree, moved together as one block by applyBlockReorder.
+// `source` field (below) is a `scenario-group` naming every Activity/
+// Transit under its whole subtree, moved together as one block by
+// applyBlockReorder.
 //
 // A dropped Activity landing exactly on its anchor's own instant (a
 // Stay/Transit boundary/stage, or another Activity with no lendable
@@ -160,9 +198,16 @@ export interface DragMeta {
   containerDayStart: string;
   legId: string;
   scenarioId: string | null;
-  activityId: string | null;
-  transitId?: string | null;
-  scenarioGroup?: ReorderMembers | null;
+  // What this row is as a drag source — null for a row that's a drop target
+  // only, never something a drag can start from: a Transit's Arrive
+  // boundary or a transit-stage row (only Depart carries the Transit's own
+  // 'transit' source, since it's the compound unit's single handle), a
+  // Stay's Check-out/Staying rows (only Check-in carries a 'stay' source —
+  // see applyStayReorder's own note on why), the synthetic
+  // beforeScenarioSplitDragId spacer row, and the empty-container/empty-day
+  // placeholder metas (EmptyDropZone) — none of these are independently
+  // authored entities with a position of their own to drag away from.
+  source: DragSource | null;
   anchorEntityId: AnchorEntity | null;
   // 'front-takeover' only ever arrives here via the `{ ...overMeta,
   // ...overMeta.before }` spread in DaysView.tsx's handleDragEnd — a plain
@@ -221,18 +266,19 @@ function buildRealAnchors(flattened: SequenceItem[], dayStart: string): RealAnch
   return anchors;
 }
 
-// Every Activity/Transit id under one scenario-tabs node's own subtree —
+// Every Activity/Transit/Stay id under one scenario-tabs node's own subtree —
 // every branch (the tracks passed in), plus any nested child scenario-tabs
 // group each track's own sequence folds in (buildScenarioTracks' own
 // parentScenarioId nesting, tripModel.ts) — walked recursively so a
 // scenario-group drag picks up a nested weather-inside-a-delay split's
 // content too, not just the immediate tracks. A Transit's boundary and
 // stage rows both name the same transit._id, so transitIds is deduplicated;
-// an Activity only ever appears in one track's own sequence, so no
-// deduplication is needed there.
+// an Activity/Stay only ever appears in one track's own sequence, so no
+// deduplication is needed for either of those.
 function collectScenarioGroupMembers(tracks: ScenarioTrack[]): ReorderMembers {
   const activityIds = new Set<string>();
   const transitIds = new Set<string>();
+  const stayIds = new Set<string>();
   const walk = (list: ScenarioTrack[]) => {
     for (const track of list) {
       for (const item of track.sequence) {
@@ -240,6 +286,8 @@ function collectScenarioGroupMembers(tracks: ScenarioTrack[]): ReorderMembers {
           for (const a of item.activities) activityIds.add(a._id);
         } else if (item.type === 'transit-boundary' || item.type === 'transit-stage') {
           transitIds.add(item.transit._id);
+        } else if (item.type === 'stay') {
+          stayIds.add(item.stay._id);
         } else if (item.type === 'scenario-tabs' && item.tracks) {
           walk(item.tracks);
         }
@@ -247,7 +295,7 @@ function collectScenarioGroupMembers(tracks: ScenarioTrack[]): ReorderMembers {
     }
   };
   walk(tracks);
-  return { activityIds: [...activityIds], transitIds: [...transitIds] };
+  return { activityIds: [...activityIds], transitIds: [...transitIds], stayIds: [...stayIds] };
 }
 
 // A scenario-tabs row's own drag/render id — namespaced by calendar day AND
@@ -258,6 +306,15 @@ function collectScenarioGroupMembers(tracks: ScenarioTrack[]): ReorderMembers {
 // which must produce the exact same id for the same row.
 export function scenarioTabsDragId(dayStart: string, scenarioId: string | null, i: number): string {
   return `scenario-tabs-${dateOnly(dayStart)}-${scenarioId ?? 'top'}-${i}`;
+}
+
+// The one droppable row a container needs when NOTHING real precedes its
+// own scenario-tabs split — see buildDragMeta's own note below on when this
+// gets emitted. Exported so DayTimeline.tsx's node-building walk can render
+// a row sharing this exact id, the same contract scenarioTabsDragId already
+// keeps between the two files.
+export function beforeScenarioSplitDragId(scenarioDragId: string): string {
+  return `before-${scenarioDragId}`;
 }
 
 // `id` mirrors DayTimeline's own node-key scheme exactly (same source
@@ -344,7 +401,7 @@ export function buildDragMeta(
               endAt: first?.activityStartAt ?? null,
               legId: first?.legId ?? item.stay.legId,
               scenarioId,
-              activityId: null,
+              source: null, // Check-out is never a drag source — see applyStayReorder
               anchorEntityId: null,
               kind: 'day-start',
               cascadeActivityIds:
@@ -359,7 +416,13 @@ export function buildDragMeta(
               endAt: lastAnchor?.endAt ?? null,
               legId: lastAnchor?.legId ?? item.stay.legId,
               scenarioId,
-              activityId: null,
+              // Check-in is the one row a Stay is draggable via (see
+              // applyStayReorder) — dropping it onto a scenario tab's panel
+              // (or back out to the top-level day) reassigns the whole Stay's
+              // scenarioId, since a Stay's real checkInAt/checkOutAt are
+              // authored booking facts, never something a drop position
+              // should rewrite the way an Activity's startAt is.
+              source: { kind: 'stay', id: item.stay._id },
               anchorEntityId: lastAnchor?.entityId ?? null,
               kind: 'after',
               cascadeActivityIds: [], // Check-in is always last — nothing follows it
@@ -376,7 +439,7 @@ export function buildDragMeta(
             endAt: null,
             legId: item.stay.legId,
             scenarioId,
-            activityId: null,
+            source: null, // a 'Staying' row is never a drag source
             anchorEntityId: null,
             kind: 'after',
           },
@@ -390,8 +453,11 @@ export function buildDragMeta(
             endAt: item.key,
             legId: item.transit.legId,
             scenarioId,
-            activityId: null,
-            transitId: item.phase === 'depart' ? item.transit._id : null,
+            // Only Depart carries a 'transit' source — the whole compound
+            // unit (Depart boundary, every route stage, Arrive boundary)
+            // travels together via that one handle, so Arrive/stages are
+            // never independently draggable (see applyTransitReorder).
+            source: item.phase === 'depart' ? { kind: 'transit', id: item.transit._id } : null,
             anchorEntityId: null,
             kind: 'after',
             cascadeActivityIds: downstreamActivityIds(realAnchorIdx + 1),
@@ -407,7 +473,7 @@ export function buildDragMeta(
             endAt: item.key,
             legId: item.transit.legId,
             scenarioId,
-            activityId: null,
+            source: null, // a route stage is never independently draggable
             anchorEntityId: null,
             kind: 'after',
             cascadeActivityIds: downstreamActivityIds(realAnchorIdx + 1),
@@ -423,7 +489,7 @@ export function buildDragMeta(
             endAt: activityAnchorEndAt(activity, dayStart),
             legId: activity.legId,
             scenarioId,
-            activityId: activity._id,
+            source: { kind: 'activity', id: activity._id },
             anchorEntityId: { kind: 'activity', id: activity._id },
             kind: 'after',
             cascadeActivityIds: downstreamActivityIds(realAnchorIdx + 1),
@@ -445,18 +511,54 @@ export function buildDragMeta(
       // and the date alone isn't enough either, since a nested scenario-tabs
       // group (Task 5's own `walk` recursion) can share a calendar day with
       // its own parent's top-level group.
-      return [
-        {
-          id: scenarioTabsDragId(dayStart, scenarioId, i),
-          endAt: item.key,
-          legId: dayLegId,
-          scenarioId,
-          activityId: null,
-          anchorEntityId: null,
-          kind: 'after' as const,
-          scenarioGroup: collectScenarioGroupMembers(item.tracks ?? topLevelScenarioTracks),
+      const scenarioDragId = scenarioTabsDragId(dayStart, scenarioId, i);
+      // Shared by both entries below — a scenario-tabs row's own drag-source
+      // fields, and (when nothing real precedes it) its beforeScenarioSplit
+      // spacer's drop-target fields, agree on everything but `id` and which
+      // one extra field (source vs. cascadeActivityIds) applies — the spacer
+      // is a drop target only (source: null), never a drag source itself.
+      const sharedFields = {
+        endAt: item.key,
+        legId: dayLegId,
+        scenarioId,
+        anchorEntityId: null,
+        kind: 'after' as const,
+      };
+      const scenarioEntry: Omit<DragMeta, 'index' | 'containerDayStart'> = {
+        ...sharedFields,
+        id: scenarioDragId,
+        source: {
+          kind: 'scenario-group',
+          members: collectScenarioGroupMembers(item.tracks ?? topLevelScenarioTracks),
         },
-      ];
+      };
+      // A scenario-tabs row being droppable:false is normally harmless — the
+      // nearest real row above still catches a drop meant to land right
+      // before the split. But `realAnchorIdx` still sitting at -1 here means
+      // NOTHING real (no Transit/Activity — a preceding Stay row doesn't
+      // count either, since it never bumps realAnchorIdx) has been walked
+      // yet in this same container: a branch whose own content is entirely
+      // one nested scenario-tabs split (e.g. "Talkeetna" containing nothing
+      // but its own "Flight goes"/"Grounded" split) has no real row to fall
+      // back to at all, leaving this container with zero droppable rows —
+      // nothing to drop an Activity/Transit onto to land inside it, ahead of
+      // the split. This synthetic entry (beforeScenarioSplitDragId) is the
+      // one droppable anchor that case needs, sharing the split's own
+      // opening instant (item.key) as its endAt so a drop lands right at the
+      // top of this container. DayTimeline.tsx's own node-building walk
+      // mirrors this exact condition to render a matching row.
+      if (realAnchorIdx === -1) {
+        return [
+          {
+            ...sharedFields,
+            id: beforeScenarioSplitDragId(scenarioDragId),
+            source: null,
+            cascadeActivityIds: downstreamActivityIds(realAnchorIdx + 1),
+          },
+          scenarioEntry,
+        ];
+      }
+      return [scenarioEntry];
     })
     .map((meta, index) => ({ ...meta, containerDayStart: dayStart, index }));
 }
@@ -730,14 +832,36 @@ export function applyTransitReorder(
   };
 }
 
-// Moves an entire scenario-group bundle (every Activity/Transit across every
-// branch under one ScenarioTabsNode, gathered by collectScenarioGroupMembers
-// above) as one rigid block: every member keeps its own relative offset from
-// the rest of the block, and its own scenarioId (which branch it's in) —
-// only legId reassigns, to the drop's destination leg. See the design
-// spec's "Decisions" section for why scenarioId is deliberately never
-// touched here, unlike a plain Activity drop. No cascade (see
-// applyTransitReorder's own note on why).
+// Dragging a Stay's Check-in row onto a scenario tab's panel (or back out to
+// the top-level day) only ever reassigns which branch it belongs to — unlike
+// applyActivityReorder/applyTransitReorder, its checkInAt/checkOutAt are real
+// booking facts, not something a drop position should rewrite. legId is left
+// untouched too: a Stay's leg is whichever leg the trip's own itinerary puts
+// it in, not something a scenario-tab drop should reassign the way crossing
+// into a different leg's day does for a plain Activity/Transit.
+export function applyStayReorder(data: TripData, dropMeta: DragMeta, stayId: string): TripData {
+  return {
+    ...data,
+    stays: data.stays.map((s): Stay =>
+      s._id === stayId ? { ...s, scenarioId: dropMeta.scenarioId } : s,
+    ),
+  };
+}
+
+// Moves an entire scenario-group bundle (every Activity/Transit/Stay across
+// every branch under one ScenarioTabsNode, gathered by
+// collectScenarioGroupMembers above) as one rigid block: every member keeps
+// its own relative offset from the rest of the block, and its own
+// scenarioId (which branch it's in) — only legId reassigns, to the drop's
+// destination leg. See the design spec's "Decisions" section for why
+// scenarioId is deliberately never touched here, unlike a plain Activity
+// drop. No cascade (see applyTransitReorder's own note on why). A Stay
+// member's own legId reassigns the same way, but — unlike Activity/Transit —
+// its checkInAt/checkOutAt are never shifted by deltaMinutes: same
+// real-booking-fact reasoning as applyStayReorder's own note on why a drop
+// position should never rewrite them. A Stay's own timing is also left out
+// of anchorTime's computation below for the same reason: it never moves, so
+// it should never be what the rest of the block's shift is measured against.
 export function applyBlockReorder(
   data: TripData,
   dropMeta: DragMeta,
@@ -746,6 +870,7 @@ export function applyBlockReorder(
 ): TripData {
   const activityIds = new Set(members.activityIds);
   const transitIds = new Set(members.transitIds);
+  const stayIds = new Set(members.stayIds);
 
   // A block with zero Transits and every Activity fuzzy (no startAt) has no
   // real time to anchor a shift from — anchorTime falls back to null (a
@@ -800,6 +925,7 @@ export function applyBlockReorder(
         legId: dropMeta.legId,
       };
     }),
+    stays: data.stays.map((s) => (stayIds.has(s._id) ? { ...s, legId: dropMeta.legId } : s)),
   };
 }
 
@@ -868,4 +994,222 @@ export function applyGroupActivityReorder(
     };
   }
   return result;
+}
+
+// A container's own leading date — DayTimeline.tsx builds a top-level day's
+// containerId as exactly its date ("2027-06-26") and a scenario tab's as
+// `${date}::${scenarioId}`, so splitting on '::' recovers the calendar date
+// either way. Comparing dates (not raw containerId) is what tells a same-day
+// scenario-boundary crossing (resolveDragEndPlacement's own
+// `preserveOwnTiming` — the dragged Activity's own time should carry over
+// untouched) apart from a genuine cross-day move (where landing on the new
+// day's own anchor position, date included, is the entire point of the
+// drag).
+function dayOfContainer(containerId: string | null): string | null {
+  return containerId ? containerId.split('::')[0] : null;
+}
+
+// Resolves dnd-kit's raw active/over pair down to the two things every
+// single-row (or block) drop actually needs: `dropMeta` (which DragMeta's
+// fields the drop should actually take its position from) and
+// `preserveOwnTiming` (whether the dragged entity's own time should be left
+// alone rather than taking over the drop target's instant).
+//
+// Only onDragEnd is handled — reorder.ts deliberately skips live
+// cross-container reflow while dragging. Dropping directly onto a row is
+// read as "insert immediately after this row" when the drag moved the
+// entity later (down past its own start), but dnd-kit's own `over` never
+// distinguishes "onto, meaning before" from "onto, meaning after" — it just
+// names whichever row the pointer is over. Comparing `activeMeta`'s own
+// index (its position before the drag) against `overMeta`'s is what tells
+// the two apart: dragging upward past a row means the intent was to land
+// before it, so the row's own `before` field (DragMeta's own note) is used
+// instead of its plain fields.
+//
+// That index comparison is only meaningful within one buildDragMeta call,
+// though — each rendered Timeline (the top-level day, and each scenario tab)
+// builds its own DragMeta array with its own 0-based `index`, so comparing
+// indices across two different ones is comparing unrelated numbers.
+// `@dnd-kit/sortable`'s useSortable stamps every row's `data.current` with
+// its own `sortable.containerId` alongside our DragMeta fields (see its
+// SortableData type) — that, not our own `index`, is what actually
+// identifies which rendered Timeline a row belongs to, so it's what detects
+// a drag that crossed from one into another. applyActivityReorder/
+// applyTransitReorder need to know this: without it, a same-day
+// cross-container drop still resolves to some row's plain DragMeta and
+// forces the dragged entity onto that row's own instant regardless of
+// duration, which is exactly how dragging an Activity out of a scenario tab
+// used to scramble its displayed time — the reported Homer-Spit bug. A drop
+// that crosses onto a *different calendar day* is deliberately NOT treated
+// this way — see `dayOfContainer`'s own note — since relocating onto the new
+// day's own real anchor timestamp (date included) is the entire point of
+// that drag, not something to guard against the way an ambiguous same-day
+// "before vs. after" is.
+function resolveDragEndPlacement(
+  activeMeta: DragMeta,
+  overMeta: DragMeta,
+  activeContainerId: string | null,
+  overContainerId: string | null,
+): { dropMeta: DragMeta; preserveOwnTiming: boolean } {
+  const containerChanged = activeContainerId !== overContainerId;
+  // Only a same-day container crossing should leave the dragged entity's own
+  // time untouched — a containerChanged drop that also lands on a different
+  // calendar day needs the normal takeover so the destination day's own
+  // anchor timestamp (and therefore the new date) actually applies.
+  const preserveOwnTiming =
+    containerChanged && dayOfContainer(activeContainerId) === dayOfContainer(overContainerId);
+  const movingUp = !containerChanged && activeMeta.index > overMeta.index;
+  const dropMeta = movingUp && overMeta.before ? { ...overMeta, ...overMeta.before } : overMeta;
+  return { dropMeta, preserveOwnTiming };
+}
+
+// Which raw collections a drag-end commit actually touched — the state
+// layer's setData(updater, dirty) wants this as its own `dirty` argument, but
+// reorder.ts stays agnostic of that context's own CollectionName type (a
+// state-layer concern), so the caller narrows/casts this array itself.
+export interface DragEndResult {
+  data: TripData;
+  collections: Array<'activities' | 'transits' | 'stays'>;
+}
+
+// The single-row (non-multi-select) half of DaysView.tsx's handleDragEnd —
+// dispatches on `activeMeta.source`'s own kind to the one applyXReorder
+// function that actually knows how to move that kind of row, after resolving
+// the shared movingUp/preserveOwnTiming/dropMeta placement every kind needs
+// (resolveDragEndPlacement above). Returns null when `activeMeta` names a
+// row with no source at all (a Stay's Check-out/Staying, a Transit's
+// Arrive/stage, or a placeholder) — none of these can ever legitimately be
+// the *active* (dragged) side of a drag-end event, since dnd-kit only lets a
+// non-disabled row start a drag in the first place, but the null case is
+// kept here rather than assumed away so a caller doesn't have to re-check
+// `.source` itself before calling this.
+export function applySingleRowDragEnd(
+  data: TripData,
+  activeMeta: DragMeta,
+  overMeta: DragMeta,
+  activeContainerId: string | null,
+  overContainerId: string | null,
+): DragEndResult | null {
+  if (!activeMeta.source) return null;
+  const { dropMeta, preserveOwnTiming } = resolveDragEndPlacement(
+    activeMeta,
+    overMeta,
+    activeContainerId,
+    overContainerId,
+  );
+  const dayStart = dropMeta.containerDayStart;
+  switch (activeMeta.source.kind) {
+    case 'scenario-group':
+      return {
+        data: applyBlockReorder(data, dropMeta, activeMeta.source.members, dayStart),
+        collections: ['activities', 'transits', 'stays'],
+      };
+    case 'transit':
+      return {
+        data: applyTransitReorder(
+          data,
+          dropMeta,
+          activeMeta.source.id,
+          dayStart,
+          preserveOwnTiming,
+        ),
+        collections: ['transits'],
+      };
+    case 'stay':
+      return {
+        data: applyStayReorder(data, dropMeta, activeMeta.source.id),
+        collections: ['stays'],
+      };
+    case 'activity':
+      return {
+        data: applyActivityReorder(
+          data,
+          dropMeta,
+          activeMeta.source.id,
+          dayStart,
+          preserveOwnTiming,
+        ),
+        collections: ['activities'],
+      };
+  }
+}
+
+// The multi-select half of DaysView.tsx's handleDragEnd — a drag of a row
+// that's itself part of a real (>1) multi-select moves every selected row
+// together, regardless of container or day. `selectedRows` is
+// RowSelection.rows' own values (TripSelectionsContextObject.ts) — passed
+// structurally rather than importing that type here, since reorder.ts stays
+// agnostic of the selection state layer the same way it stays agnostic of
+// TripDataContext's own CollectionName.
+//
+// A selection made up entirely of plain Activity rows keeps the original
+// insertion-chaining behavior (applyGroupActivityReorder, each member
+// anchored right after the previous one) — this is established, tested
+// behavior, unchanged from before mixed selections existed. A selection that
+// includes a Transit row and/or a scenario-group bundle instead moves as one
+// rigid formation (applyBlockReorder — every member shifted by the same
+// delta, preserving each member's own offset from the rest of the group),
+// since that's the only sensible way to keep e.g. a scenario's own
+// Depart/Arrive/Activities and a plain Activity selected alongside it (a
+// dinner right after) in the same relative arrangement on drop. A Stay row's
+// own members always have activityIds.length === 0 (never 1), so any
+// selection including one already fails the pure-activity check on its own
+// and falls to the block-reorder branch below — the only sensible way to
+// move a Stay at all, since applyGroupActivityReorder has no concept of one.
+export function applyGroupDragEnd(
+  data: TripData,
+  activeMeta: DragMeta,
+  overMeta: DragMeta,
+  activeContainerId: string | null,
+  overContainerId: string | null,
+  selectedRows: Array<{ containerId: string; members: ReorderMembers }>,
+): DragEndResult {
+  const { dropMeta } = resolveDragEndPlacement(
+    activeMeta,
+    overMeta,
+    activeContainerId,
+    overContainerId,
+  );
+  const dayStart = dropMeta.containerDayStart;
+  const isPureActivitySelection = selectedRows.every(
+    (row) => row.members.transitIds.length === 0 && row.members.activityIds.length === 1,
+  );
+  if (isPureActivitySelection) {
+    // Each group member's own origin container may differ from the row that
+    // was actually dragged (a multi-day selection) — so whether a given
+    // member's own drop should preserve its own timing has to be asked per
+    // Activity, against that Activity's own recorded origin day, rather than
+    // reusing the single `preserveOwnTiming` flag derived from just the
+    // dragged row.
+    const originContainerByActivityId = new Map(
+      selectedRows.map((row) => [row.members.activityIds[0], row.containerId]),
+    );
+    const groupIds = data.activities
+      .filter((a) => originContainerByActivityId.has(a._id))
+      .sort((a, b) => activitySortKey(a, dayStart).localeCompare(activitySortKey(b, dayStart)))
+      .map((a) => a._id);
+    const next = applyGroupActivityReorder(data, dropMeta, groupIds, dayStart, (id) => {
+      const originContainerId = originContainerByActivityId.get(id) ?? null;
+      return (
+        originContainerId !== overContainerId &&
+        dayOfContainer(originContainerId) === dayOfContainer(overContainerId)
+      );
+    });
+    return { data: next, collections: ['activities'] };
+  }
+  const activityIds = new Set<string>();
+  const transitIds = new Set<string>();
+  const stayIds = new Set<string>();
+  for (const row of selectedRows) {
+    row.members.activityIds.forEach((id) => activityIds.add(id));
+    row.members.transitIds.forEach((id) => transitIds.add(id));
+    row.members.stayIds.forEach((id) => stayIds.add(id));
+  }
+  const next = applyBlockReorder(
+    data,
+    dropMeta,
+    { activityIds: [...activityIds], transitIds: [...transitIds], stayIds: [...stayIds] },
+    dayStart,
+  );
+  return { data: next, collections: ['activities', 'transits', 'stays'] };
 }

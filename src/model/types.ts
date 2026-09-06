@@ -139,6 +139,7 @@ export interface Package {
 export interface Stay {
   _id: string;
   legId: string;
+  scenarioId: string | null;
   checkInAt: string;
   checkOutAt: string;
   status: PlanStatus;
