@@ -80,6 +80,7 @@ export function ScenarioTabsSection({
           return (
             <Chip
               key={t.scenario._id}
+              data-testid={`scenario-chip-${t.scenario._id}`}
               label={t.scenario.label}
               icon={renderMaterialIcon(t.scenario.icon, { fontSize: 'small' })}
               color={active ? (t.scenario.tone === 'ideal' ? 'primary' : 'error') : 'default'}

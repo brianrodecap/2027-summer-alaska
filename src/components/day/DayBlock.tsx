@@ -37,7 +37,12 @@ import { activeTitleCandidates } from './scenarioSelection';
 // now, not something this button has to ask up front.
 function AddToDayButton({ day, onAdd }: { day: Day; onAdd: (day: Day) => void }) {
   return (
-    <Button startIcon={<AddIcon />} onClick={() => onAdd(day)} sx={{ mt: 1 }}>
+    <Button
+      startIcon={<AddIcon />}
+      onClick={() => onAdd(day)}
+      sx={{ mt: 1 }}
+      data-testid={`add-to-day-${day.date}`}
+    >
       Add to this day
     </Button>
   );

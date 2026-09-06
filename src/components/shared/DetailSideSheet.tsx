@@ -47,11 +47,11 @@ export function DetailSideSheet({
           {title}
         </Typography>
         {onEdit && (
-          <IconButton onClick={onEdit} aria-label="Edit">
+          <IconButton onClick={onEdit} aria-label="Edit" data-testid="detail-sheet-edit">
             <EditIcon />
           </IconButton>
         )}
-        <IconButton onClick={onClose} aria-label="Close">
+        <IconButton onClick={onClose} aria-label="Close" data-testid="detail-sheet-close">
           <CloseIcon />
         </IconButton>
       </Box>

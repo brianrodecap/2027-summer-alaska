@@ -174,6 +174,7 @@ function TimelineRow({
   dragHandle,
   trailing,
   selected,
+  testId,
   children,
 }: {
   dot: ReactNode;
@@ -182,10 +183,11 @@ function TimelineRow({
   dragHandle?: ReactNode;
   trailing?: ReactNode;
   selected?: boolean;
+  testId?: string;
   children: ReactNode;
 }) {
   return (
-    <TimelineItem sx={dragHandle ? ACTIVITY_HOVER_SX : undefined}>
+    <TimelineItem data-testid={testId} sx={dragHandle ? ACTIVITY_HOVER_SX : undefined}>
       <LeadingGutter dragHandle={dragHandle} />
       <TimelineSeparator>
         {dot}
@@ -247,6 +249,7 @@ const StayNode = memo(function StayNode({
       isLast={isLast}
       dragHandle={dragHandle}
       selected={selected}
+      testId={`stay-row-${item.key}`}
       trailing={
         <RowMenu
           entity="stay"
@@ -339,6 +342,7 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
       isLast={isLast}
       dragHandle={dragHandle}
       selected={selected}
+      testId={`transit-boundary-${item.key}`}
       trailing={
         isDepart && (
           <RowMenu
@@ -380,7 +384,11 @@ const TransitStageNode = memo(function TransitStageNode({
   const tone = activeRouteTone(transit, routeTones);
   if (variant.tone !== tone) return null; // a non-active variant's stages simply aren't rendered
   return (
-    <TimelineRow dot={<RowLeadingDot icon="signpost" />} isLast={isLast}>
+    <TimelineRow
+      dot={<RowLeadingDot icon="signpost" />}
+      isLast={isLast}
+      testId={`transit-stage-${item.key}`}
+    >
       <Typography variant="caption" color="text.secondary">
         {formatTime(stage.key)} · {STAGE_KIND_LABEL[stage.kind] ?? 'Via'}
       </Typography>
@@ -429,6 +437,7 @@ const ActivityNode = memo(function ActivityNode({
       contentSx={{ px: ROW_CONTENT_PX }}
       dragHandle={dragHandle}
       selected={selected}
+      testId={`activity-row-${activity._id}`}
       trailing={
         <RowMenu
           entity={noteTarget.entity}

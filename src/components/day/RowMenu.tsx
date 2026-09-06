@@ -41,6 +41,7 @@ export function RowMenu({
     <>
       <IconButton
         aria-label="Row actions"
+        data-testid={`row-menu-${entity}-${id}`}
         size="small"
         edge="end"
         sx={{ flexShrink: 0, ml: 0.5, mt: -0.5 }}

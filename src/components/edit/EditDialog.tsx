@@ -136,13 +136,19 @@ function EditDialogBody({
         {isNew ? (
           <span />
         ) : (
-          <Button color="error" onClick={() => setConfirmingDelete(true)}>
+          <Button
+            color="error"
+            onClick={() => setConfirmingDelete(true)}
+            data-testid="edit-dialog-delete"
+          >
             Delete
           </Button>
         )}
         <div>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave}>
+          <Button onClick={onClose} data-testid="edit-dialog-cancel">
+            Cancel
+          </Button>
+          <Button variant="contained" onClick={handleSave} data-testid="edit-dialog-save">
             {isNew ? 'Add' : 'Save'}
           </Button>
         </div>

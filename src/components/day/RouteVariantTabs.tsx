@@ -30,6 +30,7 @@ export function RouteVariantTabs({ transit }: { transit: EnrichedTransit }) {
         return (
           <Chip
             key={v.tone}
+            data-testid={`route-variant-${transit._id}-${v.tone}`}
             label={v.label}
             icon={renderMaterialIcon(ROUTE_TONE_ICON[v.tone] ?? 'route', { fontSize: 'small' })}
             color={active ? 'primary' : 'default'}

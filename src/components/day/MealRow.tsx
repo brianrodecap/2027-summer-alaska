@@ -111,6 +111,7 @@ export function MealRow({
             return (
               <Chip
                 key={i}
+                data-testid={`meal-option-${activity._id}-${i}`}
                 label={DINING_FORMAT_LABEL[option.diningFormat]}
                 icon={renderMaterialIcon(DINING_FORMAT_ICON[option.diningFormat], {
                   fontSize: 'small',
