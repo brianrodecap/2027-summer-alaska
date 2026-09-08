@@ -25,6 +25,7 @@ import { AddNoteMenuItems } from '../shared/AddNoteMenuItems';
 import { NotesCluster } from '../shared/Notes';
 import { useAnchorMenu } from '../shared/useAnchorMenu';
 import { DayAlertsBanner } from './DayAlertsBanner';
+import { DayHolidayChip } from './DayHolidayChip';
 import { DayTimeline } from './DayTimeline';
 import { DayWeatherStrip } from './DayWeatherStrip';
 import { activeTitleCandidates } from './scenarioSelection';
@@ -129,9 +130,12 @@ export const DayBlock = memo(function DayBlock({
             {collapsed ? <ExpandMoreIcon /> : <ExpandLessIcon />}
           </IconButton>
           <Box sx={{ minWidth: 0 }}>
-            <Typography variant="caption" color="text.secondary">
-              {day.dateLabel}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography variant="caption" color="text.secondary">
+                {day.dateLabel}
+              </Typography>
+              <DayHolidayChip date={day.date} />
+            </Box>
             <Typography variant="h6" noWrap={collapsed}>
               {title}
             </Typography>

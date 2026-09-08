@@ -8,31 +8,27 @@ import type {
   WizardCategory,
   WizardStepId,
 } from '../../model/editForms';
+import { isMergingIntoDuplicate } from '../../model/editForms';
 import type { ScenarioDateInfo } from '../../model/tripModel';
 import type { Activity, Leg, Route, Scenario, Stay, Transit, Traveler } from '../../model/types';
 import { ScenarioEditForm } from '../edit/ScenarioEditForm';
+import { LodgingField, StayWhenFields, TransitEndpointFields } from '../edit/StayTransitFields';
 import {
-  ActivityPlaceStep,
   ActivityReview,
-  ActivityWhatStep,
-  ActivityWhenStep,
+  ActivityWhereWhenStep,
   BookingStep,
   CategoryStep,
-  ExtrasStep,
+  DetailsStep,
   MealBranchStep,
   MealDecisionStep,
   MealDuplicateStep,
-  MealOptionsStep,
-  MealPlaceStep,
   MealWhatStep,
+  MealWhereWhenStep,
   ScenarioReview,
-  StayDetailsStep,
   StayReview,
-  StayWhenStep,
   TransitReview,
   TransitRouteStep,
   TransitWhenStep,
-  TransitWhereStep,
 } from './WizardStepContent';
 
 // Everything any step's content might need — assembled once by the
@@ -126,11 +122,11 @@ export function renderWizardStep(stepId: WizardStepId, ctx: WizardStepContext): 
         />
       );
     case 'stayDetails':
-      return <StayDetailsStep form={ctx.stayForm} onChange={ctx.onStayFormChange} />;
+      return <LodgingField form={ctx.stayForm} onChange={ctx.onStayFormChange} />;
     case 'stayWhen':
-      return <StayWhenStep form={ctx.stayForm} onChange={ctx.onStayFormChange} />;
+      return <StayWhenFields form={ctx.stayForm} onChange={ctx.onStayFormChange} />;
     case 'transitWhere':
-      return <TransitWhereStep form={ctx.transitForm} onChange={ctx.onTransitFormChange} />;
+      return <TransitEndpointFields form={ctx.transitForm} onChange={ctx.onTransitFormChange} />;
     case 'transitRoute':
       return (
         <TransitRouteStep
@@ -141,24 +137,24 @@ export function renderWizardStep(stepId: WizardStepId, ctx: WizardStepContext): 
       );
     case 'transitWhen':
       return <TransitWhenStep form={ctx.transitForm} onChange={ctx.onTransitFormChange} />;
-    case 'activityWhat':
-      return <ActivityWhatStep form={ctx.activityForm} onChange={ctx.onActivityFormChange} />;
-    case 'activityWhen':
-      return <ActivityWhenStep form={ctx.activityForm} onChange={ctx.onActivityFormChange} />;
-    case 'activityPlace':
-      return <ActivityPlaceStep form={ctx.activityForm} onChange={ctx.onActivityFormChange} />;
-    case 'extras':
+    case 'activityWhereWhen':
+      return <ActivityWhereWhenStep form={ctx.activityForm} onChange={ctx.onActivityFormChange} />;
+    case 'details':
+      // A duplicate being merged in discards this form's own description
+      // (the merged Activity keeps its existing one) — see
+      // mergeMealOptionIntoActivity — so that subsection is skipped rather
+      // than collecting an answer that's about to be thrown away.
       return (
-        <ExtrasStep
+        <DetailsStep
           form={ctx.activityForm}
           onChange={ctx.onActivityFormChange}
           tripTravelers={ctx.tripTravelers}
+          showDescription={!isMergingIntoDuplicate(ctx)}
+          isMeal={ctx.category === 'meal'}
         />
       );
     case 'mealWhat':
       return <MealWhatStep form={ctx.activityForm} onChange={ctx.onActivityFormChange} />;
-    case 'mealWhen':
-      return <ActivityWhenStep form={ctx.activityForm} onChange={ctx.onActivityFormChange} />;
     case 'mealDuplicate':
       return (
         <MealDuplicateStep
@@ -169,21 +165,16 @@ export function renderWizardStep(stepId: WizardStepId, ctx: WizardStepContext): 
       );
     case 'mealDecision':
       return <MealDecisionStep decision={ctx.mealDecision} onChange={ctx.onMealDecisionChange} />;
-    case 'mealPlace':
+    case 'mealWhereWhen':
+      // A duplicate being merged in always becomes exactly one new
+      // candidate (mergeMealOptionIntoActivity) — single-place mode here
+      // regardless of mealDecision, same override the 'details' case above
+      // applies when deciding whether its own description subsection runs.
       return (
-        <MealPlaceStep
+        <MealWhereWhenStep
           form={ctx.activityForm}
           onChange={ctx.onActivityFormChange}
-          stays={ctx.stays}
-          activities={ctx.activities}
-          transits={ctx.transits}
-        />
-      );
-    case 'mealOptions':
-      return (
-        <MealOptionsStep
-          form={ctx.activityForm}
-          onChange={ctx.onActivityFormChange}
+          showCandidates={!isMergingIntoDuplicate(ctx) && ctx.mealDecision === 'undecided'}
           stays={ctx.stays}
           activities={ctx.activities}
           transits={ctx.transits}

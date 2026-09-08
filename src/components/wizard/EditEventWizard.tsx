@@ -13,7 +13,6 @@ import {
   categoryForActivity,
   type EditKind,
   type Entity,
-  type MealDecision,
   mealDecisionForActivity,
   stayFormFrom,
   type StayFormState,
@@ -26,6 +25,7 @@ import {
 import type { Activity, Route, Stay, Transit, Traveler } from '../../model/types';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { renderWizardStep, type WizardStepContext } from './renderWizardStep';
+import { useMealDecision } from './useMealDecision';
 import { WizardShell, type WizardStep } from './WizardShell';
 
 const EDIT_TITLE: Record<EditKind, string> = {
@@ -89,13 +89,12 @@ function EditEventWizardBody({
   const [category, setCategory] = useState<WizardCategory>(() =>
     kind === 'activity' ? categoryForActivity(activityForm) : kind,
   );
-  const [mealDecision, setMealDecision] = useState<MealDecision>(() =>
+  const [mealDecision, handleMealDecisionChange] = useMealDecision(
     mealDecisionForActivity(activityForm),
+    setActivityForm,
   );
 
   const stepIds = wizardStepsForCategory(category, {
-    mealDecision,
-    hasTravelers: tripTravelers.length > 0,
     lead: kind === 'activity' ? 'mealBranch' : null,
   });
 
@@ -103,7 +102,7 @@ function EditEventWizardBody({
     category,
     onCategoryChange: setCategory,
     mealDecision,
-    onMealDecisionChange: setMealDecision,
+    onMealDecisionChange: handleMealDecisionChange,
     activityForm,
     onActivityFormChange: setActivityForm,
     stayForm,

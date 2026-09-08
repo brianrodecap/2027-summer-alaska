@@ -22,6 +22,11 @@
     "travelers": null,
     "images": [
       {
+        "uri": "https://places.googleapis.com/v1/places/ChIJERqXa7WiyFYRr2-9pzRat5Y/photos/AVoNoXT04b5x82TEsW6fk94Wj5HA-lCLb0pB5Weg5-nWB7UHPzVoA3XBXCXpjY3emSZL5Wy5Uo6rnDi9VeIWpKqRSsCUAjoF2ngxvg96CtoFyGkjhsc3fD700V_uHHQeLY_hVZQpP9rMy2Sii2kbNiNlxbRgJ2BFF-8VCQY-a6ev6Q-NdjRPZsJlR9W5ZAiIIgOpywVbtPWoEivWNw_rI26KbZolUyr9UhGXUuEult9j0nGozP6I3mRQ04ZXewppgY12dNO5O4pPXYi7XmSe6bZIY4vXDxp3IJ5mk9wI0CmsrLi8FVQxVdVTWVLODL-HCwZb-U2gvjw-qfxoQVHsYp3KP0QQ4DjVvka0PEMvypCx3L3pJY8kL0Htnqu6drsoUi36mYDWLaNQzJbSvaRY-62O6ZqZcLEr33o_kU6Ic1NTpUERbQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+        "credit": "Mandar Pathak",
+        "caption": null
+      },
+      {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Ted_Stevens_Anchorage_International_Airport,_main_lobby_of_South_Terminal.jpg",
         "credit": "Photo by Wonderlane / CC BY 2.0",
         "caption": "Main lobby of the South Terminal, Ted Stevens Airport"
@@ -5306,6 +5311,12 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [
+      {
+        "uri": "https://places.googleapis.com/v1/places/ChIJ-ThFGNCZyFYRE9YZ2gxC9Pw/photos/AVoNoXRTK-ceLdX732-1nkS-7EXBocK75nhwSgn_z73841oeg7vjCwgTzDXmhJjFwPZu4O-zvlPVRQIAV8lRglxEnd-0UU7aZKbvwCeK2SQWogzKn5wjyfnWjsg-JY0AW0pyiPQhka_CGL6MJ0U55tTrhU7CAymALl9EH6hl_OHGfLKasAlAldtZRts38WlgKS_OhxwlaYdy5KXlEuApLsCLpOzHxhyw9pF3GYEbr_XNCAspQLaUVvEQH4UNt1LytM3p58jdJjjdvgkH1HVI-Yc4vSlxQ02jSL0UuChwOvSwfQ3QuoneWAfpRW3KCLOG_ka2mLuoUr37i8LV2IB_cVGbUBZ04zInwj2UGwGXGb95bQKJr9_wlxqRxCJtz3cbj6e689jyQgS8Ub_yNiYVVQ1671w7B-_3zE--BLvUebL4pjT3C83B/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+        "credit": "Walmart Supercenter",
+        "caption": null
+      }
+    ]
   }
 ]

@@ -6,7 +6,6 @@ import TimelineConnector from '@mui/lab/TimelineConnector';
 import TimelineContent from '@mui/lab/TimelineContent';
 import TimelineItem from '@mui/lab/TimelineItem';
 import TimelineSeparator from '@mui/lab/TimelineSeparator';
-import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
@@ -22,7 +21,11 @@ import {
 
 import { filterSequenceItems } from '../../model/filters';
 import { firstImage, stayDetailBits } from '../../model/formatting';
-import { activeMealOptions, selectedMealOptionIndex } from '../../model/mealOptions';
+import {
+  activeMealOptions,
+  isMealActivity,
+  selectedMealOptionIndex,
+} from '../../model/mealOptions';
 import {
   beforeScenarioSplitDragId,
   buildDragMeta,
@@ -61,12 +64,15 @@ import {
 import { BookingChip } from '../shared/BookingChip';
 import { splitNotes } from '../shared/noteKind';
 import { NotesCluster } from '../shared/Notes';
-import { RowLeadingDot } from '../shared/RowLeadingDot';
+import { ROW_LEADING_SIZE, ROW_OVERLINE_SX, RowLeadingDot } from '../shared/RowLeadingDot';
 import { ActivityLeading, ActivityRow } from './ActivityRow';
+import { AvatarOrDot } from './AvatarOrDot';
+import { MealRow, MealRowLeading } from './MealRow';
 import { RouteVariantTabs } from './RouteVariantTabs';
 import { RowMenu } from './RowMenu';
 import { visibleTracksFor } from './scenarioSelection';
 import { ScenarioTabsSection } from './ScenarioTabsSection';
+import { useInViewport } from './useInViewport';
 
 // Every route variant's stages/arrival were already walked once in
 // buildTripView (transit.routeInfo.variants[]) — switching which tone is
@@ -123,7 +129,11 @@ const LEADING_GUTTER_SX = {
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'flex-start',
-  pt: '1px',
+  // Centers the grip icon against ROW_LEADING_SIZE (every dot/Avatar in the
+  // column, now a uniform diameter — see RowLeadingDot.tsx), derived from
+  // both known sizes rather than a hand-tuned pixel value that would go
+  // stale the next time either one changes.
+  pt: `${(ROW_LEADING_SIZE - DRAG_HANDLE_WIDTH) / 2}px`,
 } as const;
 
 function LeadingGutter({ dragHandle }: { dragHandle?: ReactNode }) {
@@ -153,19 +163,32 @@ function TrailingGutter({ children }: { children?: ReactNode }) {
 // varying per row type. Centralizing that wiring here means a future change
 // to the shared chrome (the gutters, the connector-suppression on the last
 // row, ...) touches one place instead of five. `contentSx` defaults to every
-// row's own { pb: 3, pt: 0 } and merges in a caller's override rather than
-// requiring each of the five callers to repeat it; the drag-handle
-// hover-reveal (ACTIVITY_HOVER_SX) is likewise wired automatically off
-// whether a dragHandle was passed, rather than exposed as its own opaque
-// itemSx prop — only a row with a drag handle needs it.
-const DEFAULT_CONTENT_SX = { pb: 3, pt: 0 };
+// row's own { pb: 3, pt: 0, px: ROW_CONTENT_PX } and merges in a
+// caller's override rather than requiring each of the five callers to repeat it; the
+// drag-handle hover-reveal (ACTIVITY_HOVER_SX) is likewise wired
+// automatically off whether a dragHandle was passed, rather than exposed as
+// its own opaque itemSx prop — only a row with a drag handle needs it.
+//
+// The standard horizontal inset for a row's own text/chips content —
+// smaller than MuiTimelineContent's own built-in `16px` default so text has
+// more room now that the leading dot/Avatar column is wider (see
+// RowLeadingDot's ROW_LEADING_SIZE). Every row gets it by default (folded
+// into DEFAULT_CONTENT_SX below) so Activity, Stay, and Transit rows all
+// line up at the same left/right edge; only ScenarioTabsNode opts out
+// (px: 0), and ScenarioTabsSection's own chip/notes wrapper re-imports this
+// same constant rather than hand-matching it, so the two can't silently
+// drift apart.
+export const ROW_CONTENT_PX = 1;
 
-// The standard horizontal inset for a row's own text/chips content (as
-// opposed to Stay/Transit's un-inset image+text, which sits flush with the
-// dot column). ActivityNode's contentSx below and ScenarioTabsSection's own
-// chip/notes wrapper share this exact value so the two can't silently drift
-// apart the way two hand-matched literals connected only by comments could.
-export const ROW_CONTENT_PX = 2;
+// TimelineContent stretches to match its row's full height (TimelineItem's
+// own flex default), so its padding-top is measured from the exact same y
+// as the dot/Avatar's own top edge — `pt: 0` puts text flush against it.
+// Each row's own leading caption additionally sets `lineHeight: 1` (see e.g.
+// StayNode below) so its own line-height leading doesn't leave that first
+// line sitting visibly lower than the dot/Avatar's top — fixed on the
+// caption itself rather than as an offset here, since the amount of leading
+// is a property of that Typography, not of this shared container.
+const DEFAULT_CONTENT_SX = { pb: 3, pt: 0, px: ROW_CONTENT_PX };
 
 function TimelineRow({
   dot,
@@ -239,13 +262,7 @@ const StayNode = memo(function StayNode({
   const { above, mid, below } = splitNotes(stay.notes);
   return (
     <TimelineRow
-      dot={
-        image ? (
-          <Avatar src={image.uri} sx={{ width: 32, height: 32 }} />
-        ) : (
-          <RowLeadingDot icon="hotel" />
-        )
-      }
+      dot={<AvatarOrDot image={image} icon="hotel" />}
       isLast={isLast}
       dragHandle={dragHandle}
       selected={selected}
@@ -261,7 +278,7 @@ const StayNode = memo(function StayNode({
     >
       <NotesCluster notes={above} />
       <Box sx={{ cursor: 'pointer' }} onClick={() => onOpen(stay)}>
-        <Typography variant="caption" color="text.secondary">
+        <Typography variant="caption" color="text.secondary" sx={ROW_OVERLINE_SX}>
           {stayRelation(stay, date)}
         </Typography>
         <Typography variant="subtitle1">{name}</Typography>
@@ -312,7 +329,7 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
 
   const boundaryContent = (
     <Box sx={{ minWidth: 0 }}>
-      <Typography variant="caption" color="text.secondary">
+      <Typography variant="caption" color="text.secondary" sx={ROW_OVERLINE_SX}>
         {time
           ? `${formatTime(time)} · ${isDepart ? 'Depart' : 'Arrive'}`
           : isDepart
@@ -332,13 +349,7 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
 
   return (
     <TimelineRow
-      dot={
-        image ? (
-          <Avatar src={image.uri} sx={{ width: 32, height: 32 }} />
-        ) : (
-          <RowLeadingDot icon={modeIconName} />
-        )
-      }
+      dot={<AvatarOrDot image={image} icon={modeIconName} />}
       isLast={isLast}
       dragHandle={dragHandle}
       selected={selected}
@@ -389,7 +400,7 @@ const TransitStageNode = memo(function TransitStageNode({
       isLast={isLast}
       testId={`transit-stage-${item.key}`}
     >
-      <Typography variant="caption" color="text.secondary">
+      <Typography variant="caption" color="text.secondary" sx={ROW_OVERLINE_SX}>
         {formatTime(stage.key)} · {STAGE_KIND_LABEL[stage.kind] ?? 'Via'}
       </Typography>
       <Typography variant="subtitle1" title={stage.note ?? undefined}>
@@ -417,6 +428,10 @@ const ActivityNode = memo(function ActivityNode({
   const { openEdit, deleteEntity } = useEdit();
   const { mealOptionIndex } = useMealOptionSelection();
   const { above, mid, below } = splitNotes(activity.notes);
+  // One observer shared by this node's leading dot and its row text — both
+  // sit in the same TimelineItem and cross the same rootMargin together, so
+  // there's no need for AvatarOrDot to stand up a second one of its own.
+  const { ref: rowRef, inView } = useInViewport<HTMLButtonElement>();
 
   // A meal row's "add note" actions target whichever candidate is currently
   // selected, not the Activity as a whole — see EnrichedMealOption.notes and
@@ -424,17 +439,35 @@ const ActivityNode = memo(function ActivityNode({
   // on the Activity itself (there's no separate delete for a candidate; that
   // goes through ActivityEditForm's MealOptionList instead).
   let noteTarget: { entity: RefEntityKind; id: string } = { entity: 'activity', id: activity._id };
-  if (activity.options?.length) {
+  const isMeal = isMealActivity(activity);
+  if (isMeal) {
     const options = activeMealOptions(activity, day);
     const selected = options[selectedMealOptionIndex(options, mealOptionIndex, activity._id)];
     if (selected) noteTarget = { entity: 'mealOption', id: selected._id };
   }
+  const leading = isMeal ? (
+    <MealRowLeading activity={activity} day={day} inView={inView} />
+  ) : (
+    <ActivityLeading activity={activity} inView={inView} />
+  );
+  // MealRow/ActivityRow take identical props — pick the component itself
+  // rather than duplicating the JSX per branch.
+  const RowComponent = isMeal ? MealRow : ActivityRow;
+  const row = (
+    <RowComponent
+      activity={activity}
+      day={day}
+      onOpen={onOpenActivity}
+      midNotes={mid}
+      inView={inView}
+      buttonRef={rowRef}
+    />
+  );
 
   return (
     <TimelineRow
-      dot={<ActivityLeading activity={activity} day={day} />}
+      dot={leading}
       isLast={isLast}
-      contentSx={{ px: ROW_CONTENT_PX }}
       dragHandle={dragHandle}
       selected={selected}
       testId={`activity-row-${activity._id}`}
@@ -448,7 +481,7 @@ const ActivityNode = memo(function ActivityNode({
       }
     >
       <NotesCluster notes={above} />
-      <ActivityRow activity={activity} day={day} onOpen={onOpenActivity} midNotes={mid} />
+      {row}
       <NotesCluster notes={below} />
     </TimelineRow>
   );

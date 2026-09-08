@@ -278,7 +278,17 @@ export interface MealOption {
   booking: Booking | null;
 }
 
-export type TimeLabel = 'All day' | 'Morning' | 'Afternoon' | 'Evening' | (string & {});
+export type TimeLabel =
+  | 'All day'
+  | 'Sunrise'
+  | 'Morning'
+  | 'Midday'
+  | 'Afternoon'
+  | 'Sunset'
+  | 'Evening'
+  | 'Night'
+  | 'Midnight'
+  | (string & {});
 export type Priority = 'high' | 'medium' | 'low';
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
@@ -292,7 +302,10 @@ export interface Activity {
   timeLabel: TimeLabel | null;
   date: string | null; // set only when startAt is null
   priority: Priority | null;
-  text: string;
+  // null when a Place already names the row — see activityHeadline
+  // (tripModel.ts), which every reader of this field's display text goes
+  // through instead of reading .text directly.
+  text: string | null;
   place: Place | null;
   // Opt-in per entity (not per Place, since the same physical place can show
   // conditions on one entry but not another), and only meaningful when place
@@ -534,6 +547,8 @@ export interface TripView {
   days: Day[];
   legSummaries: LegSummary[];
   activitiesById: Map<string, EnrichedActivity>;
+  staysById: Map<string, EnrichedStay>;
+  transitsById: Map<string, EnrichedTransit>;
   scenariosById: Map<string, Scenario>;
   routesById: Map<string, Route>;
   budget: BudgetView;

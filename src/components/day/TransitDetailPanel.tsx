@@ -1,9 +1,12 @@
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import { firstImage } from '../../model/formatting';
 import { formatTime, transitRouteLabel } from '../../model/tripModel';
 import type { EnrichedTransit } from '../../model/types';
+import { useHeroImageSelect } from '../../state/useHeroImageSelect';
+import { PlacePanel } from '../activity/PlacePanel';
 import { BookingChip } from '../shared/BookingChip';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
@@ -26,6 +29,10 @@ export function TransitDetailPanel({
   onClose: () => void;
   onEdit?: () => void;
 }) {
+  // Both endpoints share one hero image, so this doesn't need to know which
+  // one a click came from.
+  const onSelectImage = useHeroImageSelect('transit', transit?._id);
+
   if (!transit) return null;
 
   const image = firstImage(transit);
@@ -51,6 +58,17 @@ export function TransitDetailPanel({
         </Box>
       )}
       <NotesCluster notes={transit.notes} expanded />
+      {[transit.from, transit.to].map(
+        (endpoint) =>
+          endpoint.id && (
+            <Stack key={endpoint.id} spacing={0.5}>
+              <Typography variant="overline" color="text.secondary">
+                {endpoint.label}
+              </Typography>
+              <PlacePanel place={endpoint} onSelectImage={onSelectImage} />
+            </Stack>
+          ),
+      )}
     </DetailSideSheet>
   );
 }

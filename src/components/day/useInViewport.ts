@@ -1,5 +1,33 @@
 import { useCallback, useEffect, useState } from 'react';
 
+// One IntersectionObserver per distinct rootMargin, shared across every
+// useInViewport call site — DayTimeline's ActivityNode/AvatarOrDot now call
+// this per row (100+ rows for a trip this size), and standing up that many
+// separate IntersectionObserver instances on mount is wasted work an
+// observer's own multi-target .observe() API already exists to avoid.
+const sharedObservers = new Map<
+  string,
+  { observer: IntersectionObserver; callbacks: Map<Element, () => void> }
+>();
+
+function getSharedObserver(rootMargin: string) {
+  let entry = sharedObservers.get(rootMargin);
+  if (!entry) {
+    const callbacks = new Map<Element, () => void>();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) callbacks.get(entry.target)?.();
+        }
+      },
+      { rootMargin },
+    );
+    entry = { observer, callbacks };
+    sharedObservers.set(rootMargin, entry);
+  }
+  return entry;
+}
+
 // Generic "has this element scrolled near the viewport yet" gate. DaysView
 // renders every Day block unvirtualized (~28 for this trip), so anything
 // that fires on mount — like DayWeatherStrip's weather lookup — would
@@ -25,14 +53,13 @@ export function useInViewport<T extends Element>(rootMargin = '600px 0px') {
 
   useEffect(() => {
     if (inView || !element) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) setInView(true);
-      },
-      { rootMargin },
-    );
+    const { observer, callbacks } = getSharedObserver(rootMargin);
+    callbacks.set(element, () => setInView(true));
     observer.observe(element);
-    return () => observer.disconnect();
+    return () => {
+      observer.unobserve(element);
+      callbacks.delete(element);
+    };
   }, [element, inView, rootMargin]);
 
   return { ref, inView };

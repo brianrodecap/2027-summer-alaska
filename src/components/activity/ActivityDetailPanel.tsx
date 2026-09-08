@@ -3,7 +3,9 @@ import Typography from '@mui/material/Typography';
 
 import { DINING_FORMAT_LABEL, firstImage } from '../../model/formatting';
 import { mealOptionLabel } from '../../model/mealOptions';
+import { activityHeadline } from '../../model/tripModel';
 import type { Booking, EnrichedActivity, EnrichedMealOption, Place } from '../../model/types';
+import { useHeroImageSelect } from '../../state/useHeroImageSelect';
 import { BookingChip } from '../shared/BookingChip';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
@@ -63,6 +65,8 @@ export function ActivityDetailPanel({
   onClose: () => void;
   onEdit?: () => void;
 }) {
+  const onSelectImage = useHeroImageSelect('activity', activity?._id);
+
   if (!activity) return null;
 
   const place = selectedPlace(activity, selectedOption);
@@ -89,16 +93,21 @@ export function ActivityDetailPanel({
       open={open}
       onClose={onClose}
       onEdit={onEdit}
-      title={place ? place.label : activity.text}
+      title={place ? place.label : activityHeadline(activity)}
       titleIcon={place ? renderMaterialIcon(titleIconName, { color: 'primary' }) : undefined}
     >
       <EntityHeroImage image={image} />
       {selectedOption ? (
         <SelectedMealOptionBody option={selectedOption} />
       ) : (
-        <Typography variant="body1">
-          <LinkifiedText text={activity.text} />
-        </Typography>
+        // null only when a Place already named the title above — nothing
+        // left to add here, same as the meal-option body's own
+        // no-place-no-repeat rule.
+        activity.text && (
+          <Typography variant="body1">
+            <LinkifiedText text={activity.text} />
+          </Typography>
+        )
       )}
       {booking && (
         <Box sx={{ mt: 1.5 }}>
@@ -106,7 +115,7 @@ export function ActivityDetailPanel({
         </Box>
       )}
       <NotesCluster notes={aboveNotes} expanded />
-      {place && <PlacePanel place={place} />}
+      {place && <PlacePanel place={place} onSelectImage={onSelectImage} />}
       <NotesCluster notes={footnotes} expanded />
     </DetailSideSheet>
   );

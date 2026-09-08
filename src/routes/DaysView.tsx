@@ -41,7 +41,7 @@ import {
 } from '../model/editForms';
 import { dayHasVisibleContent } from '../model/filters';
 import { applyGroupDragEnd, applySingleRowDragEnd, type DragMeta } from '../model/reorder';
-import { formatTime, todayDateStr, transitRouteLabel } from '../model/tripModel';
+import { activityHeadline, formatTime, todayDateStr, transitRouteLabel } from '../model/tripModel';
 import type {
   Activity,
   Day,
@@ -59,23 +59,49 @@ import { useEdit } from '../state/useEdit';
 import { useTripData } from '../state/useTripData';
 import { useFilterSelection, useRowSelection } from '../state/useTripSelections';
 
-// Stay's and Transit's detail panels are both opened/closed/edited the same
-// way — a plain "which entity is open" state, with Edit clearing it and
-// handing off to EditContext's own dialog. Activity's panel additionally
-// carries a selected meal-option candidate, so it keeps its own state below
-// rather than being forced into this shape.
-function useDetailPanel<T extends { _id: string }>(openEdit: (id: string) => void) {
-  const [entity, setEntity] = useState<T | null>(null);
+// Stay's, Transit's and Activity's detail panels are all opened/closed/edited
+// the same way — a plain "which entity is open" state, with Edit clearing it
+// and handing off to EditContext's own dialog. Activity's panel additionally
+// carries a selected meal-option candidate, resolved via `resolveSecondary`.
+//
+// Stores only the id(s), not the entity itself — a live edit (an in-place
+// photo pick, say — see PlacePanel's onSelectImage) rebuilds `view` with a
+// fresh object for every entity, and a panel that had captured the *old* one
+// at open time would keep showing stale data until closed and reopened.
+// Looking it up by id from `byId` every render instead means the open sheet
+// always reflects whatever `view` currently holds.
+function useDetailPanel<T extends { _id: string }, S = never>(
+  byId: Map<string, T> | undefined,
+  openEdit: (id: string) => void,
+  resolveSecondary?: (entity: T, secondaryId: string) => S | undefined,
+) {
+  const [ids, setIds] = useState<{ id: string; secondaryId?: string } | null>(null);
+  const entity = ids ? (byId?.get(ids.id) ?? null) : null;
+  const secondary =
+    entity && ids?.secondaryId && resolveSecondary
+      ? resolveSecondary(entity, ids.secondaryId)
+      : undefined;
+  // onOpen/onClose are memoized because they're handed straight to the
+  // memoized DayBlock (onOpenStay/onOpenTransit, and onOpenActivity via
+  // DaysView's adapter). A fresh closure here would defeat that memo for all
+  // ~28 unvirtualized day blocks on every unrelated DaysView state change —
+  // see DayBlock's own note on why it's memoized. setIds is stable, so these
+  // need no dependencies.
+  const onOpen = useCallback(
+    (e: T, secondaryId?: string) => setIds({ id: e._id, secondaryId }),
+    [],
+  );
+  const onClose = useCallback(() => setIds(null), []);
   return {
     entity,
-    open: Boolean(entity),
-    onOpen: setEntity,
-    onClose: () => setEntity(null),
+    secondary,
+    open: Boolean(ids),
+    onOpen,
+    onClose,
     onEdit: entity
       ? () => {
-          const id = entity._id;
-          setEntity(null);
-          openEdit(id);
+          setIds(null);
+          openEdit(entity._id);
         }
       : undefined,
   };
@@ -117,12 +143,15 @@ export function DaysView() {
   const { slug, date } = useParams();
   const navigate = useNavigate();
   const [mapDay, setMapDay] = useState<Day | null>(null);
-  const [openActivity, setOpenActivity] = useState<{
-    activity: EnrichedActivity;
-    selectedOption?: EnrichedMealOption;
-  } | null>(null);
-  const stayPanel = useDetailPanel<EnrichedStay>((id) => openEdit('stay', id));
-  const transitPanel = useDetailPanel<EnrichedTransit>((id) => openEdit('transit', id));
+  const activityPanel = useDetailPanel<EnrichedActivity, EnrichedMealOption>(
+    view?.activitiesById,
+    (id) => openEdit('activity', id),
+    (activity, optionId) => activity.options?.find((o) => o._id === optionId),
+  );
+  const stayPanel = useDetailPanel<EnrichedStay>(view?.staysById, (id) => openEdit('stay', id));
+  const transitPanel = useDetailPanel<EnrichedTransit>(view?.transitsById, (id) =>
+    openEdit('transit', id),
+  );
   const [datePickerOpen, setDatePickerOpen] = useState(false);
   const [routesOpen, setRoutesOpen] = useState(false);
   const [scenariosOpen, setScenariosOpen] = useState(false);
@@ -181,11 +210,13 @@ export function DaysView() {
     }
   }, [date, view?.dateRange, slug, navigate]);
 
+  // Memoized for the same reason as handleAddEvent below: this is passed
+  // straight to the memoized DayBlock, and activityPanel.onOpen is itself
+  // stable (see useDetailPanel), so this adapter stays stable too.
   const handleOpenActivity = useCallback(
-    (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => {
-      setOpenActivity({ activity, selectedOption });
-    },
-    [],
+    (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) =>
+      activityPanel.onOpen(activity, selectedOption?._id),
+    [activityPanel.onOpen],
   );
 
   // Reordering — see src/model/reorder.ts. A distance threshold on the
@@ -343,7 +374,7 @@ export function DaysView() {
             ) : draggingActivity ? (
               <DragOverlayChip>
                 <Box>
-                  <Typography variant="subtitle2">{draggingActivity.text}</Typography>
+                  <Typography variant="subtitle2">{activityHeadline(draggingActivity)}</Typography>
                   {draggingActivity.startAt && (
                     <Typography variant="caption" color="text.secondary">
                       {formatTime(draggingActivity.startAt)}
@@ -361,19 +392,11 @@ export function DaysView() {
       )}
       <DayMapPanel day={mapDay} open={Boolean(mapDay)} onClose={() => setMapDay(null)} />
       <ActivityDetailPanel
-        activity={openActivity?.activity ?? null}
-        selectedOption={openActivity?.selectedOption}
-        open={Boolean(openActivity)}
-        onClose={() => setOpenActivity(null)}
-        onEdit={
-          openActivity
-            ? () => {
-                const id = openActivity.activity._id;
-                setOpenActivity(null);
-                openEdit('activity', id);
-              }
-            : undefined
-        }
+        activity={activityPanel.entity}
+        selectedOption={activityPanel.secondary}
+        open={activityPanel.open}
+        onClose={activityPanel.onClose}
+        onEdit={activityPanel.onEdit}
       />
       <StayDetailPanel
         stay={stayPanel.entity}

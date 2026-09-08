@@ -7,7 +7,7 @@ import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 
-import { activeMealOptions } from '../../model/mealOptions';
+import { activeMealOptions, isMealActivity } from '../../model/mealOptions';
 import { dayFullRouteUrls, dayMapEmbedUrl } from '../../model/tripModel';
 import type { Day, Place, SequenceItem } from '../../model/types';
 import {
@@ -30,7 +30,7 @@ function collectMealPlaces(
     for (const item of sequence) {
       if (item.type === 'section') {
         for (const activity of item.activities) {
-          if (!activity.options?.length || !mealOptionIndex.has(activity._id)) continue;
+          if (!isMealActivity(activity) || !mealOptionIndex.has(activity._id)) continue;
           const options = activeMealOptions(activity, day);
           const option = options[mealOptionIndex.get(activity._id) as number];
           if (option) result.set(activity._id, option.place);

@@ -12,6 +12,7 @@ import { type ReactNode, useState } from 'react';
 
 import type { WizardStepId } from '../../model/editForms';
 import { WIZARD_STEP_LABEL, WIZARD_STEP_TIP } from '../../model/editForms';
+import { LabelWithTip } from '../shared/LabelWithTip';
 
 export interface WizardStep {
   id: WizardStepId;
@@ -78,14 +79,9 @@ export function WizardShell({
           {steps.map((step, index) => (
             <Step key={step.id}>
               <StepLabel onClick={() => setRawActiveStep(index)} sx={{ cursor: 'pointer' }}>
-                {WIZARD_STEP_LABEL[step.id]}
+                <LabelWithTip text={WIZARD_STEP_LABEL[step.id]} tip={WIZARD_STEP_TIP[step.id]} />
               </StepLabel>
               <StepContent>
-                {WIZARD_STEP_TIP[step.id] && (
-                  <Alert severity="info" variant="outlined" sx={{ mb: 2 }}>
-                    {WIZARD_STEP_TIP[step.id]}
-                  </Alert>
-                )}
                 {step.content}
                 <Box sx={{ mt: 2, display: 'flex', gap: 1 }}>
                   <Button onClick={onCancel}>Cancel</Button>

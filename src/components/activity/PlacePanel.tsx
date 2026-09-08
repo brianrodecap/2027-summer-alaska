@@ -7,8 +7,16 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { useMemo } from 'react';
 
-import type { Place } from '../../model/types';
+import {
+  MAX_PHOTOS,
+  photoThumbnailUrl,
+  type PlaceAuthorAttribution,
+  placeImageFromPhoto,
+  type PlacePhoto,
+} from '../../model/places';
+import type { Image, Place } from '../../model/types';
 import { usePlaceDetails } from './usePlaceDetails';
 
 // Fallback shown when the API key isn't configured yet or a lookup fails —
@@ -22,15 +30,110 @@ function placeSearchUrl(place: Place): string {
     : `https://www.google.com/maps/search/?api=1&query=${query}`;
 }
 
+// One attribution per distinct author (Google's own listing can repeat the
+// same photographer across several photos) — the display name is always
+// present, a profile link only sometimes.
+function uniqueAttributions(photos: PlacePhoto[]): PlaceAuthorAttribution[] {
+  const byName = new Map<string, PlaceAuthorAttribution>();
+  for (const photo of photos) {
+    const attribution = photo.authorAttributions?.[0];
+    if (attribution && !byName.has(attribution.displayName)) {
+      byName.set(attribution.displayName, attribution);
+    }
+  }
+  return [...byName.values()];
+}
+
+// A horizontal thumbnail strip of whatever photos Google currently lists for
+// this place — live only, never persisted (see placeImageFromPhoto, called
+// only for whichever single photo a click actually picks). Each <img> is
+// fetched at a size matched to its own 120x90 display, not the larger size a
+// chosen hero gets — requesting hero-sized media for every thumbnail here
+// was pulling down several times the pixel data any of them needed, on every
+// lookup. loading="lazy" also means a thumbnail scrolled out of the strip's
+// own view is never fetched until a viewer actually scrolls to it. Google's
+// terms require the author attribution shown alongside each photo, hence the
+// caption line below the strip rather than dropping it. Clicking a thumbnail
+// makes it the entity's hero image, the same one EntityHeroImage shows at the
+// top of the sheet.
+function PlacePhotoStrip({
+  photos,
+  onSelect,
+}: {
+  photos: PlacePhoto[];
+  onSelect: (photo: PlacePhoto) => void;
+}) {
+  const attributions = useMemo(() => uniqueAttributions(photos), [photos]);
+  if (!photos.length) return null;
+  return (
+    <Stack spacing={0.5}>
+      <Stack direction="row" spacing={1} sx={{ overflowX: 'auto' }}>
+        {photos.map((photo) => (
+          <Box
+            key={photo.name}
+            component="img"
+            src={photoThumbnailUrl(photo.name)}
+            loading="lazy"
+            alt=""
+            title={photo.authorAttributions?.[0]?.displayName}
+            onClick={() => onSelect(photo)}
+            sx={{
+              width: 120,
+              height: 90,
+              objectFit: 'cover',
+              borderRadius: 1,
+              flexShrink: 0,
+              cursor: 'pointer',
+            }}
+          />
+        ))}
+      </Stack>
+      {attributions.length > 0 && (
+        <Typography variant="caption" color="text.secondary">
+          Photos:{' '}
+          {attributions.map((a, i) => (
+            <span key={a.displayName}>
+              {i > 0 && ', '}
+              {a.uri ? (
+                <Link href={a.uri} target="_blank" rel="noopener">
+                  {a.displayName}
+                </Link>
+              ) : (
+                a.displayName
+              )}
+            </span>
+          ))}
+        </Typography>
+      )}
+    </Stack>
+  );
+}
+
 // Only draws on fields the Places API (New) actually returns for this site's
-// deliberately Enterprise-tier-only field mask — no photos/rating/reviews
-// (see model/places.ts).
-export function PlacePanel({ place }: { place: Place }) {
+// field mask — hours/website/maps link (Enterprise) plus photos (the
+// separate, cheaper Photos SKU) — still nothing from Enterprise+Atmosphere
+// (no rating/reviews; see model/places.ts).
+export function PlacePanel({
+  place,
+  onSelectImage,
+}: {
+  place: Place;
+  // Fires when a viewer clicks one thumbnail in the photo strip below,
+  // naming it the entity's new hero image (see formatting.ts's
+  // withHeroImage — every DetailPanel writes this into its own top-level
+  // `images`, not this place's, since that's the array firstImage always
+  // checks first). Nothing here is ever persisted on its own — only an
+  // explicit click stores anything, so browsing never silently grows what
+  // every day-list row's own thumbnail then has to load (see ActivityRow's
+  // firstImage(activity) ?? firstImage(activity.place) fallback).
+  onSelectImage: (image: Image) => void;
+}) {
   const { details, loading, failed, configured } = usePlaceDetails(place.id);
+  const photos = useMemo(() => (details?.photos ?? []).slice(0, MAX_PHOTOS), [details?.photos]);
 
   // A named-but-unresolved place (place.id: null — a shipboard restaurant
-  // with no static geolocation, say) has nothing to fetch at all — the hook
-  // above still gets called every render (rules-of-hooks), it just reports
+  // with no static geolocation, say) has nothing to fetch at all — the hooks
+  // above still get called every render (rules-of-hooks), they just report
   // loading: false and nothing to show.
   if (!place.id) return null;
 
@@ -102,6 +205,10 @@ export function PlacePanel({ place }: { place: Place }) {
           </Link>
         )}
       </Stack>
+      <PlacePhotoStrip
+        photos={photos}
+        onSelect={(photo) => onSelectImage(placeImageFromPhoto(photo))}
+      />
     </Stack>
   );
 }

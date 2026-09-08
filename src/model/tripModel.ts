@@ -475,6 +475,33 @@ export function activityTimeLabel(
   return 'Time TBD';
 }
 
+// The one place every reader of an Activity's display text goes through,
+// rather than reading .text directly — text is null whenever a Place
+// already names the row (see the Activity.text doc comment in types.ts), so
+// the place's own name is the fact of record in that case instead of a
+// second, possibly-stale copy of it.
+export function activityHeadline(activity: Pick<Activity, 'text' | 'place'>): string {
+  return activity.text ?? activity.place?.label ?? '';
+}
+
+// Which place's coordinates a sun-anchored ('Sunrise'/'Sunset' timeLabel, no
+// startAt) Activity's real clock time should be computed from: the
+// Activity's own Place when it names one (e.g. "Sunrise at Sheep Mountain
+// overlook" wants that overlook's own horizon, not the day's generic
+// anchor), falling back to the Day's own resolved sunrise/sunset anchor
+// place (day.sunrisePlaceId/sunsetPlaceId — see this file's own
+// dayPlaceIds-derived sunrisePlaceId/sunsetPlaceId assignment) for a
+// sun-anchored activity that names no place of its own (e.g. a bare
+// "Sunrise" banner activity). Pure Activity+Day derivation, so it lives here
+// rather than in useSunAnchoredTime, which only owns the fetch itself.
+export function resolveSunPlaceId(
+  activity: Pick<EnrichedActivity, 'place' | 'timeLabel'>,
+  day: Pick<Day, 'sunrisePlaceId' | 'sunsetPlaceId'>,
+): string | null {
+  if (activity.place?.id) return activity.place.id;
+  return activity.timeLabel === 'Sunrise' ? day.sunrisePlaceId : day.sunsetPlaceId;
+}
+
 // ---------- Activity's date is usually implied by startAt. The fuzzy-time
 // path (timeLabel only, no exact startAt — see TIME_LABEL_ANCHORS below) has
 // no timestamp to read a date from, so Activity carries an explicit `date`
@@ -655,11 +682,29 @@ export function stayRelation(stay: Stay, date: string): StayRelation {
 // this clock time. "All day" is for a whole-day banner activity (e.g. a
 // cruise sea day) that has no time of its own and belongs before the day's
 // other, real-timed activities — hence the earliest possible anchor.
+// Sunrise/Sunset get a fixed anchor here, same as every other label, and
+// that is deliberate rather than a gap waiting to be closed. weather.ts's
+// getDayWeather does resolve a real sunrise/sunset per Day (from its
+// sunrisePlaceId/sunsetPlaceId), and the row's own overline shows that real
+// time via useSunAnchoredTime — so a Sunset row can read "Sunset (11:47 PM)"
+// while still sorting at 19:00, ahead of an 8pm Evening activity. That
+// mismatch is accepted on purpose: threading the live value into the sort
+// key would make the day list's order shift as remote data loads or
+// changes, and a stable, predictable order is worth more to a reader than a
+// more accurate one that reshuffles underneath them. Anchor times are a
+// fixed, static ordering decision; don't replace them with a dynamically
+// resolved value, and don't re-tune the constants as a drive-by cleanup
+// (that's a content call, not a refactor).
 const TIME_LABEL_ANCHORS: Record<string, string> = {
   'All day': '00:00',
+  Sunrise: '05:00',
   Morning: '09:00',
+  Midday: '12:00',
   Afternoon: '13:00',
+  Sunset: '19:00',
   Evening: '20:00',
+  Night: '22:00',
+  Midnight: '23:59',
 };
 
 // Every Activity must resolve to both a real sort position and a real date:
@@ -1336,7 +1381,7 @@ function deriveSummary(
   const idealTrack = idealOrFirstTrack(day);
   const first =
     firstActivityIn(day.sequence) ?? (idealTrack && firstActivityIn(idealTrack.sequence));
-  if (first) return truncateSummary(first.text);
+  if (first) return truncateSummary(activityHeadline(first));
   if (day.stays[0]) return `Staying at ${day.stays[0].lodging?.name ?? day.location}`;
   return day.location;
 }
@@ -1430,7 +1475,7 @@ export function deriveTitle(location: string, candidates: EnrichedActivity[]): s
   const topRank = Math.max(...candidates.map((a) => PRIORITY_RANK[a.priority as string]));
   return candidates
     .filter((a) => PRIORITY_RANK[a.priority as string] === topRank)
-    .map((a) => a.text)
+    .map((a) => activityHeadline(a))
     .join(' & ');
 }
 
@@ -2292,7 +2337,7 @@ export function overlapWarningsFor(
         : `During transit: ${transitRouteLabel(overlappingTransit.transit)}`
       : null,
     activityOverlapWarning: overlappingActivity
-      ? `Overlaps with "${overlappingActivity.text}".`
+      ? `Overlaps with "${activityHeadline(overlappingActivity)}".`
       : null,
   };
 }
@@ -2510,7 +2555,7 @@ function bookingLineItems(
         entity: 'activity',
         id: activity._id,
         legId: activity.legId,
-        label: activity.text,
+        label: activityHeadline(activity),
         date: activity.date,
         booking: activity.booking,
       });
@@ -2525,7 +2570,9 @@ function bookingLineItems(
           entity: 'mealOption',
           id: option._id,
           legId: activity.legId,
-          label: option.place ? `${activity.text} — ${option.place.label}` : activity.text,
+          label: option.place
+            ? `${activityHeadline(activity)} — ${option.place.label}`
+            : activityHeadline(activity),
           date: activity.date,
           booking: option.booking,
         });
@@ -2868,7 +2915,12 @@ export function buildTripView(data: TripData): TripView {
     enrichedActivities,
   );
 
+  // The three by-id indexes are built from the enriched collections rather
+  // than by walking `days`, so they cover every entity the trip holds —
+  // including any Stay/Transit whose dates don't land on a rendered Day.
   const activitiesById = new Map(enrichedActivities.map((a) => [a._id, a]));
+  const staysById = new Map(enrichedStays.map((s) => [s._id, s]));
+  const transitsById = new Map(routedTransits.map((t) => [t._id, t]));
 
   const { progress: bookingProgress, percent: bookingPercent } = tripBookingSummary(
     legs,
@@ -2887,6 +2939,8 @@ export function buildTripView(data: TripData): TripView {
     days,
     legSummaries,
     activitiesById,
+    staysById,
+    transitsById,
     scenariosById,
     routesById,
     budget,

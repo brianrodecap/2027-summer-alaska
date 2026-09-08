@@ -374,7 +374,7 @@ export function draftEntityFromExtraction(
       Math.round((wallClockMs(fields.endAt) - wallClockMs(fields.startAt)) / 60000 / 15) * 15;
     activity.durationMinutes = minutes > 0 ? minutes : null;
   }
-  activity.text = fields.text ?? '';
+  activity.text = fields.text ?? null;
   activity.place = fields.placeLabel ? { id: null, label: fields.placeLabel } : null;
   activity.booking = booking;
   activity.mealType = fields.mealType ?? null;

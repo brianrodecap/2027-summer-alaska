@@ -1,4 +1,3 @@
-import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import Chip from '@mui/material/Chip';
@@ -13,6 +12,7 @@ import {
   mealOptionTimeLabel,
   selectedMealOptionIndex,
 } from '../../model/mealOptions';
+import { activityHeadline } from '../../model/tripModel';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
 import { useMealOptionSelection } from '../../state/useTripSelections';
 import { BookingChip } from '../shared/BookingChip';
@@ -21,8 +21,10 @@ import { DINING_FORMAT_ICON, renderMaterialIcon } from '../shared/materialIcon';
 import { splitNotes } from '../shared/noteKind';
 import { NotesCluster } from '../shared/Notes';
 import { OverlapWarnings } from '../shared/OverlapWarnings';
-import { RowLeadingDot } from '../shared/RowLeadingDot';
+import { ROW_OVERLINE_SX } from '../shared/RowLeadingDot';
 import { TravelerChips } from '../shared/TravelerChips';
+import { AvatarOrDotView } from './AvatarOrDot';
+import { useSunAnchoredTime } from './useSunAnchoredTime';
 
 // Which candidate is "active" for a meal Activity — shared by the row's own
 // content and the timeline dot beside it, so both stay in sync as the user
@@ -37,13 +39,23 @@ function useMealSelection(activity: EnrichedActivity, day: Day) {
 
 // The image/icon a meal Activity contributes to the day timeline's own dot
 // column, for whichever candidate is currently selected.
-export function MealRowLeading({ activity, day }: { activity: EnrichedActivity; day: Day }) {
+export function MealRowLeading({
+  activity,
+  day,
+  inView,
+}: {
+  activity: EnrichedActivity;
+  day: Day;
+  inView: boolean;
+}) {
   const { selected } = useMealSelection(activity, day);
   const image = selected ? firstImage(selected.place) : null;
-  return image ? (
-    <Avatar src={image.uri} sx={{ width: 32, height: 32 }} />
-  ) : (
-    <RowLeadingDot icon={selected ? DINING_FORMAT_ICON[selected.diningFormat] : 'event'} />
+  return (
+    <AvatarOrDotView
+      image={image}
+      icon={selected ? DINING_FORMAT_ICON[selected.diningFormat] : 'event'}
+      inView={inView}
+    />
   );
 }
 
@@ -62,11 +74,15 @@ export function MealRow({
   day,
   onOpen,
   midNotes,
+  inView,
+  buttonRef,
 }: {
   activity: EnrichedActivity;
   day: Day;
   onOpen: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
   midNotes?: Note[];
+  inView: boolean;
+  buttonRef: (node: HTMLButtonElement | null) => void;
 }) {
   const { mealOptionIndex, selectMealOption } = useMealOptionSelection();
   const { options, index, selected } = useMealSelection(activity, day);
@@ -75,23 +91,31 @@ export function MealRow({
     mid: optionMid,
     below: optionBelow,
   } = splitNotes(selected?.notes ?? []);
+  // A selected candidate's own mealOptionTimeLabel already answers "what
+  // time is this, really" more specifically than a sun-anchored Sunrise/
+  // Sunset label ever could, so that lookup only fires for a still-open
+  // meal with no candidate picked yet.
+  const sunAnchored = useSunAnchoredTime(activity, day, inView && !selected);
+  const timeOverride = selected ? mealOptionTimeLabel(activity, selected) : sunAnchored;
 
   return (
     <Box sx={{ flexGrow: 1, minWidth: 0 }}>
       <NotesCluster notes={optionAbove} />
       <ButtonBase
+        ref={buttonRef}
         onClick={() => onOpen(activity, selected ?? undefined)}
         sx={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: 1 }}
       >
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-          <Typography variant="caption" color="text.secondary">
-            {timeAndMealTypeLabel(
-              activity,
-              selected ? mealOptionTimeLabel(activity, selected) : undefined,
-            )}
+          <Typography variant="caption" color="text.secondary" sx={ROW_OVERLINE_SX}>
+            {timeAndMealTypeLabel(activity, timeOverride)}
           </Typography>
           <Typography variant="body1">
-            {selected ? mealOptionLabel(selected) : <LinkifiedText text={activity.text} />}
+            {selected ? (
+              mealOptionLabel(selected)
+            ) : (
+              <LinkifiedText text={activityHeadline(activity)} />
+            )}
           </Typography>
           <NotesCluster notes={midNotes} />
           <NotesCluster notes={optionMid} />

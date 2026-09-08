@@ -1,4 +1,5 @@
 import TimelineDot from '@mui/lab/TimelineDot';
+import { forwardRef } from 'react';
 
 import { renderMaterialIcon } from './materialIcon';
 
@@ -9,10 +10,45 @@ import { renderMaterialIcon } from './materialIcon';
 // TimelineOppositeContent, which this app never uses) — zeroed out here so
 // it sits flush at the top of its TimelineSeparator, matching an
 // Avatar-image row's own 0-margin image.
-export function RowLeadingDot({ icon }: { icon: string | null | undefined }) {
-  return (
-    <TimelineDot variant="outlined" color="grey" sx={{ m: 0 }}>
-      {renderMaterialIcon(icon, { fontSize: 'small' })}
-    </TimelineDot>
-  );
-}
+//
+// Ref-forwarding: an image-bearing row swaps this dot out for an Avatar once
+// its own useInViewport observer fires (see ActivityRow/MealRow/DayTimeline)
+// — the same observer ref needs to attach to whichever of the two is
+// currently rendered, this dot included, while it's still the placeholder.
+//
+// Sized to match AvatarOrDot's own Avatar exactly (see ROW_LEADING_SIZE) —
+// the dot-to-photo swap must never change a row's leading-column footprint,
+// so every dot renders at the same diameter an Avatar would, icon included.
+export const ROW_LEADING_SIZE = 48;
+
+// Every row's own leading caption (see DayTimeline.tsx, ActivityRow.tsx,
+// MealRow.tsx) uses this to sit flush against its dot/Avatar above, instead
+// of the default line-height's built-in leading.
+export const ROW_OVERLINE_SX = { lineHeight: 1 };
+
+export const RowLeadingDot = forwardRef<HTMLDivElement, { icon: string | null | undefined }>(
+  function RowLeadingDot({ icon }, ref) {
+    return (
+      <TimelineDot
+        ref={ref}
+        variant="outlined"
+        color="grey"
+        // @mui/lab's TimelineDot root is `display: flex` with no
+        // alignItems/justifyContent of its own — harmless at its default
+        // unsized footprint (the icon nearly fills the padded box either
+        // way) but once forced to a fixed diameter bigger than the icon,
+        // flex-start left the icon stuck in the top-left corner instead of
+        // centered in the circle.
+        sx={{
+          m: 0,
+          width: ROW_LEADING_SIZE,
+          height: ROW_LEADING_SIZE,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        {renderMaterialIcon(icon, { fontSize: 'medium' })}
+      </TimelineDot>
+    );
+  },
+);

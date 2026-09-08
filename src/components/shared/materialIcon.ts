@@ -3,6 +3,7 @@ import AttractionsIcon from '@mui/icons-material/Attractions';
 import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
 import CabinIcon from '@mui/icons-material/Cabin';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import CelebrationIcon from '@mui/icons-material/Celebration';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloudIcon from '@mui/icons-material/Cloud';
 import CommuteIcon from '@mui/icons-material/Commute';
@@ -105,6 +106,7 @@ const ICONS: Record<string, IconComponent> = {
   filter_list: FilterListIcon,
   link: LinkIcon,
   commute: CommuteIcon,
+  celebration: CelebrationIcon,
 };
 
 // Maps a live Place's primaryType (Places API (New)) to an icon for the

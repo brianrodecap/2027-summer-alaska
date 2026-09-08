@@ -4,6 +4,7 @@
 // entity shapes these draw on).
 import { activityTimeLabel } from './tripModel';
 import type { DiningFormat, Image, Leg, Lodging, MealOption, MealType } from './types';
+import type { PlaceSunriseSunset } from './weather';
 
 // ---------- leg skeleton-authority vocabulary ----------
 
@@ -29,6 +30,18 @@ export const AUTHORITY_OPTIONS: {
 // photos can coexist. Rendering only ever draws the first entry. ----------
 export function firstImage(entity: { images?: Image[] | null } | null | undefined): Image | null {
   return entity?.images?.[0] ?? null;
+}
+
+// Makes `image` the entity's own hero — firstImage's first entry — moving
+// it there if it's already stored, prepending it otherwise. This is the
+// *entity's* own top-level `images` (Activity/Stay/Transit), not a Place's —
+// firstImage always checks that array before ever falling back to a place's
+// own images (see ActivityDetailPanel et al.), so a manual "make this the
+// hero" click has to land there to actually change what's shown, regardless
+// of which specific place (or, for a meal, which candidate) the photo came
+// from.
+export function withHeroImage(images: Image[] | null | undefined, image: Image): Image[] {
+  return [image, ...(images ?? []).filter((img) => img.uri !== image.uri)];
 }
 
 // The room/campsite/bed-configuration bits a Stay's lodging can carry —
@@ -63,13 +76,65 @@ const MEAL_TYPE_LABEL: Record<MealType, string> = {
   snack: 'Snack',
 };
 
+// A meal's booking is called a reservation; everything else's is a booking.
+// One rule, one place — this previously sat inline at five call sites (the
+// two edit forms, the wizard's booking step and its review row, and
+// MealOptionList's per-candidate fields) in three different shapes.
+export interface BookingNoun {
+  noun: 'booking' | 'reservation';
+  // Sentence-case for a field label ("Reservation status").
+  label: string;
+  // Past participle for a review row's value ("Reserved").
+  done: string;
+}
+
+const MEAL_BOOKING_NOUN: BookingNoun = {
+  noun: 'reservation',
+  label: 'Reservation',
+  done: 'Reserved',
+};
+const DEFAULT_BOOKING_NOUN: BookingNoun = { noun: 'booking', label: 'Booking', done: 'Booked' };
+
+export function bookingNoun(isMeal: boolean): BookingNoun {
+  return isMeal ? MEAL_BOOKING_NOUN : DEFAULT_BOOKING_NOUN;
+}
+
+// An Activity timed only as 'Sunrise'/'Sunset' (no real startAt) — the one
+// case useSunAnchoredTime resolves a real clock time for. Shared by that
+// hook and by ActivityRow/MealRow's own overline text so all three agree on
+// exactly which Activities count as sun-anchored.
+export function isSunAnchoredActivity(activity: {
+  startAt: string | null;
+  timeLabel: string | null;
+}): boolean {
+  return !activity.startAt && (activity.timeLabel === 'Sunrise' || activity.timeLabel === 'Sunset');
+}
+
+// A sun-anchored ('Sunrise'/'Sunset' timeLabel, no startAt) Activity's
+// overline otherwise just shows the bare label text (activityTimeLabel's
+// fallback) — this folds in the real computed clock time once
+// useSunAnchoredTime resolves one, without discarding the label itself:
+// "Sunrise" is still the meaningful fact (this is tied to the event, not a
+// fixed hour someone picked), the clock time is precision layered on top of
+// it. Falls back to the bare label when nothing's resolved yet (still
+// loading, no place to compute from, API key unconfigured) so this is
+// always safe to call.
+export function sunAnchoredTimeLabel(
+  timeLabel: string,
+  resolved: PlaceSunriseSunset | null,
+): string {
+  const time = timeLabel === 'Sunrise' ? resolved?.sunrise : resolved?.sunset;
+  return time ? `${timeLabel} (${time})` : timeLabel;
+}
+
 // Every day-list row leads with "time · type" on its overline — mealType for
 // a meal Activity, 'Activity' for a plain one — matching Depart/Via/Waypoint/
 // Arrive's own time-plus-type overline and Stay's relation-only one.
-// timeOverride lets MealRow substitute the selected MealOption candidate's
-// own calculated time span (mealOptionTimeLabel, in mealOptions.ts) in place
-// of the Activity's own — the still-open Activity itself has no
-// durationMinutes to compute a span from, only whichever candidate is picked.
+// timeOverride lets a caller substitute a more specific computed time in
+// place of activityTimeLabel's own fallback text — MealRow's selected
+// MealOption candidate span (mealOptionTimeLabel, in mealOptions.ts), or
+// ActivityRow/MealRow's own sunAnchoredTimeLabel above for a Sunrise/Sunset
+// Activity once its real clock time has resolved.
 export function timeAndMealTypeLabel(
   activity: {
     _id: string;

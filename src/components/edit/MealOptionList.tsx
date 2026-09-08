@@ -62,10 +62,24 @@ function MealOptionRow({
         borderRadius: 2,
         p: 2,
         mb: 1.5,
-        position: 'relative',
       }}
     >
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 1 }}>
+        <PlacePickerField
+          place={option.place}
+          onChange={(place) => onChange({ ...option, place })}
+        />
+        <IconButton size="small" aria-label="Move this candidate earlier" onClick={onMoveUp}>
+          <ArrowUpwardIcon fontSize="small" />
+        </IconButton>
+        <IconButton size="small" aria-label="Move this candidate later" onClick={onMoveDown}>
+          <ArrowDownwardIcon fontSize="small" />
+        </IconButton>
+        <IconButton size="small" aria-label="Remove this candidate" onClick={onRemove}>
+          <DeleteIcon fontSize="small" />
+        </IconButton>
+      </Stack>
+      <Stack spacing={1.5}>
         <TextField
           select
           label="Dining format"
@@ -77,7 +91,6 @@ function MealOptionRow({
               : null;
             onChange({ ...option, diningFormat, includedIn });
           }}
-          fullWidth
         >
           {MEAL_OPTION_DINING_FORMAT_VALUES.map((v) => (
             <MenuItem key={v} value={v}>
@@ -85,18 +98,6 @@ function MealOptionRow({
             </MenuItem>
           ))}
         </TextField>
-        <IconButton size="small" aria-label="Move this candidate earlier" onClick={onMoveUp}>
-          <ArrowUpwardIcon fontSize="small" />
-        </IconButton>
-        <IconButton size="small" aria-label="Move this candidate later" onClick={onMoveDown}>
-          <ArrowDownwardIcon fontSize="small" />
-        </IconButton>
-      </Stack>
-      <Stack spacing={1.5}>
-        <PlacePickerField
-          place={option.place}
-          onChange={(place) => onChange({ ...option, place })}
-        />
         {DINING_FORMATS_WITH_INCLUDED_IN.includes(option.diningFormat) && (
           <IncludedInField
             diningFormat={option.diningFormat}
@@ -109,20 +110,13 @@ function MealOptionRow({
           />
         )}
         <BookingFields
+          isMeal
           value={bookingFormValueFrom(option.booking)}
           onChange={(v) =>
             onChange({ ...option, booking: readBookingFormValue(v, option.booking) })
           }
         />
       </Stack>
-      <IconButton
-        size="small"
-        aria-label="Remove this candidate"
-        onClick={onRemove}
-        sx={{ position: 'absolute', bottom: 8, right: 8 }}
-      >
-        <DeleteIcon fontSize="small" />
-      </IconButton>
     </Box>
   );
 }
@@ -160,8 +154,7 @@ export function MealOptionList({
   return (
     <Box>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-        Meal candidates — leave empty to keep the single decided place/dining format above; add a
-        few to leave this meal undecided among them instead.
+        Add every place still in the running — each gets its own tab on the day's list.
       </Typography>
       {options.map((option, i) => (
         <MealOptionRow

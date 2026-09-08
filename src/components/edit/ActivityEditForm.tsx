@@ -1,6 +1,4 @@
-import Checkbox from '@mui/material/Checkbox';
 import Divider from '@mui/material/Divider';
-import FormControlLabel from '@mui/material/FormControlLabel';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
@@ -8,11 +6,11 @@ import Typography from '@mui/material/Typography';
 
 import type { ActivityFormState } from '../../model/editForms';
 import {
+  applyMealTypeChange,
   DINING_FORMAT_OPTIONS,
   DINING_FORMATS_WITH_INCLUDED_IN,
   MEAL_TYPE_VALUES,
   PRIORITY_OPTIONS,
-  TIME_LABEL_OPTIONS,
 } from '../../model/editForms';
 import type {
   Activity,
@@ -21,17 +19,16 @@ import type {
   PlanStatus,
   Priority,
   Stay,
-  TimeLabel,
   Transit,
   Traveler,
 } from '../../model/types';
+import { ActivityWhenFields } from './ActivityWhenFields';
 import { BookingFields } from './BookingFields';
-import { DateTimeFieldPair } from './DateTimeFieldPair';
-import { DurationSelect } from './DurationSelect';
 import { IncludedInField } from './IncludedInField';
 import { MealOptionList } from './MealOptionList';
 import { PlaceConditionsToggles } from './PlaceConditionsToggles';
 import { PlacePickerField } from './PlacePickerField';
+import { TravelerCheckboxList } from './TravelerCheckboxList';
 
 const STATUS_OPTIONS: { value: PlanStatus; label: string }[] = [
   { value: 'planning', label: 'Planning' },
@@ -69,30 +66,7 @@ export function ActivityEditForm({
 
   return (
     <Stack spacing={2}>
-      <DateTimeFieldPair
-        dateLabel="Starts date"
-        timeLabel="Starts time"
-        dateValue={form.startsDate}
-        timeValue={form.startsTime}
-        onDateChange={(v) => onChange({ ...form, startsDate: v })}
-        onTimeChange={(v) => onChange({ ...form, startsTime: v })}
-      />
-      <DurationSelect
-        value={form.durationMinutes}
-        onChange={(durationMinutes) => onChange({ ...form, durationMinutes })}
-      />
-      <TextField
-        select
-        label="Fuzzy time (used only when Starts has a date but no time)"
-        value={form.timeLabel}
-        onChange={(e) => onChange({ ...form, timeLabel: e.target.value as TimeLabel | '' })}
-      >
-        {TIME_LABEL_OPTIONS.map((o) => (
-          <MenuItem key={o.value} value={o.value}>
-            {o.label}
-          </MenuItem>
-        ))}
-      </TextField>
+      <ActivityWhenFields form={form} onChange={onChange} />
 
       {!hasOptions && (
         <>
@@ -108,7 +82,7 @@ export function ActivityEditForm({
         label="Description"
         value={form.text}
         onChange={(e) => onChange({ ...form, text: e.target.value })}
-        required
+        placeholder={form.place?.label}
       />
       <TextField
         select
@@ -138,7 +112,7 @@ export function ActivityEditForm({
         select
         label="Meal type"
         value={form.mealType}
-        onChange={(e) => onChange({ ...form, mealType: e.target.value as MealType | '' })}
+        onChange={(e) => onChange(applyMealTypeChange(form, e.target.value as MealType | ''))}
       >
         {MEAL_TYPE_OPTIONS.map((o) => (
           <MenuItem key={o.value} value={o.value}>
@@ -200,35 +174,20 @@ export function ActivityEditForm({
       {tripTravelers.length > 0 && (
         <>
           <Divider />
-          <Typography variant="overline" color="text.secondary">
-            Travelers (excursions only — leave all unchecked for everyone)
-          </Typography>
-          <Stack>
-            {tripTravelers.map((t) => (
-              <FormControlLabel
-                key={t.id}
-                control={
-                  <Checkbox
-                    checked={form.travelerIds.includes(t.id)}
-                    onChange={(e) =>
-                      onChange({
-                        ...form,
-                        travelerIds: e.target.checked
-                          ? [...form.travelerIds, t.id]
-                          : form.travelerIds.filter((id) => id !== t.id),
-                      })
-                    }
-                  />
-                }
-                label={t.name}
-              />
-            ))}
-          </Stack>
+          <TravelerCheckboxList
+            travelers={tripTravelers}
+            selectedIds={form.travelerIds}
+            onChange={(travelerIds) => onChange({ ...form, travelerIds })}
+          />
         </>
       )}
 
       <Divider />
-      <BookingFields value={form.booking} onChange={(booking) => onChange({ ...form, booking })} />
+      <BookingFields
+        isMeal={isMeal}
+        value={form.booking}
+        onChange={(booking) => onChange({ ...form, booking })}
+      />
     </Stack>
   );
 }

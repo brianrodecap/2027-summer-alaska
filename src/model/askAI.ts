@@ -13,7 +13,7 @@ import {
   mergeBooking,
 } from './documentImport';
 import { blankActivity, type EditKind, findByKind } from './editForms';
-import { formatTime } from './tripModel';
+import { activityHeadline, formatTime } from './tripModel';
 import type { Activity, Stay, Transit, TripData } from './types';
 
 export class AskAIError extends Error {}
@@ -126,7 +126,7 @@ export function buildTripContext(data: TripData): string {
       const when = a.startAt ?? `${a.date ?? '?'} (${a.timeLabel ?? 'unspecified time'})`;
       const place = a.place ? ` at ${a.place.label}` : '';
       lines.push(
-        `  Activity ${a._id}: ${a.text || '(untitled)'} — ${when}${place} [${a.status}]${scenarioTag(a.scenarioId)}`,
+        `  Activity ${a._id}: ${activityHeadline(a) || '(untitled)'} — ${when}${place} [${a.status}]${scenarioTag(a.scenarioId)}`,
       );
     }
   }
@@ -370,7 +370,7 @@ export function describeDayPlanOp(op: DayPlanOp, data: TripData): string {
     return `+ Add "${op.text}"${when}`;
   }
   const existing = data.activities.find((a) => a._id === op.entityId);
-  const label = existing ? `"${existing.text}"` : 'that activity';
+  const label = existing ? `"${activityHeadline(existing)}"` : 'that activity';
   if (op.op === 'remove') return `− Remove ${label}`;
   const from = existing?.startAt ? formatTime(existing.startAt) : null;
   const to = op.startAt ? formatTime(op.startAt) : null;

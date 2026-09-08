@@ -1,10 +1,10 @@
-import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import Typography from '@mui/material/Typography';
 
 import { firstImage, timeAndMealTypeLabel } from '../../model/formatting';
 import { liveOverlapWarnings } from '../../model/mealOptions';
+import { activityHeadline } from '../../model/tripModel';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
 import { useMealOptionSelection } from '../../state/useTripSelections';
 import { BookingChip } from '../shared/BookingChip';
@@ -12,10 +12,11 @@ import { LinkifiedText } from '../shared/LinkifiedText';
 import { DEFAULT_PLACE_ICON, DINING_FORMAT_ICON } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
 import { OverlapWarnings } from '../shared/OverlapWarnings';
-import { RowLeadingDot } from '../shared/RowLeadingDot';
+import { ROW_OVERLINE_SX } from '../shared/RowLeadingDot';
 import { TravelerChips } from '../shared/TravelerChips';
-import { MealRow, MealRowLeading } from './MealRow';
+import { AvatarOrDotView } from './AvatarOrDot';
 import { PlaceConditionsLine } from './PlaceConditionsLine';
+import { useSunAnchoredTime } from './useSunAnchoredTime';
 
 // Activities don't carry an explicit category field — a committed meal's
 // diningFormat is the only synchronous signal richer than "does this
@@ -26,18 +27,20 @@ function activityRowIconName(activity: EnrichedActivity): string {
   return 'event';
 }
 
-// The image/icon an Activity contributes to the day timeline's own dot
-// column — a meal with open candidates defers to whichever option is
-// currently selected, same as its row content does.
-export function ActivityLeading({ activity, day }: { activity: EnrichedActivity; day: Day }) {
-  if (activity.options?.length) return <MealRowLeading activity={activity} day={day} />;
-
+// The image/icon a plain (non-meal) Activity contributes to the day
+// timeline's own dot column — DayTimeline's own ActivityNode picks this or
+// MealRowLeading before either ever mounts, based on isMealActivity(),
+// so a meal Activity's dot never mounts this component's own hooks only to
+// discard them.
+export function ActivityLeading({
+  activity,
+  inView,
+}: {
+  activity: EnrichedActivity;
+  inView: boolean;
+}) {
   const image = firstImage(activity) ?? firstImage(activity.place);
-  return image ? (
-    <Avatar src={image.uri} sx={{ width: 32, height: 32 }} />
-  ) : (
-    <RowLeadingDot icon={activityRowIconName(activity)} />
-  );
+  return <AvatarOrDotView image={image} icon={activityRowIconName(activity)} inView={inView} />;
 }
 
 export function ActivityRow({
@@ -45,19 +48,22 @@ export function ActivityRow({
   day,
   onOpen,
   midNotes,
+  inView,
+  buttonRef,
 }: {
   activity: EnrichedActivity;
   day: Day;
   onOpen: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
   midNotes?: Note[];
+  inView: boolean;
+  buttonRef: (node: HTMLButtonElement | null) => void;
 }) {
   const { mealOptionIndex } = useMealOptionSelection();
-
-  if (activity.options?.length)
-    return <MealRow activity={activity} day={day} onOpen={onOpen} midNotes={midNotes} />;
+  const timeText = useSunAnchoredTime(activity, day, inView);
 
   return (
     <ButtonBase
+      ref={buttonRef}
       onClick={() => onOpen(activity)}
       sx={{
         flexGrow: 1,
@@ -69,11 +75,11 @@ export function ActivityRow({
       }}
     >
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-        <Typography variant="caption" color="text.secondary">
-          {timeAndMealTypeLabel(activity)}
+        <Typography variant="caption" color="text.secondary" sx={ROW_OVERLINE_SX}>
+          {timeAndMealTypeLabel(activity, timeText)}
         </Typography>
         <Typography variant="body1">
-          <LinkifiedText text={activity.text} />
+          <LinkifiedText text={activityHeadline(activity)} />
         </Typography>
         <PlaceConditionsLine
           place={activity.place}

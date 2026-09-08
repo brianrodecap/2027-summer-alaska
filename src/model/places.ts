@@ -6,16 +6,32 @@
 // (Place Details Enterprise: $20/1k calls vs. Text Search Enterprise: $35/1k)
 // and exact — a free-text search can silently match the wrong business (this
 // project's own migration caught a Talkeetna museum query resolving to an
-// unrelated museum in Texas). Deliberately scoped to Enterprise-tier fields
-// (hours, website, maps link) and nothing pricier (no photos, no
-// rating/reviews — those are Enterprise+Atmosphere and add review
-// display/attribution obligations on top of the extra cost).
+// unrelated museum in Texas). Scoped to Enterprise-tier fields (hours,
+// website, maps link) plus the separate, cheaper Photos SKU (~$7/1k on top,
+// billed only for the `photos` field itself — see PlacePanel for the actual
+// photo media fetch, a second, unauthenticated-by-us request the browser
+// makes directly) — still nothing from Enterprise+Atmosphere (no
+// rating/reviews, which add review display/attribution obligations on top of
+// the extra cost).
 import { PLACES_API_KEY } from '../config/places';
 import { googleApiFetch } from './googleApiFetch';
+import type { Image } from './types';
 
 export interface PlaceOpeningHours {
   openNow?: boolean;
   weekdayDescriptions?: string[];
+}
+
+export interface PlaceAuthorAttribution {
+  displayName: string;
+  uri?: string;
+}
+
+export interface PlacePhoto {
+  name: string;
+  widthPx?: number;
+  heightPx?: number;
+  authorAttributions?: PlaceAuthorAttribution[];
 }
 
 export interface PlaceDetails {
@@ -24,6 +40,7 @@ export interface PlaceDetails {
   websiteUri?: string;
   googleMapsUri?: string;
   primaryType?: string;
+  photos?: PlacePhoto[];
 }
 
 export interface PlaceSearchResult {
@@ -40,7 +57,56 @@ const FIELD_MASK = [
   'websiteUri',
   'googleMapsUri',
   'primaryType',
+  'photos',
 ].join(',');
+
+// Google returns up to 10 photos per place — capped well below that so one
+// lookup can never queue up more lazy-loaded media fetches than a thumbnail
+// strip could ever show at once. Exported so PlacePanel's own thumbnail
+// strip renders exactly this many, never more.
+export const MAX_PHOTOS = 4;
+
+// Two distinct sizes for two distinct jobs, never the same URL for both —
+// requesting the hero's own 400px size for every one of MAX_PHOTOS thumbnail
+// previews (each displayed at only ~120x90) was pulling down several times
+// the pixel data any of them actually needed, on every single lookup.
+// Thumbnails stay small; only the one photo an entity actually stores as its
+// hero (see formatting.ts's withHeroImage) is ever fetched at the larger size.
+const PHOTO_THUMBNAIL_DIMENSION_PX = 240;
+const PHOTO_HERO_DIMENSION_PX = 400;
+
+// Photo Media is fetched directly by the browser as a plain <img src> (see
+// PlacePanel's loading="lazy" thumbnails) — never through googleApiFetch's
+// header-based auth, since a hotlinked <img> can't attach a custom header.
+// Google's media endpoint is built for exactly this, taking the key as a
+// query param instead.
+function photoMediaUrl(photoName: string, dimensionPx: number): string {
+  const params = new URLSearchParams({
+    maxWidthPx: String(dimensionPx),
+    maxHeightPx: String(dimensionPx),
+    key: PLACES_API_KEY,
+  });
+  return `https://places.googleapis.com/v1/${photoName}/media?${params}`;
+}
+
+// The small size PlacePanel's own thumbnail strip previews at — never
+// persisted, since these are shown live and re-fetched fresh every time the
+// strip renders (see PlacePanel).
+export function photoThumbnailUrl(photoName: string): string {
+  return photoMediaUrl(photoName, PHOTO_THUMBNAIL_DIMENSION_PX);
+}
+
+// The Image[] shape every entity's own top-level `images` stores (see
+// formatting.ts's withHeroImage) — built only for whichever single photo a
+// viewer actually clicks in the strip, at the larger hero-appropriate size,
+// so nothing this size is ever fetched for a photo nobody picked.
+export function placeImageFromPhoto(photo: PlacePhoto): Image {
+  return {
+    uri: photoMediaUrl(photo.name, PHOTO_HERO_DIMENSION_PX),
+    credit: photo.authorAttributions?.[0]?.displayName ?? null,
+    caption: null,
+  };
+}
 
 // Keyed by place id, caching the in-flight/resolved promise so the same place
 // is never fetched twice in one page session (activities can repeat across

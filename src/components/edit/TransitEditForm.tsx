@@ -12,6 +12,7 @@ import {
 import type { Route } from '../../model/types';
 import { BookingFields } from './BookingFields';
 import { DateTimeFieldPair } from './DateTimeFieldPair';
+import { TransitEndpointFields } from './StayTransitFields';
 
 export function TransitEditForm({
   form,
@@ -27,20 +28,7 @@ export function TransitEditForm({
 
   return (
     <Stack spacing={2}>
-      <Stack direction="row" spacing={2}>
-        <TextField
-          label="From"
-          value={form.fromLabel}
-          onChange={(e) => onChange({ ...form, fromLabel: e.target.value })}
-          fullWidth
-        />
-        <TextField
-          label="To"
-          value={form.toLabel}
-          onChange={(e) => onChange({ ...form, toLabel: e.target.value })}
-          fullWidth
-        />
-      </Stack>
+      <TransitEndpointFields form={form} onChange={onChange} />
       <DateTimeFieldPair
         dateLabel="Departs date"
         timeLabel="Departs time"

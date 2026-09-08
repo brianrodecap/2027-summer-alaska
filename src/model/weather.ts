@@ -302,6 +302,29 @@ export async function getPlaceTemperature(
   return { highF: weather.highF, lowF: weather.lowF, isForecast: weather.isForecast };
 }
 
+export interface PlaceSunriseSunset {
+  sunrise: string | null;
+  sunset: string | null;
+}
+
+// Single-place sunrise/sunset, for a fuzzy-timed ('Sunrise'/'Sunset'
+// timeLabel, no startAt) Activity's own row — same forecast-vs-climate-
+// average fallback as getPlaceTemperature above, narrowed to just the two
+// fields a "what time is that, really" row needs. Unlike showWeatherAtPlace/
+// showElevationAtPlace this isn't an opt-in per-entity toggle: an Activity
+// that names itself "Sunrise"/"Sunset" is inherently making a time claim, so
+// resolving what that actually means is always relevant, not a nice-to-have
+// extra.
+export async function getPlaceSunriseSunset(
+  placeId: string,
+  date: string,
+): Promise<PlaceSunriseSunset | null> {
+  if (!isPlacesApiKeyConfigured()) return null;
+  const weather = await getPlaceWeather(placeId, date);
+  if (!weather) return null;
+  return { sunrise: weather.sunrise, sunset: weather.sunset };
+}
+
 // ---- air quality — US AQI, for every day the caller resolves a place for
 // (see DayWeatherStrip's own "best-effort place" fallback for days with no
 // dedicated weatherPlaceId). Open-Meteo's air-quality model's own forecast

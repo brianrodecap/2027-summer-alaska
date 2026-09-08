@@ -14,7 +14,6 @@ import {
   type EditKind,
   type Entity,
   findDuplicateMealActivity,
-  type MealDecision,
   mergeMealOptionIntoActivity,
   stayFormFrom,
   type StayFormState,
@@ -27,6 +26,7 @@ import {
 import { resolveScenarioDates } from '../../model/tripModel';
 import type { Activity, Leg, Route, Scenario, Stay, Transit, Traveler } from '../../model/types';
 import { renderWizardStep, type WizardStepContext } from './renderWizardStep';
+import { useMealDecision } from './useMealDecision';
 import { WizardShell, type WizardStep } from './WizardShell';
 
 // The "Add to this day" wizard — unlike EditEventWizard, the kind isn't
@@ -64,12 +64,15 @@ export function AddEventWizard({
 }) {
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<WizardCategory>('activity');
-  const [mealDecision, setMealDecision] = useState<MealDecision>('decided');
   const [mergeIntoDuplicate, setMergeIntoDuplicate] = useState(true);
 
   const [activityForm, setActivityForm] = useState<ActivityFormState>(() =>
     activityFormFrom(blankActivity(legId, date)),
   );
+  // Most meals get jotted down before a place is settled on — "still
+  // deciding" is the far more common starting point than "I already know
+  // exactly where."
+  const [mealDecision, handleMealDecisionChange] = useMealDecision('undecided', setActivityForm);
   const [stayForm, setStayForm] = useState<StayFormState>(() =>
     stayFormFrom(blankStay(legId, date)),
   );
@@ -93,18 +96,15 @@ export function AddEventWizard({
   );
 
   const stepIds = wizardStepsForCategory(category, {
-    mealDecision,
-    hasTravelers: tripTravelers.length > 0,
     lead: 'category',
     duplicateMealActivity,
-    mergeIntoDuplicate,
   });
 
   const ctx: WizardStepContext = {
     category,
     onCategoryChange: setCategory,
     mealDecision,
-    onMealDecisionChange: setMealDecision,
+    onMealDecisionChange: handleMealDecisionChange,
     duplicateMealActivity,
     mergeIntoDuplicate,
     onMergeIntoDuplicateChange: setMergeIntoDuplicate,
@@ -129,7 +129,14 @@ export function AddEventWizard({
   const steps: WizardStep[] = stepIds.map((id) => ({
     id,
     content: renderWizardStep(id, ctx),
-    canProceed: wizardStepCanProceed(id, { activityForm, stayForm, transitForm, scenarioForm }),
+    canProceed: wizardStepCanProceed(id, {
+      activityForm,
+      stayForm,
+      transitForm,
+      scenarioForm,
+      duplicateMealActivity,
+      mergeIntoDuplicate,
+    }),
   }));
 
   const handleFinish = () => {

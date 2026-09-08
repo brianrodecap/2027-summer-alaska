@@ -43,7 +43,13 @@ function isIncludedOptionActive(day: Day, option: EnrichedMealOption): boolean {
 }
 
 // activity.options is only ever set while a meal is genuinely undecided
-// among named candidates.
+// among named candidates — that's also what distinguishes a meal Activity
+// from a plain one everywhere the day list, its map panel, and its live
+// dining-format overrides need to branch on it.
+export function isMealActivity(activity: { options: unknown[] | null }): boolean {
+  return Boolean(activity.options?.length);
+}
+
 export function activeMealOptions(
   activity: { options: EnrichedMealOption[] | null },
   day: Day,
@@ -127,7 +133,7 @@ function liveFormatOverrides(
   if (cached && cached.mealOptionIndex === mealOptionIndex) return cached.overrides;
   const overrides = new Map<string, DiningFormat>();
   for (const activity of dayActivities(day)) {
-    if (!activity.options?.length) continue;
+    if (!isMealActivity(activity)) continue;
     const options = activeMealOptions(activity, day);
     const selected = options[selectedMealOptionIndex(options, mealOptionIndex, activity._id)];
     if (selected) overrides.set(activity._id, selected.diningFormat);

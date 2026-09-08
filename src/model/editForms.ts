@@ -9,11 +9,12 @@ import {
   bookingFormValueFrom,
   readBookingFormValue,
 } from '../components/edit/bookingFormValue';
-import { dateOnly, transitRouteLabel } from './tripModel';
+import { activityHeadline, addDaysStr, dateOnly, transitRouteLabel } from './tripModel';
 import type {
   Activity,
   DiningFormat,
   Leg,
+  Lodging,
   MealOption,
   MealType,
   Place,
@@ -69,7 +70,7 @@ export function blankStay(legId: string, date: string): Stay {
     legId,
     scenarioId: null,
     checkInAt: `${date}T15:00`,
-    checkOutAt: `${date}T15:00`,
+    checkOutAt: `${addDaysStr(date, 1)}T11:00`,
     status: 'planning',
     lodging: { placeId: null, name: '' },
     booking: null,
@@ -118,6 +119,22 @@ export function findByKind<
   return (data[COLLECTION_FOR_KIND[kind]] as Entity[]).find((e) => e._id === id);
 }
 
+// Finds the one entity named by kind+id and replaces it with `patch`'s
+// result, leaving everything else untouched — the read side of findByKind
+// above, used wherever a change needs to reach one entity buried in
+// TripData without a whole edit-form Save (see useHeroImageSelect, which
+// patches an entity's own images array when a viewer picks a new hero
+// photo from its detail panel).
+export function patchByKind<
+  T extends { activities: Activity[]; stays: Stay[]; transits: Transit[] },
+>(data: T, kind: EditKind, id: string, patch: (entity: Entity) => Entity): T {
+  const collection = COLLECTION_FOR_KIND[kind];
+  return {
+    ...data,
+    [collection]: (data[collection] as Entity[]).map((e) => (e._id === id ? patch(e) : e)),
+  };
+}
+
 // Shared "replace by _id, else append" used by every collection's own
 // onSave (Route/Scenario dialogs, EditContext) so the two shapes can't
 // silently diverge.
@@ -130,7 +147,7 @@ export function upsertById<T extends { _id: string }>(list: T[], item: T): T[] {
 export function entityLabel(kind: EditKind, entity: Entity): string {
   if (kind === 'stay') return (entity as Stay).lodging?.name || 'Untitled stay';
   if (kind === 'transit') return transitRouteLabel(entity as Transit);
-  return (entity as Activity).text || 'Untitled activity';
+  return activityHeadline(entity as Activity) || 'Untitled activity';
 }
 
 // Swaps two array entries by index — shared by RouteEditForm's variant
@@ -214,17 +231,54 @@ function toMealOption(fields: Omit<MealOption, '_id'>): MealOption {
   return { _id: crypto.randomUUID(), ...fields };
 }
 
-export function mergeMealOptionIntoActivity(
-  duplicate: Activity,
-  form: ActivityFormState,
-): Activity {
-  const merged = structuredClone(duplicate);
-  const newOption = toMealOption({
+// The form's own decided-place fields (place/diningFormat/includedIn/
+// booking), repackaged as one MealOption — shared by mergeMealOptionIntoActivity
+// (folding a whole new draft in as a candidate) and changeMealDecisionForm
+// below (folding just the place already picked in as candidate zero, when
+// switching from decided to undecided mid-wizard).
+export function mealOptionFromForm(
+  form: Pick<ActivityFormState, 'diningFormat' | 'place' | 'includedIn' | 'booking'>,
+): MealOption {
+  return toMealOption({
     diningFormat: form.diningFormat || 'sit-down',
     place: form.place,
     includedIn: form.includedIn,
     booking: readBookingFormValue(form.booking, null),
   });
+}
+
+// Wraps the "Do you know where yet?" toggle's own onChange — a genuine
+// toggle has to be lossless in both directions, or switching back and forth
+// quietly drops whatever was entered. Undecided keeps candidate zero as the
+// decided place (mirroring MealOptionList's own "options[0] is the default
+// tab" rule), so going decided -> undecided -> decided is a no-op, not a
+// one-way trip.
+export function changeMealDecisionForm(
+  form: ActivityFormState,
+  next: MealDecision,
+): ActivityFormState {
+  if (next === 'undecided') {
+    if (!form.place) return form;
+    return { ...form, place: null, options: [mealOptionFromForm(form), ...form.options] };
+  }
+  if (!form.options.length) return form;
+  const [first, ...rest] = form.options;
+  return {
+    ...form,
+    place: first.place,
+    diningFormat: first.diningFormat,
+    includedIn: first.includedIn,
+    booking: bookingFormValueFrom(first.booking),
+    options: rest,
+  };
+}
+
+export function mergeMealOptionIntoActivity(
+  duplicate: Activity,
+  form: ActivityFormState,
+): Activity {
+  const merged = structuredClone(duplicate);
+  const newOption = mealOptionFromForm(form);
   if (merged.options?.length) {
     merged.options = [...merged.options, newOption];
   } else {
@@ -294,7 +348,7 @@ export function includedInOptions(
       if (date == null) continue;
       options.push({
         value: `activity:${activity._id}`,
-        label: activity.text,
+        label: activityHeadline(activity),
         date,
         sortKey: activity.startAt ?? `${date}T00:00`,
       });
@@ -356,7 +410,7 @@ export function activityFormFrom(activity: Activity): ActivityFormState {
     startsTime,
     durationMinutes: activity.durationMinutes,
     timeLabel: activity.timeLabel ?? '',
-    text: activity.text,
+    text: activity.text ?? '',
     status: activity.status,
     priority: activity.priority ?? '',
     mealType: activity.mealType ?? '',
@@ -371,15 +425,26 @@ export function activityFormFrom(activity: Activity): ActivityFormState {
   };
 }
 
+// text is only required when there's no Place to fall back on — a Place
+// already names the row, so forcing a duplicate label just to satisfy this
+// check would store the same fact twice (see activityHeadline in
+// tripModel.ts, which every reader of an Activity's display text goes
+// through instead of reading .text directly). Shared by applyActivityForm's
+// validation and wizardStepCanProceed's 'details' case so the rule can't
+// drift between the two.
+export function hasDescriptionOrPlace(form: Pick<ActivityFormState, 'text' | 'place'>): boolean {
+  return form.text.trim() !== '' || Boolean(form.place);
+}
+
 // Every Activity must resolve to both a real sort position and a real date
 // — startAt, or a Starts date paired with a fuzzy timeLabel. An exact Starts
 // always wins over the fuzzy time select when both are given.
 export function applyActivityForm(activity: Activity, form: ActivityFormState): string | null {
   const text = form.text.trim();
-  if (!text) return 'Needs a description.';
+  if (!hasDescriptionOrPlace(form)) return 'Needs a description.';
   const startAt =
     form.startsDate && form.startsTime ? `${form.startsDate}T${form.startsTime}` : null;
-  activity.text = text;
+  activity.text = text || null;
   activity.status = form.status;
   activity.priority = form.priority || null;
   if (startAt) {
@@ -422,8 +487,15 @@ export function applyActivityForm(activity: Activity, form: ActivityFormState): 
 
 // ---------- Stay ----------
 
+// A Stay's lodging, reshaped as the Place a PlacePickerField (or the detail
+// side sheet's own live Places lookup) needs — shared by stayFormFrom below
+// and StayDetailPanel, which both need the same lodging->Place conversion.
+export function placeFromLodging(lodging: Lodging | null | undefined): Place | null {
+  return lodging ? { id: lodging.placeId, label: lodging.name } : null;
+}
+
 export interface StayFormState {
-  lodgingName: string;
+  place: Place | null;
   checkInDate: string | null;
   checkInTime: string | null;
   checkOutDate: string | null;
@@ -433,7 +505,7 @@ export interface StayFormState {
 
 export function stayFormFrom(stay: Stay): StayFormState {
   return {
-    lodgingName: stay.lodging?.name ?? '',
+    place: placeFromLodging(stay.lodging),
     checkInDate: dateOnly(stay.checkInAt),
     checkInTime: stay.checkInAt.slice(11, 16),
     checkOutDate: dateOnly(stay.checkOutAt),
@@ -450,7 +522,10 @@ export function applyStayForm(stay: Stay, form: StayFormState): string | null {
   if (!checkInAt || !checkOutAt) return 'Needs both check-in and check-out times.';
   stay.checkInAt = checkInAt;
   stay.checkOutAt = checkOutAt;
-  if (stay.lodging) stay.lodging.name = form.lodgingName.trim() || stay.lodging.name;
+  const name = form.place?.label.trim();
+  if (name) {
+    stay.lodging = { ...stay.lodging, placeId: form.place?.id ?? null, name };
+  }
   stay.booking = readBookingFormValue(form.booking, stay.booking);
   return null;
 }
@@ -458,8 +533,8 @@ export function applyStayForm(stay: Stay, form: StayFormState): string | null {
 // ---------- Transit ----------
 
 export interface TransitFormState {
-  fromLabel: string;
-  toLabel: string;
+  from: Place;
+  to: Place;
   departsDate: string | null;
   departsTime: string | null;
   arrivesDate: string | null;
@@ -471,8 +546,8 @@ export interface TransitFormState {
 
 export function transitFormFrom(transit: Transit): TransitFormState {
   return {
-    fromLabel: transit.from.label,
-    toLabel: transit.to.label,
+    from: transit.from,
+    to: transit.to,
     departsDate: dateOnly(transit.departsAt),
     departsTime: transit.departsAt.slice(11, 16),
     arrivesDate: transit.arrivesAt ? dateOnly(transit.arrivesAt) : null,
@@ -499,8 +574,8 @@ export function applyTransitForm(transit: Transit, form: TransitFormState): stri
     return 'Needs both a departure and arrival time.';
   transit.departsAt = departsAt;
   transit.arrivesAt = arrivesAt;
-  transit.from.label = form.fromLabel.trim() || transit.from.label;
-  transit.to.label = form.toLabel.trim() || transit.to.label;
+  transit.from = form.from.label.trim() ? form.from : transit.from;
+  transit.to = form.to.label.trim() ? form.to : transit.to;
   transit.routeId = form.routeId;
   transit.routeVariant = form.routeId ? form.routeVariant : null;
   transit.booking = readBookingFormValue(form.booking, transit.booking);
@@ -524,13 +599,22 @@ export function routeVariantOptions(route: Route | null): { value: string; label
 
 // Shared closed-vocabulary <TextField select> option lists — used by both
 // the flat ActivityEditForm and the wizard's own step components, so they
-// can't silently drift apart.
+// can't silently drift apart. Ordered chronologically through the day
+// (All day leads the real time-of-day slots since it isn't a point within
+// one) — TIME_LABEL_ANCHORS in tripModel.ts must carry a matching anchor
+// time for every value here besides None, or validateActivityTiming rejects
+// it at load time.
 export const TIME_LABEL_OPTIONS: { value: TimeLabel | ''; label: string }[] = [
   { value: '', label: 'None' },
-  { value: 'Morning', label: 'Morning' },
-  { value: 'Afternoon', label: 'Afternoon' },
-  { value: 'Evening', label: 'Evening' },
   { value: 'All day', label: 'All day' },
+  { value: 'Sunrise', label: 'Sunrise' },
+  { value: 'Morning', label: 'Morning' },
+  { value: 'Midday', label: 'Midday' },
+  { value: 'Afternoon', label: 'Afternoon' },
+  { value: 'Sunset', label: 'Sunset' },
+  { value: 'Evening', label: 'Evening' },
+  { value: 'Night', label: 'Night' },
+  { value: 'Midnight', label: 'Midnight' },
 ];
 
 export const PRIORITY_OPTIONS: { value: Priority | ''; label: string }[] = [
@@ -563,6 +647,26 @@ export const MEAL_TYPE_VALUES: { value: MealType; label: string }[] = [
   { value: 'dinner', label: 'Dinner' },
   { value: 'snack', label: 'Snack' },
 ];
+
+// A sensible Time default once a meal type is picked — Snack gets none,
+// since it's the one type without a natural single part of the day (a snack
+// could land anywhere). Only ever applied when nothing's been chosen yet
+// (see MealWhatStep) — never overwrites a Time already set.
+export const MEAL_TYPE_DEFAULT_TIME_LABEL: Partial<Record<MealType, TimeLabel>> = {
+  breakfast: 'Morning',
+  lunch: 'Midday',
+  dinner: 'Evening',
+};
+
+export function applyMealTypeChange(
+  form: ActivityFormState,
+  mealType: MealType | '',
+): ActivityFormState {
+  const defaultTimeLabel = mealType ? MEAL_TYPE_DEFAULT_TIME_LABEL[mealType] : undefined;
+  const timeLabel =
+    defaultTimeLabel && !form.timeLabel && !form.startsTime ? defaultTimeLabel : form.timeLabel;
+  return { ...form, mealType, timeLabel };
+}
 
 // ---------- Route ----------
 //
@@ -821,28 +925,41 @@ export type WizardCategory = EditKind | 'meal' | 'scenario';
 
 export type MealDecision = 'decided' | 'undecided';
 
-// Key order doubles as the CategoryStep's display order — keep the most
-// common choice (a place to sleep) first.
-export const WIZARD_CATEGORY_META: Record<WizardCategory, { label: string; helper: string }> = {
+// Key order doubles as the CategoryStep's display order — ranked by how
+// often each kind actually shows up in this trip's data (94 activities, 79
+// meals, 25 scenarios, 22 transits, 10 stays), except the three "somewhere
+// to ___" choices (do/eat/sleep) are kept together as one family rather than
+// splitting "sleep" out to the literal bottom of that ranking. `icon` is a
+// materialIcon.ts registry name, rendered to the left of each card's label.
+export const WIZARD_CATEGORY_META: Record<
+  WizardCategory,
+  { label: string; helper: string; icon: string }
+> = {
+  activity: {
+    label: 'Something to do',
+    helper: 'A hike, tour, museum, or anything else that happens at a place and a time.',
+    icon: 'hiking',
+  },
+  meal: {
+    label: 'Somewhere to eat',
+    helper: 'Breakfast, lunch, dinner, or a snack — even if the place is still up in the air.',
+    icon: 'restaurant',
+  },
   stay: {
     label: 'Somewhere to sleep',
     helper: 'A hotel, lodge, cabin, or campsite — anywhere you check in and check out of.',
+    icon: 'hotel',
   },
-  meal: {
-    label: 'A meal',
-    helper: 'Breakfast, lunch, dinner, or a snack — even if the place is still up in the air.',
+  scenario: {
+    label: 'A backup plan',
+    helper:
+      "Two versions of a day, for when weather (or anything else) changes your plans — an 'ideal' one and the 'alternate' it falls back to.",
+    icon: 'alt_route',
   },
   transit: {
     label: 'Getting somewhere',
     helper: 'A drive, flight, ferry, or any other leg that moves from one place to another.',
-  },
-  activity: {
-    label: 'Something to do',
-    helper: 'A hike, tour, museum, or anything else that happens at a place and a time.',
-  },
-  scenario: {
-    label: 'A weather-branch or backup plan',
-    helper: "Two versions of a day — an 'ideal' plan and the 'alternate' it falls back to.",
+    icon: 'commute',
   },
 };
 
@@ -867,16 +984,12 @@ export type WizardStepId =
   | 'transitWhere'
   | 'transitRoute'
   | 'transitWhen'
-  | 'activityWhat'
-  | 'activityWhen'
-  | 'activityPlace'
-  | 'extras'
+  | 'activityWhereWhen'
+  | 'details'
   | 'mealWhat'
-  | 'mealWhen'
-  | 'mealDuplicate'
   | 'mealDecision'
-  | 'mealPlace'
-  | 'mealOptions'
+  | 'mealWhereWhen'
+  | 'mealDuplicate'
   | 'booking'
   | 'scenarioDetails'
   | 'review';
@@ -889,16 +1002,12 @@ export const WIZARD_STEP_LABEL: Record<WizardStepId, string> = {
   transitWhere: 'From / to',
   transitRoute: 'Route',
   transitWhen: 'Departs / arrives',
-  activityWhat: 'What is it?',
-  activityWhen: 'When',
-  activityPlace: 'Place',
-  extras: 'A few more details',
+  activityWhereWhen: 'Where & When',
+  details: 'Details',
   mealWhat: 'What meal?',
-  mealWhen: 'When',
-  mealDuplicate: 'Already planned?',
   mealDecision: 'Do you know where yet?',
-  mealPlace: 'Where',
-  mealOptions: 'The candidates',
+  mealWhereWhen: 'Where & When',
+  mealDuplicate: 'Already planned?',
   booking: 'Booking',
   scenarioDetails: 'Scenario details',
   review: 'Review',
@@ -913,15 +1022,16 @@ export const WIZARD_STEP_TIP: Partial<Record<WizardStepId, string>> = {
   transitWhere: "Plain place names are fine; you don't need a full address.",
   transitRoute:
     "Picking a route with known stages fills in travel time automatically and surfaces this leg's stops on the day. Leave it as None for a simple point-to-point trip.",
-  activityWhen: 'No exact time yet? Leave Starts time blank and pick a fuzzy time of day instead.',
-  activityPlace: "Leave this blank if there's no specific real-world location.",
-  mealWhen: 'No exact time yet? Leave Starts time blank and pick a fuzzy time of day instead.',
+  activityWhereWhen:
+    "Leave Place blank if there's no specific real-world location — you can still say when it happens.",
+  mealDecision:
+    "Still choosing between a few restaurants? Say so — you can list every candidate next. Switching back and forth keeps whatever you've already entered.",
+  mealWhereWhen:
+    "Add every candidate still in the running, or the one place you've settled on — whichever this meal's still deciding between.",
   mealDuplicate:
     'Merging keeps every candidate as one switchable set of choices instead of two entries that look like they overlap.',
-  mealDecision:
-    'Still choosing between a few restaurants? Say so — you can list every candidate next.',
-  mealOptions: "Add every place still in the running; each gets its own tab on the day's list.",
-  extras: "Both are optional — skip either if they don't apply.",
+  details:
+    "Everything here is optional. Description defaults to the place's name if left blank. Add booking or reservation details only once there's an actual confirmation — attendees only show up once there is, since that's usually what limits who's on it.",
   booking: "Only fill this in once there's an actual reservation or confirmation number.",
   scenarioDetails:
     "Ideal is the plan you're hoping for; Alternate is what this day falls back to if it doesn't pan out.",
@@ -932,55 +1042,51 @@ export const WIZARD_STEP_TIP: Partial<Record<WizardStepId, string>> = {
 // Activity, kind already fixed) — the two are mutually exclusive, and
 // editing a Stay/Transit gets no lead step at all, since there's nothing
 // left to ask before its own details.
+// "This meal is being folded into an existing Activity as one more candidate,
+// rather than saved as an Activity of its own." Both halves are needed: a
+// duplicate has to have been found *and* the viewer has to have left the
+// merge toggle on. Exported so the wizards, the step renderer, and
+// wizardStepCanProceed all derive it the same way instead of each carrying
+// their own precomputed copy.
+export function isMergingIntoDuplicate(opts: {
+  duplicateMealActivity?: Activity | null;
+  mergeIntoDuplicate?: boolean;
+}): boolean {
+  return Boolean(opts.duplicateMealActivity && opts.mergeIntoDuplicate);
+}
+
 export function wizardStepsForCategory(
   category: WizardCategory,
   opts: {
-    mealDecision: MealDecision;
-    hasTravelers: boolean;
     lead: 'category' | 'mealBranch' | null;
     // Only AddEventWizard ever has a duplicate to find (see
-    // findDuplicateMealActivity) — EditEventWizard leaves both unset, which
+    // findDuplicateMealActivity) — EditEventWizard leaves this unset, which
     // reads the same as "no duplicate found".
     duplicateMealActivity?: Activity | null;
-    mergeIntoDuplicate?: boolean;
   },
 ): WizardStepId[] {
   const lead: WizardStepId[] = opts.lead ? [opts.lead] : [];
-  const extras: WizardStepId[] = opts.hasTravelers ? ['extras'] : [];
   switch (category) {
     case 'stay':
       return [...lead, 'stayDetails', 'stayWhen', 'booking', 'review'];
     case 'transit':
       return [...lead, 'transitWhere', 'transitRoute', 'transitWhen', 'booking', 'review'];
     case 'activity':
-      return [
-        ...lead,
-        'activityWhat',
-        'activityWhen',
-        'activityPlace',
-        ...extras,
-        'booking',
-        'review',
-      ];
+      return [...lead, 'activityWhereWhen', 'details', 'review'];
     case 'meal': {
+      // mealType/Start date/time all live inside mealWhereWhen now, so a
+      // duplicate can only be detected once that step's been filled in —
+      // it surfaces right after, rather than before, for exactly that
+      // reason (findDuplicateMealActivity needs the values that step
+      // collects).
       const duplicateStep: WizardStepId[] = opts.duplicateMealActivity ? ['mealDuplicate'] : [];
-      // Merging folds the in-progress form straight into the existing
-      // Activity as one more candidate (mergeMealOptionIntoActivity) — the
-      // decided/undecided branch and its own candidate list don't apply,
-      // since this meal's "still deciding among a few" state already lives
-      // on the Activity being merged into.
-      const decisionSteps: WizardStepId[] =
-        opts.duplicateMealActivity && opts.mergeIntoDuplicate
-          ? ['mealPlace']
-          : ['mealDecision', opts.mealDecision === 'decided' ? 'mealPlace' : 'mealOptions'];
       return [
         ...lead,
         'mealWhat',
-        'mealWhen',
+        'mealDecision',
+        'mealWhereWhen',
         ...duplicateStep,
-        ...decisionSteps,
-        ...extras,
-        'booking',
+        'details',
         'review',
       ];
     }
@@ -1001,6 +1107,13 @@ export function wizardStepCanProceed(
     stayForm?: StayFormState;
     transitForm?: TransitFormState;
     scenarioForm?: Scenario;
+    // 'details' hides its description subsection while merging into a
+    // duplicate meal (see renderWizardStep's 'details' case), so it mustn't
+    // require one either. Passed as the same two raw inputs the renderer
+    // gets, rather than a precomputed flag, so the rule lives only in
+    // isMergingIntoDuplicate.
+    duplicateMealActivity?: Activity | null;
+    mergeIntoDuplicate?: boolean;
   },
 ): boolean {
   switch (stepId) {
@@ -1014,11 +1127,11 @@ export function wizardStepCanProceed(
         f && f.departsDate && f.departsTime && (f.routeId || (f.arrivesDate && f.arrivesTime)),
       );
     }
-    case 'activityWhat':
-    case 'mealWhat':
-      return Boolean(forms.activityForm && forms.activityForm.text.trim() !== '');
-    case 'activityWhen':
-    case 'mealWhen': {
+    case 'details':
+      if (isMergingIntoDuplicate(forms)) return true;
+      return Boolean(forms.activityForm && hasDescriptionOrPlace(forms.activityForm));
+    case 'activityWhereWhen':
+    case 'mealWhereWhen': {
       const f = forms.activityForm;
       return Boolean(f && f.startsDate && (f.startsTime || f.timeLabel));
     }

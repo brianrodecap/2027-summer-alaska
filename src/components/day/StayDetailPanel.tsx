@@ -1,9 +1,12 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
+import { placeFromLodging } from '../../model/editForms';
 import { firstImage, stayDetailBits } from '../../model/formatting';
 import { formatTime } from '../../model/tripModel';
 import type { EnrichedStay } from '../../model/types';
+import { useHeroImageSelect } from '../../state/useHeroImageSelect';
+import { PlacePanel } from '../activity/PlacePanel';
 import { BookingChip } from '../shared/BookingChip';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
@@ -25,10 +28,13 @@ export function StayDetailPanel({
   onClose: () => void;
   onEdit?: () => void;
 }) {
+  const onSelectImage = useHeroImageSelect('stay', stay?._id);
+
   if (!stay) return null;
 
   const image = firstImage(stay);
   const detailBits = stayDetailBits(stay.lodging);
+  const place = placeFromLodging(stay.lodging);
 
   return (
     <DetailSideSheet
@@ -53,6 +59,7 @@ export function StayDetailPanel({
         </Box>
       )}
       <NotesCluster notes={stay.notes} expanded />
+      {place && <PlacePanel place={place} onSelectImage={onSelectImage} />}
     </DetailSideSheet>
   );
 }
