@@ -344,8 +344,8 @@ export function draftEntityFromExtraction(
     if (fields.checkInAt) stay.checkInAt = fields.checkInAt;
     if (fields.checkOutAt) stay.checkOutAt = fields.checkOutAt;
     if (stay.lodging) {
-      stay.lodging.name = fields.lodgingName ?? stay.lodging.name;
-      stay.lodging.placeId = null;
+      stay.lodging.place.label = fields.lodgingName ?? stay.lodging.place.label;
+      stay.lodging.place.id = null;
     }
     stay.booking = booking;
     return stay;

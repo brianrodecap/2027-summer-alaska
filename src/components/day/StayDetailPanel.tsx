@@ -1,8 +1,7 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
-import { placeFromLodging } from '../../model/editForms';
-import { firstImage, stayDetailBits } from '../../model/formatting';
+import { firstImage, placeFromLodging, stayDetailBits } from '../../model/formatting';
 import { formatTime } from '../../model/tripModel';
 import type { EnrichedStay } from '../../model/types';
 import { useHeroImageSelect } from '../../state/useHeroImageSelect';
@@ -41,7 +40,7 @@ export function StayDetailPanel({
       open={open}
       onClose={onClose}
       onEdit={onEdit}
-      title={stay.lodging?.name ?? 'Lodging still open'}
+      title={place?.label ?? 'Lodging still open'}
       titleIcon={renderMaterialIcon('hotel', { color: 'primary' })}
     >
       <EntityHeroImage image={image} />

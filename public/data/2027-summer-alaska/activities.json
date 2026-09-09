@@ -107,25 +107,53 @@
     "date": null
   },
   {
-    "_id": "act_jun27_ideal_2",
+    "_id": "act_jun27_alt_2",
     "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_ideal",
+    "scenarioId": "scenario_jun27_alt",
     "status": "planning",
-    "startAt": "2027-06-27T09:00",
+    "startAt": null,
     "durationMinutes": null,
-    "timeLabel": null,
+    "timeLabel": "Afternoon",
     "priority": null,
-    "text": "Check in with your flightseeing operator, safety briefing",
+    "text": null,
     "place": {
-      "id": "ChIJ3yZKTfOVzlYR66TXF7zl7dg",
-      "label": "K2 Aviation",
+      "id": "ChIJ33nUJ42VzlYReEG24JfykiY",
+      "label": "Mahay’s Jet Boat Adventures",
       "images": [
         {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/K2_flightseeing_Alaska_2005.jpg",
-          "credit": "Photo by raer / CC BY 2.0",
-          "caption": "K2 Aviation's flightseeing facility in Talkeetna"
+          "uri": "https://mahaysriverboat.com/wp-content/uploads/2021/06/Queen-with-mountain-1024x576.jpg",
+          "credit": "Courtesy of Mahay's Jet Boat Adventures",
+          "caption": "Mahay's jet boat cruising the river with mountain views"
         }
       ]
+    },
+    "booking": {
+      "status": "planning",
+      "confirmationNumber": null,
+      "cost": null
+    },
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [],
+    "date": "2027-06-27"
+  },
+  {
+    "_id": "0152fb29-e30c-492b-9278-a7a4575f5800",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_alt",
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Afternoon",
+    "date": "2027-06-27",
+    "priority": null,
+    "text": null,
+    "place": {
+      "id": "ChIJ-9r9Su3GzlYRd2bK5bTAhq0",
+      "label": "Alaska Birch Syrup & Wild Harvest: Shop"
     },
     "booking": null,
     "mealType": null,
@@ -133,16 +161,85 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [
+      {
+        "uri": "https://places.googleapis.com/v1/places/ChIJ-9r9Su3GzlYRd2bK5bTAhq0/photos/AVoNoXRlEYtehUaI6ghFQ1gM602PXz9gxqHWZBQJUMfZyjKYw783kYxMEDqIcpzt4vg7tDmHZxG_WxZ7mR9k-SFTkJ8Y2p3BQIxfjyAEislBug3uWvMBQe7xNNphZASE6EcnViKPrjfmonc7ZgD_HKRnEsbO3sVuuA39btAFXwhJSghk8g__nnzlp_5aLeTpD2snSQ8aXblpH92PAeBCLGBrYXmOFeXi4JNiKsICfbSJzJQ4ylQ4HEzFp9vwYiRdtfh_xx9oUomt7kI5N0b1PWjzFBb7R2PGgh_oM2aGbaJgHTp4B5tISgJTKjBDEpqYIamNZONI4BAaHftXur39GouXiwGn0MHg1k4eUhOLprIosZtCZiY1qMDrhH1Hw2WZE9SYamuwxvdsZQ_vwFnYwkubhcqjqPiRMO5QPEuJRxlh69Y/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+        "credit": "Alaska Birch Syrup & Wild Harvest: Shop",
+        "caption": null
+      }
+    ]
+  },
+  {
+    "_id": "act_jun27_ideal_1",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_alt",
+    "status": "planning",
+    "startAt": "2027-06-27T08:00",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "priority": null,
+    "text": "Breakfast — choosing where",
+    "place": null,
+    "booking": null,
+    "mealType": "breakfast",
+    "diningFormat": null,
+    "includedIn": null,
+    "options": [
+      {
+        "_id": "act_jun27_ideal_1_opt0",
+        "diningFormat": "included",
+        "place": null,
+        "includedIn": {
+          "entity": "stay",
+          "id": "stay_talkeetna"
+        },
+        "booking": null
+      },
+      {
+        "_id": "act_jun27_ideal_1_opt1",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJS63CqrW_zlYRNQYObIK7Szk",
+          "label": "Flying Squirrel Bakery Cafe",
+          "images": [
+            {
+              "uri": "https://le-cdn.website-editor.net/s/8702a098f6b94c62a426a67f31a19d32/dms3rep/multi/opt/175423ce-e09a-4c5a-8fb5-3e34c424807f-1920w.jpg?Expires=1789344480&Signature=cnK-82r-gY5LLL~g~AF6Fb30WFemF7rvgv4eABg-YpjjZ2iaw6qS7wTbTSdjN8Uq0sbFp~6e409-OnqiRLhpLF6lcDImZVojFQWrCmFSG9jgyyUib8fx7TWCaHpAqft8lHHL3aekbjJbzpvwnzi6xJ~puWQ1sneECEG0BperdmuubRixZNJsWuPDGQnMqBB4utpjTfEXSeyP84zkAyfXJ4s3BENeoMU4LMKKcqbO1~tuDmiv4U0djOI64PLsCikc6-E3tBwUAq2AWbW~~60bwMcHMYy40oBsTg2~XOYqADevWWXypoSBefce2z33bXO11y0fqe4-OtYF1iiP1uC4Nw__&Key-Pair-Id=K2NXBXLF010TJW"
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      },
+      {
+        "_id": "act_jun27_ideal_1_opt2",
+        "diningFormat": "grab-and-go",
+        "place": {
+          "id": "ChIJI6KxxIyVzlYRGhaQQYdhhss",
+          "label": "Conscious Coffee",
+          "images": [
+            {
+              "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Conscious_Coffee_%2841544107660%29.jpg",
+              "credit": "Photo by C Watts / CC BY 2.0",
+              "caption": "Conscious Coffee, Talkeetna, Alaska"
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      }
+    ],
+    "travelers": null,
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jun27_ideal_3",
     "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_ideal",
+    "scenarioId": "scenario_jun27_alt",
     "status": "planning",
-    "startAt": "2027-06-27T09:30",
-    "durationMinutes": 120,
-    "timeLabel": null,
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Morning",
     "priority": "high",
     "text": "Denali flightseeing with glacier landing",
     "place": {
@@ -152,8 +249,8 @@
     },
     "booking": {
       "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
+      "confirmationNumber": null,
+      "cost": null
     },
     "mealType": null,
     "diningFormat": null,
@@ -166,41 +263,98 @@
         "credit": "Photo by Jacob W. Frank / NPS, CC BY 2.0",
         "caption": "Flightseeing plane wing over Denali and the Alaska Range"
       }
-    ]
+    ],
+    "date": "2027-06-27"
   },
   {
     "_id": "act_jun27_ideal_4",
     "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_ideal",
+    "scenarioId": "scenario_jun27_alt",
     "status": "planning",
     "startAt": "2027-06-27T12:00",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
     "text": "West Rib Pub & Grill",
+    "place": null,
+    "booking": null,
+    "mealType": "lunch",
+    "diningFormat": null,
+    "includedIn": null,
+    "options": [
+      {
+        "_id": "8d7d6492-2520-4d50-a458-e3eb8ba5baa6",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJvQtPqJKVzlYRS5vJhR_du4M",
+          "label": "West Rib Pub & Grill",
+          "images": [
+            {
+              "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Nagley%27s_Main_Street_Deli_and_West_Rib.jpg",
+              "credit": "Photo by Laura Alier / CC BY 4.0",
+              "caption": "Nagley's Store and West Rib Pub & Grill signage, downtown Talkeetna"
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      },
+      {
+        "_id": "56832641-a1fa-46f9-a2e6-4f9e266ffdfd",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJeXwBuZKVzlYRC7c634C1pyk",
+          "label": "Talkeetna Roadhouse",
+          "images": [
+            {
+              "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Talkeetna_Roadhouse_Alaska_AK_inn_bakery_and_restaurant.jpg",
+              "credit": "Photo by Swampyank / CC BY-SA 4.0",
+              "caption": "Historic Talkeetna Roadhouse inn, bakery, and restaurant"
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      }
+    ],
+    "travelers": null,
+    "images": [],
+    "date": null
+  },
+  {
+    "_id": "act_jun27_ideal_7",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_alt",
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Afternoon",
+    "priority": null,
+    "text": null,
     "place": {
-      "id": "ChIJvQtPqJKVzlYRS5vJhR_du4M",
-      "label": "West Rib Pub & Grill",
+      "id": "ChIJn7ypqvKVzlYRxjwrM2rNi20",
+      "label": "Nagley's Store",
       "images": [
         {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Nagley%27s_Main_Street_Deli_and_West_Rib.jpg",
-          "credit": "Photo by Laura Alier / CC BY 4.0",
-          "caption": "Nagley's Store and West Rib Pub & Grill signage, downtown Talkeetna"
+          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Nagley's_Store,_Talkeetna,_AK.jpg",
+          "credit": "Photo by Zeete / CC BY-SA 4.0",
+          "caption": "Nagley's Store, a Talkeetna landmark since 1921"
         }
       ]
     },
     "booking": null,
-    "mealType": "lunch",
-    "diningFormat": "sit-down",
+    "mealType": null,
+    "diningFormat": null,
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-06-27"
   },
   {
-    "_id": "act_jun27_ideal_5",
+    "_id": "act_jun27_alt_5",
     "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_ideal",
+    "scenarioId": "scenario_jun27_alt",
     "status": "planning",
     "startAt": null,
     "durationMinutes": null,
@@ -224,75 +378,23 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": [],
-    "date": "2027-06-27"
-  },
-  {
-    "_id": "act_jun27_ideal_6",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_ideal",
-    "status": "planning",
-    "startAt": "2027-06-27T14:00",
-    "durationMinutes": 30,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Walk Main Street",
-    "place": {
-      "id": "ChIJ20slWQCVzlYRwXYWxu-x5Es",
-      "label": "Welcome to Beautiful Downtown Talkeetna Alaska Sign",
-      "images": []
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
     "images": [
       {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Downtown_Talkeetna.jpg",
-        "credit": "Photo by Justin Morgan / CC BY-SA 2.0",
-        "caption": "Downtown Talkeetna's Main Street"
+        "uri": "https://places.googleapis.com/v1/places/ChIJj6m5aoTAzlYRyQI-9AWEsFc/photos/AVoNoXQegQowB_uMQmDEKWyE1w6NUHyus3_y2uPrQoSsQq7hakfyfr8tf3ZXIDJTToNWjNYPEgzzoB-2eW9vjEwFGaVnFznZ9H2BwMS-VjXpBiZwwdf3TqT1QZONei-IikeaM9M4460usR9VeELz_UfkhGyc8oTsAXWjp1RGjATkzWgTfhkeIp3W4ZjoeoH_r6FPNDpJAxlDHg0KIdezyA9veg1Yf1zsyi7PK_zZxTspgLgSTvCvtDnMSUSuiHlszeGq_6lyNIM-VRyXv5KMf0iVMZj6nvzFdgIq9QVrzMWB2XxbrEn5hu0QN9uUMNghAOLsLMH2tqierENqOhJ9YGren609UTT3VrmqBiqWQOObFU4kuQuvVVLWumw3v1CbwIlw34leLJ0FpzbOB7EQZ9umeqi0AX-o0UFow5HrlDXZJPi2wg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+        "credit": "zealouscease",
+        "caption": null
       }
-    ]
-  },
-  {
-    "_id": "act_jun27_ideal_7",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_ideal",
-    "status": "planning",
-    "startAt": "2027-06-27T14:25",
-    "durationMinutes": 30,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Browse Nagley’s Store",
-    "place": {
-      "id": "ChIJn7ypqvKVzlYRxjwrM2rNi20",
-      "label": "Nagley's Store",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Nagley's_Store,_Talkeetna,_AK.jpg",
-          "credit": "Photo by Zeete / CC BY-SA 4.0",
-          "caption": "Nagley's Store, a Talkeetna landmark since 1921"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
+    ],
+    "date": "2027-06-27"
   },
   {
     "_id": "act_jun27_ideal_8",
     "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_ideal",
+    "scenarioId": "scenario_jun27_alt",
     "status": "planning",
-    "startAt": "2027-06-27T14:50",
-    "durationMinutes": 45,
-    "timeLabel": null,
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Afternoon",
     "priority": null,
     "text": "River confluence viewpoint (Susitna/Talkeetna/Chulitna)",
     "place": {
@@ -312,127 +414,19 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jun27_ideal_9",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_ideal",
-    "status": "planning",
-    "startAt": "2027-06-27T15:30",
-    "durationMinutes": 90,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Downtime at the mountain-view deck",
-    "place": {
-      "id": "ChIJQ4enWi--zlYRFqykGD_hqSY",
-      "label": "Talkeetna Alaskan Lodge",
-      "images": []
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jun27_ideal_10",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_ideal",
-    "status": "planning",
-    "startAt": "2027-06-27T18:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Denali Brewing Co.",
-    "place": {
-      "id": "ChIJbfrXM-nGzlYRzMhMFWUTFzI",
-      "label": "Denali Brewing Company",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_Brewing_Company,_Talkeetna,_Alaska.jpg",
-          "credit": "Photo by Laura Alier / CC BY 4.0",
-          "caption": "Denali Brewing Company building exterior in Talkeetna"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": "dinner",
-    "diningFormat": "sit-down",
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jun27_ideal_11",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_ideal",
-    "status": "planning",
-    "startAt": null,
-    "durationMinutes": null,
-    "timeLabel": "Evening",
-    "priority": null,
-    "text": "Casual stroll",
-    "place": {
-      "id": "ChIJRcDJfvyVzlYRIOTHFeZRV_Q",
-      "label": "Talkeetna River Walk",
-      "images": []
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
     "images": [],
     "date": "2027-06-27"
-  },
-  {
-    "_id": "act_jun27_alt_2",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_alt",
-    "status": "planning",
-    "startAt": "2027-06-27T09:30",
-    "durationMinutes": 120,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Wilderness Jet Boat Tour",
-    "place": {
-      "id": "ChIJ33nUJ42VzlYReEG24JfykiY",
-      "label": "Mahay’s Jet Boat Adventures",
-      "images": [
-        {
-          "uri": "https://mahaysriverboat.com/wp-content/uploads/2021/06/Queen-with-mountain-1024x576.jpg",
-          "credit": "Courtesy of Mahay's Jet Boat Adventures",
-          "caption": "Mahay's jet boat cruising the river with mountain views"
-        }
-      ]
-    },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
   },
   {
     "_id": "act_jun27_alt_3",
     "legId": "leg_parks",
     "scenarioId": "scenario_jun27_alt",
     "status": "planning",
-    "startAt": "2027-06-27T12:00",
-    "durationMinutes": 120,
-    "timeLabel": null,
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Afternoon",
     "priority": null,
-    "text": "Talkeetna Sled Dog Kennel Tour",
+    "text": null,
     "place": {
       "id": "ChIJl5APv_m5zlYRInGU8O6jjLM",
       "label": "AK Sled Dog Tours",
@@ -444,57 +438,29 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [
+      {
+        "uri": "https://places.googleapis.com/v1/places/ChIJl5APv_m5zlYRInGU8O6jjLM/photos/AVoNoXSz-XKFZp1IDnFLodzmYVa44ERgxwRt80JTc7TGHT1ibk8I1DFR0MpmCYS1HyKdVVL99OLJPlJtP40T7xWjNV9R8Cj2nuf0S3Lg8UVKqUAubftdgPOw47ib1KawSOS9s_AEjesYlAn_NHy0OxKNsD__ejS7wwn6CN7f71nPhEUvpAUVmoVT95DkuXNV_4A8bVptV8r8wVg80FDx-i0O_IL4Fl4-i46-ROLWm1XrBh6yaKG17QXKmwOP2MMF40I8fYvNB7-K8n-eVfc_4UqAKJ4lbOh9T4DAGc2NtQro8UzvTUdVdmtH45Gp_5NaY0u7MnYQhBztu3l9X8bS4_pCnUhIluwjoTabN2LnShbrULZiSyP4aj-XaZEJaffaXA3kwvHgLpwjlk0N9eQYNLDS3EWRh6V-MOXgG81Lqeyvx_KEvw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+        "credit": "AK Sled Dog Tours",
+        "caption": null
+      }
+    ],
+    "date": "2027-06-27"
   },
   {
-    "_id": "act_jun27_alt_4",
+    "_id": "act_jun27_ideal_9",
     "legId": "leg_parks",
     "scenarioId": "scenario_jun27_alt",
     "status": "planning",
-    "startAt": "2027-06-27T14:00",
+    "startAt": null,
     "durationMinutes": null,
-    "timeLabel": null,
+    "timeLabel": "Afternoon",
     "priority": null,
-    "text": "Lunch at Talkeetna Roadhouse",
+    "text": "Downtime at the mountain-view deck",
     "place": {
-      "id": "ChIJeXwBuZKVzlYRC7c634C1pyk",
-      "label": "Talkeetna Roadhouse",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Talkeetna_Roadhouse_Alaska_AK_inn_bakery_and_restaurant.jpg",
-          "credit": "Photo by Swampyank / CC BY-SA 4.0",
-          "caption": "Historic Talkeetna Roadhouse inn, bakery, and restaurant"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": "lunch",
-    "diningFormat": "sit-down",
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jun27_alt_5",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_alt",
-    "status": "planning",
-    "startAt": "2027-06-27T15:00",
-    "durationMinutes": 60,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Talkeetna Historical Society Museum",
-    "place": {
-      "id": "ChIJj6m5aoTAzlYRyQI-9AWEsFc",
-      "label": "Talkeetna Historical Society",
-      "images": [
-        {
-          "uri": "https://www.talkeetnamuseum.org/wp-content/uploads/2021/01/The-Little-Red-School-House-THS-1974-copy.jpg",
-          "credit": "Courtesy of Talkeetna Historical Society",
-          "caption": "Talkeetna Historical Society Museum, the 1936 schoolhouse"
-        }
-      ]
+      "id": "ChIJCbGyYCa-zlYRmXTCunpFzAs",
+      "label": "Talkeetna Alaskan Lodge",
+      "images": []
     },
     "booking": null,
     "mealType": null,
@@ -502,16 +468,53 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [
+      {
+        "uri": "https://places.googleapis.com/v1/places/ChIJCbGyYCa-zlYRmXTCunpFzAs/photos/AVoNoXRyYea_XqLk5egkRwZzyRGiCKgy1HDCLe0uGgnJrL_KgY_16TZSMpW6jJZ2nJwS2FiQOaqJfD_2lj-uGmnp3anMdlj-jLCSlVxhkL4FSx9b8J8DjG34pejXefWRR1TILztAFryCWTctcuklHNwquhApxniXBD4tu3vIZfdN7P4c9lJQXcIOBn05rHJTz_5EScWY5FvrFx7km4Kx1fanxRJLptxCL5Z5rw6vnQMaN84mbP-RMPcE0cYayi2c7r1QuTrYQkD_g6_sG1RE7ZbASw_RhGY_VVEo7E_Hgne1s3br4uSxa81JC5sDiq1uEgDpxLG3wmHy-zaKLPkqDJ-C2covd8jsG7eEmFf92d57UoBOMK_I-zpPDQTS6J1VNhtdLuqbRlkf9ljZSYLOKhSBoZWuhUUXIm9QlzfC6w0JfaRytwAey4777nVrmQJ-Pw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+        "credit": "Talkeetna Alaskan Lodge",
+        "caption": null
+      }
+    ],
+    "date": "2027-06-27"
+  },
+  {
+    "_id": "act_jun27_ideal_11",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_alt",
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Afternoon",
+    "priority": null,
+    "text": null,
+    "place": {
+      "id": "ChIJRcDJfvyVzlYRIOTHFeZRV_Q",
+      "label": "Talkeetna River Walk",
+      "images": []
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [
+      {
+        "uri": "https://places.googleapis.com/v1/places/ChIJRcDJfvyVzlYRIOTHFeZRV_Q/photos/AVoNoXSMDV93Suxywgbts8-10LNW2C3NyI76UKCH9_gwOb_4vmysy6lE7txI_T6MN8tMQxRmoMl7cCylLasSsQr1NIR0pl4rsTdPeWd--f0370lVJckxSlXqAIUFeVgwb-sqZCPyYuN0YUXFfOZk9cYHz7N_aXMjG1OphBFAacGPlcnxjpGVAIe_15R_fO6pg-Alk2BPgym2v4Ta-e8eZcnkuqJ7bIOZ7tdizIcFTM0dlFy7X9YWfHAh-0nfgOISAz1iFXX9TAT9Wr_hex4y67lJp2f4gotQDTqh2ORaGPNyDv1gx9E4qNe_YxDGLJobOaMdNbXQCq7dlqx4V-vgNdPKAj0QrU6XypnpD6yrL4mS0Hh7ebzTuMu5Op5u0DPQWoBSqIz2tJH-qULWKdX0xo3g4e75H6hHXPToT_YmckmA9BHcXXMH/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+        "credit": "Talkeetna River Walk",
+        "caption": null
+      }
+    ],
+    "date": "2027-06-27"
   },
   {
     "_id": "act_jun27_alt_6",
     "legId": "leg_parks",
     "scenarioId": "scenario_jun27_alt",
     "status": "planning",
-    "startAt": "2027-06-27T16:00",
-    "durationMinutes": 120,
-    "timeLabel": null,
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Afternoon",
     "priority": null,
     "text": "Canoe/kayak at Talkeetna Lakes",
     "place": {
@@ -531,45 +534,17 @@
         "credit": "Alaska DOT&PF / Federal Highway Administration, public domain",
         "caption": "Driving the George Parks Highway toward Denali"
       }
-    ]
-  },
-  {
-    "_id": "act_jun27_alt_7",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_alt",
-    "status": "planning",
-    "startAt": "2027-06-27T18:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Dinner at Mountain High Pizza Pie",
-    "place": {
-      "id": "ChIJdRyxt5KVzlYRLXPYT1E0p8Q",
-      "label": "Mountain High Pizza Pie",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Mountain_High_Pizza_Pie_(41038961325).jpg",
-          "credit": "Photo by Jon Konrath / CC BY 2.0",
-          "caption": "Mountain High Pizza Pie storefront in Talkeetna, Alaska"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": "dinner",
-    "diningFormat": "sit-down",
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
+    ],
+    "date": "2027-06-27"
   },
   {
     "_id": "act_jun27_alt_8",
     "legId": "leg_parks",
     "scenarioId": "scenario_jun27_alt",
     "status": "planning",
-    "startAt": null,
+    "startAt": "2027-06-27T18:00",
     "durationMinutes": null,
-    "timeLabel": "Evening",
+    "timeLabel": null,
     "priority": null,
     "text": "Call flightseeing operator — check standby",
     "place": {
@@ -590,7 +565,91 @@
         "caption": "Denali's summit wrapped in thick cloud cover"
       }
     ],
+    "date": null
+  },
+  {
+    "_id": "act_jun27_alt_7",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_alt",
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Evening",
+    "priority": null,
+    "text": "Dinner at Mountain High Pizza Pie",
+    "place": null,
+    "booking": null,
+    "mealType": "dinner",
+    "diningFormat": null,
+    "includedIn": null,
+    "options": [
+      {
+        "_id": "eded3df2-2ca0-4c6e-adbe-91e5fead550f",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJdRyxt5KVzlYRLXPYT1E0p8Q",
+          "label": "Mountain High Pizza Pie",
+          "images": [
+            {
+              "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Mountain_High_Pizza_Pie_(41038961325).jpg",
+              "credit": "Photo by Jon Konrath / CC BY 2.0",
+              "caption": "Mountain High Pizza Pie storefront in Talkeetna, Alaska"
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      },
+      {
+        "_id": "43bec50c-87fc-4f0e-93b4-542f4778f6b1",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJbfrXM-nGzlYRzMhMFWUTFzI",
+          "label": "Denali Brewing Company",
+          "images": [
+            {
+              "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_Brewing_Company,_Talkeetna,_Alaska.jpg",
+              "credit": "Photo by Laura Alier / CC BY 4.0",
+              "caption": "Denali Brewing Company building exterior in Talkeetna"
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      }
+    ],
+    "travelers": null,
+    "images": [],
     "date": "2027-06-27"
+  },
+  {
+    "_id": "1f969ed2-490b-4787-89e4-bd9def786833",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_alt",
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Afternoon",
+    "date": "2027-06-27",
+    "priority": null,
+    "text": null,
+    "place": {
+      "id": "ChIJoQxNrpKVzlYRE3yIXLzxvcs",
+      "label": "Talkeetna Spinach Bread"
+    },
+    "booking": null,
+    "mealType": "snack",
+    "diningFormat": "sit-down",
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [
+      {
+        "uri": "https://places.googleapis.com/v1/places/ChIJoQxNrpKVzlYRE3yIXLzxvcs/photos/AVoNoXQy2rM2D8IvpuC0_TTYoh_xKtHHApSpXJzDQbFQiRgsMNeUKoxYTdUPU0VKbmJQ-q2-Dui5S2nULzE5LrVAybFXlTVay_OI88ddBN_njjQHh3sg2Mz1velVmZIqVPphYeN-dYsB28wl3RUthQhVMbDxUITa8qtZXTEvzD-Mqp-NdE_Gjr2zFN98M4luCuBSoVzp2I6VRwzhTrc2yMFdwuKU9EZDOQAg3f7j7GWJlG_6MZCnEnyYi_WD_dlWPIzoGFd3uIhG3GUDxpMnpn7NKo01fP6jPsA8EmMXf89U_jevlrQqhPiwLs2n6Dkfc1mzi7gH5TE0UznQDzvvAr6QtaenpAvd9XjjbEQgVnpiPjtRsCOeiBKHz_o5s-Gytrv9Pmx8laWABxObcfnfHkVvdu2JIknPjUkCrODJCstfZEY/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+        "credit": "Talkeetna Spinach Bread",
+        "caption": null
+      }
+    ]
   },
   {
     "_id": "act_jun28_breakfast",
@@ -4499,69 +4558,6 @@
         "caption": "Canada Place cruise terminal in downtown Vancouver"
       }
     ]
-  },
-  {
-    "_id": "act_jun27_ideal_1",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-06-27T08:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Breakfast — choosing where",
-    "place": null,
-    "booking": null,
-    "mealType": "breakfast",
-    "diningFormat": null,
-    "includedIn": null,
-    "options": [
-      {
-        "_id": "act_jun27_ideal_1_opt0",
-        "diningFormat": "included",
-        "place": null,
-        "includedIn": {
-          "entity": "stay",
-          "id": "stay_talkeetna"
-        },
-        "booking": null
-      },
-      {
-        "_id": "act_jun27_ideal_1_opt1",
-        "diningFormat": "sit-down",
-        "place": {
-          "id": "ChIJS63CqrW_zlYRNQYObIK7Szk",
-          "label": "Flying Squirrel Bakery Cafe",
-          "images": [
-            {
-              "uri": "https://le-cdn.website-editor.net/s/8702a098f6b94c62a426a67f31a19d32/dms3rep/multi/opt/175423ce-e09a-4c5a-8fb5-3e34c424807f-1920w.jpg?Expires=1789344480&Signature=cnK-82r-gY5LLL~g~AF6Fb30WFemF7rvgv4eABg-YpjjZ2iaw6qS7wTbTSdjN8Uq0sbFp~6e409-OnqiRLhpLF6lcDImZVojFQWrCmFSG9jgyyUib8fx7TWCaHpAqft8lHHL3aekbjJbzpvwnzi6xJ~puWQ1sneECEG0BperdmuubRixZNJsWuPDGQnMqBB4utpjTfEXSeyP84zkAyfXJ4s3BENeoMU4LMKKcqbO1~tuDmiv4U0djOI64PLsCikc6-E3tBwUAq2AWbW~~60bwMcHMYy40oBsTg2~XOYqADevWWXypoSBefce2z33bXO11y0fqe4-OtYF1iiP1uC4Nw__&Key-Pair-Id=K2NXBXLF010TJW"
-            }
-          ]
-        },
-        "includedIn": null,
-        "booking": null
-      },
-      {
-        "_id": "act_jun27_ideal_1_opt2",
-        "diningFormat": "grab-and-go",
-        "place": {
-          "id": "ChIJI6KxxIyVzlYRGhaQQYdhhss",
-          "label": "Conscious Coffee",
-          "images": [
-            {
-              "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Conscious_Coffee_%2841544107660%29.jpg",
-              "credit": "Photo by C Watts / CC BY 2.0",
-              "caption": "Conscious Coffee, Talkeetna, Alaska"
-            }
-          ]
-        },
-        "includedIn": null,
-        "booking": null
-      }
-    ],
-    "travelers": null,
-    "images": [],
-    "date": null
   },
   {
     "_id": "act_jun29_11",

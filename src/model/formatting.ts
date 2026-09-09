@@ -3,7 +3,7 @@
 // scoped to just one of those surfaces (see docs/data-model.html for the
 // entity shapes these draw on).
 import { activityTimeLabel } from './tripModel';
-import type { DiningFormat, Image, Leg, Lodging, MealOption, MealType } from './types';
+import type { DiningFormat, Image, Leg, Lodging, MealOption, MealType, Place } from './types';
 import type { PlaceSunriseSunset } from './weather';
 
 // ---------- leg skeleton-authority vocabulary ----------
@@ -42,6 +42,13 @@ export function firstImage(entity: { images?: Image[] | null } | null | undefine
 // from.
 export function withHeroImage(images: Image[] | null | undefined, image: Image): Image[] {
   return [image, ...(images ?? []).filter((img) => img.uri !== image.uri)];
+}
+
+// A Stay's own Place, null-safe over a possibly-absent lodging — shared by
+// editForms.ts's stayFormFrom and the day-list's own StayNode/StayDetailPanel
+// rather than each repeating the same optional chain.
+export function placeFromLodging(lodging: Lodging | null | undefined): Place | null {
+  return lodging?.place ?? null;
 }
 
 // The room/campsite/bed-configuration bits a Stay's lodging can carry —

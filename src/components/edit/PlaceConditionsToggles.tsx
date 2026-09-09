@@ -2,33 +2,39 @@ import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import Stack from '@mui/material/Stack';
 
-import type { ActivityFormState } from '../../model/editForms';
+import type { Place } from '../../model/types';
 import { LabelWithTip } from '../shared/LabelWithTip';
 
-// The "show weather"/"show elevation at this place" checkboxes — shared by
-// the guided wizard's own Place step (WizardStepContent's ActivityPlaceStep)
-// and ActivityEditForm's flat-form Place section (see EditContext's
-// via: 'wizard'/'flat' split, each a real reachable edit path), so both
-// offer the same toggle instead of just whichever one got written first.
-export function PlaceConditionsToggles({
-  form,
-  onChange,
+// The "show weather"/"show elevation at this place" checkboxes for a form's
+// place field — used by ActivityEditForm, WizardStepContent's DetailsStep,
+// and StayTransitFields' LodgingField/TransitEndpointField (the last passing
+// a departure/arrival label override for its endpoint pair). Renders nothing
+// without a named place — a toggle is meaningless with nothing to show
+// weather/elevation for.
+export function PlaceConditionsTogglesFor({
+  place,
+  onPlaceChange,
+  weatherLabel = 'Show weather',
+  elevationLabel = 'Show elevation',
 }: {
-  form: ActivityFormState;
-  onChange: (form: ActivityFormState) => void;
+  place: Place | null;
+  onPlaceChange: (place: Place) => void;
+  weatherLabel?: string;
+  elevationLabel?: string;
 }) {
+  if (!place?.label) return null;
   return (
     <Stack>
       <FormControlLabel
         control={
           <Checkbox
-            checked={form.showWeatherAtPlace}
-            onChange={(e) => onChange({ ...form, showWeatherAtPlace: e.target.checked })}
+            checked={Boolean(place.showWeather)}
+            onChange={(e) => onPlaceChange({ ...place, showWeather: e.target.checked })}
           />
         }
         label={
           <LabelWithTip
-            text="Show weather"
+            text={weatherLabel}
             tip="Adds a live temperature + conditions line under this row. Off by default."
           />
         }
@@ -36,13 +42,13 @@ export function PlaceConditionsToggles({
       <FormControlLabel
         control={
           <Checkbox
-            checked={form.showElevationAtPlace}
-            onChange={(e) => onChange({ ...form, showElevationAtPlace: e.target.checked })}
+            checked={Boolean(place.showElevation)}
+            onChange={(e) => onPlaceChange({ ...place, showElevation: e.target.checked })}
           />
         }
         label={
           <LabelWithTip
-            text="Show elevation"
+            text={elevationLabel}
             tip="Adds a one-line elevation reading under this row. Off by default."
           />
         }

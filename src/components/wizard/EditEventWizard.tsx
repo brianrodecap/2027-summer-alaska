@@ -13,7 +13,10 @@ import {
   categoryForActivity,
   type EditKind,
   type Entity,
+  entityDateOnly,
   mealDecisionForActivity,
+  mealMergeTarget,
+  mergeMealOptionIntoActivity,
   stayFormFrom,
   type StayFormState,
   transitFormFrom,
@@ -25,7 +28,7 @@ import {
 import type { Activity, Route, Stay, Transit, Traveler } from '../../model/types';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { renderWizardStep, type WizardStepContext } from './renderWizardStep';
-import { useMealDecision } from './useMealDecision';
+import { useMealDecision, useMealDuplicateMerge } from './useMealDecision';
 import { WizardShell, type WizardStep } from './WizardShell';
 
 const EDIT_TITLE: Record<EditKind, string> = {
@@ -72,15 +75,25 @@ function EditEventWizardBody({
   // All three form states are always kept around (rather than just the one
   // matching `kind`) so WizardStepContext never has to special-case a
   // missing form — only the one matching `kind`/`category` is ever actually
-  // read back out at Save time.
+  // read back out at Save time. The other two are seeded from the entity
+  // being edited's own real date (entityDateOnly), not '' — blankStay's
+  // checkOutAt does real Date math via addDaysStr, which throws on ''.
+  // Computed via a lazy useState initializer (like the three form states
+  // below it) so entityDateOnly only runs once per mount, not on every
+  // re-render of this body.
+  const [blankDate] = useState(() => entityDateOnly(kind, entity));
   const [activityForm, setActivityForm] = useState<ActivityFormState>(() =>
-    activityFormFrom(kind === 'activity' ? (entity as Activity) : blankActivity(entity.legId, '')),
+    activityFormFrom(
+      kind === 'activity' ? (entity as Activity) : blankActivity(entity.legId, blankDate),
+    ),
   );
   const [stayForm, setStayForm] = useState<StayFormState>(() =>
-    stayFormFrom(kind === 'stay' ? (entity as Stay) : blankStay(entity.legId, '')),
+    stayFormFrom(kind === 'stay' ? (entity as Stay) : blankStay(entity.legId, blankDate)),
   );
   const [transitForm, setTransitForm] = useState<TransitFormState>(() =>
-    transitFormFrom(kind === 'transit' ? (entity as Transit) : blankTransit(entity.legId, '')),
+    transitFormFrom(
+      kind === 'transit' ? (entity as Transit) : blankTransit(entity.legId, blankDate),
+    ),
   );
 
   // An Activity's own category (plain vs. meal) is derived from its data,
@@ -93,9 +106,12 @@ function EditEventWizardBody({
     mealDecisionForActivity(activityForm),
     setActivityForm,
   );
+  const { duplicateMealActivity, mergeIntoDuplicate, setMergeIntoDuplicate } =
+    useMealDuplicateMerge(activities, activityForm, entity._id);
 
   const stepIds = wizardStepsForCategory(category, {
     lead: kind === 'activity' ? 'mealBranch' : null,
+    duplicateMealActivity,
   });
 
   const ctx: WizardStepContext = {
@@ -103,6 +119,9 @@ function EditEventWizardBody({
     onCategoryChange: setCategory,
     mealDecision,
     onMealDecisionChange: handleMealDecisionChange,
+    duplicateMealActivity,
+    mergeIntoDuplicate,
+    onMergeIntoDuplicateChange: setMergeIntoDuplicate,
     activityForm,
     onActivityFormChange: setActivityForm,
     stayForm,
@@ -119,7 +138,13 @@ function EditEventWizardBody({
   const steps: WizardStep[] = stepIds.map((id) => ({
     id,
     content: renderWizardStep(id, ctx),
-    canProceed: wizardStepCanProceed(id, { activityForm, stayForm, transitForm }),
+    canProceed: wizardStepCanProceed(id, {
+      activityForm,
+      stayForm,
+      transitForm,
+      duplicateMealActivity,
+      mergeIntoDuplicate,
+    }),
   }));
 
   const handleSave = () => {
@@ -132,6 +157,17 @@ function EditEventWizardBody({
           : applyTransitForm(clone as Transit, transitForm);
     if (message) {
       setError(message);
+      return;
+    }
+    // Merging folds this Activity's decided fields into the duplicate as one
+    // more candidate (mergeMealOptionIntoActivity) and then removes this
+    // entity outright — leaving it in place alongside the newly-merged
+    // duplicate would just recreate the unmodeled-duplicate problem this
+    // whole flow exists to avoid.
+    const mergeTarget = mealMergeTarget(category, duplicateMealActivity, mergeIntoDuplicate);
+    if (mergeTarget) {
+      onSave(mergeMealOptionIntoActivity(mergeTarget, activityForm));
+      onDelete(kind, entity._id);
       return;
     }
     onSave(clone);

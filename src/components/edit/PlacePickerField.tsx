@@ -47,7 +47,7 @@ export function PlacePickerField({
         filterOptions={(x) => x} // results are already server-filtered by query
         inputValue={inputValue}
         onInputChange={(_, value) => {
-          onChange(value ? { id: place?.id ?? null, label: value, images: place?.images } : null);
+          onChange(value ? { ...place, id: place?.id ?? null, label: value } : null);
         }}
         getOptionLabel={(option) => (typeof option === 'string' ? option : option.label)}
         renderOption={(props, option) => {
@@ -65,7 +65,7 @@ export function PlacePickerField({
         }}
         onChange={(_, value) => {
           if (value && typeof value !== 'string') {
-            onChange({ id: value.id, label: value.label, images: place?.images });
+            onChange({ ...place, id: value.id, label: value.label });
             onPicked?.(value);
           }
         }}

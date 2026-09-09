@@ -1053,23 +1053,30 @@ type PreSequenceItem =
 
 // Tie-break for two Activities landing on the exact same `key` (the same
 // real startAt, or the same TIME_LABEL_ANCHORS-derived instant): a defaulted
-// (timeLabel-anchored, no real startAt of its own) Activity sorts first,
-// then one with no durationMinutes of its own, then ascending by
-// durationMinutes — the trip owner's own ordering rule for same-time rows.
-// A tie between anything else (a Stay/Transit item on either side, or two
-// non-Activity items) returns 0 so mergeByTime's stable sort falls through
-// to the items' original array order instead, preserving the existing
-// stays-then-transits-then-activities precedence a same-key tie already
-// relied on (see reorder.ts's own note on that).
+// (timeLabel-anchored, no real startAt of its own) Activity sorts first.
+// Among two *fuzzy* Activities left tied after that, order falls back to
+// alphabetical by activityHeadline rather than durationMinutes or
+// activities.json's own array order — neither of those is something a
+// reader of the rendered site can see or infer, and a fuzzy Activity has no
+// in-app way to change its position anyway (dragging one, see reorder.ts,
+// immediately gives it a real startAt and takes it out of fuzzy-tie
+// territory), so array order there would just be silent, unexplained
+// authoring-order luck. Two tied *real*-startAt Activities are different:
+// that exact tie is what reorder.ts's own drag-and-drop deliberately
+// produces (dropping an Activity onto another lands it on that anchor's own
+// instant on purpose — see applyActivityReorder/reinsertAfterAnchor), and
+// array order is how the drop resolves the tie in the dragged entry's favor
+// — a real, load-bearing, user-visible-via-dragging rule, not an accident of
+// file order — so that case (and anything else: a Stay/Transit item on
+// either side, or two non-Activity items) returns 0 and lets mergeByTime's
+// stable sort fall through to the items' original array order instead.
 function activityTieBreak(a: PreSequenceItem, b: PreSequenceItem): number {
   if (a.type !== 'activity' || b.type !== 'activity') return 0;
   const fuzzyA = !a.activity.startAt;
   const fuzzyB = !b.activity.startAt;
   if (fuzzyA !== fuzzyB) return fuzzyA ? -1 : 1;
-  const durA = a.activity.durationMinutes;
-  const durB = b.activity.durationMinutes;
-  if ((durA == null) !== (durB == null)) return durA == null ? -1 : 1;
-  return (durA ?? 0) - (durB ?? 0);
+  if (!fuzzyA) return 0;
+  return activityHeadline(a.activity).localeCompare(activityHeadline(b.activity));
 }
 
 // Merge-sorts already-keyed items (key: an ISO timestamp — every item has a
@@ -1349,7 +1356,7 @@ function orderedPlaceIds(sequence: SequenceItem[]): string[] {
   return sequence.flatMap((item): string[] => {
     switch (item.type) {
       case 'stay': {
-        const id = item.stay.lodging?.placeId;
+        const id = item.stay.lodging?.place.id;
         return id ? [id] : [];
       }
       case 'transit-boundary': {
@@ -1382,7 +1389,7 @@ function deriveSummary(
   const first =
     firstActivityIn(day.sequence) ?? (idealTrack && firstActivityIn(idealTrack.sequence));
   if (first) return truncateSummary(activityHeadline(first));
-  if (day.stays[0]) return `Staying at ${day.stays[0].lodging?.name ?? day.location}`;
+  if (day.stays[0]) return `Staying at ${day.stays[0].lodging?.place.label ?? day.location}`;
   return day.location;
 }
 
@@ -1565,20 +1572,20 @@ function sequenceMapLabels(
   for (const item of sequence) {
     // A 'Staying' item (every night of a multi-night Stay that isn't the
     // actual arrival/departure day) only counts as a map stop when its
-    // lodging carries a real placeId — a fixed hotel/lodge, whose name
+    // lodging's place carries a real id — a fixed hotel/lodge, whose name
     // geocodes reliably on its own. A Stay with no fixed point at all — a
-    // cruise ship mid-voyage (lodging.placeId: null) — stays excluded even
+    // cruise ship mid-voyage (lodging.place.id: null) — stays excluded even
     // on a 'Staying' night: Google's classic embed resolves the free-text
     // ship name to the cruise line's corporate HQ address instead, plotting
     // a fictional thousands-of-miles driving route on a day that's really
     // just shore excursions. Check in/Check out/Overnight stay on the map
-    // by name regardless of placeId, same as before.
+    // by name regardless of id, same as before.
     if (
       item.type === 'stay' &&
-      item.stay.lodging?.name &&
-      (item.relation !== 'Staying' || item.stay.lodging.placeId)
+      item.stay.lodging?.place.label &&
+      (item.relation !== 'Staying' || item.stay.lodging.place.id)
     ) {
-      labels.push(item.stay.lodging.name);
+      labels.push(item.stay.lodging.place.label);
     } else if (item.type === 'transit-boundary') {
       // A spanning Transit (transitSpansMidnight above) only ever shows one
       // boundary phase per day block — the Depart on the departure day, the
@@ -1849,21 +1856,18 @@ interface RouteStop {
 }
 
 // A stop's routable identity: always a label (Directions URL stops are text
-// first, an id can only ever supplement one), plus a placeId when one's
-// resolved (Activity.place.id, Stay.lodging.placeId, Transit.from/to.placeId)
-// — null for the endpoints (a whole city, an unresolved via) that don't have
-// one, which still geocode fine by name alone.
+// first, an id can only ever supplement one), plus an id when one's resolved
+// (Activity.place.id, Stay.lodging.place.id, Transit.from/to.id) — null for
+// the endpoints (a whole city, an unresolved via) that don't have one, which
+// still geocode fine by name alone.
 function routeStop(
-  placeLike:
-    | { label?: string; name?: string; id?: string | null; placeId?: string | null }
-    | null
-    | undefined,
+  place: Place | null | undefined,
   fallbackLabel?: string,
   trustedAsWaypoint = true,
 ): RouteStop | null {
-  const label = placeLike?.label ?? placeLike?.name ?? fallbackLabel ?? null;
+  const label = place?.label ?? fallbackLabel ?? null;
   if (!label) return null;
-  return { label, placeId: placeLike?.id ?? placeLike?.placeId ?? null, trustedAsWaypoint };
+  return { label, placeId: place?.id ?? null, trustedAsWaypoint };
 }
 
 // A routed Transit's live-selected tone: whichever the reader has actually
@@ -1940,12 +1944,12 @@ function dayFullRouteStops(day: Day, selections: DaySelections = {}): RouteStop[
   const pushSequence = (stops: RouteStop[], sequence: SequenceItem[]) => {
     for (const item of sequence) {
       if (item.type === 'stay') {
-        // Same placeId gate as sequenceMapLabels above — a 'Staying' night
-        // with no fixed point (a cruise ship mid-voyage) shouldn't route
-        // through its own free-text name every day at sea; Check out/Check
-        // in still do, unconditionally.
-        if (item.relation === 'Staying' && !item.stay.lodging?.placeId) continue;
-        const stop = routeStop(item.stay.lodging ?? undefined);
+        // Same id gate as sequenceMapLabels above — a 'Staying' night with no
+        // fixed point (a cruise ship mid-voyage) shouldn't route through its
+        // own free-text name every day at sea; Check out/Check in still do,
+        // unconditionally.
+        if (item.relation === 'Staying' && !item.stay.lodging?.place.id) continue;
+        const stop = routeStop(item.stay.lodging?.place);
         if (stop) stops.push(stop);
       } else if (item.type === 'transit-boundary' || item.type === 'transit-stage') {
         // A spanning Transit (transitSpansMidnight above) only ever has
@@ -2099,12 +2103,12 @@ function buildDay(
   // itself now also renders inline in today's sequence.
   const arrivingTransit = legTransits.find((t) => t.arrivesAt && dateOnly(t.arrivesAt) === date);
   const location =
-    primaryStay?.lodging?.name ??
+    primaryStay?.lodging?.place.label ??
     arrivingTransit?.to?.label ??
     dayTransits[0]?.from?.label ??
     leg.name;
   const locationPlaceId =
-    primaryStay?.lodging?.placeId ?? arrivingTransit?.to?.id ?? dayTransits[0]?.from?.id ?? null;
+    primaryStay?.lodging?.place.id ?? arrivingTransit?.to?.id ?? dayTransits[0]?.from?.id ?? null;
 
   const { tracks: scenarioTracks, anchorKey: scenarioAnchorKey } = buildScenarioTracks(
     dayStays,
@@ -2531,7 +2535,7 @@ function bookingLineItems(
         entity: 'stay',
         id: stay._id,
         legId: stay.legId,
-        label: stay.lodging?.name ?? 'Lodging',
+        label: stay.lodging?.place.label ?? 'Lodging',
         date: dateOnly(stay.checkInAt),
         booking: stay.booking,
       });

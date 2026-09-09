@@ -20,7 +20,7 @@ import {
 } from 'react';
 
 import { filterSequenceItems } from '../../model/filters';
-import { firstImage, stayDetailBits } from '../../model/formatting';
+import { firstImage, placeFromLodging, stayDetailBits } from '../../model/formatting';
 import {
   activeMealOptions,
   isMealActivity,
@@ -68,6 +68,7 @@ import { ROW_LEADING_SIZE, ROW_OVERLINE_SX, RowLeadingDot } from '../shared/RowL
 import { ActivityLeading, ActivityRow } from './ActivityRow';
 import { AvatarOrDot } from './AvatarOrDot';
 import { MealRow, MealRowLeading } from './MealRow';
+import { PlaceConditionsLine } from './PlaceConditionsLine';
 import { RouteVariantTabs } from './RouteVariantTabs';
 import { RowMenu } from './RowMenu';
 import { visibleTracksFor } from './scenarioSelection';
@@ -255,7 +256,8 @@ const StayNode = memo(function StayNode({
   selected?: boolean;
 }) {
   const { stay } = item;
-  const name = stay.lodging?.name ?? 'Lodging still open';
+  const lodgingPlace = placeFromLodging(stay.lodging);
+  const name = lodgingPlace?.label ?? 'Lodging still open';
   const detailBits = stayDetailBits(stay.lodging);
   const image = firstImage(stay);
   const { openEdit, deleteEntity } = useEdit();
@@ -290,6 +292,7 @@ const StayNode = memo(function StayNode({
             {detailBits.join(' · ')}
           </Typography>
         )}
+        <PlaceConditionsLine place={lodgingPlace} date={date} />
         <NotesCluster notes={mid} />
         {stay.booking && (
           <Box sx={{ mt: 0.5 }}>
@@ -304,12 +307,14 @@ const StayNode = memo(function StayNode({
 
 const TransitBoundaryNode = memo(function TransitBoundaryNode({
   item,
+  date,
   isLast,
   onOpen,
   dragHandle,
   selected,
 }: {
   item: TransitBoundarySequenceItem;
+  date: string;
   isLast: boolean;
   onOpen: (transit: EnrichedTransit) => void;
   dragHandle?: ReactNode;
@@ -318,7 +323,7 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
   const { routeTones } = useRouteToneSelection();
   const { transit, phase } = item;
   const isDepart = phase === 'depart';
-  const place = isDepart ? transit.from.label : transit.to.label;
+  const endpointPlace = isDepart ? transit.from : transit.to;
   const time = isDepart ? transit.departsAt : resolvedArrivesAtFor(transit, routeTones);
   const modeIconName = transit.mode === 'flight' ? 'flight' : 'directions_car';
   const image = isDepart ? firstImage(transit) : null;
@@ -336,7 +341,8 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
             ? 'Depart'
             : 'Arrive'}
       </Typography>
-      <Typography variant="subtitle1">{place}</Typography>
+      <Typography variant="subtitle1">{endpointPlace.label}</Typography>
+      <PlaceConditionsLine place={endpointPlace} date={date} />
       {isDepart && <NotesCluster notes={mid} />}
       {isDepart && transit.booking && (
         <Box sx={{ mt: 0.5 }}>
@@ -740,6 +746,7 @@ export const DayTimeline = memo(function DayTimeline({
       scenarioId,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     return (
@@ -810,6 +817,7 @@ export const DayTimeline = memo(function DayTimeline({
           render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => (
             <TransitBoundaryNode
               item={item}
+              date={day.date}
               isLast={isLast}
               onOpen={onOpenTransit}
               dragHandle={item.phase === 'depart' ? dragHandle : undefined}

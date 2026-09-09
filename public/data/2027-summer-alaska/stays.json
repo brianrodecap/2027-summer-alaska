@@ -2,24 +2,32 @@
   {
     "_id": "stay_talkeetna",
     "legId": "leg_parks",
-    "scenarioId": null,
+    "scenarioId": "scenario_jun27_alt",
     "checkInAt": "2027-06-27T15:00",
     "checkOutAt": "2027-06-28T11:00",
     "status": "planning",
     "lodging": {
-      "placeId": "ChIJQ4enWi--zlYRFqykGD_hqSY",
-      "name": "Talkeetna Alaskan Lodge",
+      "place": {
+        "id": "ChIJCbGyYCa-zlYRmXTCunpFzAs",
+        "label": "Talkeetna Alaskan Lodge"
+      },
       "roomType": null,
       "roomNumber": null,
       "campsite": null
     },
     "booking": {
       "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
+      "confirmationNumber": null,
+      "cost": null
     },
     "packages": null,
-    "images": []
+    "images": [
+      {
+        "uri": "https://places.googleapis.com/v1/places/ChIJCbGyYCa-zlYRmXTCunpFzAs/photos/AVoNoXRyYea_XqLk5egkRwZzyRGiCKgy1HDCLe0uGgnJrL_KgY_16TZSMpW6jJZ2nJwS2FiQOaqJfD_2lj-uGmnp3anMdlj-jLCSlVxhkL4FSx9b8J8DjG34pejXefWRR1TILztAFryCWTctcuklHNwquhApxniXBD4tu3vIZfdN7P4c9lJQXcIOBn05rHJTz_5EScWY5FvrFx7km4Kx1fanxRJLptxCL5Z5rw6vnQMaN84mbP-RMPcE0cYayi2c7r1QuTrYQkD_g6_sG1RE7ZbASw_RhGY_VVEo7E_Hgne1s3br4uSxa81JC5sDiq1uEgDpxLG3wmHy-zaKLPkqDJ-C2covd8jsG7eEmFf92d57UoBOMK_I-zpPDQTS6J1VNhtdLuqbRlkf9ljZSYLOKhSBoZWuhUUXIm9QlzfC6w0JfaRytwAey4777nVrmQJ-Pw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+        "credit": "Talkeetna Alaskan Lodge",
+        "caption": null
+      }
+    ]
   },
   {
     "_id": "stay_westmark_fbx_1",
@@ -29,8 +37,10 @@
     "checkOutAt": "2027-06-29T11:00",
     "status": "planning",
     "lodging": {
-      "placeId": "ChIJ_aR34k5FMlERqYeOQVWen5I",
-      "name": "Westmark Fairbanks",
+      "place": {
+        "id": "ChIJ_aR34k5FMlERqYeOQVWen5I",
+        "label": "Westmark Fairbanks"
+      },
       "roomType": null,
       "roomNumber": null,
       "campsite": null
@@ -57,8 +67,10 @@
     "checkOutAt": "2027-07-01T11:00",
     "status": "planning",
     "lodging": {
-      "placeId": "ChIJKXBYEtzAKFERMTb-h_NwAtE",
-      "name": "Slate Creek Inn (Coldfoot Camp)",
+      "place": {
+        "id": "ChIJKXBYEtzAKFERMTb-h_NwAtE",
+        "label": "Slate Creek Inn (Coldfoot Camp)"
+      },
       "roomType": null,
       "roomNumber": null,
       "campsite": null
@@ -85,8 +97,10 @@
     "checkOutAt": "2027-07-02T11:00",
     "status": "planning",
     "lodging": {
-      "placeId": "ChIJ_aR34k5FMlERqYeOQVWen5I",
-      "name": "Westmark Fairbanks",
+      "place": {
+        "id": "ChIJ_aR34k5FMlERqYeOQVWen5I",
+        "label": "Westmark Fairbanks"
+      },
       "roomType": null,
       "roomNumber": null,
       "campsite": null
@@ -113,8 +127,10 @@
     "checkOutAt": "2027-07-03T11:00",
     "status": "planning",
     "lodging": {
-      "placeId": "ChIJmb_m9FyFtVYRza-EUEqwdfU",
-      "name": "Copper River Princess Wilderness Lodge",
+      "place": {
+        "id": "ChIJmb_m9FyFtVYRza-EUEqwdfU",
+        "label": "Copper River Princess Wilderness Lodge"
+      },
       "roomType": null,
       "roomNumber": null,
       "campsite": null
@@ -141,8 +157,10 @@
     "checkOutAt": "2027-07-05T11:00",
     "status": "planning",
     "lodging": {
-      "placeId": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
-      "name": "Kennicott Glacier Lodge",
+      "place": {
+        "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
+        "label": "Kennicott Glacier Lodge"
+      },
       "roomType": null,
       "roomNumber": null,
       "campsite": null
@@ -182,8 +200,10 @@
     "checkOutAt": "2027-07-08T11:00",
     "status": "planning",
     "lodging": {
-      "placeId": "ChIJoUUNNIG9yFYRT1rea_yflgI",
-      "name": "Hotel Captain Cook",
+      "place": {
+        "id": "ChIJoUUNNIG9yFYRT1rea_yflgI",
+        "label": "Hotel Captain Cook"
+      },
       "roomType": null,
       "roomNumber": null,
       "campsite": null
@@ -204,8 +224,10 @@
     "checkOutAt": "2027-07-10T11:00",
     "status": "planning",
     "lodging": {
-      "placeId": "ChIJo6lg1JGXyFYR5CruzmerxY8",
-      "name": "Nullaġvik Hotel",
+      "place": {
+        "id": "ChIJo6lg1JGXyFYR5CruzmerxY8",
+        "label": "Nullaġvik Hotel"
+      },
       "roomType": null,
       "roomNumber": null,
       "campsite": null
@@ -226,8 +248,10 @@
     "checkOutAt": "2027-07-17T11:00",
     "status": "planning",
     "lodging": {
-      "placeId": "ChIJoUUNNIG9yFYRT1rea_yflgI",
-      "name": "Hotel Captain Cook",
+      "place": {
+        "id": "ChIJoUUNNIG9yFYRT1rea_yflgI",
+        "label": "Hotel Captain Cook"
+      },
       "roomType": null,
       "roomNumber": null,
       "campsite": null
@@ -248,8 +272,10 @@
     "checkOutAt": "2027-07-24T07:30",
     "status": "planning",
     "lodging": {
-      "placeId": null,
-      "name": "Discovery Princess",
+      "place": {
+        "id": null,
+        "label": "Discovery Princess"
+      },
       "roomType": "Balcony (Cat. BC)",
       "roomNumber": "L232",
       "campsite": null,
@@ -292,6 +318,33 @@
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/2023_04_29b_Discovery_Princess_16_(52935882014).jpg",
         "credit": "Photo by Blake Handley / CC BY 2.0",
         "caption": "Discovery Princess docked at Ogden Point, Victoria BC"
+      }
+    ]
+  },
+  {
+    "_id": "0e00074c-5827-4cfe-b66e-fc85bdf0b118",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_ideal",
+    "checkInAt": "2027-06-27T15:00",
+    "checkOutAt": "2027-06-28T11:00",
+    "status": "planning",
+    "lodging": {
+      "place": {
+        "id": "ChIJa9SlJa_YzFYRc54T5lapqY4",
+        "label": "Denali Princess Wilderness Lodge"
+      }
+    },
+    "booking": {
+      "status": "planning",
+      "confirmationNumber": null,
+      "cost": null
+    },
+    "packages": null,
+    "images": [
+      {
+        "uri": "https://places.googleapis.com/v1/places/ChIJa9SlJa_YzFYRc54T5lapqY4/photos/AVoNoXRdTtACCR44g6ad9dPZVUwtZ1VmdqVFwPTodsAF7JxF0dDXzxLyTzv4rEiug7e46RtGHx8114IWXOpkhtDLU9o-11xZB38pc8pZrpaOLbgaLsUKIJP1feQW4bvezTsTtenDSWryc5uYS6NJ9g-HV9lBchveg2Di6y5WzaN1TgsCi2-LCq5Zs8xdXlK0vxTaHZxy9YyFCCrGaJa-7lKXJG3gh8tGLucFnvlfbC5eUnziR9JYGIZHz8kS7h7ipX09VRrwVh6mbqxxDoMrHZNhNROxmsGtU4OU0rkp4_agkVkdRvxF5PCJ2mYCusaVYT89_PzFTVLhDjdTAsfLtRkgGhgNreC-1sycCVYLa4tU8ENGxuFpIFQs3LnUprs36XR476JmMf4vAWEFSBu9QXK6DwlfEbXnumaDPRpvwANL7_YX0SeR/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+        "credit": "Denali Princess Wilderness Lodge",
+        "caption": null
       }
     ]
   }

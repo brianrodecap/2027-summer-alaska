@@ -87,10 +87,17 @@ export interface Leg {
 // A pinned Google Place ID (or null for a named-but-unresolvable point) plus a display
 // label. Reused verbatim for Activity.place, Stay.lodging, Route places[].place,
 // and Transit from/to.
+// showWeather/showElevation are opt-in per occurrence, not per physical place — the
+// same real-world place named on two different entities (or on Transit's two distinct
+// endpoints) can show conditions on one and not the other, so each Place value carries
+// its own pair rather than the toggle living once on some shared/canonical place record.
+// Only meaningful once id/label actually name a resolvable place — see PlaceConditionsLine.
 export interface Place {
   id: string | null;
   label: string;
   images?: Image[];
+  showWeather?: boolean;
+  showElevation?: boolean;
 }
 
 // Route's own from/to endpoints. Resolved against the Places API and
@@ -111,8 +118,7 @@ export interface RouteEndpoint {
 }
 
 export interface Lodging {
-  placeId: string | null;
-  name: string;
+  place: Place;
   roomType?: string | null;
   roomNumber?: string | null;
   campsite?: string | null;
@@ -307,12 +313,6 @@ export interface Activity {
   // through instead of reading .text directly.
   text: string | null;
   place: Place | null;
-  // Opt-in per entity (not per Place, since the same physical place can show
-  // conditions on one entry but not another), and only meaningful when place
-  // is set — see PlaceConditionsLine. Absent/false is "off"; there's no
-  // separate unset state to distinguish from off.
-  showWeatherAtPlace?: boolean;
-  showElevationAtPlace?: boolean;
   booking: Booking | null;
   mealType: MealType | null;
   diningFormat: DiningFormat | null;

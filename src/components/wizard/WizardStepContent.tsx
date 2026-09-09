@@ -49,7 +49,7 @@ import type { BookingFormValue } from '../edit/bookingFormValue';
 import { DateTimeFieldPair } from '../edit/DateTimeFieldPair';
 import { IncludedInField } from '../edit/IncludedInField';
 import { MealOptionList } from '../edit/MealOptionList';
-import { PlaceConditionsToggles } from '../edit/PlaceConditionsToggles';
+import { PlaceConditionsTogglesFor } from '../edit/PlaceConditionsToggles';
 import { PlacePickerField } from '../edit/PlacePickerField';
 import { TravelerCheckboxList } from '../edit/TravelerCheckboxList';
 import { InfoTip } from '../shared/LabelWithTip';
@@ -253,7 +253,6 @@ export function ActivityWhereWhenStep({
   return (
     <Stack spacing={2}>
       <PlacePickerField place={form.place} onChange={(place) => onChange({ ...form, place })} />
-      {form.place && <PlaceConditionsToggles form={form} onChange={onChange} />}
       <ActivityWhenFields form={form} onChange={onChange} />
     </Stack>
   );
@@ -311,6 +310,10 @@ export function DetailsStep({
   return (
     <Stack spacing={2}>
       {showDescription && <DescriptionField form={form} onChange={onChange} />}
+      <PlaceConditionsTogglesFor
+        place={form.place}
+        onPlaceChange={(place) => onChange({ ...form, place })}
+      />
       <TextField
         select
         label="Priority"

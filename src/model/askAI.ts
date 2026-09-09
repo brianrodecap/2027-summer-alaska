@@ -114,7 +114,7 @@ export function buildTripContext(data: TripData): string {
     );
     for (const s of stays) {
       lines.push(
-        `  Stay ${s._id}: ${s.lodging?.name || '(unnamed)'} — ${s.checkInAt} to ${s.checkOutAt} [${s.status}]`,
+        `  Stay ${s._id}: ${s.lodging?.place.label || '(unnamed)'} — ${s.checkInAt} to ${s.checkOutAt} [${s.status}]`,
       );
     }
     for (const t of transits) {
@@ -398,7 +398,7 @@ export function draftEntityFromProposal(
     const stay = entity as Stay;
     if (fields.checkInAt) stay.checkInAt = fields.checkInAt;
     if (fields.checkOutAt) stay.checkOutAt = fields.checkOutAt;
-    if (fields.lodgingName && stay.lodging) stay.lodging.name = fields.lodgingName;
+    if (fields.lodgingName && stay.lodging) stay.lodging.place.label = fields.lodgingName;
     stay.booking = booking;
     return stay;
   }

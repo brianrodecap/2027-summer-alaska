@@ -81,12 +81,7 @@ export function ActivityRow({
         <Typography variant="body1">
           <LinkifiedText text={activityHeadline(activity)} />
         </Typography>
-        <PlaceConditionsLine
-          place={activity.place}
-          date={day.date}
-          showWeather={Boolean(activity.showWeatherAtPlace)}
-          showElevation={Boolean(activity.showElevationAtPlace)}
-        />
+        <PlaceConditionsLine place={activity.place} date={day.date} />
         <NotesCluster notes={midNotes} />
         <TravelerChips names={activity.travelers} />
         {activity.booking && (

@@ -8,7 +8,7 @@ import type {
   WizardCategory,
   WizardStepId,
 } from '../../model/editForms';
-import { isMergingIntoDuplicate } from '../../model/editForms';
+import { isMergingIntoDuplicate, resolvedMergeIntoDuplicate } from '../../model/editForms';
 import type { ScenarioDateInfo } from '../../model/tripModel';
 import type { Activity, Leg, Route, Scenario, Stay, Transit, Traveler } from '../../model/types';
 import { ScenarioEditForm } from '../edit/ScenarioEditForm';
@@ -54,11 +54,14 @@ export interface WizardStepContext {
   // filled with throwaway drafts/empty arrays.
   scenarioForm?: Scenario;
   onScenarioFormChange?: (scenario: Scenario) => void;
-  // Only AddEventWizard's 'meal' category ever populates these (see
-  // findDuplicateMealActivity) — EditEventWizard never reaches the
-  // 'mealDuplicate' step, so it has nothing to supply here.
+  // Both wizards' 'meal' category populate these (see
+  // findDuplicateMealActivity) — reachable from AddEventWizard's fresh draft
+  // and from EditEventWizard editing an existing meal into another day's
+  // slot alike.
   duplicateMealActivity?: Activity | null;
-  mergeIntoDuplicate?: boolean;
+  // null until the viewer actually reaches the 'mealDuplicate' step — see
+  // isMergingIntoDuplicate's own comment for why that's load-bearing.
+  mergeIntoDuplicate?: boolean | null;
   onMergeIntoDuplicateChange?: (merge: boolean) => void;
   stays: Stay[];
   activities: Activity[];
@@ -159,7 +162,7 @@ export function renderWizardStep(stepId: WizardStepId, ctx: WizardStepContext): 
       return (
         <MealDuplicateStep
           activity={ctx.duplicateMealActivity!}
-          merge={ctx.mergeIntoDuplicate ?? true}
+          merge={resolvedMergeIntoDuplicate(ctx.mergeIntoDuplicate)}
           onChange={ctx.onMergeIntoDuplicateChange!}
         />
       );

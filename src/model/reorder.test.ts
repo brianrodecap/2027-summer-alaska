@@ -958,6 +958,7 @@ describe('applyActivityReorder', () => {
       scenarioId: 'scenario-new',
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
 
@@ -998,6 +999,7 @@ describe('applyActivityReorder', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
 
@@ -1065,6 +1067,51 @@ describe('applyActivityReorder', () => {
     expect(byId('explore')?.scenarioId).toBeNull(); // still moves out of the scenario
     expect(byId('drive')?.startAt).toBe('2027-07-13T06:00'); // untouched, no cascade
   });
+
+  // The Talkeetna-Spinach-Bread bug: dropping a fuzzy Activity right after
+  // another fuzzy Activity sharing the same timeLabel used to force it onto
+  // that neighbor's sort-key surrogate instant (13:00 for "Afternoon"),
+  // silently converting it from fuzzy to real-timed. It should stay fuzzy —
+  // same label, no startAt — and let mergeByTime's alphabetical fuzzy
+  // tie-break do the actual ordering.
+  it('dropping a fuzzy Activity after another fuzzy Activity keeps it fuzzy under the same label', () => {
+    const flattened: SequenceItem[] = [
+      {
+        type: 'section',
+        activities: [
+          activity({ _id: 'riverwalk', timeLabel: 'Afternoon', date: '2027-06-27' }),
+          activity({ _id: 'callop', startAt: '2027-06-27T18:00' }),
+        ],
+      },
+    ];
+    const dragMeta = buildDragMeta(flattened, null, '2027-06-27T00:00', 'legA');
+    const riverwalkAnchor = dragMeta.find((d) => d.id === 'activity-riverwalk')!;
+    expect(riverwalkAnchor.anchorTimeLabel).toBe('Afternoon');
+
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [],
+      activities: [
+        activity({ _id: 'riverwalk', timeLabel: 'Afternoon', date: '2027-06-27' }),
+        activity({ _id: 'callop', startAt: '2027-06-27T18:00' }),
+        activity({ _id: 'spinachbread', timeLabel: 'Afternoon', date: '2027-06-27' }),
+      ],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+
+    const next = applyActivityReorder(data, riverwalkAnchor, 'spinachbread', '2027-06-27T00:00');
+    const updated = next.activities.find((a) => a._id === 'spinachbread');
+    expect(updated?.startAt).toBeNull();
+    expect(updated?.timeLabel).toBe('Afternoon');
+    expect(updated?.date).toBe('2027-06-27');
+    // No real slot was taken over, so the untouched 'callop' Activity's own
+    // real startAt is left completely alone — nothing to cascade.
+    expect(next.activities.find((a) => a._id === 'callop')?.startAt).toBe('2027-06-27T18:00');
+  });
 });
 
 describe('applyTransitReorder', () => {
@@ -1078,6 +1125,7 @@ describe('applyTransitReorder', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const data: TripData = {
@@ -1108,6 +1156,7 @@ describe('applyTransitReorder', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const data: TripData = {
@@ -1136,6 +1185,7 @@ describe('applyTransitReorder', () => {
       scenarioId: 'scenario1',
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const data: TripData = {
@@ -1164,6 +1214,7 @@ describe('applyTransitReorder', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const data: TripData = {
@@ -1192,6 +1243,7 @@ describe('applyTransitReorder', () => {
       scenarioId: 'scenario2',
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const data: TripData = {
@@ -1221,6 +1273,7 @@ describe('applyTransitReorder', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: { kind: 'transit', id: 'transit2' },
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const data: TripData = {
@@ -1252,6 +1305,7 @@ describe('applyStayReorder', () => {
     scenarioId: null,
     source: null,
     anchorEntityId: null,
+    anchorTimeLabel: null,
     kind: 'after',
   };
 
@@ -1317,6 +1371,7 @@ describe('applyBlockReorder', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const data: TripData = {
@@ -1359,6 +1414,7 @@ describe('applyBlockReorder', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const data: TripData = {
@@ -1401,6 +1457,7 @@ describe('applyBlockReorder', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const data: TripData = {
@@ -1448,6 +1505,7 @@ describe('applyBlockReorder', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const data: TripData = {
@@ -1510,6 +1568,7 @@ describe('applyBlockReorder', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const data: TripData = {
@@ -1564,6 +1623,7 @@ describe('applyBlockReorder', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const data: TripData = {
@@ -1607,6 +1667,7 @@ describe('applyBlockReorder', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const data: TripData = {
@@ -1666,6 +1727,7 @@ describe('applyGroupActivityReorder', () => {
       scenarioId: null,
       source: { kind: 'activity', id: 'anchor' },
       anchorEntityId: { kind: 'activity', id: 'anchor' },
+      anchorTimeLabel: null,
       kind: 'after',
       cascadeActivityIds: ['bystander'],
     };
@@ -1727,6 +1789,7 @@ describe('applyGroupActivityReorder', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
       cascadeActivityIds: [],
     };
@@ -1846,6 +1909,83 @@ describe('applySingleRowDragEnd', () => {
     expect(byId('drive')?.startAt).toBe('2027-07-13T06:00'); // untouched, no cascade
   });
 
+  // The actual Talkeetna-Spinach-Bread bug, reproduced through the real
+  // dispatcher: a fuzzy ("Afternoon", no startAt) Activity that lives in the
+  // top-level day container gets dragged into a scenario tab and dropped
+  // onto that tab's very first row (a Transit's Depart boundary). This is a
+  // same-day cross-container drop, so preserveOwnTiming forces endAt to
+  // null — but the dragged Activity has no startAt of its own to "keep"
+  // either, so without the fix it fell through resolveDropTiming's ownStartAt
+  // ?? dayStart fallback and got stamped with a false, precise midnight
+  // startAt (losing "Afternoon" entirely). It should stay fuzzy, keeping its
+  // own timeLabel, and only reassign legId/scenarioId to the drop target's.
+  it('keeps a fuzzy Activity fuzzy on a same-day cross-container drop with no real anchor to lend it a time', () => {
+    const snack = activity({
+      _id: 'spinachbread',
+      legId: 'legA',
+      scenarioId: null,
+      timeLabel: 'Afternoon',
+      date: '2027-06-27',
+      mealType: 'snack',
+      diningFormat: 'sit-down',
+    });
+    const topLevelMeta = buildDragMeta(
+      [{ type: 'section', activities: [snack] }],
+      null,
+      '2027-06-27T00:00',
+      'legA',
+    );
+    const snackMeta = topLevelMeta.find(
+      (d) => d.source?.kind === 'activity' && d.source.id === 'spinachbread',
+    )!;
+
+    const departTransit = transit({
+      _id: 'anchorageDepart',
+      legId: 'legA',
+      scenarioId: 'scenario_jun27_alt',
+      departsAt: '2027-06-27T00:15',
+      arrivesAt: '2027-06-27T02:16',
+    });
+    const scenarioMeta = buildDragMeta(
+      [
+        {
+          type: 'transit-boundary',
+          transit: departTransit,
+          phase: 'depart',
+          key: '2027-06-27T00:15',
+        },
+      ],
+      'scenario_jun27_alt',
+      '2027-06-27T00:00',
+      'legA',
+    );
+    const departMeta = scenarioMeta.find((d) => d.id === 'transit-anchorageDepart-depart')!;
+
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [departTransit],
+      activities: [snack],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+
+    const result = applySingleRowDragEnd(
+      data,
+      snackMeta,
+      departMeta,
+      '2027-06-27',
+      '2027-06-27::scenario_jun27_alt',
+    )!;
+    const updated = result.data.activities.find((a) => a._id === 'spinachbread');
+    expect(updated?.startAt).toBeNull();
+    expect(updated?.timeLabel).toBe('Afternoon');
+    expect(updated?.date).toBe('2027-06-27');
+    expect(updated?.scenarioId).toBe('scenario_jun27_alt');
+  });
+
   it('returns null for a row with no drag source (never actually reachable as the active side of a real drag)', () => {
     const notASource: DragMeta = {
       id: 'stage-transit1-eco-0',
@@ -1856,6 +1996,7 @@ describe('applySingleRowDragEnd', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const data: TripData = {
@@ -1977,6 +2118,7 @@ describe('applyGroupDragEnd', () => {
       scenarioId: null,
       source: { kind: 'activity', id: 'anchor' },
       anchorEntityId: { kind: 'activity', id: 'anchor' },
+      anchorTimeLabel: null,
       kind: 'after',
       cascadeActivityIds: ['bystander'],
     };
@@ -2040,6 +2182,7 @@ describe('applyGroupDragEnd', () => {
       scenarioId: null,
       source: null,
       anchorEntityId: null,
+      anchorTimeLabel: null,
       kind: 'after',
     };
     const activeMeta: DragMeta = {

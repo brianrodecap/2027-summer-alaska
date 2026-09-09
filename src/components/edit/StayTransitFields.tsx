@@ -2,6 +2,7 @@ import Stack from '@mui/material/Stack';
 
 import type { StayFormState, TransitFormState } from '../../model/editForms';
 import { DateTimeFieldPair } from './DateTimeFieldPair';
+import { PlaceConditionsTogglesFor } from './PlaceConditionsToggles';
 import { PlacePickerField } from './PlacePickerField';
 
 // The Stay/Transit field groups both edit paths share — the guided wizard
@@ -23,11 +24,17 @@ export function LodgingField({
   onChange: (form: StayFormState) => void;
 }) {
   return (
-    <PlacePickerField
-      label="Lodging name"
-      place={form.place}
-      onChange={(place) => onChange({ ...form, place })}
-    />
+    <Stack spacing={2}>
+      <PlacePickerField
+        label="Lodging name"
+        place={form.place}
+        onChange={(place) => onChange({ ...form, place })}
+      />
+      <PlaceConditionsTogglesFor
+        place={form.place}
+        onPlaceChange={(place) => onChange({ ...form, place })}
+      />
+    </Stack>
   );
 }
 
@@ -60,9 +67,38 @@ export function StayWhenFields({
   );
 }
 
-// TransitFormState.from/to are non-nullable Place, so clearing a picker has
-// to re-inflate the empty sentinel — keeping that literal in one place is
-// half the point of this component.
+// From/To share everything but their label and copy — kept as one local
+// component so the two endpoints can't drift.
+function TransitEndpointField({
+  label,
+  side,
+  form,
+  onChange,
+}: {
+  label: string;
+  side: 'from' | 'to';
+  form: TransitFormState;
+  onChange: (form: TransitFormState) => void;
+}) {
+  const place = form[side];
+  const copy = side === 'from' ? 'departure' : 'arrival';
+  return (
+    <Stack spacing={2} sx={{ flex: 1 }}>
+      <PlacePickerField
+        label={label}
+        place={place}
+        onChange={(place) => onChange({ ...form, [side]: place ?? { id: null, label: '' } })}
+      />
+      <PlaceConditionsTogglesFor
+        place={place}
+        onPlaceChange={(place) => onChange({ ...form, [side]: place })}
+        weatherLabel={`Show weather (${copy})`}
+        elevationLabel={`Show elevation (${copy})`}
+      />
+    </Stack>
+  );
+}
+
 export function TransitEndpointFields({
   form,
   onChange,
@@ -72,16 +108,8 @@ export function TransitEndpointFields({
 }) {
   return (
     <Stack direction="row" spacing={2}>
-      <PlacePickerField
-        label="From"
-        place={form.from}
-        onChange={(place) => onChange({ ...form, from: place ?? { id: null, label: '' } })}
-      />
-      <PlacePickerField
-        label="To"
-        place={form.to}
-        onChange={(place) => onChange({ ...form, to: place ?? { id: null, label: '' } })}
-      />
+      <TransitEndpointField label="From" side="from" form={form} onChange={onChange} />
+      <TransitEndpointField label="To" side="to" form={form} onChange={onChange} />
     </Stack>
   );
 }

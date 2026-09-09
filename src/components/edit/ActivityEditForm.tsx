@@ -26,7 +26,7 @@ import { ActivityWhenFields } from './ActivityWhenFields';
 import { BookingFields } from './BookingFields';
 import { IncludedInField } from './IncludedInField';
 import { MealOptionList } from './MealOptionList';
-import { PlaceConditionsToggles } from './PlaceConditionsToggles';
+import { PlaceConditionsTogglesFor } from './PlaceConditionsToggles';
 import { PlacePickerField } from './PlacePickerField';
 import { TravelerCheckboxList } from './TravelerCheckboxList';
 
@@ -74,7 +74,6 @@ export function ActivityEditForm({
             Place
           </Typography>
           <PlacePickerField place={form.place} onChange={(place) => onChange({ ...form, place })} />
-          {form.place && <PlaceConditionsToggles form={form} onChange={onChange} />}
         </>
       )}
 
@@ -83,6 +82,10 @@ export function ActivityEditForm({
         value={form.text}
         onChange={(e) => onChange({ ...form, text: e.target.value })}
         placeholder={form.place?.label}
+      />
+      <PlaceConditionsTogglesFor
+        place={form.place}
+        onPlaceChange={(place) => onChange({ ...form, place })}
       />
       <TextField
         select

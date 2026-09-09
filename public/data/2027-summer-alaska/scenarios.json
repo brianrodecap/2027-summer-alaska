@@ -3,8 +3,8 @@
     "_id": "scenario_jun27_ideal",
     "legId": "leg_parks",
     "tone": "ideal",
-    "label": "Flight goes",
-    "icon": "flight_takeoff",
+    "label": "Denali",
+    "icon": "landscape",
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_and_Range_from_Air_with_Plane_Wing_%287065283015%29.jpg",
@@ -17,8 +17,8 @@
     "_id": "scenario_jun27_alt",
     "legId": "leg_parks",
     "tone": "alternate",
-    "label": "Grounded",
-    "icon": "cloud",
+    "label": "Talkeetna",
+    "icon": "signpost",
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_in_the_clouds._NPS-Jason_Bennett_%2818062718644%29.jpg",

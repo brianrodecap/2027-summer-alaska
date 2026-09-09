@@ -65,10 +65,12 @@ function MealOptionRow({
       }}
     >
       <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 1 }}>
-        <PlacePickerField
-          place={option.place}
-          onChange={(place) => onChange({ ...option, place })}
-        />
+        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+          <PlacePickerField
+            place={option.place}
+            onChange={(place) => onChange({ ...option, place })}
+          />
+        </Box>
         <IconButton size="small" aria-label="Move this candidate earlier" onClick={onMoveUp}>
           <ArrowUpwardIcon fontSize="small" />
         </IconButton>

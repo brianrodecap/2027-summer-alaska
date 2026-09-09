@@ -445,17 +445,16 @@ describe('activityOverlapWarning', () => {
 });
 
 describe('same-startAt Activity ordering', () => {
-  it('puts a defaulted (timeLabel-anchored) startAt first, then no-duration, then ascending duration', () => {
+  it('puts a defaulted (timeLabel-anchored) startAt first; two real-startAt Activities left tied keep their own array order regardless of durationMinutes', () => {
     const data = minimalTripData();
-    // TIME_LABEL_ANCHORS puts 'Morning' at 09:00 — same instant as the three
-    // real-startAt activities below, so all four tie on `key`.
+    // TIME_LABEL_ANCHORS puts 'Morning' at 09:00 — same instant as the two
+    // real-startAt activities below, so all three tie on `key`.
     pushMinimalActivity(data, { _id: 'test_fuzzy', date: '2027-06-28', timeLabel: 'Morning' });
     pushMinimalActivity(data, {
       _id: 'test_long',
       startAt: '2027-06-28T09:00',
       durationMinutes: 45,
     });
-    pushMinimalActivity(data, { _id: 'test_noduration', startAt: '2027-06-28T09:00' });
     pushMinimalActivity(data, {
       _id: 'test_short',
       startAt: '2027-06-28T09:00',
@@ -469,7 +468,39 @@ describe('same-startAt Activity ordering', () => {
       .filter((i): i is Extract<typeof i, { type: 'section' }> => i.type === 'section')
       .flatMap((i) => i.activities.map((a) => a._id));
 
-    expect(activityIds).toEqual(['test_fuzzy', 'test_noduration', 'test_short', 'test_long']);
+    // durationMinutes is never used as a tie-break — test_long (45min) stays
+    // ahead of test_short (15min) here purely because it was pushed first;
+    // this array-order fallback is what reorder.ts's drag-and-drop depends
+    // on to resolve a dropped Activity's own exact-instant tie (see
+    // reorder.test.ts), not something the day list orders by on its own.
+    expect(activityIds).toEqual(['test_fuzzy', 'test_long', 'test_short']);
+  });
+
+  it('breaks a tie between two fuzzy (timeLabel-only) Activities alphabetically by their own headline, not array order', () => {
+    const data = minimalTripData();
+    pushMinimalActivity(data, {
+      _id: 'test_zebra',
+      date: '2027-06-28',
+      timeLabel: 'Morning',
+      text: 'Zebra viewing',
+    });
+    pushMinimalActivity(data, {
+      _id: 'test_apple',
+      date: '2027-06-28',
+      timeLabel: 'Morning',
+      text: 'Apple picking',
+    });
+
+    const view = buildTripView(data);
+    const day = view.days.find((d) => d.date === '2027-06-28');
+    expect(day).toBeDefined();
+    const activityIds = day!.sequence
+      .filter((i): i is Extract<typeof i, { type: 'section' }> => i.type === 'section')
+      .flatMap((i) => i.activities.map((a) => a._id));
+
+    // test_zebra was authored first, but alphabetically 'Apple picking'
+    // comes before 'Zebra viewing'.
+    expect(activityIds).toEqual(['test_apple', 'test_zebra']);
   });
 });
 
@@ -533,7 +564,7 @@ describe('dayMapStops', () => {
 
   it('includes a mid-stay lodging (relation "Staying") on the map, not just its check-in/check-out days', () => {
     const data = minimalTripData();
-    pushMinimalStay(data, { lodging: { placeId: 'place_lodge', name: 'Test Lodge' } });
+    pushMinimalStay(data, { lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } } });
     // 2027-06-03 falls strictly inside the stay's checkIn/checkOut span —
     // a genuine "Staying" night, not a check-in or check-out day.
     const day = buildTripView(data).days.find((d) => d.date === '2027-06-03')!;
@@ -566,7 +597,7 @@ describe('dayMapStops', () => {
 
   it('bookends a "Staying" day\'s stops with the lodging at both the start and the end, not just the end', () => {
     const data = minimalTripData();
-    pushMinimalStay(data, { lodging: { placeId: 'place_lodge', name: 'Test Lodge' } });
+    pushMinimalStay(data, { lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } } });
     pushExcursionPair(data);
     const day = buildTripView(data).days.find((d) => d.date === '2027-06-03')!;
     const segments = dayMapStops(day);
@@ -580,7 +611,7 @@ describe('dayMapStops', () => {
 
   it("bookends the full Google Maps route link the same way, routes through the excursion's drivable dock as its only waypoint, and never routes through the fly-in-only destination itself despite that place carrying no resolved placeId either", () => {
     const data = minimalTripData();
-    pushMinimalStay(data, { lodging: { placeId: 'place_lodge', name: 'Test Lodge' } });
+    pushMinimalStay(data, { lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } } });
     pushExcursionPair(data);
     const day = buildTripView(data).days.find((d) => d.date === '2027-06-03')!;
     const urls = dayFullRouteUrls(day);
@@ -592,7 +623,7 @@ describe('dayMapStops', () => {
 
   it("drops a same-day excursion's remote destination (and everything that happened there) from the map stops entirely, keeping only its drivable near-side dock", () => {
     const data = minimalTripData();
-    pushMinimalStay(data, { lodging: { placeId: 'place_lodge', name: 'Test Lodge' } });
+    pushMinimalStay(data, { lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } } });
     pushExcursionPair(data);
     const day = buildTripView(data).days.find((d) => d.date === '2027-06-03')!;
     const stops = dayMapStops(day);
@@ -602,7 +633,7 @@ describe('dayMapStops', () => {
 
   it('still excludes a mid-voyage cruise cabin (no fixed placeId) from the map on a "Staying" night', () => {
     const data = minimalTripData();
-    pushMinimalStay(data, { lodging: { placeId: null, name: 'Test Ship' } });
+    pushMinimalStay(data, { lodging: { place: { id: null, label: 'Test Ship' } } });
     const day = buildTripView(data).days.find((d) => d.date === '2027-06-03')!;
     expect(dayMapStops(day).flat()).not.toContain('Test Ship');
   });
@@ -654,7 +685,7 @@ describe('dayMapStops', () => {
   // whichever endpoint fell on the day being mapped.
   it('includes both endpoints of a midnight-crossing Transit on the map for both the departure day and the arrival day', () => {
     const data = minimalTripData();
-    pushMinimalStay(data, { lodging: { placeId: 'place_lodge', name: 'Test Lodge' } });
+    pushMinimalStay(data, { lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } } });
     pushMinimalTransit(data, {
       _id: 'test_overnight',
       from: { id: 'place_origin', label: 'Origin Port' },

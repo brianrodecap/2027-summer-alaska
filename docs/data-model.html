@@ -845,7 +845,7 @@
   checkOutAt: '2027-06-28T11:00',
   status: 'active',           // planning | active | completed | cancelled
   lodging: {
-    placeId: 'ChIJ...', name: 'Talkeetna Alaskan Lodge',
+    place: { id: 'ChIJ...', label: 'Talkeetna Alaskan Lodge' },
     roomType: null, roomNumber: null, campsite: null,
   },
   booking: { status: 'booked', cost: null, confirmationNumber: null },
@@ -862,7 +862,7 @@
   checkOutAt: '2027-07-24T07:30',
   status: 'planning',
   lodging: {
-    placeId: null, name: 'Discovery Princess',
+    place: { id: null, label: 'Discovery Princess' },
     roomType: 'Balcony (Cat. BC)', roomNumber: 'L232', campsite: null,
     bedConfiguration: 'Convertible twins',   // added: cruise-specific,
     deckGroup: 'Upper', shipZone: 'Mid-Forward', // no hotel Stay needs these
@@ -931,7 +931,7 @@
   scenarioId: null,
   checkInAt: '2027-07-06T21:00', checkOutAt: '2027-07-07T07:00',
   status: 'planning',
-  lodging: { placeId: null, name: 'Roadside pullout, Denali Highway' },
+  lodging: { place: { id: null, label: 'Roadside pullout, Denali Highway' } },
   booking: null,               // first-come, first-served — nothing to reserve
   images: [],
 }</code></pre>
@@ -947,7 +947,7 @@
   checkOutAt: '2026-06-23T11:00',
   status: 'planning',
   lodging: {
-    placeId: null, name: 'Santa Cruz Scorpion Campground',
+    place: { id: null, label: 'Santa Cruz Scorpion Campground' },
     roomType: null, roomNumber: null, campsite: '022, Lower Loop',
     partySize: 4, equipment: 'Tent', vehicleCount: 0,  // added: booking-time
   },                                                     // constraints a paid
@@ -967,7 +967,7 @@
   checkOutAt: '2026-06-19T11:00',
   status: 'planning',
   lodging: {
-    placeId: null, name: 'Hotel Pacific, Monterey CA',
+    place: { id: null, label: 'Hotel Pacific, Monterey CA' },
     roomType: 'Junior, 2 Double', roomNumber: null, campsite: null,
   },
   // "No check-in after 1:00am without advance notice; 18+ to check in." is a
@@ -1004,9 +1004,10 @@
             on.
           </li>
           <li>
-            <strong>lodging mirrors the Place reference pattern</strong> (external id + label) plus
-            type-specific detail a Google Place can't carry — room type and campsite are facts about
-            the reservation, not the physical property. A free-text
+            <strong>lodging nests a <code>place</code></strong> (the same <code>Place</code> type
+            reused everywhere else) alongside type-specific detail a Google Place can't carry — room
+            type and campsite are facts about the reservation, not the physical property, so they
+            stay siblings of <code>place</code> rather than folded into it. A free-text
             <code>checkInInstructions</code> field briefly lived here too, then moved out to a
             <code>Note</code> concerning the Stay — the same "facts get one home, referenced
             everywhere else" reasoning <code>Package.note</code> follows below, once description
@@ -1507,7 +1508,7 @@
           </li>
           <li>
             <strong>Reused everywhere a real point is needed</strong>: Activity's
-            <code>place</code>, Stay's <code>lodging</code>, Route's
+            <code>place</code>, Stay's <code>lodging.place</code>, Route's
             <code>variants[].places[].place</code>, and (as of the ferry test) Transit's
             <code>from</code>/<code>to</code> all literally use this type. Route's own
             <code>from</code>/<code>to</code> use the structurally-identical but nominally distinct
@@ -1523,12 +1524,12 @@
           </li>
           <li>
             <strong>id can be null</strong> — the same allowance
-            <code>Stay.lodging.placeId</code> already makes for a named-but-unresolved location (a
+            <code>Stay.lodging.place.id</code> already makes for a named-but-unresolved location (a
             roadside pullout with no formal address), just generalized to every field that reuses
             this shape. Surfaced by two of this trip's own MealOption candidates: a cruise-ship
             specialty restaurant (Sabatini's, Crown Grill) has no static geolocation to resolve at
             all — the venue's location is relative to the ship, not the earth, the same reason
-            <code>stay_cruise.lodging.placeId</code> is itself <code>null</code> — while a Ketchikan
+            <code>stay_cruise.lodging.place.id</code> is itself <code>null</code> — while a Ketchikan
             shore restaurant (Alaska Fish House, Annabelle's) has a real, resolvable address that
             just hasn't been looked up yet. Both read identically as <code>id: null</code>; the
             presentation tier renders <code>label</code> either way and simply skips the live Places

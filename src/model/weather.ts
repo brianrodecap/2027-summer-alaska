@@ -310,8 +310,8 @@ export interface PlaceSunriseSunset {
 // Single-place sunrise/sunset, for a fuzzy-timed ('Sunrise'/'Sunset'
 // timeLabel, no startAt) Activity's own row — same forecast-vs-climate-
 // average fallback as getPlaceTemperature above, narrowed to just the two
-// fields a "what time is that, really" row needs. Unlike showWeatherAtPlace/
-// showElevationAtPlace this isn't an opt-in per-entity toggle: an Activity
+// fields a "what time is that, really" row needs. Unlike Place's own
+// showWeather/showElevation this isn't an opt-in toggle: an Activity
 // that names itself "Sunrise"/"Sunset" is inherently making a time claim, so
 // resolving what that actually means is always relevant, not a nice-to-have
 // extra.

@@ -9,12 +9,18 @@ import {
   bookingFormValueFrom,
   readBookingFormValue,
 } from '../components/edit/bookingFormValue';
-import { activityHeadline, addDaysStr, dateOnly, transitRouteLabel } from './tripModel';
+import { placeFromLodging } from './formatting';
+import {
+  activityHeadline,
+  addDaysStr,
+  dateOnly,
+  todayDateStr,
+  transitRouteLabel,
+} from './tripModel';
 import type {
   Activity,
   DiningFormat,
   Leg,
-  Lodging,
   MealOption,
   MealType,
   Place,
@@ -52,8 +58,6 @@ export function blankActivity(legId: string, date: string): Activity {
     priority: null,
     text: '',
     place: null,
-    showWeatherAtPlace: false,
-    showElevationAtPlace: false,
     booking: null,
     mealType: null,
     diningFormat: null,
@@ -72,7 +76,7 @@ export function blankStay(legId: string, date: string): Stay {
     checkInAt: `${date}T15:00`,
     checkOutAt: `${addDaysStr(date, 1)}T11:00`,
     status: 'planning',
-    lodging: { placeId: null, name: '' },
+    lodging: { place: { id: null, label: '' } },
     booking: null,
     packages: null,
     images: [],
@@ -145,7 +149,7 @@ export function upsertById<T extends { _id: string }>(list: T[], item: T): T[] {
 }
 
 export function entityLabel(kind: EditKind, entity: Entity): string {
-  if (kind === 'stay') return (entity as Stay).lodging?.name || 'Untitled stay';
+  if (kind === 'stay') return (entity as Stay).lodging?.place.label || 'Untitled stay';
   if (kind === 'transit') return transitRouteLabel(entity as Transit);
   return activityHeadline(entity as Activity) || 'Untitled activity';
 }
@@ -198,26 +202,48 @@ function activityDateOnly(activity: Activity): string | null {
   return activity.startAt ? dateOnly(activity.startAt) : activity.date;
 }
 
+// The one real date any Activity/Stay/Transit resolves to, whatever kind it
+// actually is — used only by EditEventWizard to seed the *other* two kinds'
+// otherwise-unused blank forms (every entity always carries a real date,
+// unlike '' — which addDaysStr's Date math can't parse and throws on; see
+// blankStay's checkOutAt).
+export function entityDateOnly(kind: EditKind, entity: Entity): string {
+  if (kind === 'stay') return dateOnly((entity as Stay).checkInAt);
+  if (kind === 'transit') return dateOnly((entity as Transit).departsAt);
+  return activityDateOnly(entity as Activity) ?? todayDateStr();
+}
+
 // Finds an existing Activity that the wizard's in-progress meal would
 // otherwise sit alongside as an unmodeled duplicate — breakfast/lunch/dinner
 // match on day + meal type alone (any two Lunches that day are the same
 // undecided lunch, whatever time each was given); a Snack only matches an
 // exact same startAt, since snacks are looser and more frequent than a
 // day's three main meals, so same-day-and-type alone would over-match.
+// `excludeId` leaves out the Activity being edited itself — EditEventWizard
+// passes its own entity's id so editing a meal's date/type into another
+// day's slot doesn't just "find" itself as the duplicate; AddEventWizard has
+// no existing entity yet, so it never needs to pass one.
 export function findDuplicateMealActivity(
   activities: Activity[],
   mealType: MealType | '',
   startsDate: string | null,
   startsTime: string | null,
+  excludeId?: string,
 ): Activity | null {
   if (!mealType || !startsDate) return null;
   if (mealType === 'snack') {
     if (!startsTime) return null;
     const startAt = `${startsDate}T${startsTime}`;
-    return activities.find((a) => a.mealType === 'snack' && a.startAt === startAt) ?? null;
+    return (
+      activities.find(
+        (a) => a._id !== excludeId && a.mealType === 'snack' && a.startAt === startAt,
+      ) ?? null
+    );
   }
   return (
-    activities.find((a) => a.mealType === mealType && activityDateOnly(a) === startsDate) ?? null
+    activities.find(
+      (a) => a._id !== excludeId && a.mealType === mealType && activityDateOnly(a) === startsDate,
+    ) ?? null
   );
 }
 
@@ -325,7 +351,7 @@ export function includedInOptions(
     for (const stay of stays) {
       options.push({
         value: `stay:${stay._id}`,
-        label: stay.lodging?.name ?? stay._id,
+        label: stay.lodging?.place.label ?? stay._id,
         date: dateOnly(stay.checkInAt),
         sortKey: stay.checkInAt,
       });
@@ -392,8 +418,6 @@ export interface ActivityFormState {
   mealType: MealType | '';
   diningFormat: DiningFormat | '';
   place: Place | null;
-  showWeatherAtPlace: boolean;
-  showElevationAtPlace: boolean;
   includedIn: Ref | null;
   options: MealOption[];
   travelerIds: string[];
@@ -416,8 +440,6 @@ export function activityFormFrom(activity: Activity): ActivityFormState {
     mealType: activity.mealType ?? '',
     diningFormat: activity.diningFormat ?? '',
     place: activity.place,
-    showWeatherAtPlace: activity.showWeatherAtPlace ?? false,
-    showElevationAtPlace: activity.showElevationAtPlace ?? false,
     includedIn: activity.includedIn,
     options: activity.options ?? [],
     travelerIds: activity.travelers ?? [],
@@ -476,23 +498,12 @@ export function applyActivityForm(activity: Activity, form: ActivityFormState): 
     activity.diningFormat = form.diningFormat || null;
     activity.includedIn = form.includedIn;
   }
-  // Both toggles are meaningless without a place, regardless of which branch
-  // above ran — enforced here once rather than in each branch.
-  activity.showWeatherAtPlace = Boolean(activity.place) && form.showWeatherAtPlace;
-  activity.showElevationAtPlace = Boolean(activity.place) && form.showElevationAtPlace;
   activity.travelers = form.travelerIds.length ? form.travelerIds : null;
   activity.booking = readBookingFormValue(form.booking, activity.booking);
   return null;
 }
 
 // ---------- Stay ----------
-
-// A Stay's lodging, reshaped as the Place a PlacePickerField (or the detail
-// side sheet's own live Places lookup) needs — shared by stayFormFrom below
-// and StayDetailPanel, which both need the same lodging->Place conversion.
-export function placeFromLodging(lodging: Lodging | null | undefined): Place | null {
-  return lodging ? { id: lodging.placeId, label: lodging.name } : null;
-}
 
 export interface StayFormState {
   place: Place | null;
@@ -522,9 +533,9 @@ export function applyStayForm(stay: Stay, form: StayFormState): string | null {
   if (!checkInAt || !checkOutAt) return 'Needs both check-in and check-out times.';
   stay.checkInAt = checkInAt;
   stay.checkOutAt = checkOutAt;
-  const name = form.place?.label.trim();
-  if (name) {
-    stay.lodging = { ...stay.lodging, placeId: form.place?.id ?? null, name };
+  const label = form.place?.label.trim();
+  if (label && form.place) {
+    stay.lodging = { ...stay.lodging, place: { ...form.place, label } };
   }
   stay.booking = readBookingFormValue(form.booking, stay.booking);
   return null;
@@ -1045,23 +1056,59 @@ export const WIZARD_STEP_TIP: Partial<Record<WizardStepId, string>> = {
 // "This meal is being folded into an existing Activity as one more candidate,
 // rather than saved as an Activity of its own." Both halves are needed: a
 // duplicate has to have been found *and* the viewer has to have left the
-// merge toggle on. Exported so the wizards, the step renderer, and
-// wizardStepCanProceed all derive it the same way instead of each carrying
-// their own precomputed copy.
+// merge toggle on. `mergeIntoDuplicate` is null until the viewer actually
+// reaches/answers the 'mealDuplicate' step — which sits *after*
+// 'mealWhereWhen' in wizardStepsForCategory, since duplicate detection needs
+// that step's own date/time — so treating null as "not merging yet" (rather
+// than defaulting it true) keeps mealWhereWhen showing the real candidate
+// list the viewer asked for instead of silently collapsing to single-place
+// mode before they've ever seen the duplicate prompt. See
+// resolvedMergeIntoDuplicate below for the separate `?? true` default used
+// once the viewer has actually seen (or skipped past) that step. Exported so
+// the wizards, the step renderer, and wizardStepCanProceed all derive it the
+// same way instead of each carrying their own precomputed copy.
 export function isMergingIntoDuplicate(opts: {
   duplicateMealActivity?: Activity | null;
-  mergeIntoDuplicate?: boolean;
+  mergeIntoDuplicate?: boolean | null;
 }): boolean {
   return Boolean(opts.duplicateMealActivity && opts.mergeIntoDuplicate);
+}
+
+// The same `?? true` "default to merging until the viewer says otherwise"
+// fallback MealDuplicateStep displays, factored out once so the wizards'
+// own save handlers and renderWizardStep's step body all derive it the same
+// way rather than each repeating `mergeIntoDuplicate ?? true` with its own
+// copy of this comment. Never used for the gating in isMergingIntoDuplicate
+// above, which must keep treating null as "not merging yet" so mealWhereWhen
+// doesn't collapse to single-place mode before the viewer has seen the step.
+export function resolvedMergeIntoDuplicate(
+  mergeIntoDuplicate: boolean | null | undefined,
+): boolean {
+  return mergeIntoDuplicate ?? true;
+}
+
+// Both wizards' save handlers reach this same conclusion — a meal being
+// merged into a duplicate skips creating/updating its own Activity and folds
+// into the duplicate instead — so it's factored out once rather than each
+// handler repeating the three-way check. Returns the duplicate to merge into
+// (or null if this save isn't a merge), so callers get the narrowed,
+// non-null Activity for free instead of re-checking duplicateMealActivity.
+export function mealMergeTarget(
+  category: WizardCategory,
+  duplicateMealActivity: Activity | null | undefined,
+  mergeIntoDuplicate: boolean | null | undefined,
+): Activity | null {
+  if (category !== 'meal' || !duplicateMealActivity) return null;
+  return resolvedMergeIntoDuplicate(mergeIntoDuplicate) ? duplicateMealActivity : null;
 }
 
 export function wizardStepsForCategory(
   category: WizardCategory,
   opts: {
     lead: 'category' | 'mealBranch' | null;
-    // Only AddEventWizard ever has a duplicate to find (see
-    // findDuplicateMealActivity) — EditEventWizard leaves this unset, which
-    // reads the same as "no duplicate found".
+    // Both wizards compute this the same way (findDuplicateMealActivity) and
+    // pass it through here — omitted (undefined) reads the same as "no
+    // duplicate found".
     duplicateMealActivity?: Activity | null;
   },
 ): WizardStepId[] {
@@ -1113,7 +1160,7 @@ export function wizardStepCanProceed(
     // gets, rather than a precomputed flag, so the rule lives only in
     // isMergingIntoDuplicate.
     duplicateMealActivity?: Activity | null;
-    mergeIntoDuplicate?: boolean;
+    mergeIntoDuplicate?: boolean | null;
   },
 ): boolean {
   switch (stepId) {

@@ -34,6 +34,14 @@ import {
 } from './tripModel';
 import type { Activity, ScenarioTrack, SequenceItem, Stay, Transit, TripData } from './types';
 
+// An Activity's own fuzzy-timing label if it's fuzzy (no startAt), else
+// null — what a real anchor/drag-meta entry names as "after this" so a drop
+// lands after a fuzzy neighbor by adopting its label rather than taking
+// over its sort-key surrogate instant as a genuine startAt.
+function fuzzyTimeLabelOf(activity: Activity): string | null {
+  return activity.startAt ? null : (activity.timeLabel ?? null);
+}
+
 // Names the specific Activity or Transit a DragMeta/RealAnchor entry refers
 // to — an Activity's own id is unambiguous on its own, but a Transit's
 // Depart boundary, every route stage, and its Arrive boundary all share one
@@ -209,6 +217,18 @@ export interface DragMeta {
   // authored entities with a position of their own to drag away from.
   source: DragSource | null;
   anchorEntityId: AnchorEntity | null;
+  // Set only when this row's own `endAt` is a fuzzy Activity's sort-key
+  // surrogate (activityAnchorEndAt's no-startAt branch), never a real
+  // timestamp — e.g. an "Afternoon" Activity with no startAt of its own.
+  // applyActivityReorder reads this to keep a drop landing on/after this row
+  // fuzzy too (adopting this same label, startAt left null) rather than
+  // taking over the surrogate instant as a genuine clock time: two same-label
+  // fuzzy Activities already sort alphabetically against each other
+  // (tripModel.ts's mergeByTime fuzzy tie-break), so staying fuzzy is what
+  // actually lands the drop "after" this row the way the label implies.
+  // null for every other row kind (Transit boundaries/stages are never
+  // fuzzy; a real-timed Activity carries its own startAt already).
+  anchorTimeLabel: string | null;
   // 'front-takeover' only ever arrives here via the `{ ...overMeta,
   // ...overMeta.before }` spread in DaysView.tsx's handleDragEnd — a plain
   // DragMeta built by buildDragMeta is always 'after' or 'day-start'.
@@ -218,6 +238,7 @@ export interface DragMeta {
     endAt: string;
     legId: string;
     anchorEntityId: AnchorEntity | null;
+    anchorTimeLabel: string | null;
     cascadeActivityIds: string[];
     // 'front-takeover' marks the one `before` case with no real preceding
     // anchor at all (see beforeFieldsAt) — applyActivityReorder only honors
@@ -236,6 +257,11 @@ interface RealAnchor {
   legId: string;
   entityId: AnchorEntity | null;
   activityStartAt: string | null;
+  // This anchor's own timeLabel when it's a fuzzy (no-startAt) Activity —
+  // null for a Transit boundary/stage or a real-timed Activity, neither of
+  // which is ever fuzzy. See DragMeta.anchorTimeLabel's own note on why this
+  // matters at drop time.
+  timeLabel: string | null;
 }
 
 // The container's own real (non-Stay-boundary) rows, in day.sequence's
@@ -251,6 +277,7 @@ function buildRealAnchors(flattened: SequenceItem[], dayStart: string): RealAnch
         legId: item.transit.legId,
         entityId: { kind: 'transit', id: item.transit._id },
         activityStartAt: null,
+        timeLabel: null,
       });
     } else if (item.type === 'section') {
       for (const activity of item.activities) {
@@ -259,6 +286,7 @@ function buildRealAnchors(flattened: SequenceItem[], dayStart: string): RealAnch
           legId: activity.legId,
           entityId: { kind: 'activity', id: activity._id },
           activityStartAt: activity.startAt,
+          timeLabel: fuzzyTimeLabelOf(activity),
         });
       }
     }
@@ -377,6 +405,7 @@ export function buildDragMeta(
         endAt: preceding?.endAt ?? own.activityStartAt ?? own.endAt,
         legId: preceding?.legId ?? ownLegId,
         anchorEntityId: preceding?.entityId ?? null,
+        anchorTimeLabel: preceding ? preceding.timeLabel : own.timeLabel,
         cascadeActivityIds: downstreamActivityIds(k),
         kind: preceding ? 'after' : 'front-takeover',
       },
@@ -403,6 +432,7 @@ export function buildDragMeta(
               scenarioId,
               source: null, // Check-out is never a drag source — see applyStayReorder
               anchorEntityId: null,
+              anchorTimeLabel: null,
               kind: 'day-start',
               cascadeActivityIds:
                 firstActivityIdx >= 0 ? downstreamActivityIds(firstActivityIdx) : [],
@@ -424,6 +454,7 @@ export function buildDragMeta(
               // should rewrite the way an Activity's startAt is.
               source: { kind: 'stay', id: item.stay._id },
               anchorEntityId: lastAnchor?.entityId ?? null,
+              anchorTimeLabel: null,
               kind: 'after',
               cascadeActivityIds: [], // Check-in is always last — nothing follows it
             },
@@ -441,6 +472,7 @@ export function buildDragMeta(
             scenarioId,
             source: null, // a 'Staying' row is never a drag source
             anchorEntityId: null,
+            anchorTimeLabel: null,
             kind: 'after',
           },
         ];
@@ -459,6 +491,7 @@ export function buildDragMeta(
             // never independently draggable (see applyTransitReorder).
             source: item.phase === 'depart' ? { kind: 'transit', id: item.transit._id } : null,
             anchorEntityId: null,
+            anchorTimeLabel: null, // a Transit boundary is never fuzzy
             kind: 'after',
             cascadeActivityIds: downstreamActivityIds(realAnchorIdx + 1),
             ...beforeFieldsAt(realAnchorIdx, item.transit.legId),
@@ -475,6 +508,7 @@ export function buildDragMeta(
             scenarioId,
             source: null, // a route stage is never independently draggable
             anchorEntityId: null,
+            anchorTimeLabel: null, // a route stage is never fuzzy
             kind: 'after',
             cascadeActivityIds: downstreamActivityIds(realAnchorIdx + 1),
             ...beforeFieldsAt(realAnchorIdx, item.transit.legId),
@@ -491,6 +525,7 @@ export function buildDragMeta(
             scenarioId,
             source: { kind: 'activity', id: activity._id },
             anchorEntityId: { kind: 'activity', id: activity._id },
+            anchorTimeLabel: fuzzyTimeLabelOf(activity),
             kind: 'after',
             cascadeActivityIds: downstreamActivityIds(realAnchorIdx + 1),
             ...beforeFieldsAt(realAnchorIdx, activity.legId),
@@ -522,6 +557,7 @@ export function buildDragMeta(
         legId: dayLegId,
         scenarioId,
         anchorEntityId: null,
+        anchorTimeLabel: null, // item.key is always a real instant, never fuzzy
         kind: 'after' as const,
       };
       const scenarioEntry: Omit<DragMeta, 'index' | 'containerDayStart'> = {
@@ -719,38 +755,74 @@ export function applyActivityReorder(
   const isNoOpFrontTakeover =
     dropMeta.kind === 'front-takeover' && activityDurationMinutes(activity) == null;
   const skipTakeover = preserveOwnTiming || isNoOpFrontTakeover;
+  const anchorTimeLabel = skipTakeover ? null : dropMeta.anchorTimeLabel;
   const endAt = skipTakeover ? null : dropMeta.endAt;
-  const cascadeActivityIds = skipTakeover ? undefined : dropMeta.cascadeActivityIds;
-
-  // Derived straight from the Activity's own current date, not threaded
-  // down from DaysView.tsx's own container-crossing checks — a drop that
-  // never leaves its own container can never cross days, so this stays
-  // correct regardless of *why* endAt/skipTakeover ended up the way they
-  // did (an empty destination day, a duration-less front-takeover, ...).
-  // See resolveDropTiming's own note on why this still has to relocate the
-  // Activity even with no real anchor to land on.
-  const crossesDay = activity.startAt != null && dateOnly(activity.startAt) !== dateOnly(dayStart);
-  const timing = resolveDropTiming(endAt, dayStart, activity.startAt, crossesDay);
-  const updated: Activity = {
-    ...activity,
-    startAt: timing.startAt,
-    timeLabel: null,
-    date: null,
-    legId: dropMeta.legId,
-    scenarioId: dropMeta.scenarioId,
-  };
 
   let rest = data.activities.filter((a) => a._id !== activityId);
 
-  if (cascadeActivityIds?.length) {
-    rest = cascadeShift(
-      rest,
-      cascadeActivityIds,
-      dropMeta.kind === 'day-start'
-        ? { kind: 'uniform', shiftMinutes: activityDurationMinutes(activity) ?? 1 }
-        : { kind: 'minimal', startAfter: activityEndAt(timing.startAt, updated) },
-    );
+  // Either the drop lands on/after a fuzzy (no-startAt) neighbor — stay
+  // fuzzy too, adopting that same label, instead of taking over the
+  // neighbor's sort-key surrogate instant as a genuine startAt (see
+  // DragMeta.anchorTimeLabel's own note on why this is what actually lands
+  // the drop "after" a fuzzy neighbor the way its label implies) — or the
+  // Activity being dragged is itself already fuzzy and this drop has no
+  // real instant to hand it either (preserveOwnTiming, a duration-less
+  // front-takeover, or a genuine no-anchor target like a mid-Stay "Staying"
+  // row). resolveDropTiming's own "keep ownStartAt" fallback is a no-op for
+  // a real-timed Activity, but ownStartAt is null here — so without this
+  // branch it would fall all the way through to `dayStart` and get stamped
+  // with a false, precise midnight, exactly like taking over a real anchor
+  // would. A fuzzy Activity's own timeLabel (guaranteed non-null whenever
+  // startAt is, per the invariant buildTripView enforces) is what "its own
+  // time" actually means in that case, so that's what gets kept.
+  const fuzzyLabel =
+    anchorTimeLabel ?? (activity.startAt == null && endAt == null ? activity.timeLabel : null);
+
+  // Only `startAt`/`timeLabel`/`date` differ between the fuzzy and real-timed
+  // cases below — legId/scenarioId always reassign to dropMeta's the same
+  // way, so `updated` is built once after this branch rather than twice.
+  let timing: Pick<Activity, 'startAt' | 'timeLabel' | 'date'>;
+
+  if (fuzzyLabel) {
+    // Only `date` moves, to stay on the destination day (same as
+    // applyBlockReorder already does for an unrouted fuzzy block member),
+    // since `date` rather than startAt is what activitiesByDate reads for a
+    // fuzzy Activity's day. A fuzzy drop takes over no fixed instant, so
+    // there's nothing for cascadeActivityIds to displace — deliberately
+    // left unapplied.
+    timing = { startAt: null, timeLabel: fuzzyLabel, date: dateOnly(dayStart) };
+  } else {
+    const cascadeActivityIds = skipTakeover ? undefined : dropMeta.cascadeActivityIds;
+
+    // Derived straight from the Activity's own current date, not threaded
+    // down from DaysView.tsx's own container-crossing checks — a drop that
+    // never leaves its own container can never cross days, so this stays
+    // correct regardless of *why* endAt/skipTakeover ended up the way they
+    // did (an empty destination day, a duration-less front-takeover, ...).
+    // See resolveDropTiming's own note on why this still has to relocate
+    // the Activity even with no real anchor to land on.
+    const crossesDay =
+      activity.startAt != null && dateOnly(activity.startAt) !== dateOnly(dayStart);
+    const resolved = resolveDropTiming(endAt, dayStart, activity.startAt, crossesDay);
+    timing = { startAt: resolved.startAt, timeLabel: null, date: null };
+
+    if (cascadeActivityIds?.length) {
+      rest = cascadeShift(
+        rest,
+        cascadeActivityIds,
+        dropMeta.kind === 'day-start'
+          ? { kind: 'uniform', shiftMinutes: activityDurationMinutes(activity) ?? 1 }
+          : { kind: 'minimal', startAfter: activityEndAt(resolved.startAt, activity) },
+      );
+    }
   }
+
+  const updated: Activity = {
+    ...activity,
+    ...timing,
+    legId: dropMeta.legId,
+    scenarioId: dropMeta.scenarioId,
+  };
 
   const insertAt = reinsertAfterAnchor(rest, dropMeta.anchorEntityId, 'activity');
 
@@ -989,6 +1061,12 @@ export function applyGroupActivityReorder(
       ...nextDropMeta,
       endAt: placed.startAt ? activityEndAt(placed.startAt, placed) : nextDropMeta.endAt,
       anchorEntityId: { kind: 'activity', id: placed._id },
+      // Carries the just-placed Activity's own fuzzy label forward (or null
+      // once a real startAt has taken over), same as buildDragMeta computes
+      // it for an ordinary section Activity — otherwise every later group
+      // member would keep inheriting the very first drop position's own
+      // anchorTimeLabel regardless of what actually got placed there.
+      anchorTimeLabel: fuzzyTimeLabelOf(placed),
       kind: 'after',
       cascadeActivityIds: nextDropMeta.cascadeActivityIds?.filter((id) => !isGroupMember.has(id)),
     };

@@ -32,8 +32,8 @@ function usePlaceElevation(placeId: string | null) {
 }
 
 // The per-entity "show weather"/"show elevation at this place" row (see
-// Activity.showWeatherAtPlace/showElevationAtPlace and ActivityEditForm's
-// own toggles) — renders right after a row's description, ahead of its
+// Place.showWeather/showElevation and ActivityEditForm's own toggles) —
+// renders right after a row's description, ahead of its
 // notes/travelers/booking chip, since this is primary information about the
 // entry rather than a footnote. Off (renders nothing) unless at least one
 // toggle is on and the entity actually resolves a Place.
@@ -42,18 +42,10 @@ function usePlaceElevation(placeId: string | null) {
 // every day's rows at once regardless of scroll position, so without this
 // every enabled row across the whole trip would fetch the instant the page
 // loads instead of as each one actually scrolls into view.
-export function PlaceConditionsLine({
-  place,
-  date,
-  showWeather,
-  showElevation,
-}: {
-  place: Place | null;
-  date: string;
-  showWeather: boolean;
-  showElevation: boolean;
-}) {
+export function PlaceConditionsLine({ place, date }: { place: Place | null; date: string }) {
   const placeId = place?.id ?? null;
+  const showWeather = Boolean(place?.showWeather);
+  const showElevation = Boolean(place?.showElevation);
   const wantsAny = Boolean(placeId) && (showWeather || showElevation) && isPlacesApiKeyConfigured();
   const { ref, inView } = useInViewport<HTMLDivElement>();
   const activePlaceId = wantsAny && inView ? placeId : null;
