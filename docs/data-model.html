@@ -1529,14 +1529,15 @@
             this shape. Surfaced by two of this trip's own MealOption candidates: a cruise-ship
             specialty restaurant (Sabatini's, Crown Grill) has no static geolocation to resolve at
             all — the venue's location is relative to the ship, not the earth, the same reason
-            <code>stay_cruise.lodging.place.id</code> is itself <code>null</code> — while a Ketchikan
-            shore restaurant (Alaska Fish House, Annabelle's) has a real, resolvable address that
-            just hasn't been looked up yet. Both read identically as <code>id: null</code>; the
-            presentation tier renders <code>label</code> either way and simply skips the live Places
-            lookup panel when <code>id</code> is absent (see <code>places.js</code>) rather than
-            showing a loading state that can only ever resolve to "unavailable." Distinct from
-            <code>place: null</code> itself, which still means no resolvable venue at all —
-            self-catered, included with no venue to name, or genuinely not yet named.
+            <code>stay_cruise.lodging.place.id</code> is itself <code>null</code> — while a
+            Ketchikan shore restaurant (Alaska Fish House, Annabelle's) has a real, resolvable
+            address that just hasn't been looked up yet. Both read identically as
+            <code>id: null</code>; the presentation tier renders <code>label</code> either way and
+            simply skips the live Places lookup panel when <code>id</code> is absent (see
+            <code>places.js</code>) rather than showing a loading state that can only ever resolve
+            to "unavailable." Distinct from <code>place: null</code> itself, which still means no
+            resolvable venue at all — self-catered, included with no venue to name, or genuinely not
+            yet named.
           </li>
         </ul>
       </article>

@@ -64,7 +64,8 @@ import {
 import { BookingChip } from '../shared/BookingChip';
 import { splitNotes } from '../shared/noteKind';
 import { NotesCluster } from '../shared/Notes';
-import { ROW_LEADING_SIZE, ROW_OVERLINE_SX, RowLeadingDot } from '../shared/RowLeadingDot';
+import { RowLeadingDot } from '../shared/RowLeadingDot';
+import { ROW_LEADING_SIZE, ROW_OVERLINE_SX } from '../shared/rowLeadingTokens';
 import { ActivityLeading, ActivityRow } from './ActivityRow';
 import { AvatarOrDot } from './AvatarOrDot';
 import { MealRow, MealRowLeading } from './MealRow';
@@ -655,19 +656,31 @@ const EmptyDropZone = memo(function EmptyDropZone({
 // preceding its own scenario-tabs split (reorder.ts's own note on
 // beforeScenarioSplitDragId/realAnchorIdx) — a branch whose entire content
 // is one nested scenario-tabs split would otherwise have zero droppable
-// rows, since the scenario-tabs row itself never is one. Kept visually
-// minimal, unlike EmptyDropZone's dashed box: this container isn't actually
-// empty, it just has nothing to fall back to for a drop meant to land right
-// before the split.
+// rows, since the scenario-tabs row itself never is one. This is pure
+// drag-and-drop plumbing, not a real Stay/Transit/Activity entry, so it
+// deliberately doesn't render through TimelineRow (no dot, no connector) —
+// giving it the same full-size icon-dot treatment as every real row made it
+// read as a broken, content-less timeline entry rather than "nothing here."
+// It stays fully collapsed until something is actually dragged over it
+// (SortableRow's own `isOver`, threaded through here), at which point it
+// opens into a thin insertion line — still no dashed box like
+// EmptyDropZone's, since this container isn't actually empty, it just has
+// nothing to fall back to for a drop meant to land right before the split.
 const ScenarioSplitDropSpacer = memo(function ScenarioSplitDropSpacer({
-  isLast,
+  isOver,
 }: {
-  isLast: boolean;
+  isOver?: boolean;
 }) {
   return (
-    <TimelineRow dot={<RowLeadingDot icon={null} />} isLast={isLast} contentSx={{ pb: 1 }}>
-      <Box sx={{ height: 4 }} />
-    </TimelineRow>
+    <Box
+      sx={{
+        ml: `${DRAG_HANDLE_WIDTH + ROW_LEADING_SIZE}px`,
+        height: isOver ? 8 : 0,
+        borderRadius: 1,
+        bgcolor: isOver ? 'primary.main' : 'transparent',
+        transition: 'height 120ms, background-color 120ms',
+      }}
+    />
   );
 });
 
@@ -708,11 +721,15 @@ export const DayTimeline = memo(function DayTimeline({
   // it's a no-op there, same as the top-level day.sequence case; a branch
   // that does carry one (Stay.scenarioId) gets its own Check-in/Check-out
   // pulled to the front/back of that branch's own timeline exactly like the
-  // top level's.
+  // top level's. Passing day.scenarioTracks opts splitOutStayBoundaries into
+  // also treating a scenario-tabs group as a bare Stay boundary when every
+  // one of its tracks agrees it is one (see its own comment) — pulled to the
+  // same front/back position a plain Stay item would get, alongside (not
+  // ahead of/behind) any real top-level Stay boundary already there.
   const flattened = useMemo(() => {
-    const { checkOuts, rest, checkIns } = splitOutStayBoundaries(filtered);
+    const { checkOuts, rest, checkIns } = splitOutStayBoundaries(filtered, day.scenarioTracks);
     return [...checkOuts, ...rest, ...checkIns];
-  }, [filtered]);
+  }, [filtered, day.scenarioTracks]);
   const dayStart = `${day.date}T00:00`;
 
   // Kept a stable reference across renders the filter/selection/scenario
@@ -772,7 +789,12 @@ export const DayTimeline = memo(function DayTimeline({
     dragId: string | null;
     draggable: boolean;
     droppable: boolean;
-    render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => ReactElement;
+    render: (props: {
+      isLast: boolean;
+      dragHandle?: ReactNode;
+      selected?: boolean;
+      isOver?: boolean;
+    }) => ReactElement;
   }
 
   const nodes: DayTimelineNode[] = flattened.flatMap((item, i): DayTimelineNode[] => {
@@ -793,7 +815,7 @@ export const DayTimeline = memo(function DayTimeline({
           dragId,
           draggable,
           droppable: true,
-          render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => (
+          render: ({ isLast, dragHandle, selected }) => (
             <StayNode
               item={item}
               date={day.date}
@@ -814,7 +836,7 @@ export const DayTimeline = memo(function DayTimeline({
           dragId,
           draggable: item.phase === 'depart',
           droppable: true,
-          render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => (
+          render: ({ isLast, dragHandle, selected }) => (
             <TransitBoundaryNode
               item={item}
               date={day.date}
@@ -835,7 +857,7 @@ export const DayTimeline = memo(function DayTimeline({
           dragId,
           draggable: false,
           droppable: true,
-          render: (isLast: boolean) => <TransitStageNode item={item} isLast={isLast} />,
+          render: ({ isLast }) => <TransitStageNode item={item} isLast={isLast} />,
         },
       ];
     }
@@ -847,7 +869,7 @@ export const DayTimeline = memo(function DayTimeline({
           dragId,
           draggable: true,
           droppable: true,
-          render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => (
+          render: ({ isLast, dragHandle, selected }) => (
             <ActivityNode
               activity={activity}
               day={day}
@@ -871,7 +893,7 @@ export const DayTimeline = memo(function DayTimeline({
       dragId: scenarioDragId,
       draggable: true,
       droppable: false,
-      render: (isLast: boolean, dragHandle?: ReactNode, selected?: boolean) => (
+      render: ({ isLast, dragHandle, selected }) => (
         <ScenarioTabsNode
           day={day}
           tracks={item.tracks ?? day.scenarioTracks}
@@ -902,7 +924,7 @@ export const DayTimeline = memo(function DayTimeline({
           dragId: spacerId,
           draggable: false,
           droppable: true,
-          render: (isLast: boolean) => <ScenarioSplitDropSpacer isLast={isLast} />,
+          render: ({ isOver }) => <ScenarioSplitDropSpacer isOver={isOver} />,
         },
         scenarioNode,
       ];
@@ -927,7 +949,7 @@ export const DayTimeline = memo(function DayTimeline({
       dragId: null,
       draggable: false,
       droppable: false,
-      render: (isLast: boolean) => (
+      render: ({ isLast }) => (
         <StayNode item={item} date={day.date} isLast={isLast} onOpen={onOpenStay} />
       ),
     }));
@@ -977,10 +999,10 @@ export const DayTimeline = memo(function DayTimeline({
                   droppable={node.droppable}
                   dragMeta={meta}
                 >
-                  {(dragHandleProps) =>
-                    node.render(
-                      i === allNodes.length - 1,
-                      dragHandleProps ? (
+                  {(dragHandleProps, isOver) =>
+                    node.render({
+                      isLast: i === allNodes.length - 1,
+                      dragHandle: dragHandleProps ? (
                         <Tooltip
                           title={isSelected ? 'Selected — drag to move group' : 'Drag to reorder'}
                         >
@@ -1012,12 +1034,13 @@ export const DayTimeline = memo(function DayTimeline({
                           </IconButton>
                         </Tooltip>
                       ) : undefined,
-                      isSelected,
-                    )
+                      selected: isSelected,
+                      isOver,
+                    })
                   }
                 </SortableRow>
               ) : (
-                node.render(i === allNodes.length - 1)
+                node.render({ isLast: i === allNodes.length - 1 })
               )}
             </Fragment>
           );

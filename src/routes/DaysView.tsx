@@ -212,10 +212,14 @@ export function DaysView() {
 
   // Memoized for the same reason as handleAddEvent below: this is passed
   // straight to the memoized DayBlock, and activityPanel.onOpen is itself
-  // stable (see useDetailPanel), so this adapter stays stable too.
+  // stable (see useDetailPanel), so this adapter stays stable too — the
+  // lint rule can't see that stability through the member access, so
+  // depending on the whole activityPanel object (a fresh one every render)
+  // would defeat the memoization this exists for.
   const handleOpenActivity = useCallback(
     (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) =>
       activityPanel.onOpen(activity, selectedOption?._id),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [activityPanel.onOpen],
   );
 

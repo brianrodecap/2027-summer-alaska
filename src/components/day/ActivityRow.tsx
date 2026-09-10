@@ -12,7 +12,7 @@ import { LinkifiedText } from '../shared/LinkifiedText';
 import { DEFAULT_PLACE_ICON, DINING_FORMAT_ICON } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
 import { OverlapWarnings } from '../shared/OverlapWarnings';
-import { ROW_OVERLINE_SX } from '../shared/RowLeadingDot';
+import { ROW_OVERLINE_SX } from '../shared/rowLeadingTokens';
 import { TravelerChips } from '../shared/TravelerChips';
 import { AvatarOrDotView } from './AvatarOrDot';
 import { PlaceConditionsLine } from './PlaceConditionsLine';

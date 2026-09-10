@@ -2,7 +2,8 @@ import Avatar from '@mui/material/Avatar';
 import { forwardRef } from 'react';
 
 import type { Image } from '../../model/types';
-import { ROW_LEADING_SIZE, RowLeadingDot } from '../shared/RowLeadingDot';
+import { RowLeadingDot } from '../shared/RowLeadingDot';
+import { ROW_LEADING_SIZE } from '../shared/rowLeadingTokens';
 import { useInViewport } from './useInViewport';
 
 // The day timeline's own dot-or-photo treatment: a row/node's own image

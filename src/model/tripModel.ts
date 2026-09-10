@@ -1337,13 +1337,25 @@ function truncateSummary(text: string): string {
   return text.length > 140 ? `${text.slice(0, 137)}…` : text;
 }
 
+// Resolves competing candidates by trying each predicate in turn (most
+// specific tier first) and falling back to the first item if none match —
+// the "ideal wins, otherwise whichever's there" convention used throughout
+// for scenario-branch ties, and its variants (an extra outright-wins tier
+// ahead of the ideal-tone check, for callers like primaryStay below where
+// some candidates aren't scenario-scoped at all).
+function pickByPriority<T>(items: T[], ...predicates: Array<(item: T) => boolean>): T | null {
+  for (const predicate of predicates) {
+    const match = items.find(predicate);
+    if (match) return match;
+  }
+  return items[0] ?? null;
+}
+
 // A branching day's headline event (e.g. flightseeing) only exists on one
 // scenario track — the "planned" one, same convention used throughout: ideal
 // if present, otherwise whichever track is there.
 function idealOrFirstTrack(day: Pick<Day, 'scenarioTracks'>): ScenarioTrack | null {
-  return (
-    day.scenarioTracks.find((t) => t.scenario.tone === 'ideal') ?? day.scenarioTracks[0] ?? null
-  );
+  return pickByPriority(day.scenarioTracks, (t) => t.scenario.tone === 'ideal');
 }
 
 // Every place with a resolvable id touched by a day, in the same
@@ -1512,17 +1524,73 @@ export function deriveTitle(location: string, candidates: EnrichedActivity[]): s
 // (DayTimeline) and dayMapStops below (so the computed map's last stop is
 // always tonight's actual lodging, not wherever check-in's raw timestamp
 // happened to sort).
-export function splitOutStayBoundaries(sequence: SequenceItem[]): {
+//
+// A scenario-tabs group whose every candidate track's own same-day content
+// is nothing but a Stay boundary (e.g. a night whose lodging itself differs
+// per scenario — Denali Princess Wilderness Lodge vs. Talkeetna Alaskan
+// Lodge, both checking out the same morning) carries no real per-scenario
+// *activity* content for this date at all; it exists purely to answer "which
+// hotel did you wake up in / go to sleep in," so it deserves this same
+// treatment too — but only DayTimeline's caller wants that (dayMapStops
+// below plots a scenario branch's own already-selected sequence, which
+// never contains an unresolved scenario-tabs item), so it's opt-in via
+// `scenarioTracks`, used only as the fallback for a top-level scenario-tabs
+// placeholder that carries no `tracks` of its own (buildSequence's `{ type:
+// 'scenario-tabs', key }` above).
+function trackBoundaryKind(track: ScenarioTrack): 'checkout' | 'checkin' | null {
+  if (!track.sequence.length) return null;
+  if (track.sequence.every((item) => item.type === 'stay' && item.relation === 'Check out')) {
+    return 'checkout';
+  }
+  if (
+    track.sequence.every(
+      (item) =>
+        item.type === 'stay' && (item.relation === 'Check in' || item.relation === 'Staying'),
+    )
+  ) {
+    return 'checkin';
+  }
+  return null;
+}
+
+function scenarioGroupBoundary(
+  item: ScenarioTabsSequenceItem,
+  fallbackTracks: ScenarioTrack[],
+): 'checkout' | 'checkin' | null {
+  const tracks = item.tracks ?? fallbackTracks;
+  if (!tracks.length) return null;
+  if (tracks.every((t) => trackBoundaryKind(t) === 'checkout')) return 'checkout';
+  if (tracks.every((t) => trackBoundaryKind(t) === 'checkin')) return 'checkin';
+  return null;
+}
+
+function stayBoundaryKind(
+  item: SequenceItem,
+  scenarioTracks: ScenarioTrack[] | undefined,
+): 'checkout' | 'checkin' | null {
+  if (item.type === 'stay') {
+    if (item.relation === 'Check out') return 'checkout';
+    if (item.relation === 'Check in' || item.relation === 'Staying') return 'checkin';
+    return null;
+  }
+  if (scenarioTracks && item.type === 'scenario-tabs') {
+    return scenarioGroupBoundary(item, scenarioTracks);
+  }
+  return null;
+}
+
+export function splitOutStayBoundaries(
+  sequence: SequenceItem[],
+  scenarioTracks?: ScenarioTrack[],
+): {
   checkOuts: SequenceItem[];
   rest: SequenceItem[];
   checkIns: SequenceItem[];
 } {
   const checkOuts = sequence.filter(
-    (item) => item.type === 'stay' && item.relation === 'Check out',
+    (item) => stayBoundaryKind(item, scenarioTracks) === 'checkout',
   );
-  const checkIns = sequence.filter(
-    (item) => item.type === 'stay' && (item.relation === 'Check in' || item.relation === 'Staying'),
-  );
+  const checkIns = sequence.filter((item) => stayBoundaryKind(item, scenarioTracks) === 'checkin');
   const rest = sequence.filter((item) => !checkOuts.includes(item) && !checkIns.includes(item));
   return { checkOuts, rest, checkIns };
 }
@@ -2092,11 +2160,23 @@ function buildDay(
 
   // The stay whose checkout is today but check-in wasn't (i.e. only touching
   // this day on the way out) is skipped in favor of wherever the day actually
-  // ends up — the incoming stay, or the one already in progress.
-  const primaryStay =
-    dayStays.find((s) => !(dateOnly(s.checkOutAt) === date && dateOnly(s.checkInAt) !== date)) ??
-    dayStays[0] ??
-    null;
+  // ends up — the incoming stay, or the one already in progress. When more
+  // than one branch's Stay claims the same night (a scenario split over
+  // where to sleep, e.g. a flightseeing lodge vs. its town-based backup),
+  // a Stay that isn't scenario-scoped at all wins outright (it happens no
+  // matter which branch is taken), otherwise the ideal branch's own Stay
+  // wins — the same pickByPriority/"planned by default" convention
+  // idealOrFirstTrack/plannedTrackCandidates already use for the day's
+  // title/summary/weather, so the header names the planned lodging rather
+  // than whichever branch's Stay happens to sort first in stays.json.
+  const eligibleStays = dayStays.filter(
+    (s) => !(dateOnly(s.checkOutAt) === date && dateOnly(s.checkInAt) !== date),
+  );
+  const primaryStay = pickByPriority(
+    eligibleStays,
+    (s) => !s.scenarioId,
+    (s) => scenariosById.get(s.scenarioId ?? '')?.tone === 'ideal',
+  );
   // Looked up against every one of the leg's Transits, not just dayTransits —
   // a day with nothing else to name itself after still needs to know one
   // arrived here, even though (per transitItemsOnDate) the Arrive boundary
