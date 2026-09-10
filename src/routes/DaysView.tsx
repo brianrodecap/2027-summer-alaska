@@ -19,7 +19,15 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import useScrollTrigger from '@mui/material/useScrollTrigger';
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type ComponentProps,
+  type ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { ActivityDetailPanel } from '../components/activity/ActivityDetailPanel';
@@ -27,6 +35,7 @@ import { AskAIDialog } from '../components/day/AskAIDialog';
 import { DayBlock } from '../components/day/DayBlock';
 import { DayMapPanel } from '../components/day/DayMapPanel';
 import { FilterMenu } from '../components/day/FilterMenu';
+import { resolveActiveScenarioId } from '../components/day/scenarioSelection';
 import { StayDetailPanel } from '../components/day/StayDetailPanel';
 import { TransitDetailPanel } from '../components/day/TransitDetailPanel';
 import { RoutesDialog } from '../components/edit/RoutesDialog';
@@ -57,7 +66,11 @@ import type {
 import type { CollectionName } from '../state/TripDataContextObject';
 import { useEdit } from '../state/useEdit';
 import { useTripData } from '../state/useTripData';
-import { useFilterSelection, useRowSelection } from '../state/useTripSelections';
+import {
+  useFilterSelection,
+  useRowSelection,
+  useScenarioSelection,
+} from '../state/useTripSelections';
 
 // Stay's, Transit's and Activity's detail panels are all opened/closed/edited
 // the same way — a plain "which entity is open" state, with Edit clearing it
@@ -133,6 +146,26 @@ function DragOverlayChip({ children }: { children: ReactNode }) {
       {children}
     </Paper>
   );
+}
+
+// Reads `scenarioTone` only while the "Add to this day" wizard is actually
+// open, rather than DaysView subscribing to it at the top level for a value
+// only this dialog needs — so a scenario-tab click elsewhere in the trip
+// doesn't re-run DaysView's own render body while the dialog is closed.
+function ScenarioScopedAddEventWizard({
+  day,
+  daysByDate,
+  ...rest
+}: { day: Day; daysByDate: Map<string, Day> } & Omit<
+  ComponentProps<typeof AddEventWizard>,
+  'activeScenarioId'
+>) {
+  const { scenarioTone } = useScenarioSelection();
+  const activeScenarioId = useMemo(
+    () => resolveActiveScenarioId(day, daysByDate, scenarioTone),
+    [day, daysByDate, scenarioTone],
+  );
+  return <AddEventWizard {...rest} activeScenarioId={activeScenarioId} />;
 }
 
 export function DaysView() {
@@ -464,7 +497,9 @@ export function DaysView() {
         />
       )}
       {data && addWizardDay && (
-        <AddEventWizard
+        <ScenarioScopedAddEventWizard
+          day={addWizardDay}
+          daysByDate={daysByDate}
           legId={addWizardDay.leg._id}
           date={addWizardDay.date}
           stays={data.stays}

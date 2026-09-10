@@ -38,6 +38,7 @@ import { WizardShell, type WizardStep } from './WizardShell';
 export function AddEventWizard({
   legId,
   date,
+  activeScenarioId,
   stays,
   activities,
   transits,
@@ -51,6 +52,13 @@ export function AddEventWizard({
 }: {
   legId: string;
   date: string;
+  // The scenario branch this day is currently showing (null on a
+  // non-branching day, or one with no scenario tab actively selected) — new
+  // Activities are tagged with it so they land in whichever branch was on
+  // screen when "Add to this day" was clicked, and meal-duplicate detection
+  // (see findDuplicateMealActivity) never folds this draft into another
+  // branch's own meal just because it falls on the same date.
+  activeScenarioId: string | null;
   stays: Stay[];
   activities: Activity[];
   transits: Transit[];
@@ -66,7 +74,7 @@ export function AddEventWizard({
   const [category, setCategory] = useState<WizardCategory>('activity');
 
   const [activityForm, setActivityForm] = useState<ActivityFormState>(() =>
-    activityFormFrom(blankActivity(legId, date)),
+    activityFormFrom(blankActivity(legId, date, activeScenarioId)),
   );
   // Most meals get jotted down before a place is settled on — "still
   // deciding" is the far more common starting point than "I already know
@@ -84,7 +92,7 @@ export function AddEventWizard({
     [scenarios, activities, transits],
   );
   const { duplicateMealActivity, mergeIntoDuplicate, setMergeIntoDuplicate } =
-    useMealDuplicateMerge(activities, activityForm);
+    useMealDuplicateMerge(activities, activityForm, activeScenarioId);
 
   const stepIds = wizardStepsForCategory(category, {
     lead: 'category',
@@ -161,7 +169,7 @@ export function AddEventWizard({
       onSaveEntity('transit', entity);
       return;
     }
-    const entity = blankActivity(legId, date);
+    const entity = blankActivity(legId, date, activeScenarioId);
     const message = applyActivityForm(entity, activityForm);
     if (message) {
       setError(message);

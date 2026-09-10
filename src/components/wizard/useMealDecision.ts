@@ -28,13 +28,18 @@ export function useMealDecision(
 // gates — identical between AddEventWizard and EditEventWizard (down to the
 // null-until-answered default; see isMergingIntoDuplicate's own comment for
 // why a true default would be wrong), so both call this instead of each
-// keeping its own copy that could silently drift. `excludeId` is the entity
-// being edited itself, so EditEventWizard doesn't "find" its own draft as a
+// keeping its own copy that could silently drift. `scenarioId` is the branch
+// this in-progress meal actually belongs to (AddEventWizard's day's
+// currently-active scenario tab, or EditEventWizard's own entity's
+// scenarioId) — see findDuplicateMealActivity for why a candidate outside
+// that branch is never a real duplicate. `excludeId` is the entity being
+// edited itself, so EditEventWizard doesn't "find" its own draft as a
 // duplicate of itself — AddEventWizard has no existing entity yet, so it
 // never passes one.
 export function useMealDuplicateMerge(
   activities: Activity[],
   activityForm: ActivityFormState,
+  scenarioId: string | null,
   excludeId?: string,
 ): {
   duplicateMealActivity: Activity | null;
@@ -49,6 +54,7 @@ export function useMealDuplicateMerge(
         activityForm.mealType,
         activityForm.startsDate,
         activityForm.startsTime,
+        scenarioId,
         excludeId,
       ),
     [
@@ -56,6 +62,7 @@ export function useMealDuplicateMerge(
       activityForm.mealType,
       activityForm.startsDate,
       activityForm.startsTime,
+      scenarioId,
       excludeId,
     ],
   );

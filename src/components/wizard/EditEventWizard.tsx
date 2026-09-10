@@ -82,10 +82,12 @@ function EditEventWizardBody({
   // below it) so entityDateOnly only runs once per mount, not on every
   // re-render of this body.
   const [blankDate] = useState(() => entityDateOnly(kind, entity));
+  // Only an Activity being edited actually is one — narrowed once here so
+  // both the form-init below and the scenario-scoped duplicate search
+  // further down share the same cast instead of each re-checking `kind`.
+  const activityEntity = kind === 'activity' ? (entity as Activity) : null;
   const [activityForm, setActivityForm] = useState<ActivityFormState>(() =>
-    activityFormFrom(
-      kind === 'activity' ? (entity as Activity) : blankActivity(entity.legId, blankDate),
-    ),
+    activityFormFrom(activityEntity ?? blankActivity(entity.legId, blankDate)),
   );
   const [stayForm, setStayForm] = useState<StayFormState>(() =>
     stayFormFrom(kind === 'stay' ? (entity as Stay) : blankStay(entity.legId, blankDate)),
@@ -106,8 +108,12 @@ function EditEventWizardBody({
     mealDecisionForActivity(activityForm),
     setActivityForm,
   );
+  // Only an Activity actually carries a scenarioId to scope the duplicate
+  // search by — a Stay/Transit being edited never reaches the meal branch at
+  // all (kind === 'activity' is the only case wizardStepsForCategory's
+  // mealBranch lead applies to), so null is never actually read here.
   const { duplicateMealActivity, mergeIntoDuplicate, setMergeIntoDuplicate } =
-    useMealDuplicateMerge(activities, activityForm, entity._id);
+    useMealDuplicateMerge(activities, activityForm, activityEntity?.scenarioId ?? null, entity._id);
 
   const stepIds = wizardStepsForCategory(category, {
     lead: kind === 'activity' ? 'mealBranch' : null,

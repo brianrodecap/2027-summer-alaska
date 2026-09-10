@@ -94,6 +94,22 @@ export function resolveActiveTrack(
   return visible.find((t) => t.scenario.tone === followedTone) ?? visible[0];
 }
 
+// The scenario id resolveActiveTrack's top-level track resolves to for a
+// given day, or null if the day has no active branch (no scenario tracks,
+// or nothing visible) — the "which branch is on screen for this day right
+// now" lookup used wherever only the id itself is needed, not the track.
+export function resolveActiveScenarioId(
+  day: Day | null,
+  daysByDate: Map<string, Day>,
+  scenarioTone: Map<string, string>,
+): string | null {
+  if (!day) return null;
+  return (
+    resolveActiveTrack(day, day.scenarioTracks, daysByDate, scenarioTone, true)?.scenario._id ??
+    null
+  );
+}
+
 // A single active track's own priority-activity candidates, recursing into
 // any nested scenario-tabs split's own active track (never an unselected
 // sibling — day is unused by resolveActiveTrack when topLevel is false, so

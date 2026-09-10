@@ -45,11 +45,15 @@ import type {
 // it blank in the JSON. The edit dialog's own validation (applyActivityForm
 // et al.) is what forces a real time to be entered before Save.
 
-export function blankActivity(legId: string, date: string): Activity {
+export function blankActivity(
+  legId: string,
+  date: string,
+  scenarioId: string | null = null,
+): Activity {
   return {
     _id: crypto.randomUUID(),
     legId,
-    scenarioId: null,
+    scenarioId,
     status: 'planning',
     startAt: null,
     durationMinutes: null,
@@ -219,31 +223,35 @@ export function entityDateOnly(kind: EditKind, entity: Entity): string {
 // undecided lunch, whatever time each was given); a Snack only matches an
 // exact same startAt, since snacks are looser and more frequent than a
 // day's three main meals, so same-day-and-type alone would over-match.
-// `excludeId` leaves out the Activity being edited itself — EditEventWizard
-// passes its own entity's id so editing a meal's date/type into another
-// day's slot doesn't just "find" itself as the duplicate; AddEventWizard has
-// no existing entity yet, so it never needs to pass one.
+// `scenarioId` scopes the search to the branch the in-progress meal actually
+// belongs to (the day's currently-active scenario tab for a new meal, or the
+// Activity's own scenarioId when editing one) — a candidate whose own
+// scenarioId doesn't match exactly (including both being null, for a
+// non-branching day) belongs to a different, mutually-exclusive scenario
+// and must never be silently folded in: e.g. a Talkeetna-only lunch is not a
+// duplicate of a new lunch being added under the Denali tab, even though
+// both fall on the same date. `excludeId` leaves out the Activity being
+// edited itself — EditEventWizard passes its own entity's id so editing a
+// meal's date/type into another day's slot doesn't just "find" itself as the
+// duplicate; AddEventWizard has no existing entity yet, so it never needs to
+// pass one.
 export function findDuplicateMealActivity(
   activities: Activity[],
   mealType: MealType | '',
   startsDate: string | null,
   startsTime: string | null,
+  scenarioId: string | null,
   excludeId?: string,
 ): Activity | null {
   if (!mealType || !startsDate) return null;
+  const candidates = activities.filter((a) => a._id !== excludeId && a.scenarioId === scenarioId);
   if (mealType === 'snack') {
     if (!startsTime) return null;
     const startAt = `${startsDate}T${startsTime}`;
-    return (
-      activities.find(
-        (a) => a._id !== excludeId && a.mealType === 'snack' && a.startAt === startAt,
-      ) ?? null
-    );
+    return candidates.find((a) => a.mealType === 'snack' && a.startAt === startAt) ?? null;
   }
   return (
-    activities.find(
-      (a) => a._id !== excludeId && a.mealType === mealType && activityDateOnly(a) === startsDate,
-    ) ?? null
+    candidates.find((a) => a.mealType === mealType && activityDateOnly(a) === startsDate) ?? null
   );
 }
 
