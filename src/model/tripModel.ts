@@ -11,6 +11,7 @@
 // `Date`/`dayjs` object and hand it to a caller, or accept one as an input —
 // picker components convert to/from plain strings at their own edge instead.
 
+import { firstImage } from './formatting';
 import type {
   Activity,
   Booking,
@@ -928,6 +929,7 @@ function stageTimesForVariant(
       stages.push({
         label: seg.label ?? (seg.place?.label as string),
         placeId: seg.place?.id ?? null,
+        image: firstImage(seg.place),
         note: seg.note ?? null,
         kind: seg.kind,
         key: formatWallClock(clockMs),

@@ -30,14 +30,14 @@ import {
 } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 
-import { ActivityDetailPanel } from '../components/activity/ActivityDetailPanel';
 import { AskAIDialog } from '../components/day/AskAIDialog';
 import { DayBlock } from '../components/day/DayBlock';
 import { DayMapPanel } from '../components/day/DayMapPanel';
 import { FilterMenu } from '../components/day/FilterMenu';
 import { resolveActiveScenarioId } from '../components/day/scenarioSelection';
-import { StayDetailPanel } from '../components/day/StayDetailPanel';
-import { TransitDetailPanel } from '../components/day/TransitDetailPanel';
+import { ActivityDetailPanel } from '../components/detail/ActivityDetailPanel';
+import { StayDetailPanel } from '../components/detail/StayDetailPanel';
+import { TransitDetailPanel } from '../components/detail/TransitDetailPanel';
 import { RoutesDialog } from '../components/edit/RoutesDialog';
 import { ScenariosDialog } from '../components/edit/ScenariosDialog';
 import { JumpToDayPicker } from '../components/pickers/JumpToDayPicker';

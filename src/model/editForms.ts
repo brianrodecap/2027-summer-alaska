@@ -20,6 +20,7 @@ import {
 import type {
   Activity,
   DiningFormat,
+  Image,
   Leg,
   MealOption,
   MealType,
@@ -121,6 +122,12 @@ export const COLLECTION_FOR_KIND: Record<EditKind, 'activities' | 'stays' | 'tra
   transit: 'transits',
 };
 
+// Maps each EditKind literal to its concrete entity type, so a caller that
+// passes a literal kind (e.g. usePatchEntity('stay', id)) gets a patch
+// callback typed to that one entity — not the untyped Activity | Stay |
+// Transit union — without an unsafe cast at every call site.
+export type KindToEntity = { activity: Activity; stay: Stay; transit: Transit };
+
 export function findByKind<
   T extends { activities: Activity[]; stays: Stay[]; transits: Transit[] },
 >(kind: EditKind, id: string, data: T): Entity | undefined {
@@ -135,11 +142,14 @@ export function findByKind<
 // photo from its detail panel).
 export function patchByKind<
   T extends { activities: Activity[]; stays: Stay[]; transits: Transit[] },
->(data: T, kind: EditKind, id: string, patch: (entity: Entity) => Entity): T {
+  K extends EditKind,
+>(data: T, kind: K, id: string, patch: (entity: KindToEntity[K]) => KindToEntity[K]): T {
   const collection = COLLECTION_FOR_KIND[kind];
   return {
     ...data,
-    [collection]: (data[collection] as Entity[]).map((e) => (e._id === id ? patch(e) : e)),
+    [collection]: (data[collection] as Entity[]).map((e) =>
+      e._id === id ? patch(e as KindToEntity[K]) : e,
+    ),
   };
 }
 
@@ -509,6 +519,45 @@ export function applyActivityForm(activity: Activity, form: ActivityFormState): 
   activity.travelers = form.travelerIds.length ? form.travelerIds : null;
   activity.booking = readBookingFormValue(form.booking, activity.booking);
   return null;
+}
+
+// Backfills a live Google Places photo onto a specific Place value's own
+// `images` — distinct from useHeroImageSelect's entity-level `images` (the
+// viewer's own manually-picked hero, which always wins — see firstImage's
+// entity-before-place priority). A meal Activity can offer several
+// MealOption candidates, each naming a different real-world place, so the
+// photo has to land on that one candidate's own Place rather than the
+// shared Activity, or backfilling one candidate's photo would silently
+// become every other candidate's hero too (see MealRowLeading, which reads
+// only the selected candidate's own place.images, never the Activity's).
+export function withActivityPlaceImage(
+  activity: Activity,
+  optionId: string | undefined,
+  image: Image,
+): Activity {
+  if (optionId) {
+    return {
+      ...activity,
+      options: (activity.options ?? []).map((o) =>
+        o._id === optionId && o.place ? { ...o, place: { ...o.place, images: [image] } } : o,
+      ),
+    };
+  }
+  return activity.place ? { ...activity, place: { ...activity.place, images: [image] } } : activity;
+}
+
+export function withStayPlaceImage(stay: Stay, image: Image): Stay {
+  return stay.lodging
+    ? { ...stay, lodging: { ...stay.lodging, place: { ...stay.lodging.place, images: [image] } } }
+    : stay;
+}
+
+export function withTransitPlaceImage(
+  transit: Transit,
+  endpoint: 'from' | 'to',
+  image: Image,
+): Transit {
+  return { ...transit, [endpoint]: { ...transit[endpoint], images: [image] } };
 }
 
 // ---------- Stay ----------

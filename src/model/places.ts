@@ -162,3 +162,16 @@ export async function searchPlaces(query: string): Promise<PlaceSearchResult[]> 
 export function isPlacesApiKeyConfigured(): boolean {
   return Boolean(PLACES_API_KEY) && !PLACES_API_KEY.startsWith('REPLACE_');
 }
+
+// The gate-fetch-extract-convert recipe behind every "give this place its
+// first live photo" call site that isn't already inside a component driving
+// usePlaceDetails (PlacePickerField's post-pick backfill, mainly) — kept
+// here rather than assembled ad hoc in a UI event handler, alongside the
+// other Place business logic. Resolves to null on a missing key, a fetch
+// failure, or a place with no photos.
+export async function fetchFirstPlaceImage(id: string): Promise<Image | null> {
+  if (!isPlacesApiKeyConfigured()) return null;
+  const details = await getPlace(id).catch(() => null);
+  const photo = details?.photos?.[0];
+  return photo ? placeImageFromPhoto(photo) : null;
+}

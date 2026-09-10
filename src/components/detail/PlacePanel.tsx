@@ -7,7 +7,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 
 import {
   MAX_PHOTOS,
@@ -116,20 +116,41 @@ function PlacePhotoStrip({
 export function PlacePanel({
   place,
   onSelectImage,
+  onAutoImage,
 }: {
   place: Place;
   // Fires when a viewer clicks one thumbnail in the photo strip below,
   // naming it the entity's new hero image (see formatting.ts's
   // withHeroImage — every DetailPanel writes this into its own top-level
   // `images`, not this place's, since that's the array firstImage always
-  // checks first). Nothing here is ever persisted on its own — only an
-  // explicit click stores anything, so browsing never silently grows what
-  // every day-list row's own thumbnail then has to load (see ActivityRow's
-  // firstImage(activity) ?? firstImage(activity.place) fallback).
+  // checks first). An explicit click always overrides whatever onAutoImage
+  // below has backfilled.
   onSelectImage: (image: Image) => void;
+  // Fires at most once per place, automatically, the moment a live lookup
+  // first returns a photo for a place that has no images of its own yet
+  // (see the persisted ref below) — backfills Place.images (see
+  // usePlaceImagePersist) so a browsed-but-never-edited activity/meal/stay/
+  // transit still ends up with a photo without requiring a manual click.
+  // Omitted where a caller has no Place-level images field to write back to.
+  onAutoImage?: (image: Image) => void;
 }) {
   const { details, loading, failed, configured } = usePlaceDetails(place.id);
   const photos = useMemo(() => (details?.photos ?? []).slice(0, MAX_PHOTOS), [details?.photos]);
+
+  // Guards against persisting twice for the same place (React StrictMode's
+  // double-invoke, or this effect re-running as `photos` gets a new array
+  // identity on every fetch resolution) — reset whenever the place itself
+  // changes, since a different place's lookup is a genuinely new backfill
+  // opportunity, not a repeat of this one.
+  const persistedPlaceId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!onAutoImage || place.images?.length) return;
+    if (persistedPlaceId.current === place.id) return;
+    const photo = photos[0];
+    if (!photo) return;
+    persistedPlaceId.current = place.id;
+    onAutoImage(placeImageFromPhoto(photo));
+  }, [photos, place.id, place.images, onAutoImage]);
 
   // A named-but-unresolved place (place.id: null — a shipboard restaurant
   // with no static geolocation, say) has nothing to fetch at all — the hooks

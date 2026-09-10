@@ -260,7 +260,7 @@ const StayNode = memo(function StayNode({
   const lodgingPlace = placeFromLodging(stay.lodging);
   const name = lodgingPlace?.label ?? 'Lodging still open';
   const detailBits = stayDetailBits(stay.lodging);
-  const image = firstImage(stay);
+  const image = firstImage(stay, lodgingPlace);
   const { openEdit, deleteEntity } = useEdit();
   const { above, mid, below } = splitNotes(stay.notes);
   return (
@@ -327,7 +327,7 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
   const endpointPlace = isDepart ? transit.from : transit.to;
   const time = isDepart ? transit.departsAt : resolvedArrivesAtFor(transit, routeTones);
   const modeIconName = transit.mode === 'flight' ? 'flight' : 'directions_car';
-  const image = isDepart ? firstImage(transit) : null;
+  const image = firstImage(transit, endpointPlace);
   const { openEdit, deleteEntity } = useEdit();
   const { above, mid, below } = isDepart
     ? splitNotes(transit.notes)
@@ -403,7 +403,7 @@ const TransitStageNode = memo(function TransitStageNode({
   if (variant.tone !== tone) return null; // a non-active variant's stages simply aren't rendered
   return (
     <TimelineRow
-      dot={<RowLeadingDot icon="signpost" />}
+      dot={<AvatarOrDot image={stage.image} icon="signpost" />}
       isLast={isLast}
       testId={`transit-stage-${item.key}`}
     >

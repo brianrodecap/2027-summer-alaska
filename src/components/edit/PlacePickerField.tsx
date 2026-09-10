@@ -3,8 +3,9 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { useEffect, useRef } from 'react';
 
-import type { PlaceSearchResult } from '../../model/places';
+import { fetchFirstPlaceImage, type PlaceSearchResult } from '../../model/places';
 import type { Place } from '../../model/types';
 import { usePlaceSearch } from './usePlaceSearch';
 
@@ -26,7 +27,11 @@ export function PlacePickerField({
   label?: string;
   place: Place | null;
   onChange: (place: Place | null) => void;
-  onPicked?: (result: PlaceSearchResult) => void;
+  // May return a Promise (RouteEditForm's does, to drive its own async
+  // recompute) — the photo backfill below always awaits it first, so its
+  // own onChange (built from a place snapshot with no images) can never
+  // land after and wipe out the photo this field just backfilled.
+  onPicked?: (result: PlaceSearchResult) => void | Promise<void>;
 }) {
   // Driven straight off `place` rather than mirrored into its own useState —
   // a list of these (a Route variant's places[], say) can have an entry
@@ -36,6 +41,17 @@ export function PlacePickerField({
   // deleted entry's text instead of picking up the shifted-in entry's.
   const inputValue = place?.label ?? '';
   const { options, loading, error } = usePlaceSearch(inputValue);
+
+  // Read at pick-fetch-resolution time rather than closed over from the pick
+  // itself — `onChange`'s own synchronous call already moves the parent on
+  // to the newly picked place, and this field can go on to something else
+  // (the user picks again, or — per the inputValue comment above — this
+  // component instance gets reused for a different list entry entirely)
+  // before the photo lookup below finishes.
+  const placeRef = useRef(place);
+  useEffect(() => {
+    placeRef.current = place;
+  }, [place]);
 
   return (
     <Stack spacing={1}>
@@ -63,10 +79,23 @@ export function PlacePickerField({
             </li>
           );
         }}
-        onChange={(_, value) => {
+        onChange={async (_, value) => {
           if (value && typeof value !== 'string') {
-            onChange({ ...place, id: value.id, label: value.label });
-            onPicked?.(value);
+            // A fresh pick names a different physical place than whatever
+            // `place` pointed at before, so any images it carried over from
+            // that old place are dropped here rather than spread forward —
+            // the backfill below (or a later manual hero pick) is what
+            // supplies this new place's own image instead.
+            onChange({ ...place, id: value.id, label: value.label, images: undefined });
+            // Kicked off now (it only needs value.id) but not awaited until
+            // after onPicked below, so the two network calls overlap instead
+            // of stacking — onPicked's own onChange still lands first; see
+            // its doc comment above for why that ordering matters.
+            const imagePromise = fetchFirstPlaceImage(value.id);
+            await onPicked?.(value);
+            const image = await imagePromise;
+            if (!image || placeRef.current?.id !== value.id) return;
+            onChange({ ...placeRef.current, images: [image] });
           }
         }}
         noOptionsText={error ? 'Search failed — check the Places API key/quota.' : 'No matches.'}

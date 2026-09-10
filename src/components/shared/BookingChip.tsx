@@ -1,4 +1,5 @@
 import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 
 import { formatMoney } from '../../model/tripModel';
@@ -27,5 +28,18 @@ export function BookingChip({ booking }: { booking: Booking | null | undefined }
       color={STATUS_COLOR[booking.status]}
       sx={{ alignSelf: 'flex-start' }}
     />
+  );
+}
+
+// The spaced, top-margined slot every DetailPanel (Activity/Stay/Transit)
+// gives a Booking — factored out so the three panels' layouts can't
+// silently diverge on the gap above the chip. Renders nothing when there's
+// no booking, same as BookingChip itself.
+export function BookingSection({ booking }: { booking: Booking | null | undefined }) {
+  if (!booking) return null;
+  return (
+    <Box sx={{ mt: 1.5 }}>
+      <BookingChip booking={booking} />
+    </Box>
   );
 }

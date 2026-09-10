@@ -1,4 +1,3 @@
-import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
 import { DINING_FORMAT_LABEL, firstImage } from '../../model/formatting';
@@ -6,7 +5,8 @@ import { mealOptionLabel } from '../../model/mealOptions';
 import { activityHeadline } from '../../model/tripModel';
 import type { Booking, EnrichedActivity, EnrichedMealOption, Place } from '../../model/types';
 import { useHeroImageSelect } from '../../state/useHeroImageSelect';
-import { BookingChip } from '../shared/BookingChip';
+import { useActivityPlaceImagePersist } from '../../state/usePlaceImagePersist';
+import { BookingSection } from '../shared/BookingChip';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
 import { LinkifiedText } from '../shared/LinkifiedText';
@@ -66,12 +66,13 @@ export function ActivityDetailPanel({
   onEdit?: () => void;
 }) {
   const onSelectImage = useHeroImageSelect('activity', activity?._id);
+  const onAutoImage = useActivityPlaceImagePersist(activity, selectedOption);
 
   if (!activity) return null;
 
   const place = selectedPlace(activity, selectedOption);
   const booking = selectedBooking(activity, selectedOption);
-  const image = firstImage(activity) ?? (place ? firstImage(place) : null);
+  const image = firstImage(activity, place);
   const titleIconName = selectedOption
     ? DINING_FORMAT_ICON[selectedOption.diningFormat]
     : DEFAULT_PLACE_ICON;
@@ -109,13 +110,11 @@ export function ActivityDetailPanel({
           </Typography>
         )
       )}
-      {booking && (
-        <Box sx={{ mt: 1.5 }}>
-          <BookingChip booking={booking} />
-        </Box>
-      )}
+      <BookingSection booking={booking} />
       <NotesCluster notes={aboveNotes} expanded />
-      {place && <PlacePanel place={place} onSelectImage={onSelectImage} />}
+      {place && (
+        <PlacePanel place={place} onSelectImage={onSelectImage} onAutoImage={onAutoImage} />
+      )}
       <NotesCluster notes={footnotes} expanded />
     </DetailSideSheet>
   );

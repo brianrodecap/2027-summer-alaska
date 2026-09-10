@@ -1,4 +1,3 @@
-import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
@@ -6,12 +5,13 @@ import { firstImage } from '../../model/formatting';
 import { formatTime, transitRouteLabel } from '../../model/tripModel';
 import type { EnrichedTransit } from '../../model/types';
 import { useHeroImageSelect } from '../../state/useHeroImageSelect';
-import { PlacePanel } from '../activity/PlacePanel';
-import { BookingChip } from '../shared/BookingChip';
+import { useTransitPlaceImagePersist } from '../../state/usePlaceImagePersist';
+import { BookingSection } from '../shared/BookingChip';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
+import { PlacePanel } from './PlacePanel';
 
 // A Transit row's own tap target, opened from its Depart row — mirrors
 // ActivityDetailPanel/StayDetailPanel's side sheet. A Transit's notes are
@@ -32,10 +32,16 @@ export function TransitDetailPanel({
   // Both endpoints share one hero image, so this doesn't need to know which
   // one a click came from.
   const onSelectImage = useHeroImageSelect('transit', transit?._id);
+  const onAutoImageFrom = useTransitPlaceImagePersist(transit, 'from');
+  const onAutoImageTo = useTransitPlaceImagePersist(transit, 'to');
 
   if (!transit) return null;
 
-  const image = firstImage(transit);
+  const image = firstImage(transit, transit.from, transit.to);
+  const endpoints = [
+    { place: transit.from, onAutoImage: onAutoImageFrom },
+    { place: transit.to, onAutoImage: onAutoImageTo },
+  ];
 
   return (
     <DetailSideSheet
@@ -52,20 +58,16 @@ export function TransitDetailPanel({
         {formatTime(transit.departsAt)} depart ·{' '}
         {transit.arrivesAt ? `${formatTime(transit.arrivesAt)} arrive` : 'arrival time TBD'}
       </Typography>
-      {transit.booking && (
-        <Box sx={{ mt: 1.5 }}>
-          <BookingChip booking={transit.booking} />
-        </Box>
-      )}
+      <BookingSection booking={transit.booking} />
       <NotesCluster notes={transit.notes} expanded />
-      {[transit.from, transit.to].map(
-        (endpoint) =>
-          endpoint.id && (
-            <Stack key={endpoint.id} spacing={0.5}>
+      {endpoints.map(
+        ({ place, onAutoImage }) =>
+          place.id && (
+            <Stack key={place.id} spacing={0.5}>
               <Typography variant="overline" color="text.secondary">
-                {endpoint.label}
+                {place.label}
               </Typography>
-              <PlacePanel place={endpoint} onSelectImage={onSelectImage} />
+              <PlacePanel place={place} onSelectImage={onSelectImage} onAutoImage={onAutoImage} />
             </Stack>
           ),
       )}

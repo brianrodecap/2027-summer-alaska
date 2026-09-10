@@ -368,6 +368,7 @@ export interface EnrichedStay extends Stay {
 export interface RouteStage {
   label: string;
   placeId: string | null;
+  image: Image | null;
   note: string | null;
   kind: RoutePlaceKind;
   key: string;

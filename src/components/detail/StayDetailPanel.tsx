@@ -1,16 +1,16 @@
-import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
 import { firstImage, placeFromLodging, stayDetailBits } from '../../model/formatting';
 import { formatTime } from '../../model/tripModel';
 import type { EnrichedStay } from '../../model/types';
 import { useHeroImageSelect } from '../../state/useHeroImageSelect';
-import { PlacePanel } from '../activity/PlacePanel';
-import { BookingChip } from '../shared/BookingChip';
+import { useStayPlaceImagePersist } from '../../state/usePlaceImagePersist';
+import { BookingSection } from '../shared/BookingChip';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
+import { PlacePanel } from './PlacePanel';
 
 // A Stay row's own tap target — mirrors ActivityDetailPanel's side sheet
 // (title/icon, the same detail already visible inline in the timeline row,
@@ -28,12 +28,13 @@ export function StayDetailPanel({
   onEdit?: () => void;
 }) {
   const onSelectImage = useHeroImageSelect('stay', stay?._id);
+  const onAutoImage = useStayPlaceImagePersist(stay);
 
   if (!stay) return null;
 
-  const image = firstImage(stay);
   const detailBits = stayDetailBits(stay.lodging);
   const place = placeFromLodging(stay.lodging);
+  const image = firstImage(stay, place);
 
   return (
     <DetailSideSheet
@@ -52,13 +53,11 @@ export function StayDetailPanel({
           {detailBits.join(' · ')}
         </Typography>
       )}
-      {stay.booking && (
-        <Box sx={{ mt: 1.5 }}>
-          <BookingChip booking={stay.booking} />
-        </Box>
-      )}
+      <BookingSection booking={stay.booking} />
       <NotesCluster notes={stay.notes} expanded />
-      {place && <PlacePanel place={place} onSelectImage={onSelectImage} />}
+      {place && (
+        <PlacePanel place={place} onSelectImage={onSelectImage} onAutoImage={onAutoImage} />
+      )}
     </DetailSideSheet>
   );
 }

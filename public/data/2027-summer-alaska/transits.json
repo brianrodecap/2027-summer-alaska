@@ -532,11 +532,25 @@
     "mode": "drive",
     "from": {
       "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
-      "label": "Anchorage"
+      "label": "Anchorage",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJQT-zBHaRyFYR42iEp1q6fSU/photos/AVoNoXQQP6kT5U8C1t223vA3yhWwydQQVDdGdGA4_-PZRw5RUXMfMCICaAmSwLCQyfGOSnYoA0eFZ_I6c0W_P6K_nCwpB8q-oSxfAtCQLFg4USLFfiMLeL66x8zyxSwjluRQQ5qaRPYxTRsx-n4a3_q8wCRZFfuXWwEnPnlBd6PUAW994hXOYgRjkzWRoN8s5hNRkXgy1i1H4jrENqzP5JDQ74OyPnJL4HXAZFLmhWSZjGWnu-nfsmcW13F3g7RrkU06djgsZtDEQa4vO11QgtLNBppnW_7VBr2SG0hFE71PKg4WAszMtqgeXVdGLB5vu0pb76HyppfwEjxdBxxwuJ5WOme4UhLi1rZ85lcSwe40QsbDkx-b8_KADYAMOsJkA2zaIvsTeNyKR3Mo-oemlUnB3PmVng2vzz6F60sGPOMfTv9JRg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Jeffery Montague",
+          "caption": null
+        }
+      ]
     },
     "to": {
       "id": "ChIJ-0i_GVHfzFYRRg-PNt-u2nw",
-      "label": "Denali Park"
+      "label": "Denali Park",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJ-0i_GVHfzFYRRg-PNt-u2nw/photos/AVoNoXR-ax60hQ-UDoF3JCYaPOEv42oDz41yx6p79HjX8011SExGu_y2R7uI6CSyScbL9qfco7otlpnTwDnsro2Ora6kVdqTjIRG-LjjKIPtJWL1-DNcoWhCxW4NsA80cqo317rwd0Ywub5Ls5GFoxZFvWGrv_igtTi11NVSEclCeOSVM8ttXVpr0Hy4KB58WZqLRfw1ktvc3JkSb3HrFjH0TmgHr8iKkV5LjwB01nk1oUdJoi0LvwQkJDJBvCct6itwZX2xPQHg4eO11gp_uOb0R5sCZAKLLVcHRRSEQ8xHQ8Pps4makJvfjYtJZfT1c6XgZrDvLVWn6T1-Kg8CZnFod0sIsoznihGmAg9hkz5otpj3DXMIDlVAS6omEL-IDQ72WsQ7PGbOy_Z_fnA11zDVzwwTbOTTn1gVf_PN-1_Uwgr4TODU/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Yasser Jamal",
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-06-27T00:15",
     "arrivesAt": null,
@@ -554,11 +568,25 @@
     "mode": "drive",
     "from": {
       "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
-      "label": "Denali Bus Depot"
+      "label": "Denali Bus Depot",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJh0yE6LLYzFYRkQ2PsoJ3EBk/photos/AVoNoXQDO7n-2QBA6GB3LqT1PcsN_saSdy6P2H3lyTpvnl6NYCTNCGe53TCx2oyAy7nTDWEo2ZK4AgjI45R1h0d47jw2-ssjOM7S9m3qaZdHDBKXWzedV9_1_VpNKrQWjOekXRDIvN_S7myxfTTUacZJVcoKmWbOJmycBRXE7VokFTGPziltj-qVJDXqdabrTId_Mbl0l9Pm7k908hUwHGTiur6ZbRaQWPivVMbSabeg02nd-xdrsBqT9iIvA3vlJEV_y9zsKYULP2zw5SfnQf0vJvn2-32l1c-fEaZzim2W8J2cZhqQDHnzFtdQ2vRLmg7yY7DVPgnZvMSZPKfwVDRU6zmydGzfyBQ6zPBO17iFV6SCC6fd9TkvAEwVWCGzR56z_DEGOUkBERXpP6uiaXFAU-sPAns9UUCberGXouIPim8ZKA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Denali Bus Depot",
+          "caption": null
+        }
+      ]
     },
     "to": {
       "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
-      "label": "Denali Bus Depot"
+      "label": "Denali Bus Depot",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJh0yE6LLYzFYRkQ2PsoJ3EBk/photos/AVoNoXQDO7n-2QBA6GB3LqT1PcsN_saSdy6P2H3lyTpvnl6NYCTNCGe53TCx2oyAy7nTDWEo2ZK4AgjI45R1h0d47jw2-ssjOM7S9m3qaZdHDBKXWzedV9_1_VpNKrQWjOekXRDIvN_S7myxfTTUacZJVcoKmWbOJmycBRXE7VokFTGPziltj-qVJDXqdabrTId_Mbl0l9Pm7k908hUwHGTiur6ZbRaQWPivVMbSabeg02nd-xdrsBqT9iIvA3vlJEV_y9zsKYULP2zw5SfnQf0vJvn2-32l1c-fEaZzim2W8J2cZhqQDHnzFtdQ2vRLmg7yY7DVPgnZvMSZPKfwVDRU6zmydGzfyBQ6zPBO17iFV6SCC6fd9TkvAEwVWCGzR56z_DEGOUkBERXpP6uiaXFAU-sPAns9UUCberGXouIPim8ZKA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Denali Bus Depot",
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-06-27T09:00",
     "arrivesAt": null,

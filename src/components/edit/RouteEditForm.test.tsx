@@ -1,14 +1,38 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useState } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Route } from '../../model/types';
 import { RouteEditForm } from './RouteEditForm';
 
+// This file has no global RTL auto-cleanup wired up (src/test/setup.ts only
+// registers jest-dom's matchers) — with more than one test in a file, a
+// prior test's tree stays mounted, so a getAllByLabelText/getByRole query in
+// a later test can silently match the wrong render entirely.
+afterEach(cleanup);
+
 // Keeps the test hermetic — real search would debounce into a network call.
 vi.mock('./usePlaceSearch', () => ({
-  usePlaceSearch: () => ({ options: [], loading: false, error: false }),
+  usePlaceSearch: () => ({
+    options: [{ id: 'place_diner', label: 'Alpha Diner', address: '123 Main St' }],
+    loading: false,
+    error: false,
+  }),
 }));
+
+// Only the live Place Details fetch needs stubbing — everything else
+// (photoMediaUrl/placeImageFromPhoto's own URL building, invoked here via the
+// real placeImageFromPhoto) stays real so the assertion below exercises the
+// same code a real pick would run.
+vi.mock('../../model/places', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../../model/places')>();
+  return {
+    ...actual,
+    fetchFirstPlaceImage: vi
+      .fn()
+      .mockResolvedValue(actual.placeImageFromPhoto({ name: 'places/place_diner/photos/photo_1' })),
+  };
+});
 
 function routeWithPlaces(labels: string[]): Route {
   return {
@@ -31,9 +55,23 @@ function routeWithPlaces(labels: string[]): Route {
   };
 }
 
-function Harness({ initial }: { initial: Route }) {
+function Harness({
+  initial,
+  onFormChange,
+}: {
+  initial: Route;
+  onFormChange?: (route: Route) => void;
+}) {
   const [form, setForm] = useState(initial);
-  return <RouteEditForm form={form} onChange={setForm} />;
+  return (
+    <RouteEditForm
+      form={form}
+      onChange={(next) => {
+        setForm(next);
+        onFormChange?.(next);
+      }}
+    />
+  );
 }
 
 describe('RouteEditForm', () => {
@@ -57,6 +95,36 @@ describe('RouteEditForm', () => {
           .slice(2)
           .map((el) => (el as HTMLInputElement).value);
         expect(names).toEqual(['Alpha', 'Charlie']);
+      },
+      { timeout: 10_000 },
+    );
+  }, 15_000);
+
+  it('backfills the first Google photo onto a freshly picked waypoint place', async () => {
+    let latestForm: Route | undefined;
+    render(
+      <Harness
+        initial={routeWithPlaces(['Alpha'])}
+        onFormChange={(form) => {
+          latestForm = form;
+        }}
+      />,
+    );
+
+    // The first two "Name" fields are the route's own From/To pickers — the
+    // third is this variant's one waypoint.
+    fireEvent.mouseDown(screen.getAllByLabelText('Name')[2]);
+    fireEvent.click(await screen.findByRole('option', { name: /Alpha Diner/ }));
+
+    await waitFor(
+      () => {
+        expect(latestForm?.variants[0].places[0].place?.images).toEqual([
+          {
+            uri: expect.stringContaining('places/place_diner/photos/photo_1/media'),
+            credit: null,
+            caption: null,
+          },
+        ]);
       },
       { timeout: 10_000 },
     );

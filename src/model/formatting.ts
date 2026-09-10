@@ -27,9 +27,21 @@ export const AUTHORITY_OPTIONS: {
 
 // ---------- images: every entity carries images: Image[] — a list rather
 // than one field so a hand-sourced reference photo and later personal trip
-// photos can coexist. Rendering only ever draws the first entry. ----------
-export function firstImage(entity: { images?: Image[] | null } | null | undefined): Image | null {
-  return entity?.images?.[0] ?? null;
+// photos can coexist. Rendering only ever draws the first entry.
+//
+// Takes multiple candidates so a caller can express "this entity's own
+// image, falling back to its place's" as firstImage(entity, place) rather
+// than firstImage(entity) ?? firstImage(place) — the entity-before-place
+// priority this whole file's callers rely on lives here once instead of
+// being re-derived at each call site. ----------
+export function firstImage(
+  ...entities: Array<{ images?: Image[] | null } | null | undefined>
+): Image | null {
+  for (const entity of entities) {
+    const image = entity?.images?.[0];
+    if (image) return image;
+  }
+  return null;
 }
 
 // Makes `image` the entity's own hero — firstImage's first entry — moving

@@ -39,7 +39,7 @@ export function ActivityLeading({
   activity: EnrichedActivity;
   inView: boolean;
 }) {
-  const image = firstImage(activity) ?? firstImage(activity.place);
+  const image = firstImage(activity, activity.place);
   return <AvatarOrDotView image={image} icon={activityRowIconName(activity)} inView={inView} />;
 }
 

@@ -25,7 +25,14 @@
             "kind": "via",
             "place": {
               "id": "ChIJe9iB48DiyFYR0c3w5-2X6No",
-              "label": "Butte"
+              "label": "Butte",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJe9iB48DiyFYR0c3w5-2X6No/photos/AVoNoXTZxJs_t8Sn5lE2gehKNI3TZarYQ2ZsyROQrpOYHVkOdpHYtBMRgF1FoCg3gSeC5eiCtJ61cOiDa6lN6QqiCHEo0IyF4S1MxP7z5x40mUO3P1ZpCf2qlHiClg5JPd-9Z-wQAIrqMDuFqRsErfqml3RWcIHBXnxVc_MOY_QyA_KcNJzN4WVS4c1Ed9-MI-9OwoQDuRCLhw8JpljXfK_gXyWwck3ClgiaBSFVHce16qhMZq_ypVAArZt6-YOFu4WrKkk7lMVMSjSvoZvh0Rn9BBW-6OH1ffnqQxquNoyNbOHAyiyH5Pi2S92NXDQ-SBJJkopg9IonfYiLj0WLNanCGy-u3wZVSap3GizaM5ay6ANMtjvV1HUzwWrnWGUzwt0WMVIAB_-rdZEbjAyw1zBHWorhRhQefarr7Xe_9yfhh1alpFfN/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "Linda A. Darling",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 47,
             "distanceMiles": 42.1
@@ -424,7 +431,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJMQSzDXyDzlYR0kjMv9sRo-I",
-              "label": "Denali Viewpoint South"
+              "label": "Denali Viewpoint South",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJMQSzDXyDzlYR0kjMv9sRo-I/photos/AVoNoXTpZ15VqOYG8-_XEzVLCrbR_orL--f4kNF2Z35ZcTRdLuFFlXAtF2iT_C58AVhdenEE-ko47Lxw0c2RJt5i_W3jqYxSwhpIOixGqDH8vLA2E6mO760iHESkTPideCi6C_m3S1XDhkDvgb9kgZqbAfJwtTXgJKwwadY6E-n8uOY4JRj2D9YB_XSp6Ra_qUiEnczut0EE-Zw4DVAAAEAjiSYGZzdJ1upHRbT9S2UOk5wdWo1U_XhxqmKkAWve_8v2Qc9ANBg6ZzsY6nk8dzUhKsEFy6OegSyT3VyDkkKQfn0UnrIrRSpioGOeVRlYwobfAsvFFXsjPzHw-KmHyRQrFGpSYFlXLsfHxOR1i5Fd8NjGiwKq-yNadtq4PPBI9eOV5MxtaZ4iK1PxJhw5AG060gSItpJnuidvCEVjT-_5Q2Ey1hKN/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "Gary Rients",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 142,
             "distanceMiles": 135.9
@@ -433,7 +447,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJW1BnSrYwzFYRJFJvnughNoQ",
-              "label": "Denali View North"
+              "label": "Denali View North",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJW1BnSrYwzFYRJFJvnughNoQ/photos/AVoNoXRIuc8cJWqxM3-NQYRyU_L3GPP7lBS17brC3tFx_5GGQyXhBBibs1t2OdqFO5oQMneL1iPF9nueDIbhEPXjJnggYrhpTYn3gT5RwQHQftLV3T3waG0ASTW5GguCOwXN1YkdBJ6-CCMFG2fB1nCpoEJ6MEHZ_B6VGopvVswtuJ1tlAJH6f_YumCfETz2uEo2PgOuTO1yPfswarFXMuesXHzHelWD_WJxonKAoH5XrGgEv4E8PU84uB1Z6HxOTQSl3x1kUI6wQoFiDBHIDBtqoHubrHBFF3Uud67XC2z7BV74cpp08FHlIemOUH1h3_SL18BJe8avjO49KQ42F1ICM7rb9dCE1wiq2FPzb57FeK1C6KRTyVkPZM32mv5vQw1EOyBBAEgOO0LhRC3QMq_1y2C_i19y7kMjwB8HEtZXenE7fek/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "Jeff Knarr",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 28,
             "distanceMiles": 28
@@ -464,7 +485,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJn-qS2Y4izVYRMd4cnEMLm84",
-              "label": "Savage River Loop Trailhead"
+              "label": "Savage River Loop Trailhead",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJn-qS2Y4izVYRMd4cnEMLm84/photos/AVoNoXQTwbtmOFcwt_7a4UpaW9lha4zaJQs8gCToqY_GMW-OYHUHXUg4UiTBePWXVgMxVyLE5th6dsyoZ0otmqVXkyuKoASLMV_tas1BjPMb9i-jHuR8ngDsDgjJFM5mZvazFfkFEetNj3dedy_mamL662QAHuVkw89RUlUmUB_TJ6ueyi6O8hLthQa-aRCLfY0f6PJ330hhV7mZU2CdbXG_VX96nP3xVGc367pzLaC26Kr4uvsywDOCsFpFDsiF90CssU7Wxwcb5xpzKFSxieK_qn8-Q1nfjQSJtbFaMmtM9K1dU3OFELKJG4n9C-cFa8goF6VgSoPoltr90Bqb_Cyql-qF9_1qOjOEieHS2A_bdmf3yB7wDdrxfEpAlXnD1sBpj_Bk6oMSm9COJJBHkSZNZD6b4top-RKpuITYVgWBnQwc6ZQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "Spencer",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 28,
             "distanceMiles": 14.4
@@ -473,7 +501,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJ30RTwZUQzVYRRLJe3DMMGEg",
-              "label": "Teklanika Rest Stop"
+              "label": "Teklanika Rest Stop",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJ30RTwZUQzVYRRLJe3DMMGEg/photos/AVoNoXS-2rNJy5habLkqPWy-FMM77JytmOR8S0wqVshWmRUIpItCFxcdJTAgJdT_TbcIzWfdZMncJYSP8z9C2xnEfvNrUUdEEsnu6asZZ0-d2ZNhGVi_R9YJ8MkrhT2lXqS5MZZczFn3UFEjOu-Z7TCy2hETomgjdc0ya7XyuixGmzT-95-EYtyW8ZvdJNIvfbFug8NQ9-wDmkB2C2HY33FkzLQgYttR4e5O2UZ1HeV5aryinIWmjOS0spPK5lXEie4rvZCmMtFhnwFElFNPE9Xah6KA3xaMDz_JEyRD55JzO4-OT2NqHAgivqAhIGJJBfZLNmbZGL2wAP7ykHgnHgPOXkugzwGMzo05Sp_fDIodUzb9xUYVsdmtB6zexpy-5HMX0N9uUx1a0JqdmPsz1E3WQdnOA-ct0u70VIphOAzCFJ5f048Ysg_zmTvFkZYpgTxV/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "Wojciech Tański",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 34,
             "distanceMiles": 15.7
@@ -482,7 +517,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJqfcxFdMOzVYRvdQHJx-6VI8",
-              "label": "Polychrome Overlook"
+              "label": "Polychrome Overlook",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJqfcxFdMOzVYRvdQHJx-6VI8/photos/AVoNoXR84nkLUVHsw-hejfzmxzZPJjr7IfMay4oFc6v2OJAENkZI_N9zxS9ibj_bs-Dyziq9jWr7M0w15Tbt8i3WCljn1Qz2GeSyqnYrm-2Xc2-_JCKeKM4QnmfPF43aVhlDyYHc-bZcI2iIn7xfFjQGfSD9M3xrtQ1WZ1er8k7xRcpGwl4rdoTOKEgAfM28iGETRhrPVWvf765DLaZyYPkOqwr6naDiA4J9ftPVfFQGvaa_nKuV01K8BKIExJRJRUgV2pjSmCf-jmigTJZNYsQLDSwJVlC-GNAYSV0xOWWzMrQJrRarJin2cpsvTtxelTg837h538kAosUyxgxcW90wxceIHDtLZ2PBCpPFaWX8kiPXG5ETsb6DnnqLiQiQxjtV7OMJCw4V0Xo423I0xDSg-7rtTFLXg2QPdORUYoHmixUaTKQ8/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "Dominic Galloro",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 38,
             "distanceMiles": 15.6
@@ -491,7 +533,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJ37w5IVEKzVYRhUd9W-UxoNg",
-              "label": "Toklat River Ranger Station"
+              "label": "Toklat River Ranger Station",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJ37w5IVEKzVYRhUd9W-UxoNg/photos/AVoNoXRuv0JtqcLyVbmPCvpyscp-Ud-U3ZviOA-Do5YhhAJVDHZSp54G0C-ha8yJskx4yQg7ba8zT05HBMx5NLN2b5Ltaq3cDx3GeUfKQkuEcUGnuYPNrgT1TA3BiYZzkG0RP5pBAmWsi9xat579OpmGziGxDzqYbRidyCCvT_gIIt6GKLmt_FzK51EAcI2EMbo2cJ8Wvj1o_qALDny5rZYUvWcJUOZoznxVbTgeqtrZ1Ghxf49_QiWczpjRU9Sd9wFGzF16RLhlaZrLSL9qluHi45c0uxCw6NqEJuqkEGAA4XjzehwCoqQy0KoP-C-iJLZoBGmr6QA-WW4QFpiGF37Blsuwmr8ebNuoH_Y5pm1AXUqKjH7D5zlq43SjGDVwG3O_E7cHgD9aagM6RGlfTpsLxKXUum9Sxa_2wgXce2IRtb9ccHLO/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "Darvin Martin",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 20,
             "distanceMiles": 7.7
@@ -500,7 +549,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJEfbMbs-hzVYRsw-Gqdh5zsE",
-              "label": "Stony Hill Scenic Overlook"
+              "label": "Stony Hill Scenic Overlook",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJEfbMbs-hzVYRsw-Gqdh5zsE/photos/AVoNoXS509Wn6BeLmwu-1HpgdJ8lGFHfbBhMm7DioAl6VzHF8HIqKNs-hlSm9iPspas0IHAzLmjdWrzEYSpIMhM1QkzGtsYYF-T-W6Dj87QME-O5JdYph2UmykCa9MChqaCX0k5QPmzqB0RnCbKNNhThFuvZZGMFdIph16_2ijDXaB1IFp-U07Tv1-tRQWTDbxH1WH29r0ho8RexBoqkUYPcHo12RGEgOOlWP-GPy-2nzilyXlSQ7ZgybARVf9Rk24LNj3hx-kPf1rhOuDDD4PscKU3h5nQwaBkYIfVrGBfE7aP5LsQ4fx8B3TlopY4cQWXdqW03GDHV6zjLHBmYUW8-4OZviW4pgVveKjGkHRqGKt3derd40Avjio1z0mkkTZIX1NN2SnJ_PoccQQfO5C2k0T27iAjzcEHLjzxQUhBd0KC7rPK18drjDfkMwP5sysVQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "Jason Williams",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 22,
             "distanceMiles": 8.5
@@ -509,7 +565,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJsYRgs6uYzVYRoIkxAtOU_KE",
-              "label": "Eielson Visitor Center"
+              "label": "Eielson Visitor Center",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJsYRgs6uYzVYRoIkxAtOU_KE/photos/AVoNoXQ_RMUGOoNLDhga928U6u6IiMRLacO7pM5-oI6mFxvaNS5M7sHL4vU1BIyqxgxxPLsB2HpIiWJniHmj7EqFSHveL6jtKtA-Xp8rd-Lze6wXNjztxle_XvHFOujHBfvDXNO_x4MIO7koCHSyg-rHpCg2UpOfvZ7XPOxZpiGGjcr5GJDBIr2lDwu481HrpTy799fZqRFql0ELVoNDX1PTkHHt_5-wAMRkysY6cEpR9F4j2UwY8f9w8j4yFx2HRA5Da7tIYXdSr-7nQti5EHt38hf_PEM7Arn7fym0U3RTcSmh73DlyV8vikOa41lVh5tXZgSI0Kyeb4vjXla2MKBHmczZU1Hr37PGLsLosrOYsk0fvnoHJ32hQwhFjm-3-CKrsHdgV8gYSqE52oV0SxqtJtUSKKILnWjUK3jAQwAfIfa-uhrA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "Wei-Cheng Hung",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 11,
             "distanceMiles": 4
