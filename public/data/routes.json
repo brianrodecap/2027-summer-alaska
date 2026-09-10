@@ -444,5 +444,81 @@
       }
     ],
     "images": []
+  },
+  {
+    "_id": "route_new_13",
+    "from": {
+      "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
+      "label": "Denali Bus Depot"
+    },
+    "to": {
+      "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
+      "label": "Denali Bus Depot"
+    },
+    "variants": [
+      {
+        "tone": "direct",
+        "label": "Mile 66",
+        "places": [
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJn-qS2Y4izVYRMd4cnEMLm84",
+              "label": "Savage River Loop Trailhead"
+            },
+            "durationMinutes": 28,
+            "distanceMiles": 14.4
+          },
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJ30RTwZUQzVYRRLJe3DMMGEg",
+              "label": "Teklanika Rest Stop"
+            },
+            "durationMinutes": 34,
+            "distanceMiles": 15.7
+          },
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJqfcxFdMOzVYRvdQHJx-6VI8",
+              "label": "Polychrome Overlook"
+            },
+            "durationMinutes": 38,
+            "distanceMiles": 15.6
+          },
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJ37w5IVEKzVYRhUd9W-UxoNg",
+              "label": "Toklat River Ranger Station"
+            },
+            "durationMinutes": 20,
+            "distanceMiles": 7.7
+          },
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJEfbMbs-hzVYRsw-Gqdh5zsE",
+              "label": "Stony Hill Scenic Overlook"
+            },
+            "durationMinutes": 22,
+            "distanceMiles": 8.5
+          },
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJsYRgs6uYzVYRoIkxAtOU_KE",
+              "label": "Eielson Visitor Center"
+            },
+            "durationMinutes": 11,
+            "distanceMiles": 4
+          }
+        ],
+        "finalLegMinutes": 150,
+        "finalLegMiles": 65.5
+      }
+    ],
+    "images": []
   }
 ]

@@ -654,7 +654,7 @@
   {
     "_id": "act_jun28_breakfast",
     "legId": "leg_parks",
-    "scenarioId": null,
+    "scenarioId": "scenario_jun27_alt",
     "status": "planning",
     "startAt": "2027-06-28T06:00",
     "durationMinutes": null,
@@ -717,93 +717,6 @@
           "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_Wilderness_Access_Center.jpg",
           "credit": "Photo by Pat W. Sanders / CC BY 2.0",
           "caption": "Denali Wilderness Access Center, Denali National Park"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jun28_5",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-06-28T13:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Morino Grill, Denali Visitor Center",
-    "place": {
-      "id": "ChIJm08IkFHfzFYRR1motg0wk64",
-      "label": "Morino Grill",
-      "images": [
-        {
-          "uri": "https://www.reservedenali.com/media/826454/morino-grill-exterior-denali-national-park-2000x.jpg",
-          "credit": "Courtesy of ReserveDenali.com",
-          "caption": "Morino Grill exterior at the Denali Visitor Center"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": "lunch",
-    "diningFormat": "grab-and-go",
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jun28_6",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-06-28T14:30",
-    "durationMinutes": 60,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Sled Dog Kennels demonstration",
-    "place": {
-      "id": "ChIJY28Rjp4gzVYRQFLw8NqoU-E",
-      "label": "Denali Sled Dog Kennels",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Working_Kennels_(7106548949).jpg",
-          "credit": "NPS, Denali National Park and Preserve, public domain",
-          "caption": "Working sled dog kennels at Denali National Park"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jun28_7",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-06-28T14:00",
-    "durationMinutes": 30,
-    "timeLabel": null,
-    "priority": "high",
-    "text": "Denali Visitor Center",
-    "place": {
-      "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
-      "label": "Denali Visitor Center",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_backdoor_of_the_Denali_Visitor_Center_leads_to_the_main_trail-head_in_the_area_(4817aeca-b149-4f25-872a-4c020acb0ffb).jpg",
-          "credit": "Photo by Kira Heeschen / NPS, public domain",
-          "caption": "The Denali Visitor Center, near the park entrance"
         }
       ]
     },
@@ -4986,29 +4899,6 @@
     "date": null
   },
   {
-    "_id": "73df4fd3-2ff8-46c5-8665-735b0b1b56ff",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": null,
-    "durationMinutes": null,
-    "timeLabel": "Morning",
-    "date": "2027-06-28",
-    "priority": null,
-    "text": "Eielson Visitor Center",
-    "place": {
-      "id": "ChIJsYRgs6uYzVYRoIkxAtOU_KE",
-      "label": "Eielson Visitor Center"
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
     "_id": "act_jul11_dinner",
     "legId": "leg_parks",
     "scenarioId": null,
@@ -5314,5 +5204,95 @@
         "caption": null
       }
     ]
+  },
+  {
+    "_id": "act_jun28_7",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_ideal",
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Afternoon",
+    "priority": "high",
+    "text": "Denali Visitor Center",
+    "place": {
+      "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
+      "label": "Denali Visitor Center",
+      "images": [
+        {
+          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_backdoor_of_the_Denali_Visitor_Center_leads_to_the_main_trail-head_in_the_area_(4817aeca-b149-4f25-872a-4c020acb0ffb).jpg",
+          "credit": "Photo by Kira Heeschen / NPS, public domain",
+          "caption": "The Denali Visitor Center, near the park entrance"
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [],
+    "date": "2027-06-28"
+  },
+  {
+    "_id": "act_jun28_6",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_ideal",
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Morning",
+    "priority": null,
+    "text": "Sled Dog Kennels demonstration",
+    "place": {
+      "id": "ChIJY28Rjp4gzVYRQFLw8NqoU-E",
+      "label": "Denali Sled Dog Kennels",
+      "images": [
+        {
+          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Working_Kennels_(7106548949).jpg",
+          "credit": "NPS, Denali National Park and Preserve, public domain",
+          "caption": "Working sled dog kennels at Denali National Park"
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [],
+    "date": "2027-06-28"
+  },
+  {
+    "_id": "act_jun28_5",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_ideal",
+    "status": "planning",
+    "startAt": "2027-06-28T13:30",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "priority": null,
+    "text": "Morino Grill, Denali Visitor Center",
+    "place": {
+      "id": "ChIJm08IkFHfzFYRR1motg0wk64",
+      "label": "Morino Grill",
+      "images": [
+        {
+          "uri": "https://www.reservedenali.com/media/826454/morino-grill-exterior-denali-national-park-2000x.jpg",
+          "credit": "Courtesy of ReserveDenali.com",
+          "caption": "Morino Grill exterior at the Denali Visitor Center"
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": "lunch",
+    "diningFormat": "grab-and-go",
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [],
+    "date": null
   }
 ]

@@ -78,11 +78,11 @@ export function TripSelectionsProvider({ children }: { children: ReactNode }) {
   const rowSelectionValue = useMemo<RowSelectionValue>(
     () => ({
       selection: rowSelection,
-      toggleRowSelection: (dragId, containerId, members) =>
+      toggleRowSelection: (dragId, containerId, members, isScenarioGroup) =>
         setRowSelection((prev) => {
           const rows = new Map(prev?.rows ?? []);
           if (rows.has(dragId)) rows.delete(dragId);
-          else rows.set(dragId, { containerId, members });
+          else rows.set(dragId, { containerId, members, isScenarioGroup });
           return rows.size ? { rows } : null;
         }),
       clearRowSelection: () => setRowSelection(null),

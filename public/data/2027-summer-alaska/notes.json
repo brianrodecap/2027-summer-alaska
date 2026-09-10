@@ -1823,5 +1823,29 @@
       }
     ],
     "images": []
+  },
+  {
+    "_id": "c7cd6ed0-9b9e-423d-91bb-e540b4c72b42",
+    "kind": "footnote",
+    "text": "Exact departure time is assigned when you book, not fixed at 9am. Hop-off privileges anywhere beyond Savage River for wildlife viewing and photos; reboard any later green bus. Round trip is about 4.5 hours to the current Mile 43 turnaround.",
+    "concerns": [
+      {
+        "entity": "transit",
+        "id": "073e15c0-5d67-442d-b89e-0011a5cab44b"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "05ecdab7-2709-4048-84f3-f47f5179e308",
+    "kind": "footnote",
+    "text": "Book ahead at https://www.reservedenali.com/; arrive 20 minutes early.",
+    "concerns": [
+      {
+        "entity": "transit",
+        "id": "073e15c0-5d67-442d-b89e-0011a5cab44b"
+      }
+    ],
+    "images": []
   }
 ]

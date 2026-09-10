@@ -1188,6 +1188,14 @@ function buildScenarioTracks(
     ...dayActivities.map((a) => a.scenarioId).filter((id): id is string => Boolean(id)),
   ]);
 
+  // realOwnKey (below) needs to know which of transitsForSequence actually
+  // lands an item on `date` — computed once here rather than re-running
+  // transitItemsOnDate per transit inside realOwnKey, which trackOwnItems
+  // already runs for the same transits via its own flatMap.
+  const transitIdsOnDate = new Set(
+    transitsForSequence.filter((t) => transitItemsOnDate(t, date).length > 0).map((t) => t._id),
+  );
+
   function trackOwnItems(
     scenarioId: string,
   ): (
@@ -1219,6 +1227,19 @@ function buildScenarioTracks(
     );
   }
 
+  // The earliest realAnchorKey across a set of tracks — used both to key a
+  // nested tab group's own placeholder (via `children`) and to borrow a
+  // sibling's real content for the day's own top-level badge when the
+  // ideal-or-first track is a pure boundary (via `tracks`, below).
+  function earliestRealAnchor(tracks: ScenarioTrack[]): string | null {
+    return earliestKey(
+      tracks
+        .map((t) => t.realAnchorKey)
+        .filter((k): k is string => k !== null)
+        .map((key) => ({ key })),
+    );
+  }
+
   // A *real* earliest key for one scenario's own content — unlike ownKey
   // (below, from trackOwnItems), which runs a Transit's boundary through
   // transitSortKey and so clamps a transit already in progress before today
@@ -1227,7 +1248,13 @@ function buildScenarioTracks(
   // deciding where a *nested* group's tab placeholder belongs relative to
   // the parent's real timeline (see its one use, below) — a transit that's
   // actually been running since yesterday shouldn't out-rank a same-day 7am
-  // event just because its clamped key reads as "start of day".
+  // event just because its clamped key reads as "start of day". Only a
+  // Transit that actually lands an item on `date` counts, though — the same
+  // eligibility transitItemsOnDate/includableTrack already apply — since
+  // transitsForSequence also carries a same-day, non-midnight-crossing
+  // Transit purely so `present` (above) can see its scenarioId; contributing
+  // that one's raw yesterday-or-earlier departsAt here would anchor the
+  // group to a day it doesn't actually appear on.
   function realOwnKey(scenarioId: string): string | null {
     const stayKeys = stayEventItems(
       dayStays.filter((s) => s.scenarioId === scenarioId),
@@ -1235,7 +1262,7 @@ function buildScenarioTracks(
       dayStart,
     ).map((item) => item.key);
     const transitKeys = transitsForSequence
-      .filter((t) => t.scenarioId === scenarioId)
+      .filter((t) => t.scenarioId === scenarioId && transitIdsOnDate.has(t._id))
       .map((t) => t.departsAt);
     const activityKeys = dayActivities
       .filter((a) => a.scenarioId === scenarioId)
@@ -1268,12 +1295,7 @@ function buildScenarioTracks(
       // whole nested group is genuinely unanchored, and dayStart only if
       // that's unanchored too.
       const childKey =
-        earliestKey(
-          children
-            .map((c) => c.realAnchorKey)
-            .filter((k): k is string => k !== null)
-            .map((key) => ({ key })),
-        ) ??
+        earliestRealAnchor(children) ??
         earliestKey(
           children.filter((c) => c.anchorKey !== null).map((c) => ({ key: c.anchorKey as string })),
         );
@@ -1327,8 +1349,29 @@ function buildScenarioTracks(
   // as "no scenario content exists today," which would silently drop the
   // whole tab group (including any *other*, real-content sibling track)
   // whenever the ideal-or-first pick happens to be the still-empty one.
+  //
+  // Anchoring on idealOrFirstTrack's own anchorKey alone (unlike the
+  // nested-tabs case above, whose childKey already takes the earliest
+  // realAnchorKey across every child) is deliberate — see the "Homer-Spit
+  // bug" regression test: a sibling track's own earlier content shouldn't
+  // usually steal the badge's position, since that strands a plain Activity
+  // landing chronologically between the two right after the whole badge. But
+  // that reasoning assumes the ideal-or-first track's own anchor is itself
+  // *real* content; when it's a pure Stay checkout/check-in boundary
+  // (trackBoundaryKind below) — which is really just "which hotel did you
+  // wake up in," not a moment the day is organized around — it carries no
+  // such claim to the badge's position, and a sibling's earlier real content
+  // (e.g. an alternate branch's breakfast) should anchor the badge instead;
+  // otherwise a same-day item chronologically between that real sibling
+  // content and the checkout's clock time (a Transit departing at 6:30am
+  // sorting after an 11am checkout-only "anchor," say) wrongly renders before
+  // the whole group instead of after it.
+  const idealTrack = idealOrFirstTrack({ scenarioTracks: tracks });
+  const idealIsBoundaryOnly = idealTrack !== null && trackBoundaryKind(idealTrack) !== null;
   const anchorKey = tracks.length
-    ? (idealOrFirstTrack({ scenarioTracks: tracks })?.anchorKey ?? dayStart)
+    ? ((idealIsBoundaryOnly ? earliestRealAnchor(tracks) : null) ??
+      idealTrack?.anchorKey ??
+      dayStart)
     : null;
   return { tracks, anchorKey };
 }

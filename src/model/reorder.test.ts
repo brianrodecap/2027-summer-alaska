@@ -2146,8 +2146,16 @@ describe('applyGroupDragEnd', () => {
     };
 
     const selectedRows = [
-      { containerId: 'container1', members: { activityIds: ['g1'], transitIds: [], stayIds: [] } },
-      { containerId: 'container1', members: { activityIds: ['g2'], transitIds: [], stayIds: [] } },
+      {
+        containerId: 'container1',
+        members: { activityIds: ['g1'], transitIds: [], stayIds: [] },
+        isScenarioGroup: false,
+      },
+      {
+        containerId: 'container1',
+        members: { activityIds: ['g2'], transitIds: [], stayIds: [] },
+        isScenarioGroup: false,
+      },
     ];
 
     const result = applyGroupDragEnd(
@@ -2171,15 +2179,86 @@ describe('applyGroupDragEnd', () => {
   // A mixed selection (a Transit row alongside a plain Activity row) fails
   // the pure-Activity check — applyGroupActivityReorder has no concept of a
   // Transit member — and moves instead as one rigid formation via
-  // applyBlockReorder, reporting all three collections dirty.
-  it('routes a mixed Transit+Activity multi-select to applyBlockReorder', () => {
+  // applyBlockReorder, reporting all three collections dirty. Both rows here
+  // are plain (isScenarioGroup: false, hand-picked individually, neither
+  // itself a scenario-tabs bundle), and the drop targets a real alternate
+  // scenario — the reported bug: dragging a meal/transit multi-select into
+  // an alternate scenario silently left both stranded on their original
+  // scenarioId, since applyBlockReorder used to never reassign it at all.
+  it('routes a mixed Transit+Activity multi-select to applyBlockReorder, reassigning scenarioId for plain rows', () => {
     const overMeta: DragMeta = {
       id: 'scenario-tabs-0',
       index: 0,
       endAt: '2027-06-01T10:00',
       containerDayStart: DAY_START,
       legId: 'legA',
-      scenarioId: null,
+      scenarioId: 'alt',
+      source: null,
+      anchorEntityId: null,
+      anchorTimeLabel: null,
+      kind: 'after',
+    };
+    const activeMeta: DragMeta = {
+      ...overMeta,
+      id: 'transit-transit1-depart',
+      source: { kind: 'transit', id: 'transit1' },
+    };
+
+    const data: TripData = {
+      trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+      legs: [],
+      stays: [],
+      transits: [transit({ scenarioId: null, arrivesAt: '2027-06-01T09:00' })],
+      activities: [
+        activity({ _id: 'idealAct', scenarioId: null, startAt: '2027-06-01T10:00' }),
+        activity({ _id: 'bystander', scenarioId: null, startAt: '2027-06-01T20:00' }),
+      ],
+      scenarios: [],
+      notes: [],
+      routes: [],
+    };
+
+    const selectedRows = [
+      {
+        containerId: 'c1',
+        members: { activityIds: ['idealAct'], transitIds: [], stayIds: [] },
+        isScenarioGroup: false,
+      },
+      {
+        containerId: 'c1',
+        members: { activityIds: [], transitIds: ['transit1'], stayIds: [] },
+        isScenarioGroup: false,
+      },
+    ];
+
+    const result = applyGroupDragEnd(data, activeMeta, overMeta, 'c1', 'c1', selectedRows);
+    expect(result.collections).toEqual(['activities', 'transits', 'stays']);
+    const byId = (id: string) => result.data.activities.find((a) => a._id === id);
+    const transitById = result.data.transits.find((t) => t._id === 'transit1');
+    // delta = 10:00 - 08:00 = +120 minutes, applied to every member — same
+    // shift applyBlockReorder's own dedicated test already covers.
+    expect(transitById?.departsAt).toBe('2027-06-01T10:00');
+    expect(transitById?.arrivesAt).toBe('2027-06-01T11:00');
+    expect(byId('idealAct')?.startAt).toBe('2027-06-01T12:00');
+    expect(byId('bystander')?.startAt).toBe('2027-06-01T20:00'); // untouched — not a member
+    // The fix under test: both plain rows picked up the drop's destination
+    // scenarioId, same as a lone drag of either would.
+    expect(transitById?.scenarioId).toBe('alt');
+    expect(byId('idealAct')?.scenarioId).toBe('alt');
+  });
+
+  // A scenario-group bundle mixed into the same multi-select as a plain
+  // Activity row must keep its own members' scenarioId untouched (their
+  // branch identity), while the plain row alongside it still reassigns —
+  // the two rules applyBlockReorder's scenarioReassignIds now distinguishes.
+  it('preserves a scenario-group member’s own scenarioId while reassigning a plain row mixed into the same drag', () => {
+    const overMeta: DragMeta = {
+      id: 'anchor',
+      index: 0,
+      endAt: '2027-06-01T10:00',
+      containerDayStart: DAY_START,
+      legId: 'legA',
+      scenarioId: 'alt',
       source: null,
       anchorEntityId: null,
       anchorTimeLabel: null,
@@ -2197,8 +2276,12 @@ describe('applyGroupDragEnd', () => {
       stays: [],
       transits: [transit({ scenarioId: 'ideal', arrivesAt: '2027-06-01T09:00' })],
       activities: [
-        activity({ _id: 'idealAct', scenarioId: 'ideal', startAt: '2027-06-01T10:00' }),
-        activity({ _id: 'bystander', scenarioId: null, startAt: '2027-06-01T20:00' }),
+        // Belongs to the dragged scenario-group bundle — its own branch
+        // identity must survive the drag unchanged.
+        activity({ _id: 'groupAct', scenarioId: 'ideal', startAt: '2027-06-01T08:30' }),
+        // Hand-picked alongside the bundle, but not part of it — a plain
+        // row, so it should pick up the drop's destination scenarioId.
+        activity({ _id: 'plainAct', scenarioId: null, startAt: '2027-06-01T10:00' }),
       ],
       scenarios: [],
       notes: [],
@@ -2206,19 +2289,27 @@ describe('applyGroupDragEnd', () => {
     };
 
     const selectedRows = [
-      { containerId: 'c1', members: { activityIds: ['idealAct'], transitIds: [], stayIds: [] } },
-      { containerId: 'c1', members: { activityIds: [], transitIds: ['transit1'], stayIds: [] } },
+      {
+        containerId: 'c1',
+        members: {
+          activityIds: ['groupAct'],
+          transitIds: ['transit1'],
+          stayIds: [],
+        },
+        isScenarioGroup: true,
+      },
+      {
+        containerId: 'c1',
+        members: { activityIds: ['plainAct'], transitIds: [], stayIds: [] },
+        isScenarioGroup: false,
+      },
     ];
 
     const result = applyGroupDragEnd(data, activeMeta, overMeta, 'c1', 'c1', selectedRows);
-    expect(result.collections).toEqual(['activities', 'transits', 'stays']);
     const byId = (id: string) => result.data.activities.find((a) => a._id === id);
     const transitById = result.data.transits.find((t) => t._id === 'transit1');
-    // delta = 10:00 - 08:00 = +120 minutes, applied to every member — same
-    // shift applyBlockReorder's own dedicated test already covers.
-    expect(transitById?.departsAt).toBe('2027-06-01T10:00');
-    expect(transitById?.arrivesAt).toBe('2027-06-01T11:00');
-    expect(byId('idealAct')?.startAt).toBe('2027-06-01T12:00');
-    expect(byId('bystander')?.startAt).toBe('2027-06-01T20:00'); // untouched — not a member
+    expect(transitById?.scenarioId).toBe('ideal'); // scenario-group member — untouched
+    expect(byId('groupAct')?.scenarioId).toBe('ideal'); // scenario-group member — untouched
+    expect(byId('plainAct')?.scenarioId).toBe('alt'); // plain row — reassigned
   });
 });

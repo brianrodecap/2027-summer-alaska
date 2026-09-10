@@ -54,6 +54,14 @@ export type RowSelectionMembers = ReorderMembers;
 export interface SelectedRow {
   containerId: string;
   members: RowSelectionMembers;
+  // Whether this row's own members came from a scenario-tabs bundle rather
+  // than a single plain Activity/Transit/Stay row — see reorder.ts's
+  // applyGroupDragEnd for why this matters: a scenario-group member's
+  // scenarioId is its own branch identity and must survive a group drag
+  // unchanged, while a plain row swept into the same multi-select drop
+  // should pick up the destination's scenarioId exactly like a lone drag of
+  // that same row would.
+  isScenarioGroup: boolean;
 }
 
 export interface RowSelection {
@@ -62,7 +70,12 @@ export interface RowSelection {
 
 export interface RowSelectionValue {
   selection: RowSelection | null;
-  toggleRowSelection: (dragId: string, containerId: string, members: RowSelectionMembers) => void;
+  toggleRowSelection: (
+    dragId: string,
+    containerId: string,
+    members: RowSelectionMembers,
+    isScenarioGroup: boolean,
+  ) => void;
   clearRowSelection: () => void;
 }
 

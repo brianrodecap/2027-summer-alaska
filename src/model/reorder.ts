@@ -923,13 +923,28 @@ export function applyStayReorder(data: TripData, dropMeta: DragMeta, stayId: str
 // Moves an entire scenario-group bundle (every Activity/Transit/Stay across
 // every branch under one ScenarioTabsNode, gathered by
 // collectScenarioGroupMembers above) as one rigid block: every member keeps
-// its own relative offset from the rest of the block, and its own
-// scenarioId (which branch it's in) — only legId reassigns, to the drop's
-// destination leg. See the design spec's "Decisions" section for why
-// scenarioId is deliberately never touched here, unlike a plain Activity
-// drop. No cascade (see applyTransitReorder's own note on why). A Stay
-// member's own legId reassigns the same way, but — unlike Activity/Transit —
-// its checkInAt/checkOutAt are never shifted by deltaMinutes: same
+// its own relative offset from the rest of the block, and — by default —
+// its own scenarioId (which branch it's in); only legId reassigns
+// unconditionally, to the drop's destination leg. See the design spec's
+// "Decisions" section for why scenarioId is deliberately left alone for a
+// genuine scenario-group bundle drag, unlike a plain Activity drop.
+//
+// `scenarioReassignIds` is the one exception: applyGroupDragEnd's own mixed
+// multi-select case can combine a genuine scenario-group bundle (whose
+// members must keep their own branch identity, per the above) with one or
+// more plain Activity/Transit/Stay rows the user hand-picked alongside it —
+// those plain rows were never carrying a scenario-branch identity of their
+// own, so an id named here instead gets dropMeta.scenarioId, exactly like a
+// lone drag of that same row would (applyActivityReorder/applyTransitReorder
+// both reassign scenarioId unconditionally). A flat id set is enough since
+// each lookup below is already gated by the entity's own kind-specific
+// membership check (activityIds/transitIds/stayIds). Left empty (the
+// default) for a lone scenario-group drag, where every member is rigid —
+// see applySingleRowDragEnd's own call.
+//
+// No cascade (see applyTransitReorder's own note on why). A Stay member's
+// own legId reassigns the same way, but — unlike Activity/Transit — its
+// checkInAt/checkOutAt are never shifted by deltaMinutes: same
 // real-booking-fact reasoning as applyStayReorder's own note on why a drop
 // position should never rewrite them. A Stay's own timing is also left out
 // of anchorTime's computation below for the same reason: it never moves, so
@@ -939,6 +954,7 @@ export function applyBlockReorder(
   dropMeta: DragMeta,
   members: ReorderMembers,
   dayStart: string,
+  scenarioReassignIds: ReadonlySet<string> = new Set(),
 ): TripData {
   const activityIds = new Set(members.activityIds);
   const transitIds = new Set(members.transitIds);
@@ -965,6 +981,8 @@ export function applyBlockReorder(
     ? resolveDropTiming(dropMeta.endAt, dayStart, anchorTime, crossesDay)
     : null;
   const deltaMinutes = timing && anchorTime ? diffMinutesIso(anchorTime, timing.startAt) : 0;
+  const reassignedScenarioId = (id: string, currentScenarioId: string | null) =>
+    scenarioReassignIds.has(id) ? dropMeta.scenarioId : currentScenarioId;
 
   return {
     ...data,
@@ -986,6 +1004,7 @@ export function applyBlockReorder(
         startAt: a.startAt ? addMinutesIso(a.startAt, deltaMinutes) : a.startAt,
         date: a.startAt ? a.date : dateOnly(dayStart),
         legId: dropMeta.legId,
+        scenarioId: reassignedScenarioId(a._id, a.scenarioId),
       };
     }),
     transits: data.transits.map((t) => {
@@ -995,9 +1014,17 @@ export function applyBlockReorder(
         departsAt: addMinutesIso(t.departsAt, deltaMinutes),
         arrivesAt: shiftedArrivesAt(t, deltaMinutes),
         legId: dropMeta.legId,
+        scenarioId: reassignedScenarioId(t._id, t.scenarioId),
       };
     }),
-    stays: data.stays.map((s) => (stayIds.has(s._id) ? { ...s, legId: dropMeta.legId } : s)),
+    stays: data.stays.map((s) => {
+      if (!stayIds.has(s._id)) return s;
+      return {
+        ...s,
+        legId: dropMeta.legId,
+        scenarioId: reassignedScenarioId(s._id, s.scenarioId),
+      };
+    }),
   };
 }
 
@@ -1234,13 +1261,27 @@ export function applySingleRowDragEnd(
 // selection including one already fails the pure-activity check on its own
 // and falls to the block-reorder branch below — the only sensible way to
 // move a Stay at all, since applyGroupActivityReorder has no concept of one.
+//
+// Within that block-reorder branch, only a selected row that's itself a
+// scenario-group bundle (`isScenarioGroup`) keeps its members' own
+// scenarioId untouched — that's the one case where scenarioId genuinely
+// encodes a branch identity the drag must preserve (applyBlockReorder's own
+// note on why). A plain Activity/Transit/Stay row swept into the same
+// multi-select — the common case this fixes: hand-picking a meal and a
+// transit together and dragging them into a scenario tab — carries no
+// branch identity of its own, so it should pick up the drop's destination
+// scenarioId exactly like a lone drag of that same row already does
+// (applyActivityReorder/applyTransitReorder). Leaving every member's
+// scenarioId untouched here (the pre-fix behavior) silently stranded a
+// mixed plain-row selection on its original branch — the reported "drag a
+// meal and a transit into the alternate scenario does nothing" bug.
 export function applyGroupDragEnd(
   data: TripData,
   activeMeta: DragMeta,
   overMeta: DragMeta,
   activeContainerId: string | null,
   overContainerId: string | null,
-  selectedRows: Array<{ containerId: string; members: ReorderMembers }>,
+  selectedRows: Array<{ containerId: string; members: ReorderMembers; isScenarioGroup: boolean }>,
 ): DragEndResult {
   const { dropMeta } = resolveDragEndPlacement(
     activeMeta,
@@ -1278,16 +1319,23 @@ export function applyGroupDragEnd(
   const activityIds = new Set<string>();
   const transitIds = new Set<string>();
   const stayIds = new Set<string>();
+  const scenarioReassignIds = new Set<string>();
   for (const row of selectedRows) {
     row.members.activityIds.forEach((id) => activityIds.add(id));
     row.members.transitIds.forEach((id) => transitIds.add(id));
     row.members.stayIds.forEach((id) => stayIds.add(id));
+    if (!row.isScenarioGroup) {
+      row.members.activityIds.forEach((id) => scenarioReassignIds.add(id));
+      row.members.transitIds.forEach((id) => scenarioReassignIds.add(id));
+      row.members.stayIds.forEach((id) => scenarioReassignIds.add(id));
+    }
   }
   const next = applyBlockReorder(
     data,
     dropMeta,
     { activityIds: [...activityIds], transitIds: [...transitIds], stayIds: [...stayIds] },
     dayStart,
+    scenarioReassignIds,
   );
   return { data: next, collections: ['activities', 'transits', 'stays'] };
 }

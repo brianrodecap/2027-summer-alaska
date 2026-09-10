@@ -1015,7 +1015,12 @@ export const DayTimeline = memo(function DayTimeline({
                               meta && rowMembers
                                 ? (event) => {
                                     event.stopPropagation();
-                                    toggleRowSelection(meta.id, containerId, rowMembers);
+                                    toggleRowSelection(
+                                      meta.id,
+                                      containerId,
+                                      rowMembers,
+                                      meta.source?.kind === 'scenario-group',
+                                    );
                                   }
                                 : undefined
                             }

@@ -266,6 +266,82 @@ describe('buildTripView', () => {
     expect(gapIdx).toBeLessThan(scenarioTabsIdx);
   });
 
+  // The reverse of the Homer-Spit case above: here the ideal-or-first track
+  // carries nothing but a Stay checkout (trackBoundaryKind === 'checkout'),
+  // so its own anchorKey (the checkout's literal, administrative clock time)
+  // isn't real content the day is organized around — borrowing a sibling
+  // track's own earlier real content is correct here, not the bug the
+  // Homer-Spit test guards against. Without that, a same-day plain Transit
+  // sorting between the sibling's real content and the checkout's clock time
+  // wrongly rendered before the whole scenario-tabs badge instead of after.
+  it("anchors a day's scenario-tabs placeholder to a sibling's real content when the ideal-or-first track is a pure checkout boundary", () => {
+    const data = minimalTripData();
+    data.scenarios.push(
+      {
+        _id: 'test_scenario_ideal',
+        legId: 'leg_test',
+        tone: 'ideal',
+        label: 'Test ideal',
+        icon: 'flight_takeoff',
+        images: [],
+      },
+      {
+        _id: 'test_scenario_alt',
+        legId: 'leg_test',
+        tone: 'alternate',
+        label: 'Test alternate',
+        icon: 'cloud',
+        images: [],
+      },
+    );
+    // The ideal track's entire same-day content is a Stay checkout — purely
+    // administrative, not a moment the day is organized around.
+    data.stays.push({
+      _id: 'test_ideal_checkout',
+      legId: 'leg_test',
+      scenarioId: 'test_scenario_ideal',
+      checkInAt: '2027-05-31T15:00',
+      checkOutAt: '2027-06-01T11:00',
+      status: 'planning',
+      lodging: null,
+      booking: null,
+      images: [],
+    });
+    // The alternate track's entire same-day content is the same checkout,
+    // plus its own real activity well before the checkout's clock time.
+    data.stays.push({
+      _id: 'test_alt_checkout',
+      legId: 'leg_test',
+      scenarioId: 'test_scenario_alt',
+      checkInAt: '2027-05-31T15:00',
+      checkOutAt: '2027-06-01T11:00',
+      status: 'planning',
+      lodging: null,
+      booking: null,
+      images: [],
+    });
+    pushMinimalActivity(data, {
+      _id: 'test_alt_breakfast',
+      scenarioId: 'test_scenario_alt',
+      startAt: '2027-06-01T06:00',
+    });
+    // A plain same-day Transit chronologically after the alternate's real
+    // content but well before the checkout's own clock time.
+    pushMinimalTransit(data, {
+      departsAt: '2027-06-01T06:30',
+      arrivesAt: '2027-06-01T07:00',
+    });
+
+    const day = buildTripView(data).days.find((d) => d.date === '2027-06-01')!;
+    expect(day).toBeDefined();
+
+    const transitIdx = day.sequence.findIndex((i) => i.type === 'transit-boundary');
+    const scenarioTabsIdx = day.sequence.findIndex((i) => i.type === 'scenario-tabs');
+    expect(transitIdx).toBeGreaterThanOrEqual(0);
+    expect(scenarioTabsIdx).toBeGreaterThanOrEqual(0);
+    expect(scenarioTabsIdx).toBeLessThan(transitIdx);
+  });
+
   // DaysView's "Add to this day" > Scenario flow (editForms.ts's
   // blankScenario) seeds a brand-new Scenario with no Activity/Transit of
   // its own yet, placed only via its own `date` field. buildScenarioTracks
