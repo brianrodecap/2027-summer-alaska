@@ -98,6 +98,17 @@ export interface Place {
   images?: Image[];
   showWeather?: boolean;
   showElevation?: boolean;
+  // Fallback contact details for a place that hasn't been resolved to a real
+  // Google Place id yet (or never will be) — once a real id exists, the
+  // Places API lookup is the live source of truth for phone/website (see
+  // PlaceDetails.phone/websiteUri in model/places.ts) and
+  // these two fields are unnecessary, same "known but not yet resolved" role
+  // Ref-less coordinates play elsewhere for a place with no id. `email` has
+  // no Places API equivalent at all (Google doesn't expose one), so it's
+  // shown from here regardless of whether the place ever gets a real id.
+  phone?: string;
+  website?: string;
+  email?: string;
 }
 
 // Route's own from/to endpoints. Resolved against the Places API and
@@ -500,7 +511,7 @@ export interface BudgetTotals {
   currency: string | null;
 }
 
-export type BudgetEntityKind = 'leg' | 'stay' | 'transit' | 'activity' | 'mealOption';
+export type BudgetEntityKind = 'leg' | 'stay' | 'transit' | 'activity' | 'mealOption' | 'package';
 
 export interface BudgetLineItem {
   entity: BudgetEntityKind;

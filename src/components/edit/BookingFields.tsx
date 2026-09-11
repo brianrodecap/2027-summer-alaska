@@ -51,21 +51,30 @@ export function BookingFields({
         ))}
       </TextField>
       {value.status && (
-        <Stack direction="row" spacing={2}>
+        <>
+          <Stack direction="row" spacing={2}>
+            <TextField
+              label="Confirmation #"
+              value={value.confirmationNumber}
+              onChange={(e) => onChange({ ...value, confirmationNumber: e.target.value })}
+              fullWidth
+            />
+            <TextField
+              label="Cost"
+              type="number"
+              value={value.costAmount}
+              onChange={(e) => onChange({ ...value, costAmount: e.target.value })}
+              fullWidth
+            />
+          </Stack>
           <TextField
-            label="Confirmation #"
-            value={value.confirmationNumber}
-            onChange={(e) => onChange({ ...value, confirmationNumber: e.target.value })}
+            label="Booked through"
+            placeholder="e.g. Capital One Travel"
+            value={value.bookedThrough}
+            onChange={(e) => onChange({ ...value, bookedThrough: e.target.value })}
             fullWidth
           />
-          <TextField
-            label="Cost"
-            type="number"
-            value={value.costAmount}
-            onChange={(e) => onChange({ ...value, costAmount: e.target.value })}
-            fullWidth
-          />
-        </Stack>
+        </>
       )}
     </Stack>
   );

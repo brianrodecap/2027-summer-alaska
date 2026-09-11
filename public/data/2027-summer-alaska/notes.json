@@ -1847,5 +1847,125 @@
       }
     ],
     "images": []
+  },
+  {
+    "_id": "93bc03ef-9ac2-4179-848b-6bd0b032da65",
+    "kind": "info",
+    "text": "Kennecott was compressed from 3 nights to 2 — the Root Glacier hike and Mill Tour fit into one full day, which also satisfies the lodge's 2-night minimum — which originally freed up July 5, now used for the Matanuska Glacier helicopter tour en route to Anchorage. The dedicated Wrangell–St. Elias flightseeing day is still the one dropped in this compression — worth reconsidering during the buffer re-evaluation pass, either as an early-morning add-on before the Root Glacier hike on July 4, or reinstated as a third Kennecott day if you'd rather not compress further.",
+    "concerns": [
+      {
+        "entity": "stay",
+        "id": "c9ac2610-98b7-4819-82a6-b79f8f7e27ed"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "5ae67396-75c2-4409-916c-e0ad0bb016a7",
+    "kind": "info",
+    "text": "2-night minimum; on-site dining is limited (dining room, Meatza Wagon food truck, or a trip into McCarthy) — a meal package is worth booking.",
+    "concerns": [
+      {
+        "entity": "stay",
+        "id": "c9ac2610-98b7-4819-82a6-b79f8f7e27ed"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "76eb3298-c467-40dc-9a8d-c8f6150c5432",
+    "kind": "info",
+    "text": "Nonrefundable: changing or cancelling this booking will not result in a refund.",
+    "concerns": [
+      {
+        "entity": "stay",
+        "id": "11dc2514-b889-4097-8cf1-51feb6c7be97"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "845e6faa-b663-4ea4-9dd1-38b96ba7e5e8",
+    "kind": "info",
+    "text": "Resort fee (USD 20.43 per accommodation, per stay) and breakfast fees (approx. USD 20-25 for adults, USD 15-20 for children) are due at the property.",
+    "concerns": [
+      {
+        "entity": "stay",
+        "id": "11dc2514-b889-4097-8cf1-51feb6c7be97"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "a7fdec94-eb6a-4b51-8c45-12a6ac023a54",
+    "kind": "info",
+    "text": "Nonrefundable: if you change or cancel this booking, you will not receive a refund.",
+    "concerns": [
+      {
+        "entity": "stay",
+        "id": "381e78d7-8a39-4fdf-ab3e-de892f16da7b"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "6664bdcd-452c-42df-8b80-e118c5941d29",
+    "kind": "info",
+    "text": "Nonrefundable: if you change or cancel this booking, you will not receive a refund.",
+    "concerns": [
+      {
+        "entity": "stay",
+        "id": "342c42bc-9068-4c64-9e2a-f1d11bfbc8ed"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "0e1817f5-78bf-4882-ac86-4abb41fe3e78",
+    "kind": "info",
+    "text": "Cancellation policy strictly enforced due to remote location: more than 60 days prior to arrival incurs a $50 per room per night fee; less than 60 days prior to arrival incurs a 100% cancellation fee.",
+    "concerns": [
+      {
+        "entity": "stay",
+        "id": "3aaee9b5-4d98-4c45-a29f-15aa732ee0dd"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "68a4ff4c-6266-49dd-bcfb-f7336adfb097",
+    "kind": "info",
+    "text": "Dinner reservations are required and must be made by calling or emailing the lodge in advance (breakfast/lunch do not require reservations).",
+    "concerns": [
+      {
+        "entity": "stay",
+        "id": "3aaee9b5-4d98-4c45-a29f-15aa732ee0dd"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "0a3d3809-f66c-42f4-bf41-b6fdc2034da6",
+    "kind": "info",
+    "text": "Lodge shuttle picks up at the Footbridge on the hour from 12pm to 8pm; if arriving before 12pm, call ahead to arrange transportation.",
+    "concerns": [
+      {
+        "entity": "transit",
+        "id": "7031752b-5a0c-4660-ba30-030dad9afbe4"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "3893152c-ce03-4cdd-8b56-828ddbefef51",
+    "kind": "info",
+    "text": "Transportation from the Footbridge after 8pm is only available by prior arrangement for a $50 fee; the Front Desk closes at 9pm and no transportation is provided after that.",
+    "concerns": [
+      {
+        "entity": "transit",
+        "id": "7031752b-5a0c-4660-ba30-030dad9afbe4"
+      }
+    ],
+    "images": []
   }
 ]

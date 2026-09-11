@@ -822,3 +822,79 @@ describe('diffMinutesIso', () => {
     expect(diffMinutesIso('2027-06-01T23:30', '2027-06-02T00:15')).toBe(45);
   });
 });
+
+describe('budget: Stay packages', () => {
+  function minimalStay(
+    overrides: Partial<TripData['stays'][number]> = {},
+  ): TripData['stays'][number] {
+    return {
+      _id: 'test_stay',
+      legId: 'leg_test',
+      scenarioId: null,
+      checkInAt: '2027-06-01T15:00',
+      checkOutAt: '2027-06-02T11:00',
+      status: 'planning',
+      lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } },
+      booking: null,
+      packages: null,
+      images: [],
+      ...overrides,
+    };
+  }
+
+  it('counts a package cost in the trip totals, on top of the room rate', () => {
+    const data = minimalTripData();
+    data.trip.travelers = [{ id: 't1', name: 'Alex' }];
+    data.stays.push(
+      minimalStay({
+        booking: {
+          status: 'booked',
+          cost: { amount: 100, currency: 'USD' },
+          confirmationNumber: null,
+        },
+        packages: [
+          {
+            _id: 'pkg_1',
+            name: 'Resort fee',
+            status: 'booked',
+            cost: { amount: 20, currency: 'USD' },
+            confirmationNumber: null,
+            benefits: null,
+            travelers: null,
+          },
+        ],
+      }),
+    );
+    const view = buildTripView(data);
+    expect(view.budget.totals.spent).toBe(120);
+  });
+
+  // A 'booked' package with no separately-broken-out cost (a perk bundled
+  // into the room rate, say) used to crash the by-traveler split, which
+  // assumed every booked row it saw had a real cost to divide up.
+  it('does not crash splitting a booked-but-uncosted package across travelers', () => {
+    const data = minimalTripData();
+    data.trip.travelers = [
+      { id: 't1', name: 'Alex' },
+      { id: 't2', name: 'Sam' },
+    ];
+    data.stays.push(
+      minimalStay({
+        packages: [
+          {
+            _id: 'pkg_2',
+            name: 'Bundled perk',
+            status: 'booked',
+            cost: null,
+            confirmationNumber: null,
+            benefits: null,
+            travelers: null,
+          },
+        ],
+      }),
+    );
+    expect(() => buildTripView(data)).not.toThrow();
+    const alex = buildTripView(data).budget.byTraveler.find((t) => t.name === 'Alex');
+    expect(alex?.totals.spent).toBe(0);
+  });
+});

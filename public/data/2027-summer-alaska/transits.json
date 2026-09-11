@@ -104,32 +104,6 @@
     ]
   },
   {
-    "_id": "transit_coppercenter_mccarthy",
-    "legId": "leg_parks",
-    "journeyId": null,
-    "scenarioId": null,
-    "status": "planning",
-    "mode": "drive",
-    "from": {
-      "label": "Copper Center"
-    },
-    "to": {
-      "label": "McCarthy Road footbridge"
-    },
-    "departsAt": "2027-07-03T09:00",
-    "arrivesAt": null,
-    "routeId": "route_mccarthy_road",
-    "routeVariant": "direct",
-    "booking": null,
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_Kuskulana_Bridge.jpg",
-        "credit": "Photo by Henry Chen / CC BY-SA 2.0",
-        "caption": "Kuskulana Bridge on the McCarthy Road"
-      }
-    ]
-  },
-  {
     "_id": "transit_kennecott_anchorage",
     "legId": "leg_parks",
     "journeyId": null,
@@ -597,6 +571,78 @@
       "confirmationNumber": null,
       "cost": null
     },
+    "images": []
+  },
+  {
+    "_id": "7031752b-5a0c-4660-ba30-030dad9afbe4",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "shuttle",
+    "from": {
+      "id": "ChIJFdOBjRuFs1YRYVu1TmFM1VY",
+      "label": "McCarthy Bridge",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJFdOBjRuFs1YRYVu1TmFM1VY/photos/AVoNoXSRldK80yRGM1i4ufBkG8APyfkZ_5zHqthuBYYgKmQK8PpE0vZ10o2SiWmK-VP4TV4Ni7dqxW8K1vmBllpijrRd3hwzVfLNsC46wYZ7JPeqByn_CrXzX0xSWH8U9WcvS103t6vG6i5u9RLbNdA_Lnsf93bv3W7ZsmV5fWFK4-PLi7nM4kXDL3UmCe2fwCFygyRKjWr5kZyZliVyc0w1VXPMKtLXkhO8XyJijQzNVa4Lz2wurDpouC1lRN8fj5fP-887t3uGsRNgpxA-PWeIAbbROaz06QRAUbGk5FAPjx252ukf8cnyi1VQ697ZCyUvKJcntrxaZ3khjXWoWV-uL4o66KxCSRDGm8lx45f35LzJlwizqZiNoGAzaetRP4BS7ipts4Exs3sZel1CQQmmJV0BMFuwGMiE6PQQF9eVKF6j6A/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Nick Gentile",
+          "caption": null
+        }
+      ]
+    },
+    "to": {
+      "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
+      "label": "Kennicott Glacier Lodge",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJ2_1lpi2Cs1YRTk9_q-YuUM4/photos/AVoNoXTV7FGgRfs8Gl-wh-V-3szTvUHTwgfBcjuseTElLPFxTsGT8AT8-kFD2u4dHwo7tlyZ82H62UAgPPKiCG71f6j3xfaH6KLUnlC8gTVVutnLDguKQzKdw-8pqkBEx4OShzoThPaMPP2WmO8G8bnLNxt1t-J21hLy2YwjhtZE3RFx_X_vUZKh2ORCObu1bC5eVi0_Gu8k5JqC2rRmc1pSvKp821YupVe1hwOfoJAJ0rpMOU1-vlsTn0pIuCT16gdQE_BVzAVxURHyxqAWIFsUBRNIZm_kDCrjadlwHVJJ2_n3riFhZNF9ZHoVM_fDUJfNdqzg6ovAaraERSe5ifgExnw2NoNyK0VLPbnWJ-ZoJ6FDaBp6SJiWr6DeQQtNoH9ZdY9lL0MzGjG2WUl_rXgkI8IMptFI1-rqBHC94JL3392_HA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Kennicott Glacier Lodge",
+          "caption": null
+        }
+      ]
+    },
+    "departsAt": "2027-07-03T14:00",
+    "arrivesAt": "2027-07-03T14:30",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": null,
+    "images": []
+  },
+  {
+    "_id": "e2b7a8ae-e538-4f29-a473-8e4dde936af3",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "shuttle",
+    "from": {
+      "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
+      "label": "Kennicott Glacier Lodge",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJ2_1lpi2Cs1YRTk9_q-YuUM4/photos/AVoNoXTV7FGgRfs8Gl-wh-V-3szTvUHTwgfBcjuseTElLPFxTsGT8AT8-kFD2u4dHwo7tlyZ82H62UAgPPKiCG71f6j3xfaH6KLUnlC8gTVVutnLDguKQzKdw-8pqkBEx4OShzoThPaMPP2WmO8G8bnLNxt1t-J21hLy2YwjhtZE3RFx_X_vUZKh2ORCObu1bC5eVi0_Gu8k5JqC2rRmc1pSvKp821YupVe1hwOfoJAJ0rpMOU1-vlsTn0pIuCT16gdQE_BVzAVxURHyxqAWIFsUBRNIZm_kDCrjadlwHVJJ2_n3riFhZNF9ZHoVM_fDUJfNdqzg6ovAaraERSe5ifgExnw2NoNyK0VLPbnWJ-ZoJ6FDaBp6SJiWr6DeQQtNoH9ZdY9lL0MzGjG2WUl_rXgkI8IMptFI1-rqBHC94JL3392_HA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Kennicott Glacier Lodge",
+          "caption": null
+        }
+      ]
+    },
+    "to": {
+      "id": "ChIJFdOBjRuFs1YRYVu1TmFM1VY",
+      "label": "McCarthy Bridge",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJFdOBjRuFs1YRYVu1TmFM1VY/photos/AVoNoXSRldK80yRGM1i4ufBkG8APyfkZ_5zHqthuBYYgKmQK8PpE0vZ10o2SiWmK-VP4TV4Ni7dqxW8K1vmBllpijrRd3hwzVfLNsC46wYZ7JPeqByn_CrXzX0xSWH8U9WcvS103t6vG6i5u9RLbNdA_Lnsf93bv3W7ZsmV5fWFK4-PLi7nM4kXDL3UmCe2fwCFygyRKjWr5kZyZliVyc0w1VXPMKtLXkhO8XyJijQzNVa4Lz2wurDpouC1lRN8fj5fP-887t3uGsRNgpxA-PWeIAbbROaz06QRAUbGk5FAPjx252ukf8cnyi1VQ697ZCyUvKJcntrxaZ3khjXWoWV-uL4o66KxCSRDGm8lx45f35LzJlwizqZiNoGAzaetRP4BS7ipts4Exs3sZel1CQQmmJV0BMFuwGMiE6PQQF9eVKF6j6A/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Nick Gentile",
+          "caption": null
+        }
+      ]
+    },
+    "departsAt": "2027-07-05T11:00",
+    "arrivesAt": "2027-07-05T11:30",
+    "routeId": null,
+    "routeVariant": null,
+    "booking": null,
     "images": []
   }
 ]

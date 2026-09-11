@@ -41,7 +41,13 @@ export interface PlaceDetails {
   googleMapsUri?: string;
   primaryType?: string;
   photos?: PlacePhoto[];
+  phone?: string;
 }
+
+// The wire shape the Places API (New) actually returns — same fields, but
+// under Google's own `nationalPhoneNumber` name (the literal field mask
+// value it expects, see FIELD_MASK below) rather than our simpler `phone`.
+type RawPlaceDetails = Omit<PlaceDetails, 'phone'> & { nationalPhoneNumber?: string };
 
 export interface PlaceSearchResult {
   id: string;
@@ -58,6 +64,7 @@ const FIELD_MASK = [
   'googleMapsUri',
   'primaryType',
   'photos',
+  'nationalPhoneNumber',
 ].join(',');
 
 // Google returns up to 10 photos per place — capped well below that so one
@@ -125,7 +132,8 @@ export async function fetchPlaceFields<T>(id: string, fieldMask: string): Promis
 }
 
 export async function fetchPlace(id: string): Promise<PlaceDetails> {
-  return fetchPlaceFields<PlaceDetails>(id, FIELD_MASK);
+  const { nationalPhoneNumber, ...rest } = await fetchPlaceFields<RawPlaceDetails>(id, FIELD_MASK);
+  return { ...rest, phone: nationalPhoneNumber };
 }
 
 export function getPlace(id: string): Promise<PlaceDetails> {

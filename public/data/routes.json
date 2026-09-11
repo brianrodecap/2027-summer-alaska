@@ -195,7 +195,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJhXnkIkq0MlERbxl8lVwyH-s",
-              "label": "Tatlanika Gift Shop and Campground"
+              "label": "Tatlanika Gift Shop and Campground",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJhXnkIkq0MlERbxl8lVwyH-s/photos/AVoNoXSvwxuGPEfl6ADFK0OpdRNbcCcZtfIRPMdAwUWm-4tQp9PocmPiaZ6yszwyU4rNPzZ1aDXEG11f8BH7Han_k0UrfrjdeJKZRXpCmrcqXRBl6641SiLoswJ0Pvr6e0PT9tx-O52RXCI2QAN86EfQG9CiA8b1ZOBJCPr404YZy4u9ojDsM7mwaUBG0yKF6DFH9cR_PinRhUUL_fStHEoZjAOygfVA8kEZfnALHVp1cIGZYxSlv22oykwKxoGdtUilm8v_HaHoY8zAUK4lQNS3zrOX6kH8c1fRerkVj0NXwJWPsRbzKeQah8hLvHWVOCU4H82Bmoy6pfN_BrGHmeLLwbjkXHVb0TwkvBRppVx7qNEu0G83HluWmEbcksUetWTG-AQ6dNZS_5N5ULvrxbJtFe-jo-HxyV9rQ0l21fyb5K4/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "James Brecht",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 45,
             "distanceMiles": 40.4
@@ -238,33 +245,6 @@
     ]
   },
   {
-    "_id": "route_mccarthy_road",
-    "from": {
-      "id": "ChIJdT2A7HyWtVYRNWI7kTDhePA",
-      "label": "Copper Center"
-    },
-    "to": {
-      "id": "ChIJFdOBjRuFs1YRYVu1TmFM1VY",
-      "label": "McCarthy Bridge"
-    },
-    "variants": [
-      {
-        "tone": "direct",
-        "label": "Richardson Highway and McCarthy Road",
-        "places": [],
-        "finalLegMinutes": 171,
-        "finalLegMiles": 110.8
-      }
-    ],
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_Kuskulana_Bridge.jpg",
-        "credit": "Photo by Henry Chen / CC BY-SA 2.0",
-        "caption": "Kuskulana Bridge on the McCarthy Road"
-      }
-    ]
-  },
-  {
     "_id": "route_new_8",
     "from": {
       "id": "ChIJoy8lnw_vy1YRc8fyP3dIJVE",
@@ -283,7 +263,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJMQSzDXyDzlYR0kjMv9sRo-I",
-              "label": "Denali Viewpoint South"
+              "label": "Denali Viewpoint South",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJMQSzDXyDzlYR0kjMv9sRo-I/photos/AVoNoXRYBkUrymp7hPly__SI_qPEmtDml3fc5AQfWo6nC1JQFPqlVOyJ6ByVBEH0SJSY_7jt_PESNdBS5XSz8LnT8J1YMjERnfBeJBGOZPhWmwryMmmUD9mOjAIJoDx6-IL8B9mOREVs60ZCVIguZTLt6NQ8Ie6ZIM5WJI9ddB0dnd4yNFmy4MB0eTdUWQoRzxd1zKloWMVN00o6XE8gj32cIZcsL50vwOkHzPN882_-NKfiYTHpCQAk1MPtyUtp0whRwOoxB4f8JteJOWoT53wENesO0KETZHtzAIC3ry3rJDWwtRnnMgm24p33nMIS0c10ragSk_kYbI0hiA0eqBbIIFJNc3G-nJWU6MbkpJVYF6E1x2VXSwOGkdgoWFiO1A2CmLMPLcGRP7iwa5cJuSTRhHFsIm-4U_KYlYplQ2r95ZdOQud4/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "Gary Rients",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 53,
             "distanceMiles": 50.4
@@ -292,7 +279,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJW1BnSrYwzFYRJFJvnughNoQ",
-              "label": "Denali View North"
+              "label": "Denali View North",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJW1BnSrYwzFYRJFJvnughNoQ/photos/AVoNoXTUpxjeHryf_PJNs4FbmppUPGygJoBTucYDFjYPlmq6_ed5wYkNduTjAjXutb_l7fWm7o3_Y3YeqPVBjQNzSNmXKlTH1hJs1u8_mHsBxERMFfGd0SK93QpQxSY8qpBo7BsCF7wATQeLSvUWeEM7a8fyarutdBYqLqLUa5kcfgIKI8WYUCSAGiO8K32wjBLF8JiFdd7CRHggDQVusgr-s1aL6h3QYzAOBKdw-6Qx33tAhWDmlnR2VKuXACY1u2rBXYwYsIB_2tHT-SF7tRmBgesRsISSaSwi1Op1YQUE-vSe4CyeZuLDuj2xQsZKDgu9lj90xLCCCU6SqqeLw84aP8D2vvDYFE_yMr3cV7whzixj0yBwFLJpRzB4ac5U0FNKeQ4SHE9GU5Mq3MT8Y3rHvzDuJMtr65o794FzBVTTa4NGw9s/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "Jeff Knarr",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 28,
             "distanceMiles": 28

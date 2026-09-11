@@ -9,16 +9,36 @@ import { setStoredApiKey } from '../../config/aiKey';
 import {
   DocumentImportError,
   draftEntityFromExtraction,
+  draftIncludedTransfers,
   type ExtractedFields,
   extractEntityFromDocument,
   findConflictCandidate,
+  notesFromExtraction,
+  type ResolvedPlaces,
   resolveLegAndDateForFields,
+  resolvePlacesForFields,
 } from '../../model/documentImport';
 import { COLLECTION_FOR_KIND, type EditKind, entityLabel } from '../../model/editForms';
 import { formatDateLabel } from '../../model/tripModel';
 import type { Activity, Stay, Transit } from '../../model/types';
+import type { NoteDraft } from '../../state/NoteEditContextObject';
 import { useEdit } from '../../state/useEdit';
+import { useNoteEdit } from '../../state/useNoteEdit';
 import { useTripData } from '../../state/useTripData';
+
+// Wraps a drafted entity's own notes (if any) into the onSaved this panel's
+// draft sequence needs — see EditContext's own note on why onSaved has to
+// take and eventually call `advance` itself, rather than the queue moving
+// on right away: two dialogs (this entity's next sibling, and
+// NoteEditDialog) must never be open at once. A draft with nothing
+// noteworthy just gets `undefined`, so the queue advances immediately.
+function withNoteFollowUp(
+  notes: NoteDraft[],
+  openNoteDraftSequence: (drafts: NoteDraft[], onComplete?: () => void) => void,
+): ((advance: () => void) => void) | undefined {
+  if (!notes.length) return undefined;
+  return (advance) => openNoteDraftSequence(notes, advance);
+}
 
 const KIND_LABEL: Record<EditKind, string> = {
   activity: 'Activity',
@@ -53,14 +73,17 @@ type Status = 'idle' | 'loading' | 'error' | 'success';
 // resolveLegAndDateForFields figures out which day (and Leg) the extracted document's
 // own date falls on instead, once extraction has actually returned one.
 export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProps) {
-  const { openFromDraft } = useEdit();
+  const { openDraftSequence } = useEdit();
+  const { openNoteDraftSequence } = useNoteEdit();
   const { data, view } = useTripData();
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [extracted, setExtracted] = useState<ExtractedFields | null>(null);
+  const [draft, setDraft] = useState<Activity | Stay | Transit | null>(null);
   const [placement, setPlacement] = useState<{ legId: string; date: string } | null>(null);
   const [conflictId, setConflictId] = useState<string | null>(null);
+  const [resolvedPlaces, setResolvedPlaces] = useState<ResolvedPlaces>({});
 
   const handleExtract = async () => {
     if (!file || !apiKey.trim()) return;
@@ -77,10 +100,16 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
         setStatus('error');
         return;
       }
-      const draft = draftEntityFromExtraction(fields, resolved.legId, resolved.date);
+      // A real Places lookup (never the model itself — see documentImport.ts's
+      // own note on this), so the review form's place picker opens already
+      // pointed at the right business instead of a plain-text guess.
+      const places = await resolvePlacesForFields(fields);
+      const entityDraft = draftEntityFromExtraction(fields, resolved.legId, resolved.date, places);
       const existing = collectionFor(fields.kind, data);
-      setConflictId(findConflictCandidate(fields.kind, draft, existing));
+      setConflictId(findConflictCandidate(fields.kind, entityDraft, existing));
+      setResolvedPlaces(places);
       setExtracted(fields);
+      setDraft(entityDraft);
       setPlacement(resolved);
       setStatus('success');
     } catch (err) {
@@ -94,9 +123,36 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
   };
 
   const handleContinue = () => {
-    if (!extracted || !placement) return;
-    const draft = draftEntityFromExtraction(extracted, placement.legId, placement.date);
-    openFromDraft(extracted.kind, draft, conflictId ?? undefined);
+    if (!extracted || !placement || !draft) return;
+    // openDraftSequence overrides the saved entity's _id to conflictId when
+    // one's set (replacing an existing entry) — the note refs need to point
+    // at whichever id the entity actually ends up saved under, not draft._id's
+    // own throwaway random uuid.
+    const stayNotes = notesFromExtraction(extracted, conflictId ?? draft._id);
+    // A stay whose rate bundles round-trip shuttle/transfer transportation
+    // (see documentImport.ts's includedTransfers/draftIncludedTransfers)
+    // gets two sibling Transit drafts queued right after it, so a human
+    // reviews and confirms each leg individually rather than the shuttle
+    // only ever showing up as a Package line and a Note. Each transfer
+    // carries its own notes (a pickup schedule, an arrival-mode choice to
+    // confirm) alongside its Transit already.
+    const transferDrafts =
+      extracted.kind === 'stay'
+        ? draftIncludedTransfers(extracted, draft as Stay, placement.legId, resolvedPlaces)
+        : [];
+    openDraftSequence([
+      {
+        kind: extracted.kind,
+        entity: draft,
+        overrideId: conflictId ?? undefined,
+        onSaved: withNoteFollowUp(stayNotes, openNoteDraftSequence),
+      },
+      ...transferDrafts.map(({ transit, notes }) => ({
+        kind: 'transit' as const,
+        entity: transit,
+        onSaved: withNoteFollowUp(notes, openNoteDraftSequence),
+      })),
+    ]);
     onClose();
   };
 
@@ -104,6 +160,7 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
     setFile(e.target.files?.[0] ?? null);
     setStatus('idle');
     setExtracted(null);
+    setDraft(null);
   };
 
   const handleDownloadOriginal = () => {
@@ -119,6 +176,7 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
   const conflictEntity = conflictId
     ? collectionFor(extracted?.kind ?? 'activity', data).find((e) => e._id === conflictId)
     : undefined;
+  const matchedPlace = resolvedPlaces.lodging ?? resolvedPlaces.place;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -160,6 +218,27 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             Placing on {formatDateLabel(placement.date)}.
           </Typography>
+          {matchedPlace && (
+            <Typography variant="body2" color="text.secondary">
+              Matched place: {matchedPlace.label} — double-check this in the review form's picker
+              before saving.
+            </Typography>
+          )}
+          {extracted.includedTransfers?.length ? (
+            <Typography variant="body2" color="text.secondary">
+              Also queues {extracted.includedTransfers.length * 2} shuttle transit
+              {extracted.includedTransfers.length > 1 ? 's' : ''} (arrival + departure) for review
+              right after this.
+            </Typography>
+          ) : null}
+          {extracted.noteworthy?.length ? (
+            <Typography variant="body2" color="text.secondary">
+              {extracted.noteworthy.length === 1
+                ? 'Also flags 1 note'
+                : `Also flags ${extracted.noteworthy.length} notes`}{' '}
+              for review right after this.
+            </Typography>
+          ) : null}
           {conflictEntity && (
             <Typography variant="body2" sx={{ mt: 1 }}>
               This looks like it may replace an existing {KIND_LABEL[extracted.kind].toLowerCase()}:{' '}

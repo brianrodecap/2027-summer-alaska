@@ -1,4 +1,5 @@
 import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
 
 import type { StayFormState, TransitFormState } from '../../model/editForms';
 import { DateTimeFieldPair } from './DateTimeFieldPair';
@@ -33,6 +34,45 @@ export function LodgingField({
       <PlaceConditionsTogglesFor
         place={form.place}
         onPlaceChange={(place) => onChange({ ...form, place })}
+      />
+      <Stack direction="row" spacing={2}>
+        <TextField
+          label="Room type"
+          placeholder="e.g. Standard Cabin, 2 Double"
+          value={form.roomType}
+          onChange={(e) => onChange({ ...form, roomType: e.target.value })}
+          fullWidth
+        />
+        <TextField
+          label="Bed configuration"
+          placeholder="e.g. 2 Queen + 1 Rollaway"
+          value={form.bedConfiguration}
+          onChange={(e) => onChange({ ...form, bedConfiguration: e.target.value })}
+          fullWidth
+        />
+      </Stack>
+      <Stack direction="row" spacing={2}>
+        <TextField
+          label="Phone"
+          placeholder="Only needed until this place has a resolved Google Place id"
+          value={form.phone}
+          onChange={(e) => onChange({ ...form, phone: e.target.value })}
+          fullWidth
+        />
+        <TextField
+          label="Email"
+          placeholder="No Google Places equivalent — always kept"
+          value={form.email}
+          onChange={(e) => onChange({ ...form, email: e.target.value })}
+          fullWidth
+        />
+      </Stack>
+      <TextField
+        label="Website"
+        placeholder="Only needed until this place has a resolved Google Place id"
+        value={form.website}
+        onChange={(e) => onChange({ ...form, website: e.target.value })}
+        fullWidth
       />
     </Stack>
   );

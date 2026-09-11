@@ -49,16 +49,32 @@ export function NoteEditDialog({
   onClose,
   onSave,
   onDelete,
+  onSkip,
+  onBack,
+  hasMoreQueued = false,
 }: {
   target: NoteTarget;
   onClose: () => void;
   onSave: (kind: NoteKind, text: string) => void;
   onDelete?: () => void;
+  // Only given for a drafted note under review as part of a multi-note
+  // sequence (see NoteEditContext's own onSkip wiring) — declines just this
+  // one (nothing written) and moves on to whatever else is queued, unlike
+  // Cancel/onClose which abandons the entire remaining sequence.
+  onSkip?: () => void;
+  // Only given once at least one earlier item in the same sequence has
+  // already been resolved (see NoteEditContext's own onBack wiring) —
+  // returns to it, carrying this step's current (possibly-edited) kind/text
+  // back into its own place in the queue so nothing typed here is lost.
+  onBack?: (kind: NoteKind, text: string) => void;
+  // Whether another item is still queued after this one — Save reads as
+  // "Next" in that case, since it isn't the review's last step yet.
+  hasMoreQueued?: boolean;
 }) {
   const [kind, setKind] = useState<NoteKind>(
     target.mode === 'create' ? target.kind : target.note.kind,
   );
-  const [text, setText] = useState(target.mode === 'edit' ? target.note.text : '');
+  const [text, setText] = useState(target.mode === 'edit' ? target.note.text : (target.text ?? ''));
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const about =
     target.mode === 'create' ? describeRef(target.ref) : describeRef(target.note.concerns[0]);
@@ -108,13 +124,15 @@ export function NoteEditDialog({
           </Button>
         )}
         <Stack direction="row" spacing={1}>
-          <Button onClick={onClose}>Cancel</Button>
+          <Button onClick={onClose}>{onSkip ? 'Cancel all' : 'Cancel'}</Button>
+          {onBack && <Button onClick={() => onBack(kind, text)}>Back</Button>}
+          {onSkip && <Button onClick={onSkip}>Skip</Button>}
           <Button
             variant="contained"
             disabled={!text.trim()}
             onClick={() => onSave(kind, text.trim())}
           >
-            Save
+            {hasMoreQueued ? 'Next' : 'Save'}
           </Button>
         </Stack>
       </DialogActions>

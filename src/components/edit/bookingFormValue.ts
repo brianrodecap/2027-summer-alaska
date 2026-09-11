@@ -1,4 +1,15 @@
-import type { Booking, BookingStatus } from '../../model/types';
+import type { Booking, BookingStatus, Money } from '../../model/types';
+
+// Shared by any "amount" text input that commits straight to a Money field
+// (readBookingFormValue below, StayPackagesField's per-fee cost input) — ''
+// means "no cost", otherwise the existing currency carries over rather than
+// resetting to a hardcoded default on every edit.
+export function moneyFromAmountInput(
+  amount: string,
+  currentCurrency: string | undefined,
+): Money | null {
+  return amount ? { amount: Number(amount), currency: currentCurrency ?? 'USD' } : null;
+}
 
 // '' stands in for "no booking yet" — the Status select's own blank option
 // (see BookingFields) is what decides whether a booking exists after Save,
@@ -7,6 +18,16 @@ export interface BookingFormValue {
   status: BookingStatus | '';
   confirmationNumber: string;
   costAmount: string;
+  bookedThrough: string;
+}
+
+// Booking.bookedThrough can be a plain string or a {name, confirmationNumber}
+// object, but this form only ever reads/writes the name — the confirmation
+// number already has its own field on Booking itself, so repeating it inside
+// bookedThrough here would just be the same fact stored twice.
+function bookedThroughName(bookedThrough: Booking['bookedThrough']): string {
+  if (!bookedThrough) return '';
+  return typeof bookedThrough === 'string' ? bookedThrough : bookedThrough.name;
 }
 
 export function bookingFormValueFrom(booking: Booking | null | undefined): BookingFormValue {
@@ -14,6 +35,7 @@ export function bookingFormValueFrom(booking: Booking | null | undefined): Booki
     status: booking?.status ?? '',
     confirmationNumber: booking?.confirmationNumber ?? '',
     costAmount: booking?.cost?.amount != null ? String(booking.cost.amount) : '',
+    bookedThrough: bookedThroughName(booking?.bookedThrough),
   };
 }
 
@@ -25,8 +47,7 @@ export function readBookingFormValue(
   return {
     status: value.status,
     confirmationNumber: value.confirmationNumber || null,
-    cost: value.costAmount
-      ? { amount: Number(value.costAmount), currency: currentBooking?.cost?.currency ?? 'USD' }
-      : null,
+    cost: moneyFromAmountInput(value.costAmount, currentBooking?.cost?.currency),
+    bookedThrough: value.bookedThrough.trim() || undefined,
   };
 }

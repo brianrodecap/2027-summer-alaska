@@ -3,6 +3,7 @@ import Stack from '@mui/material/Stack';
 
 import type { StayFormState } from '../../model/editForms';
 import { BookingFields } from './BookingFields';
+import { StayPackagesField } from './StayPackagesField';
 import { LodgingField, StayWhenFields } from './StayTransitFields';
 
 export function StayEditForm({
@@ -18,6 +19,11 @@ export function StayEditForm({
       <StayWhenFields form={form} onChange={onChange} />
       <Divider />
       <BookingFields value={form.booking} onChange={(booking) => onChange({ ...form, booking })} />
+      <Divider />
+      <StayPackagesField
+        packages={form.packages}
+        onChange={(packages) => onChange({ ...form, packages })}
+      />
     </Stack>
   );
 }

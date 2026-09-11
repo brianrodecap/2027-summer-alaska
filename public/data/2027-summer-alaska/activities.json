@@ -7,14 +7,24 @@
     "startAt": "2027-06-26T21:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
+    "priority": "high",
     "text": "Arrive Ted Stevens Anchorage Intl (ANC)",
     "place": {
       "id": "ChIJERqXa7WiyFYRr2-9pzRat5Y",
       "label": "Ted Stevens Anchorage International Airport",
-      "images": []
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJERqXa7WiyFYRr2-9pzRat5Y/photos/AVoNoXSfs7NjrEJ_QpSH8Tnfuvw1lEnP6apnATDHgJ-2R3x1fuxxMea1B76_llf-CFbhjtk7CjmDysExYPj1-nKKAM4V1Ek7qt68YwW0MpUlhAL5a5EKzZVQ0Q-DcvWiKxGy_X2PWj-saRVhy1OWuLVGaALih1t2TuPTPt3F3LZ7INeW6Gp9zNuSIMJSAtgwF-dGi_VYr67fH_1Cex0mXRV7IwLfk6EgGMwIzmB7SIldr4lIfbgvEiT7MPRopO0pFyHbE742wasCowDkcPfKwOAB2yDIp2PYM_HplbDetaESGWnd6S71g10lUMtaklejv7H4owF4ELqQvGcWnrsgDUtWqKymtTLoofBws76Q_M9UZTx6MstTF_T93M133jF2gXUPxMR3fNrrJ81VGEF71u9fFtNvllhD2ps_aHMQaovcSCsAsw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Mandar Pathak",
+          "caption": null
+        }
+      ]
     },
-    "booking": null,
+    "booking": {
+      "status": "planning",
+      "confirmationNumber": null,
+      "cost": null
+    },
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -31,7 +41,8 @@
         "credit": "Photo by Wonderlane / CC BY 2.0",
         "caption": "Main lobby of the South Terminal, Ted Stevens Airport"
       }
-    ]
+    ],
+    "date": null
   },
   {
     "_id": "act_jun26_2",
@@ -45,16 +56,20 @@
     "text": "Pick up rental car at ANC.",
     "place": {
       "id": "ChIJ13s4RLKiyFYROmJ7yCd4CVU",
-      "label": "Rental Car Center",
-      "images": []
+      "label": "Rental Car Center"
     },
-    "booking": null,
+    "booking": {
+      "status": "planning",
+      "confirmationNumber": null,
+      "cost": null
+    },
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jun26_3",
@@ -78,7 +93,13 @@
         "place": {
           "id": "ChIJ14LWxYC9yFYRkKKOyOoSric",
           "label": "Humpy’s Great Alaskan Alehouse",
-          "images": []
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJ14LWxYC9yFYRkKKOyOoSric/photos/AVoNoXReDZ7nv4vtrjgag3oXQpO164HrwiF8wPC-B67ykWE9w1w54wqfhrfwl-sBKMHKs9C9Sh7jH5O-vjzICQ18NkpyaYLIOyY5-DxLeQcY4eS5zvcc1i3WPQngk2xqlgHrXBBRy_avVmEFEVVLtI7XLLExVBKFntDg5zJZnGFBihOAvMwr8iEFIi7vRJMLZ9_XLqxcpvEJ7nZbYeE1694mrfz22aKk_xEFH2Qd5iPPjjHisQnzH2KnK60RNoNO2TG1oxoVDrOFVuajIDMengHvX9c_oAyEGCyuyg4R8DaMuXE1eSACbnJteuT6Acb0w_3gUYbiEeuQclfmh5SKoLZsIv6mGpxy8QZeQFDazhQwZ2Sbh9NDN-dzVocixvnQiAZBU_fwn7E2rtBLlmCwGdq1hpT72CLbMnxSCcg2-dJ4SQVdyITF/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Humpy's Great Alaskan Alehouse",
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "booking": null
@@ -89,7 +110,13 @@
         "place": {
           "id": "ChIJd8fPpV6WyFYRJuE6eGv25vQ",
           "label": "Denny’s Restaurant",
-          "images": []
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJd8fPpV6WyFYRJuE6eGv25vQ/photos/AVoNoXSuT7EYlgoshOkk1mn00QFya4kgnFA1-L_wUyuj9-1OXwxh9PXJqpAGzej5PV_7RIfH-KBHOO8U_sk38j5AZLat8k-GYGhzcFyMuvD4Le9zB8XtYbHhc6tG4d13inCbGDCEY-Ab9LR_OmOAp_MeRRijsvEI6H2AQDyicQDKzeN-7zu-xUnl7lLJcg_lLDbGGIqMN9VWsiWWdMJsyyANbyqzHNtH7N01ywbppRt1RPwpnus1qdTHs405OQPjPrRbTQdqQRdym__kPTO9A1IE6wir5HnuenH8D3s52-5fVk4eErWSPoWJA6MsC667mzi5hVFWSviMduHdbzk_ou8YYwwharPxonKalpQkJvVhZv03LhaBlitVk4-tCGC3leN9kYMQx7XIWSpqZCtot0EuV9U2bfiWMQPA7p1l8TSeRxIgYg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Sandeep Singh Goraya",
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "booking": null
@@ -1822,40 +1849,11 @@
     "images": []
   },
   {
-    "_id": "act_jul3_3",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-03T13:00",
-    "durationMinutes": 60,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Arrive footbridge, park, cross on foot into McCarthy",
-    "place": {
-      "id": "ChIJFdOBjRuFs1YRYVu1TmFM1VY",
-      "label": "McCarthy Bridge",
-      "images": []
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_Kuskulana_Bridge.jpg",
-        "credit": "Photo by Henry Chen / CC BY-SA 2.0",
-        "caption": "Kuskulana Bridge on the McCarthy Road"
-      }
-    ]
-  },
-  {
     "_id": "act_jul3_lunch",
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-03T13:15",
+    "startAt": "2027-07-03T15:00",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -1886,74 +1884,17 @@
       }
     ],
     "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jul3_4",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-03T14:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Shuttle up to Kennecott",
-    "place": {
-      "id": "ChIJFdOBjRuFs1YRYVu1TmFM1VY",
-      "label": "McCarthy Bridge",
-      "images": []
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Kennecott_Copper_Mill.jpg",
-        "credit": "Photo by Michael F. Wacht / CC BY-SA 4.0",
-        "caption": "The historic Kennecott copper concentration mill"
-      }
-    ]
-  },
-  {
-    "_id": "act_jul3_5",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-03T14:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Arrive Kennecott, check into Kennicott Glacier Lodge",
-    "place": {
-      "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
-      "label": "Kennicott Glacier Lodge",
-      "images": []
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [
-      {
-        "uri": "https://www.kennicottlodge.com/wp-content/uploads/2018/08/explore.jpg",
-        "credit": "Courtesy of Kennicott Glacier Lodge",
-        "caption": "Kennicott Glacier Lodge near the historic copper mill"
-      }
-    ]
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul3_6",
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-03T15:00",
-    "durationMinutes": 120,
-    "timeLabel": null,
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Evening",
     "priority": null,
     "text": "Self-guided walk through the Kennecott townsite",
     "place": {
@@ -1973,16 +1914,17 @@
         "credit": "Photo by Michael F. Wacht / CC BY-SA 4.0",
         "caption": "The historic Kennecott copper concentration mill"
       }
-    ]
+    ],
+    "date": "2027-07-03"
   },
   {
     "_id": "act_jul3_7",
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-03T18:00",
+    "startAt": null,
     "durationMinutes": null,
-    "timeLabel": null,
+    "timeLabel": "Evening",
     "priority": null,
     "text": "Dinner — choosing where",
     "place": null,
@@ -2017,14 +1959,21 @@
         "place": {
           "id": "ChIJFY-zlXGFs1YRhZ9_0rBMPTI",
           "label": "McCarthy Lodge Resort",
-          "images": []
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJFY-zlXGFs1YRhZ9_0rBMPTI/photos/AVoNoXRjFBoQt0E2D4RrZRP0eM6tSmmtaQTGjYz0HN6am3c_tt_3czsyivAY8rGDTo_GYgi0hvs0-AjfWWMqWEMX5In55vGF4jxGAO-vii-1xYD6ngU7aM0xrptQB9yPiCfKgTQYzsYmbK5ZAtHoM9eWoHk_9ZnEikNmwZE_eardROxrJtANDvKL8TseEgVvyHKytkNckT168pwanM4rIl2qglkIhA_srIRPmoEXN-DTUjh0xFbygEUU2UoQuPLxvpxTZAV7ju0bkYAkd_YC4XpUWcn9SDBKuV8h9PrtWsxO3f8naN4a2hwoaazf_lbiZ2thqx2lYKtCIEmHvMRtCRzpZRyXpXaPsfEqC2-KjhQzUaKK292y-AI8I16vtw6JB8Y0IIz7_OEm6-1zaTGjQ2lngPR9c06cDae9lkFENE3tbkjaWs30YDsXFqA3mki2Mw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "McCarthy Lodge Resort",
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "booking": null
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-07-03"
   },
   {
     "_id": "act_jul4_1",
@@ -5189,7 +5138,14 @@
     "text": "Walmart Supercenter",
     "place": {
       "id": "ChIJ-ThFGNCZyFYRE9YZ2gxC9Pw",
-      "label": "Walmart Supercenter"
+      "label": "Walmart Supercenter",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJ-ThFGNCZyFYRE9YZ2gxC9Pw/photos/AVoNoXQgo9l7skbCbCVV7Wr7lZpyX4_VNjD_suFsgW02Jm7ySsolaxcPJMejKq2nA-o3QiNo8U6KyWYFU9ziueP_K6uoqatk_H5TF2_4Pvto6W152qCzgKGgm0wxT2SYyRZQ2dqCrpmiu3QZr3UvJJrVL4l2RVpCOTQUHXbeDWATHB9Q3FHEuIBTY4uTZKgpb8U2uLWlMPvIkyOmuc5AkTjLWt1ldbnUezYCSqIHE3p4AEQ-FTZarhB5As-5pznbwzwZuA1CGkoAIyJRW8sffMRq10bB9Ko1e9vzW529MrGkr9IRQe-nUDvHoFHAXV84tk-5bRtIAsiTau5WkWC-mdAXo_HOTFFCurUAhWjqbAJyTE0aps2kiWKVmXS1C9VqOpNOaB-T7smymfzl5yjMR7uiI8VYVKsYT_kcZywRia-c5dBdK3F3/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Walmart Supercenter",
+          "caption": null
+        }
+      ]
     },
     "booking": null,
     "mealType": null,

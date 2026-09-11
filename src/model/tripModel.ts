@@ -2665,6 +2665,19 @@ function bookingLineItems(
         booking: stay.booking,
       });
     }
+    // A Package (a resort fee, a meal plan, ...) is its own cost on top of
+    // the room rate above — every one gets its own row here so it's counted
+    // in the Budget view's totals, not just visible on the Stay itself.
+    for (const pkg of stay.packages ?? []) {
+      items.push({
+        entity: 'package',
+        id: pkg._id,
+        legId: stay.legId,
+        label: pkg.name,
+        date: dateOnly(stay.checkInAt),
+        booking: { status: pkg.status, cost: pkg.cost, confirmationNumber: pkg.confirmationNumber },
+      });
+    }
   }
   for (const transit of transits) {
     if (transit.booking) {
@@ -2818,12 +2831,13 @@ function groupBudgetByTraveler(travelers: Traveler[], rows: BudgetRow[]): Budget
         if (!totalsByName.has(p.name)) totalsByName.set(p.name, emptyBudgetTotals());
         addToBudgetTotals(totalsByName.get(p.name) as BudgetTotals, row.bucket, p.fare);
       }
-    } else {
+    } else if (row.booking.cost) {
+      // A 'booked' row's bucket doesn't guarantee a cost (see bookingBucket)
+      // — a booked package/perk with no separately-broken-out price, say —
+      // so there's simply nothing to divide across travelers here, same as
+      // addToBudgetTotals's own null-cost handling above.
       const share = travelers.length || 1;
-      const cost = {
-        amount: (row.booking.cost as Money).amount / share,
-        currency: (row.booking.cost as Money).currency,
-      };
+      const cost = { amount: row.booking.cost.amount / share, currency: row.booking.cost.currency };
       for (const t of travelers)
         addToBudgetTotals(totalsByName.get(t.name) as BudgetTotals, row.bucket, cost);
     }

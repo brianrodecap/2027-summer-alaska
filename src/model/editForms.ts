@@ -24,6 +24,7 @@ import type {
   Leg,
   MealOption,
   MealType,
+  Package,
   Place,
   PlanStatus,
   Priority,
@@ -562,6 +563,25 @@ export function withTransitPlaceImage(
 
 // ---------- Stay ----------
 
+// A bare extra-cost line item (a resort fee, a parking fee — anything due
+// separately from the room rate) — the same Package shape a richer,
+// hand-authored one (e.g. a meal package with benefits/travelers) already
+// uses, just with only name+cost ever touched by StayPackagesField's minimal
+// editor. status defaults to 'booked' rather than 'planning': an extra fee a
+// document names is a certain, unavoidable charge, not a still-undecided
+// add-on.
+export function blankPackage(): Package {
+  return {
+    _id: crypto.randomUUID(),
+    name: '',
+    status: 'booked',
+    cost: null,
+    confirmationNumber: null,
+    benefits: null,
+    travelers: null,
+  };
+}
+
 export interface StayFormState {
   place: Place | null;
   checkInDate: string | null;
@@ -569,6 +589,12 @@ export interface StayFormState {
   checkOutDate: string | null;
   checkOutTime: string | null;
   booking: BookingFormValue;
+  roomType: string;
+  bedConfiguration: string;
+  phone: string;
+  email: string;
+  website: string;
+  packages: Package[];
 }
 
 export function stayFormFrom(stay: Stay): StayFormState {
@@ -579,6 +605,12 @@ export function stayFormFrom(stay: Stay): StayFormState {
     checkOutDate: dateOnly(stay.checkOutAt),
     checkOutTime: stay.checkOutAt.slice(11, 16),
     booking: bookingFormValueFrom(stay.booking),
+    roomType: stay.lodging?.roomType ?? '',
+    bedConfiguration: stay.lodging?.bedConfiguration ?? '',
+    phone: stay.lodging?.place.phone ?? '',
+    email: stay.lodging?.place.email ?? '',
+    website: stay.lodging?.place.website ?? '',
+    packages: structuredClone(stay.packages ?? []),
   };
 }
 
@@ -594,7 +626,19 @@ export function applyStayForm(stay: Stay, form: StayFormState): string | null {
   if (label && form.place) {
     stay.lodging = { ...stay.lodging, place: { ...form.place, label } };
   }
+  if (stay.lodging) {
+    stay.lodging.roomType = form.roomType.trim() || null;
+    stay.lodging.bedConfiguration = form.bedConfiguration.trim() || undefined;
+    stay.lodging.place = {
+      ...stay.lodging.place,
+      phone: form.phone.trim() || undefined,
+      email: form.email.trim() || undefined,
+      website: form.website.trim() || undefined,
+    };
+  }
   stay.booking = readBookingFormValue(form.booking, stay.booking);
+  const packages = form.packages.filter((p) => p.name.trim());
+  stay.packages = packages.length ? packages : null;
   return null;
 }
 

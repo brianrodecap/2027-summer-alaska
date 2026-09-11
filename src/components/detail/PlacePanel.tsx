@@ -1,5 +1,7 @@
+import EmailIcon from '@mui/icons-material/Email';
 import LanguageIcon from '@mui/icons-material/Language';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import PhoneIcon from '@mui/icons-material/Phone';
 import PlaceIcon from '@mui/icons-material/Place';
 import ScheduleIcon from '@mui/icons-material/Schedule';
 import Box from '@mui/material/Box';
@@ -42,6 +44,27 @@ function uniqueAttributions(photos: PlacePhoto[]): PlaceAuthorAttribution[] {
     }
   }
   return [...byName.values()];
+}
+
+// The phone/email rows are identical whether the number/address came from a
+// live Places lookup or the document-import fallback — only the source
+// differs, so both branches below share these instead of repeating the JSX.
+function PhoneLine({ phone }: { phone: string }) {
+  return (
+    <Stack direction="row" spacing={1}>
+      <PhoneIcon fontSize="small" color="action" />
+      <Link href={`tel:${phone}`}>{phone}</Link>
+    </Stack>
+  );
+}
+
+function EmailLine({ email }: { email: string }) {
+  return (
+    <Stack direction="row" spacing={1}>
+      <EmailIcon fontSize="small" color="action" />
+      <Link href={`mailto:${email}`}>{email}</Link>
+    </Stack>
+  );
 }
 
 // A horizontal thumbnail strip of whatever photos Google currently lists for
@@ -153,10 +176,31 @@ export function PlacePanel({
   }, [photos, place.id, place.images, onAutoImage]);
 
   // A named-but-unresolved place (place.id: null — a shipboard restaurant
-  // with no static geolocation, say) has nothing to fetch at all — the hooks
-  // above still get called every render (rules-of-hooks), they just report
-  // loading: false and nothing to show.
-  if (!place.id) return null;
+  // with no static geolocation, or a lodging name a document import hasn't
+  // had its real Place id picked for yet) has nothing to fetch at all — the
+  // hooks above still get called every render (rules-of-hooks). Its own
+  // fallback phone/website (if a document import captured them) are the
+  // only things worth showing in that case; once a real id exists, the live
+  // lookup below is the source of truth for both instead and these fallbacks
+  // stop mattering. `email` has no live equivalent at all, so it's included
+  // here too rather than only in this unresolved branch.
+  if (!place.id) {
+    if (!place.phone && !place.website && !place.email) return null;
+    return (
+      <Stack spacing={1} sx={{ mt: 1 }}>
+        {place.phone && <PhoneLine phone={place.phone} />}
+        {place.website && (
+          <Stack direction="row" spacing={1}>
+            <LanguageIcon fontSize="small" color="action" />
+            <Link href={place.website} target="_blank" rel="noopener">
+              {place.website}
+            </Link>
+          </Stack>
+        )}
+        {place.email && <EmailLine email={place.email} />}
+      </Stack>
+    );
+  }
 
   if (loading) {
     return (
@@ -189,6 +233,11 @@ export function PlacePanel({
           <Typography variant="body2">{details.formattedAddress}</Typography>
         </Stack>
       )}
+      {details.phone && <PhoneLine phone={details.phone} />}
+      {/* No Places API field for email, live or otherwise — shown from the
+          fallback captured at document-import time regardless of whether
+          this place has since been resolved to a real id. */}
+      {place.email && <EmailLine email={place.email} />}
       {details.regularOpeningHours && (
         <Stack direction="row" spacing={1}>
           <ScheduleIcon fontSize="small" color="action" />

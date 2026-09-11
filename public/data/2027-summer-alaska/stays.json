@@ -1,65 +1,5 @@
 [
   {
-    "_id": "stay_talkeetna",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_alt",
-    "checkInAt": "2027-06-27T15:00",
-    "checkOutAt": "2027-06-28T11:00",
-    "status": "planning",
-    "lodging": {
-      "place": {
-        "id": "ChIJCbGyYCa-zlYRmXTCunpFzAs",
-        "label": "Talkeetna Alaskan Lodge"
-      },
-      "roomType": null,
-      "roomNumber": null,
-      "campsite": null
-    },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
-    "packages": null,
-    "images": [
-      {
-        "uri": "https://places.googleapis.com/v1/places/ChIJCbGyYCa-zlYRmXTCunpFzAs/photos/AVoNoXRyYea_XqLk5egkRwZzyRGiCKgy1HDCLe0uGgnJrL_KgY_16TZSMpW6jJZ2nJwS2FiQOaqJfD_2lj-uGmnp3anMdlj-jLCSlVxhkL4FSx9b8J8DjG34pejXefWRR1TILztAFryCWTctcuklHNwquhApxniXBD4tu3vIZfdN7P4c9lJQXcIOBn05rHJTz_5EScWY5FvrFx7km4Kx1fanxRJLptxCL5Z5rw6vnQMaN84mbP-RMPcE0cYayi2c7r1QuTrYQkD_g6_sG1RE7ZbASw_RhGY_VVEo7E_Hgne1s3br4uSxa81JC5sDiq1uEgDpxLG3wmHy-zaKLPkqDJ-C2covd8jsG7eEmFf92d57UoBOMK_I-zpPDQTS6J1VNhtdLuqbRlkf9ljZSYLOKhSBoZWuhUUXIm9QlzfC6w0JfaRytwAey4777nVrmQJ-Pw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-        "credit": "Talkeetna Alaskan Lodge",
-        "caption": null
-      }
-    ]
-  },
-  {
-    "_id": "stay_westmark_fbx_1",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "checkInAt": "2027-06-28T15:00",
-    "checkOutAt": "2027-06-29T11:00",
-    "status": "planning",
-    "lodging": {
-      "place": {
-        "id": "ChIJ_aR34k5FMlERqYeOQVWen5I",
-        "label": "Westmark Fairbanks"
-      },
-      "roomType": null,
-      "roomNumber": null,
-      "campsite": null
-    },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
-    "packages": null,
-    "images": [
-      {
-        "uri": "http://img1.wsimg.com/isteam/ip/4a011874-e82f-4945-b561-9350f89109a8/IMG_0252.jpeg",
-        "credit": "Courtesy of Westmark Fairbanks Hotel",
-        "caption": "Westmark Fairbanks Hotel"
-      }
-    ]
-  },
-  {
     "_id": "stay_coldfoot",
     "legId": "leg_parks",
     "scenarioId": null,
@@ -146,49 +86,6 @@
         "uri": "https://www.princesslodges.com/wp-content/uploads/2023/08/cpl-1.jpg",
         "credit": "Courtesy of Copper River Princess Wilderness Lodge",
         "caption": "Copper River Princess Wilderness Lodge"
-      }
-    ]
-  },
-  {
-    "_id": "stay_kennicott",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "checkInAt": "2027-07-03T15:00",
-    "checkOutAt": "2027-07-05T11:00",
-    "status": "planning",
-    "lodging": {
-      "place": {
-        "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
-        "label": "Kennicott Glacier Lodge"
-      },
-      "roomType": null,
-      "roomNumber": null,
-      "campsite": null
-    },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
-    "packages": [
-      {
-        "_id": "pkg_kennicott_meals",
-        "name": "Kennicott Glacier Lodge meal package",
-        "status": "planning",
-        "cost": null,
-        "confirmationNumber": null,
-        "benefits": [
-          "Breakfast in the lodge dining room",
-          "Dinner in the lodge dining room"
-        ],
-        "travelers": null
-      }
-    ],
-    "images": [
-      {
-        "uri": "https://www.kennicottlodge.com/wp-content/uploads/2018/08/explore.jpg",
-        "credit": "Courtesy of Kennicott Glacier Lodge",
-        "caption": "Kennicott Glacier Lodge near the historic copper mill"
       }
     ]
   },
@@ -322,30 +219,130 @@
     ]
   },
   {
-    "_id": "0e00074c-5827-4cfe-b66e-fc85bdf0b118",
+    "_id": "381e78d7-8a39-4fdf-ab3e-de892f16da7b",
     "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_ideal",
-    "checkInAt": "2027-06-27T15:00",
+    "scenarioId": null,
+    "checkInAt": "2027-06-27T16:00",
     "checkOutAt": "2027-06-28T11:00",
     "status": "planning",
     "lodging": {
       "place": {
-        "id": "ChIJa9SlJa_YzFYRc54T5lapqY4",
-        "label": "Denali Princess Wilderness Lodge"
-      }
+        "id": "ChIJ_______vzVYRkYm_DgC2jnw",
+        "label": "Denali Cabins - Denali National Park",
+        "images": [
+          {
+            "uri": "https://places.googleapis.com/v1/places/ChIJ_______vzVYRkYm_DgC2jnw/photos/AVoNoXQze5Ez5vMKYVYIOHXQSFxV3iUjGCzYWi7koaDsgiTi4zpqy9oojPO0-qTgY3mEIdQwHELQlna0Qoe55cN6Zeg5XVIlqpVuIxKuL34ysUef2XDf7Oha2qed5LTejlFPdMPEKDGrdZZMOlTJSbpfxK4kNM-Uh8y2oB2RkYnHNojhj0FUXHklgrxOMcbezCkOyc7Jz0YRzt3s351_HeV6FVgvkp0ruoD53wWbNJnicgBA07VaoBY5RIFrEw1Z96-ycZ9oTZWBhdSls1B2NKmzAdkcNyOJWEeLbw18h86asfnrD52aCJqOozio6QzLTk7E63dA6A8w4JA6PnzjBkX9cSD6nnLt_giLNGM9zTiYcld1gVqFmQw1gt5xCxogmwQkc-8zvt5Ib1DeDUR9V3Om3nG4FCGodsEAWuHt6jH9u2foDzoLNZ2XFvB2B_2Ntlxp/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+            "credit": "Denali Cabins - Denali National Park",
+            "caption": null
+          }
+        ]
+      },
+      "roomType": "Standard Cabin",
+      "bedConfiguration": "2 Double"
     },
     "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
+      "status": "booked",
+      "confirmationNumber": "H-7BDFMHC3VB99",
+      "cost": {
+        "amount": 403.35,
+        "currency": "USD"
+      },
+      "bookedThrough": "Capital One Travel"
+    },
+    "packages": [
+      {
+        "_id": "c42e5748-ab69-40c6-af60-3009d56168fc",
+        "name": "Resort fee",
+        "status": "booked",
+        "cost": {
+          "amount": 20.43,
+          "currency": "USD"
+        },
+        "confirmationNumber": null,
+        "benefits": null,
+        "travelers": null
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "342c42bc-9068-4c64-9e2a-f1d11bfbc8ed",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "checkInAt": "2027-06-28T15:00",
+    "checkOutAt": "2027-06-29T11:00",
+    "status": "planning",
+    "lodging": {
+      "place": {
+        "id": "ChIJ_aR34k5FMlERqYeOQVWen5I",
+        "label": "Westmark Fairbanks Hotel & Conference Center",
+        "images": [
+          {
+            "uri": "https://places.googleapis.com/v1/places/ChIJ_aR34k5FMlERqYeOQVWen5I/photos/AVoNoXQDTL6jxgvE9_eD2aBCXEI45JoIqzuavJ5JusLouUrib6sBgH9JyzSewmH3UCv__TdZFmub4ojT74qsGZNPVTmtKgOiRLoUObJzgctt7lmyyYtxgezwHyvlS1Shtaoewop0GAAp5TF46krccyskHrBmw5WQqpQI8jZU45bR744hDkB07LFZeGzDhBzuVT0DIwbM_gFEQnhRMgvE8WKWNGS9oUHv-FiTl3FSqdVSjE1sQbJPsKEWe_i9QEYqQvvVJ8BhHrf3_rk7OOJUJ_-5ASEPw6U1d15DUibSp4yqsMiIDBYELQPuCDaayHnjLNgYR5LzW1w528VM4r92csN2BiXshnAQtMZAmx_v1NpP4o0ph_Gf-EfIZwKDvX14qXzs2V7IH089IRWQCjNFfk-2e1lWSJPmrEu36_AevF-FNxF86ICndJY9lS1sdB6RcApW/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+            "credit": "Westmark Fairbanks Hotel & Conference Center",
+            "caption": null
+          }
+        ]
+      },
+      "roomType": "Room",
+      "bedConfiguration": "2 Queen"
+    },
+    "booking": {
+      "status": "booked",
+      "confirmationNumber": "H-7ZCTG7HWBLFB",
+      "cost": {
+        "amount": 238.5,
+        "currency": "USD"
+      },
+      "bookedThrough": "Capital One Travel"
+    },
+    "packages": [
+      {
+        "_id": "f7eff624-092f-45d3-bc24-23dd605f2a17",
+        "name": "Uncovered self parking fee",
+        "status": "booked",
+        "cost": {
+          "amount": 9.95,
+          "currency": "USD"
+        },
+        "confirmationNumber": null,
+        "benefits": null,
+        "travelers": null
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "3aaee9b5-4d98-4c45-a29f-15aa732ee0dd",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "checkInAt": "2027-07-03T14:00",
+    "checkOutAt": "2027-07-05T11:00",
+    "status": "planning",
+    "lodging": {
+      "place": {
+        "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
+        "label": "Kennicott Glacier Lodge",
+        "images": [
+          {
+            "uri": "https://places.googleapis.com/v1/places/ChIJ2_1lpi2Cs1YRTk9_q-YuUM4/photos/AVoNoXTV7FGgRfs8Gl-wh-V-3szTvUHTwgfBcjuseTElLPFxTsGT8AT8-kFD2u4dHwo7tlyZ82H62UAgPPKiCG71f6j3xfaH6KLUnlC8gTVVutnLDguKQzKdw-8pqkBEx4OShzoThPaMPP2WmO8G8bnLNxt1t-J21hLy2YwjhtZE3RFx_X_vUZKh2ORCObu1bC5eVi0_Gu8k5JqC2rRmc1pSvKp821YupVe1hwOfoJAJ0rpMOU1-vlsTn0pIuCT16gdQE_BVzAVxURHyxqAWIFsUBRNIZm_kDCrjadlwHVJJ2_n3riFhZNF9ZHoVM_fDUJfNdqzg6ovAaraERSe5ifgExnw2NoNyK0VLPbnWJ-ZoJ6FDaBp6SJiWr6DeQQtNoH9ZdY9lL0MzGjG2WUl_rXgkI8IMptFI1-rqBHC94JL3392_HA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+            "credit": "Kennicott Glacier Lodge",
+            "caption": null
+          }
+        ]
+      },
+      "roomType": "South Wing Glacier View Room with Private Bathroom",
+      "bedConfiguration": "2 Queen + 1 Rollaway"
+    },
+    "booking": {
+      "status": "booked",
+      "confirmationNumber": "DSRAF5KTDHVO7",
+      "cost": {
+        "amount": 990,
+        "currency": "USD"
+      }
     },
     "packages": null,
-    "images": [
-      {
-        "uri": "https://places.googleapis.com/v1/places/ChIJa9SlJa_YzFYRc54T5lapqY4/photos/AVoNoXRdTtACCR44g6ad9dPZVUwtZ1VmdqVFwPTodsAF7JxF0dDXzxLyTzv4rEiug7e46RtGHx8114IWXOpkhtDLU9o-11xZB38pc8pZrpaOLbgaLsUKIJP1feQW4bvezTsTtenDSWryc5uYS6NJ9g-HV9lBchveg2Di6y5WzaN1TgsCi2-LCq5Zs8xdXlK0vxTaHZxy9YyFCCrGaJa-7lKXJG3gh8tGLucFnvlfbC5eUnziR9JYGIZHz8kS7h7ipX09VRrwVh6mbqxxDoMrHZNhNROxmsGtU4OU0rkp4_agkVkdRvxF5PCJ2mYCusaVYT89_PzFTVLhDjdTAsfLtRkgGhgNreC-1sycCVYLa4tU8ENGxuFpIFQs3LnUprs36XR476JmMf4vAWEFSBu9QXK6DwlfEbXnumaDPRpvwANL7_YX0SeR/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-        "credit": "Denali Princess Wilderness Lodge",
-        "caption": null
-      }
-    ]
+    "images": []
   }
 ]
