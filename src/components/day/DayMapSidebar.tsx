@@ -81,7 +81,7 @@ function markerIconName(stop: DayMapPlaceStop): string {
 // `placeLabel` is the InfoWindow's own already-shown heading (stop.place.label)
 // — a transit-stage's own label is always that same place's name (see
 // walkDayMapRefs' pushTransitItemStop, which names the stop from
-// `stage.label` directly), so spelling it out a second time here would just
+// `stage.place.label` directly), so spelling it out a second time here would just
 // repeat the heading right back at the reader; the kind word alone
 // ("Waypoint"/"Via") is the only part this line actually adds.
 function refLabel(ref: DayMapPlaceRef, placeLabel: string): string {
@@ -91,7 +91,9 @@ function refLabel(ref: DayMapPlaceRef, placeLabel: string): string {
   }
   if (ref.kind === 'transit-stage') {
     const kindLabel = STAGE_KIND_LABEL[ref.stage.kind] ?? 'Stop';
-    return ref.stage.label === placeLabel ? kindLabel : `${kindLabel} · ${ref.stage.label}`;
+    return ref.stage.place.label === placeLabel
+      ? kindLabel
+      : `${kindLabel} · ${ref.stage.place.label}`;
   }
   return activityHeadline(ref.entity) || 'Activity';
 }

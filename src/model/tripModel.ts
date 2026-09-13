@@ -936,13 +936,18 @@ function stageTimesForVariant(
       }
     }
     if (!seg.finalLeg) {
+      const label = seg.label ?? (seg.place?.label as string);
+      const placeId = seg.place?.id ?? null;
+      // Carries the stage's own already-resolved image through — without
+      // this, a route waypoint/via has no `images`, even though it was
+      // resolved (firstImage(seg.place)) from this exact same place moments
+      // earlier.
+      const image = firstImage(seg.place);
       stages.push({
-        label: seg.label ?? (seg.place?.label as string),
-        placeId: seg.place?.id ?? null,
-        image: firstImage(seg.place),
         note: seg.note ?? null,
         kind: seg.kind,
         key: formatWallClock(clockMs),
+        place: { id: placeId, label, images: image ? [image] : undefined },
       });
     }
   }
@@ -1431,7 +1436,7 @@ function orderedPlaceIds(sequence: SequenceItem[]): string[] {
         return id ? [id] : [];
       }
       case 'transit-stage':
-        return item.stage.placeId ? [item.stage.placeId] : [];
+        return item.stage.place.id ? [item.stage.place.id] : [];
       case 'section':
         return item.activities.flatMap((a) => (a.place?.id ? [a.place.id] : []));
       case 'scenario-tabs': {
@@ -2033,6 +2038,11 @@ export function activeRouteTone(
 // link); callers skip the item entirely rather than falling back to a blank
 // stop. Prefers whichever tone the reader actually selected
 // (selections.routeTones) over routeInfo's own default.
+// A route stage's own Place (stage.place) is built once, in
+// stageTimesForVariant, alongside the stage itself — so it's already
+// reference-stable across renders here, with no per-call synthesis or
+// caching needed. Consumers like DayTimeline's TravelInfoControl rely on
+// that stability to skip unnecessary re-renders.
 export function transitItemPlace(
   item: TransitBoundarySequenceItem | TransitStageSequenceItem,
   selections: DaySelections,
@@ -2042,15 +2052,7 @@ export function transitItemPlace(
   }
   const tone = activeRouteTone(item.transit, selections.routeTones);
   if (item.variant.tone !== tone) return undefined;
-  // Carries the stage's own already-resolved image through — without this,
-  // a route waypoint/via has no `images`, even though stageTimesForVariant
-  // resolved one onto `stage.image` from this exact same place moments
-  // earlier (see its own `firstImage(seg.place)` call).
-  return {
-    id: item.stage.placeId,
-    label: item.stage.label,
-    images: item.stage.image ? [item.stage.image] : undefined,
-  };
+  return item.stage.place;
 }
 
 // Pushes one transit-boundary/transit-stage item's own stop — shared between

@@ -429,7 +429,7 @@ const TransitStageNode = memo(function TransitStageNode({
   if (variant.tone !== tone) return null; // a non-active variant's stages simply aren't rendered
   return (
     <TimelineRow
-      dot={<AvatarOrDot image={stage.image} icon="signpost" />}
+      dot={<AvatarOrDot image={stage.place.images?.[0] ?? null} icon="signpost" />}
       isLast={isLast}
       testId={rowTestId('transit-stage', item.key)}
     >
@@ -437,7 +437,7 @@ const TransitStageNode = memo(function TransitStageNode({
         {formatTime(stage.key)} · {STAGE_KIND_LABEL[stage.kind] ?? 'Via'}
       </Typography>
       <Typography variant="subtitle1" title={stage.note ?? undefined}>
-        {stage.label}
+        {stage.place.label}
       </Typography>
       {travelFooter}
     </TimelineRow>
