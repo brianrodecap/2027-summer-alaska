@@ -49,6 +49,7 @@ import {
 import {
   activeRouteTone,
   activityNodeKey,
+  findNextResolvableStop,
   formatTime,
   rowTestId,
   segmentKey,
@@ -687,10 +688,10 @@ const TravelInfoControl = memo(function TravelInfoControl({
 
   return (
     <Stack
-      direction="row"
-      spacing={0.5}
+      direction={{ xs: 'column', sm: 'row' }}
+      spacing={{ xs: 0.25, sm: 0.5 }}
       ref={ref}
-      sx={{ mt: 0.5, alignItems: 'center' }}
+      sx={{ mt: 0.5, alignItems: { xs: 'flex-start', sm: 'center' } }}
       onClick={(e) => e.stopPropagation()}
     >
       <Select<TravelMode>
@@ -1296,22 +1297,16 @@ export const DayTimeline = memo(function DayTimeline({
   // neither is specific enough to resolve to one Google Place) can't be
   // BOTH ends of a segment, but it also shouldn't dead-end the pairing for
   // its real, resolvable neighbors on either side. tripModel.ts's own
-  // walkDayMapRefs (what feeds the map panel) handles this by dropping
-  // unresolvable rows from its stop list before building segments at all —
-  // findNextResolvableNode below mirrors that same skip-forward-past-
-  // unresolvable-rows behavior, so the timeline's footers land on the same
-  // pairs of real places the map's route line and InfoWindows do.
-  const findNextResolvableNode = (fromIndex: number): DayTimelineNode | undefined => {
-    for (let j = fromIndex + 1; j < allNodes.length; j++) {
-      if (allNodes[j].entryPlace?.id) return allNodes[j];
-    }
-    return undefined;
-  };
-
+  // findNextResolvableStop is the one shared implementation of that
+  // skip-forward-past-unresolvable-rows behavior — also used by
+  // dayTravelSegments (the day header's own drive-time/distance total) and,
+  // via walkDayMapRefs' own up-front filter, the map panel — so the
+  // timeline's footers land on the same pairs of real places both of those
+  // do.
   const travelFooters: (ReactNode | undefined)[] = allNodes.map((node, i) => {
     if (i === allNodes.length - 1) return trailingTravelFooter;
     if (!node.exitPlace?.id) return undefined;
-    const next = findNextResolvableNode(i);
+    const next = findNextResolvableStop(allNodes, i, (n) => n.entryPlace?.id);
     if (!next || node.exitPlace.id === next.entryPlace!.id) return undefined;
     const segKey = segmentKey(node.key, next.key);
     return (

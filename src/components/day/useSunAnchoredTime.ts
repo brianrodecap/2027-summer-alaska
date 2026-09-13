@@ -11,7 +11,7 @@ import { getPlaceSunriseSunset, type PlaceSunriseSunset } from '../../model/weat
 // (real startAt, or a different fuzzy label entirely), so callers can use it
 // directly as timeAndMealTypeLabel's timeOverride without re-checking
 // isSunAnchoredActivity themselves. `active` gates the fetch the same way
-// DayWeatherStrip/PlaceConditionsLine gate on viewport visibility — the
+// DayWeatherChips/PlaceConditionsLine gate on viewport visibility — the
 // caller passes its own inView check through rather than this hook owning
 // one, since it's meant to sit inside an already-viewport-gated row.
 export function useSunAnchoredTime(

@@ -7,10 +7,10 @@ import type { NoteKind } from '../../model/types';
 import { ADD_NOTE_ITEMS, NOTE_ICON } from './noteKind';
 
 // The "add a note" menu items shared by every entry point that opens one —
-// a row's own kebab menu (RowMenu) and the day-level note button (DayBlock)
+// a row's own kebab menu (RowMenu) and the day-level note button (DayAccordion)
 // — so the three kinds always render with the same label/icon/order. Each
 // caller supplies its own click handler (already wrapping stopPropagation +
-// menu-close, see RowMenu's/DayBlock's own `pick` helper) rather than this
+// menu-close, see RowMenu's/DayAccordion's own `pick` helper) rather than this
 // component owning any menu-open state itself.
 export function AddNoteMenuItems({
   onPick,

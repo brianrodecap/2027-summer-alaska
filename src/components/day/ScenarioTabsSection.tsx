@@ -23,7 +23,7 @@ import { resolveActiveTrack } from './scenarioSelection';
 // scenarioSelection.ts for the follows/requires resolution this wires up to.
 //
 // A flight-contingent day's own live cloud cover/rain chance/wind already
-// shows in DayWeatherStrip, right above these chips — that strip's
+// shows in DayWeatherChips, right above these chips — that strip's
 // weatherPlaceId follows the same header-title priority as the day's title
 // itself, so for a day titled after its own flightseeing Activity (the
 // "Flight goes"/"Grounded" case) it's already reading the flightseeing

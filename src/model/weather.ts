@@ -326,7 +326,7 @@ export async function getPlaceSunriseSunset(
 }
 
 // ---- air quality — US AQI, for every day the caller resolves a place for
-// (see DayWeatherStrip's own "best-effort place" fallback for days with no
+// (see DayWeatherChips's own "best-effort place" fallback for days with no
 // dedicated weatherPlaceId). Open-Meteo's air-quality model's own forecast
 // horizon is shorter and less precisely documented than the main weather
 // forecast's, so this is deliberately conservative about how far out it'll
@@ -365,7 +365,7 @@ async function getAirQuality(placeId: string | null, date: string): Promise<numb
 
 // ---- marine conditions — max wave height, for a cruise-leg day only (the
 // caller passes a marine place id solely on days aboard the ship — see
-// DayWeatherStrip's cruise-day check). No climate-average fallback: wave
+// DayWeatherChips's cruise-day check). No climate-average fallback: wave
 // height climatology isn't something Open-Meteo's marine archive exposes in
 // the same reusable "one decade, filtered to nearby calendar days" shape the
 // land climate archive does, and a single-day forecast is the whole point
@@ -405,7 +405,7 @@ async function getWaveHeightFt(placeId: string | null, date: string): Promise<nu
 // differ): sunrise comes from wherever the day starts, sunset from wherever
 // it ends, and the high/low temperature from whichever place the day's
 // header title itself is about. airQualityPlaceId and marinePlaceId are
-// resolved by the caller rather than here (DayWeatherStrip's own
+// resolved by the caller rather than here (DayWeatherChips's own
 // best-effort/cruise-day logic) — null suppresses that lookup entirely
 // (used for "not in viewport yet" and "not a cruise day" alike).
 export interface DayWeatherPlaces {

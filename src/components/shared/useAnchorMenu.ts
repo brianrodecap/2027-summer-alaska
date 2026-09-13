@@ -1,7 +1,7 @@
 import { type MouseEvent, useState } from 'react';
 
 // Shared open/close wiring for an icon-button-triggered MUI Menu — see
-// RowMenu and DayBlock's AddDayNoteButton, the app's two kebab-style menu
+// RowMenu and DayAccordion's AddNoteButton, the app's two kebab-style menu
 // triggers. `pick` wraps a menu item's action with the same
 // stopPropagation-then-close sequence every item needs, so a click aimed at
 // the menu never also fires whatever onClick the row itself carries.

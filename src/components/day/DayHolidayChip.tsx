@@ -9,7 +9,7 @@ import { useInViewport } from './useInViewport';
 // while the day block is collapsed. Renders nothing at all while loading or
 // on a non-holiday/failed lookup, same "don't draw attention to a
 // nice-to-have that isn't ready" approach as DayAlertsBanner. Viewport-gated
-// like DayWeatherStrip — DaysView renders every day block unvirtualized, so
+// like DayWeatherChips — DaysView renders every day block unvirtualized, so
 // an ungated lookup would fire for all of them on mount; the wrapping <span>
 // keeps a ref target in the header for useInViewport to observe even while
 // nothing else here renders.

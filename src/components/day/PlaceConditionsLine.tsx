@@ -10,12 +10,12 @@ import { isPlacesApiKeyConfigured } from '../../model/places';
 import type { Place } from '../../model/types';
 import { getPlaceTemperature, type PlaceTemperature } from '../../model/weather';
 import { temperatureColor } from '../../model/weatherColors';
-import { WeatherLink } from './DayWeatherStrip';
+import { InfoLink } from '../shared/InfoChip';
 import { useInViewport } from './useInViewport';
 import { usePlaceWeatherLink } from './usePlaceWeatherLink';
 
 // Terrain brown — reviewed alongside the mockup, distinct from every color
-// DayWeatherStrip's own palette already uses.
+// DayWeatherChips's own palette already uses.
 const ELEVATION_COLOR = '#8d6e63';
 
 function usePlaceTemperature(placeId: string | null, date: string) {
@@ -38,7 +38,7 @@ function usePlaceElevation(placeId: string | null) {
 // entry rather than a footnote. Off (renders nothing) unless at least one
 // toggle is on and the entity actually resolves a Place.
 //
-// Gated behind the same viewport check DayWeatherStrip uses: DaysView mounts
+// Gated behind the same viewport check DayWeatherChips uses: DaysView mounts
 // every day's rows at once regardless of scroll position, so without this
 // every enabled row across the whole trip would fetch the instant the page
 // loads instead of as each one actually scrolls into view.
@@ -87,9 +87,9 @@ export function PlaceConditionsLine({ place, date }: { place: Place | null; date
   return (
     <Stack spacing={0.3} sx={{ mt: 0.5 }}>
       {weatherRow && (
-        <WeatherLink href={weatherHref} sx={{ alignSelf: 'flex-start' }}>
+        <InfoLink href={weatherHref} sx={{ alignSelf: 'flex-start' }}>
           {weatherRow}
-        </WeatherLink>
+        </InfoLink>
       )}
       {elevationFt !== null && (
         <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>

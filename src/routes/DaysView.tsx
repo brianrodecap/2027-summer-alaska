@@ -32,7 +32,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { AskAIDialog } from '../components/day/AskAIDialog';
-import { DayBlock } from '../components/day/DayBlock';
+import { DayAccordion } from '../components/day/DayAccordion';
 import { DayMapPanel } from '../components/day/DayMapPanel';
 import { DayMapSidebar } from '../components/day/DayMapSidebar';
 import { FilterMenu } from '../components/day/FilterMenu';
@@ -98,10 +98,10 @@ function useDetailPanel<T extends { _id: string }, S = never>(
       ? resolveSecondary(entity, ids.secondaryId)
       : undefined;
   // onOpen/onClose are memoized because they're handed straight to the
-  // memoized DayBlock (onOpenStay/onOpenTransit, and onOpenActivity via
+  // memoized DayAccordion (onOpenStay/onOpenTransit, and onOpenActivity via
   // DaysView's adapter). A fresh closure here would defeat that memo for all
   // ~28 unvirtualized day blocks on every unrelated DaysView state change —
-  // see DayBlock's own note on why it's memoized. setIds is stable, so these
+  // see DayAccordion's own note on why it's memoized. setIds is stable, so these
   // need no dependencies.
   const onOpen = useCallback(
     (e: T, secondaryId?: string) => setIds({ id: e._id, secondaryId }),
@@ -198,7 +198,7 @@ export function DaysView() {
   // state on every unrelated re-render while it's still open.
   const [addWizardDay, setAddWizardDay] = useState<Day | null>(null);
   // A stable reference (unlike an inline arrow in the day-list map below) so
-  // it doesn't defeat DayBlock's own memo on every unrelated DaysView
+  // it doesn't defeat DayAccordion's own memo on every unrelated DaysView
   // re-render.
   const handleAddEvent = useCallback((day: Day) => setAddWizardDay(day), []);
   const [askAIOpen, setAskAIOpen] = useState(false);
@@ -258,7 +258,7 @@ export function DaysView() {
   }, [date, view?.dateRange, slug, navigate]);
 
   // Memoized for the same reason as handleAddEvent below: this is passed
-  // straight to the memoized DayBlock, and activityPanel.onOpen is itself
+  // straight to the memoized DayAccordion, and activityPanel.onOpen is itself
   // stable (see useDetailPanel), so this adapter stays stable too — the
   // lint rule can't see that stability through the member access, so
   // depending on the whole activityPanel object (a fresh one every render)
@@ -407,7 +407,7 @@ export function DaysView() {
             >
               <Stack divider={<Box sx={{ borderBottom: 1, borderColor: 'divider' }} />}>
                 {visibleDays.map((day) => (
-                  <DayBlock
+                  <DayAccordion
                     key={day.date}
                     day={day}
                     daysByDate={daysByDate}

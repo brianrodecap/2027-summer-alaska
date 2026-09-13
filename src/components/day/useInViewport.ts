@@ -30,7 +30,7 @@ function getSharedObserver(rootMargin: string) {
 
 // Generic "has this element scrolled near the viewport yet" gate. DaysView
 // renders every Day block unvirtualized (~28 for this trip), so anything
-// that fires on mount — like DayWeatherStrip's weather lookup — would
+// that fires on mount — like DayWeatherChips's weather lookup — would
 // otherwise run for every day at once regardless of what's actually on
 // screen. This defers that first render/fetch until the element is close to
 // view, then latches `inView` true for good: the goal is to delay work that

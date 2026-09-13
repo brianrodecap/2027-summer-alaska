@@ -1545,7 +1545,7 @@ function titleCandidates(day: Pick<Day, 'scenarioTracks' | 'sequence'>): Enriche
   return [...fixed, ...plannedTrackCandidates(day.scenarioTracks)];
 }
 
-// Exported so a live-selection-aware caller (DayBlock, via
+// Exported so a live-selection-aware caller (DayAccordion, via
 // scenarioSelection.ts's activeTitleCandidates) can join its own candidate
 // list the same way day.title's build-time default does, rather than
 // duplicating the priority-rank/tie-join rule.
@@ -1981,6 +1981,17 @@ interface RouteStop {
   // stop, but too broad a target for Directions to snap to mid-route.
   // Defaults true; only the transit-boundary call site below passes false.
   trustedAsWaypoint: boolean;
+  // This stop's own DayTimeline row identity (stayNodeKey/transitBoundaryKey/
+  // activityNodeKey below), when it has one — the same key
+  // TravelInfoControl/DayMapSidebar's segmentTravelMode use to read back a
+  // TravelModeOverride. Null for a stop with no single-row equivalent: a
+  // 'Staying' night (DayTimeline gives that its own separately-keyed
+  // "-morning" node instead) or a routed Transit's own stage (keyed by its
+  // position in DayTimeline's flattened render sequence, an index no other
+  // walk of the day can reproduce) — a segment touching either just falls
+  // back to DRIVE, the same gap DayMapSidebar's own segmentTravelMode
+  // already accepts.
+  nodeKey: string | null;
 }
 
 // A stop's routable identity: always a label (Directions URL stops are text
@@ -1992,10 +2003,11 @@ function routeStop(
   place: Place | null | undefined,
   fallbackLabel?: string,
   trustedAsWaypoint = true,
+  nodeKey: string | null = null,
 ): RouteStop | null {
   const label = place?.label ?? fallbackLabel ?? null;
   if (!label) return null;
-  return { label, placeId: place?.id ?? null, trustedAsWaypoint };
+  return { label, placeId: place?.id ?? null, trustedAsWaypoint, nodeKey };
 }
 
 // A routed Transit's live-selected tone: whichever the reader has actually
@@ -2079,7 +2091,9 @@ function pushTransitItemStop(
   // construction, or a genuine relocation's own boundary, always its own
   // run's first or last stop (never a mid-run waypoint) by the same logic.
   const trustedAsWaypoint = item.type === 'transit-boundary' ? item.transit.mode !== 'drive' : true;
-  const stop = routeStop(place, undefined, trustedAsWaypoint);
+  const nodeKey =
+    item.type === 'transit-boundary' ? transitBoundaryKey(item.transit._id, item.phase) : null;
+  const stop = routeStop(place, undefined, trustedAsWaypoint, nodeKey);
   if (stop) stops.push(stop);
 }
 
@@ -2093,7 +2107,8 @@ function dayFullRouteStops(day: Day, selections: DaySelections = {}): RouteStop[
         // own free-text name every day at sea; Check out/Check in still do,
         // unconditionally.
         if (item.relation === 'Staying' && !item.stay.lodging?.place.id) continue;
-        const stop = routeStop(item.stay.lodging?.place);
+        const nodeKey = item.relation === 'Staying' ? null : stayNodeKey(item.stay._id, day.date);
+        const stop = routeStop(item.stay.lodging?.place, undefined, true, nodeKey);
         if (stop) stops.push(stop);
       } else if (item.type === 'transit-boundary' || item.type === 'transit-stage') {
         // A spanning Transit (transitSpansMidnight above) only ever has
@@ -2115,7 +2130,12 @@ function dayFullRouteStops(day: Day, selections: DaySelections = {}): RouteStop[
       } else if (item.type === 'section') {
         for (const activity of item.activities) {
           const place = resolveActivityPlace(activity, selections.mealPlaces);
-          const stop = routeStop(place ?? undefined);
+          const stop = routeStop(
+            place ?? undefined,
+            undefined,
+            true,
+            activityNodeKey(activity._id),
+          );
           if (stop) stops.push(stop);
         }
       }
@@ -2127,6 +2147,71 @@ function dayFullRouteStops(day: Day, selections: DaySelections = {}): RouteStop[
     return stops;
   };
   return bookendedRunSegments(day, selections, mapSequence, (a, b) => a.label === b.label);
+}
+
+export interface DayTravelSegment {
+  originId: string;
+  destinationId: string;
+  // The reader's own TravelModeOverride key for this exact hop (see
+  // segmentKey below), resolved from the two bounding stops' own nodeKey —
+  // null when either stop has no single-row equivalent (see RouteStop's own
+  // nodeKey note), in which case a caller should fall back to DRIVE, same as
+  // DayMapSidebar's segmentTravelMode already does for the map's own
+  // segments.
+  segmentKey: string | null;
+}
+
+// A day's stops/rows are frequently interspersed with ones that resolve to
+// no real Google place id at all — a drive Transit's own from/to is often
+// just a plain label with no id (data-model.html doesn't require one:
+// "Fairbanks" -> "Copper Center" is a perfectly real Transit with neither
+// end pinned to a Google place), and neither is a park or a whole city named
+// as an activity's fallback. Two independent callers both need to walk past
+// stops/rows like that to find the next one that DOES name a real place —
+// dayTravelSegments below (the day header's drive-time/distance total) and
+// DayTimeline's own per-row travel-info footers — so this is the one shared
+// implementation of that skip-forward, used by both, rather than each
+// re-deriving it by hand. (It used to be reimplemented separately in each
+// place; dayTravelSegments' own copy forgot to skip, which silently dropped
+// real drives — like the one across the placeless Transit above — from the
+// day's total entirely.)
+export function findNextResolvableStop<T>(
+  items: T[],
+  fromIndex: number,
+  resolvedId: (item: T) => string | null | undefined,
+): T | undefined {
+  for (let j = fromIndex + 1; j < items.length; j++) {
+    if (resolvedId(items[j])) return items[j];
+  }
+  return undefined;
+}
+
+// The day block header's own "total duration and distance" summary reads
+// off exactly the same real-place-to-real-place hops DayTimeline's own
+// per-row travel-info footers do (dayFullRouteStops above, whose own note
+// explains why the two are kept in sync) — flattened here into plain id
+// pairs for a caller that wants to add every hop's live-looked-up drive
+// time/distance into one whole-day total instead of rendering each
+// individually. A day's stay/activity/transit-boundary/transit-stage stops
+// are already interleaved in one chronological list by dayFullRouteStops, so
+// this covers ordinary point-to-point driving AND a routed Transit's own
+// waypoint-to-waypoint stages alike, with no separate handling needed for
+// either — each resolvable stop pairs with the next resolvable stop
+// (findNextResolvableStop above), however many placeless stops sit between
+// them, rather than dead-ending on one.
+export function dayTravelSegments(day: Day, selections: DaySelections = {}): DayTravelSegment[] {
+  return dayFullRouteStops(day, selections).flatMap((stops) => {
+    const segments: DayTravelSegment[] = [];
+    stops.forEach((stop, i) => {
+      if (!stop.placeId) return;
+      const next = findNextResolvableStop(stops, i, (s) => s.placeId);
+      if (next && stop.placeId !== next.placeId) {
+        const hopKey = stop.nodeKey && next.nodeKey ? segmentKey(stop.nodeKey, next.nodeKey) : null;
+        segments.push({ originId: stop.placeId, destinationId: next.placeId!, segmentKey: hopKey });
+      }
+    });
+    return segments;
+  });
 }
 
 function buildDirectionsUrl(

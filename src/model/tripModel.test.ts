@@ -4,6 +4,7 @@ import {
   buildTripView,
   dayFullRouteUrls,
   dayMapStops,
+  dayTravelSegments,
   diffMinutesIso,
   splitOutStayBoundaries,
   tripDateRange,
@@ -77,6 +78,21 @@ function pushMinimalTransit(data: TripData, overrides: Partial<TripData['transit
     arrivesAt: '2027-06-01T09:30',
     routeId: null,
     routeVariant: null,
+    booking: null,
+    images: [],
+    ...overrides,
+  });
+}
+
+function pushMinimalStay(data: TripData, overrides: Partial<TripData['stays'][number]>) {
+  data.stays.push({
+    _id: 'test_stay',
+    legId: 'leg_test',
+    scenarioId: null,
+    checkInAt: '2027-06-01T15:00',
+    checkOutAt: '2027-06-05T11:00',
+    status: 'planning',
+    lodging: null,
     booking: null,
     images: [],
     ...overrides,
@@ -624,21 +640,6 @@ describe('splitOutStayBoundaries', () => {
 });
 
 describe('dayMapStops', () => {
-  function pushMinimalStay(data: TripData, overrides: Partial<TripData['stays'][number]>) {
-    data.stays.push({
-      _id: 'test_stay',
-      legId: 'leg_test',
-      scenarioId: null,
-      checkInAt: '2027-06-01T15:00',
-      checkOutAt: '2027-06-05T11:00',
-      status: 'planning',
-      lodging: null,
-      booking: null,
-      images: [],
-      ...overrides,
-    });
-  }
-
   it('includes a mid-stay lodging (relation "Staying") on the map, not just its check-in/check-out days', () => {
     const data = minimalTripData();
     pushMinimalStay(data, { lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } } });
@@ -803,6 +804,69 @@ describe('dayMapStops', () => {
       expect(new URL(urls[0]).searchParams.get('origin')).toBe('Origin Port');
       expect(new URL(urls[0]).searchParams.get('destination')).toBe('Destination Port');
     }
+  });
+});
+
+describe('dayTravelSegments', () => {
+  // The real bug this catches: a drive Transit's own from/to is routinely
+  // just a plain label with no resolved placeId ("Fairbanks" -> "Copper
+  // Center"), which used to score BOTH the checkout->transit hop and the
+  // transit->checkin hop as unresolvable and drop the entire drive from the
+  // day's total — even though the checkout and checkin stays on either side
+  // both have real, resolved places and a real drive genuinely connects
+  // them.
+  it('still totals the drive across a Transit whose own from/to has no resolved placeId, connecting the checkout and checkin stays on either side of it', () => {
+    const data = minimalTripData();
+    pushMinimalStay(data, {
+      _id: 'test_checkout_stay',
+      checkOutAt: '2027-06-01T11:00',
+      lodging: { place: { id: 'place_origin_lodge', label: 'Origin Lodge' } },
+    });
+    pushMinimalTransit(data, {
+      mode: 'drive',
+      from: { id: null, label: 'Origin Town' },
+      to: { id: null, label: 'Destination Town' },
+      departsAt: '2027-06-01T12:00',
+      arrivesAt: '2027-06-01T16:00',
+    });
+    pushMinimalStay(data, {
+      _id: 'test_checkin_stay',
+      checkInAt: '2027-06-01T17:00',
+      checkOutAt: '2027-06-05T11:00',
+      lodging: { place: { id: 'place_dest_lodge', label: 'Destination Lodge' } },
+    });
+    const day = buildTripView(data).days.find((d) => d.date === '2027-06-01')!;
+
+    const segments = dayTravelSegments(day);
+    expect(segments).toEqual([
+      {
+        originId: 'place_origin_lodge',
+        destinationId: 'place_dest_lodge',
+        segmentKey: 'segment:stay-test_checkout_stay-2027-06-01->stay-test_checkin_stay-2027-06-01',
+      },
+    ]);
+  });
+
+  // segmentKey is what a caller (DayTravelChip) resolves a
+  // TravelModeOverride against — null here means "no override to look up,
+  // fall back to DRIVE" (see RouteStop's own nodeKey note for why a
+  // 'Staying' night's stop has no single-row equivalent to key off).
+  it('comes back with a null segmentKey for a hop touching a Staying night', () => {
+    const data = minimalTripData();
+    pushMinimalStay(data, {
+      _id: 'test_checkin_stay',
+      checkInAt: '2027-05-31T17:00',
+      checkOutAt: '2027-06-03T11:00',
+      lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } },
+    });
+    pushMinimalActivity(data, {
+      startAt: '2027-06-01T09:00',
+      place: { id: 'place_activity', label: 'Test Activity Place' },
+    });
+    const day = buildTripView(data).days.find((d) => d.date === '2027-06-01')!;
+
+    const segments = dayTravelSegments(day);
+    expect(segments.every((s) => s.segmentKey === null)).toBe(true);
   });
 });
 

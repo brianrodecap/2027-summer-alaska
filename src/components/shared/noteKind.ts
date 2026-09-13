@@ -10,7 +10,7 @@ export const NOTE_ICON: Record<NoteKind, typeof WarningIcon> = {
   footnote: NotesIcon,
 };
 
-// Shared by every "add a note" menu (RowMenu's per-row menu, DayBlock's
+// Shared by every "add a note" menu (RowMenu's per-row menu, DayAccordion's
 // day-level one) so the three kinds always offer the same label/order.
 export const ADD_NOTE_ITEMS: { kind: NoteKind; label: string }[] = [
   { kind: 'warning', label: 'Add alert' },

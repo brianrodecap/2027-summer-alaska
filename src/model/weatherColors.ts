@@ -1,6 +1,6 @@
-// Colors describing weather conditions, shared by DayWeatherStrip,
+// Colors describing weather conditions, shared by DayWeatherChips,
 // PlaceConditionsLine, and DayAlertsBanner — kept in one pure module (rather
-// than exported alongside the DayWeatherStrip component) so a palette tweak
+// than exported alongside the DayWeatherChips component) so a palette tweak
 // in one place can't silently desync from the others, and so the component
 // file itself only exports components.
 

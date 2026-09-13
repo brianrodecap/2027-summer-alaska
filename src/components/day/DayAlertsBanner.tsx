@@ -17,10 +17,10 @@ import { useDayAlerts } from './useDayAlerts';
 // — so a genuine severe-weather alert can't just reach for severity="error"
 // the way a stock MUI app would, or "Extreme" would render in the same color
 // as an unrelated day's backup-plan tab. Fixed, ungated-by-theme hex values
-// instead, same approach DayWeatherStrip already takes for its own
+// instead, same approach DayWeatherChips already takes for its own
 // domain-accurate colors (temperatureColor/AQI_BANDS) rather than routing
 // through palette roles. Reuses AQI_BANDS' exact amber for Moderate and
-// DayWeatherStrip's rain-blue/cloud-grey for Minor/Unknown, so "amber = use
+// DayWeatherChips's rain-blue/cloud-grey for Minor/Unknown, so "amber = use
 // some caution" and "blue-grey = informational" mean the same thing across
 // every weather surface on the site; Extreme/Severe get two dedicated red
 // tones nothing else on the site uses, since no other reading here ever
@@ -77,8 +77,8 @@ function AlertCard({ alert }: { alert: NwsAlert }) {
 // National Weather Service alerts (watches/warnings/advisories) active for
 // this day's places — rendered at the very top of the day block, ahead of
 // the sticky header's own Collapse, so a live severe-weather alert can't be
-// hidden by collapsing the day the way DayWeatherStrip/NotesCluster can (see
-// DayBlock). Only ever fetches for the day matching the real-world today/
+// hidden by collapsing the day the way DayWeatherChips/NotesCluster can (see
+// DayAccordion). Only ever fetches for the day matching the real-world today/
 // tomorrow (useDayAlerts); every other day renders nothing, no skeleton
 // either, since there's nothing to wait on.
 export function DayAlertsBanner({ day }: { day: Day }) {

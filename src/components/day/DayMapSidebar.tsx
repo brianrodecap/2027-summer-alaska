@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { GOOGLE_MAPS_MAP_ID } from '../../config/places';
 import { useKeyedAsync } from '../../hooks/useKeyedAsync';
+import { useSegmentLookup } from '../../hooks/useSegmentLookup';
 import {
   type DriveInfo,
   type LatLngPoint,
@@ -232,49 +233,28 @@ function buildRouteSegments(
   return segments;
 }
 
-// Shared by useRoutePaths and useSegmentTravelInfo below — both fetch off
-// the exact same segment set (key + mode), so both need to re-fetch on
-// exactly the same change and no more.
-function segmentsCacheKey(segments: RouteSegment[]): string {
-  return segments.map((s) => `${s.key}:${s.mode}`).join(',');
+// Both per-segment lookups below fetch off the exact same segment set (key +
+// mode) via the shared useSegmentLookup hook, so both need to re-fetch on
+// exactly the same change and no more; results stay mapped by each segment's
+// own key alone (not key+mode) since that's what DayMapSidebarContent looks
+// them up by below.
+function segmentCacheKey(segment: RouteSegment): string {
+  return `${segment.key}:${segment.mode}`;
 }
 
-// Shared shape for both per-segment lookups below: fetch `lookup` for every
-// segment at its own resolved travel mode, keyed the same way
-// buildRouteSegments keys its own segments. Segments not yet resolved (or
-// that the API returned no result for) are simply absent from the returned
-// map — DayMapSidebarContent falls back to that segment's own straight
-// fromPoint→toPoint line meanwhile, the same progressive-reveal treatment
-// usePlaceCoordinates already gives markers. One segment's request failing
-// (a transient network error, or — while the Routes API was still
-// propagating after being newly enabled — an auth error) shouldn't blank out
-// every other segment's already-successful result, so a failure is treated
-// as "no result" for just that one instead of rejecting the whole
-// Promise.all.
-function useSegmentLookup<T>(
-  segments: RouteSegment[],
-  lookup: (segment: RouteSegment) => Promise<T | null>,
-): Map<string, T> {
-  const key = segmentsCacheKey(segments);
-  const { value } = useKeyedAsync(key, segments.length > 0, () =>
-    Promise.all(
-      segments.map((s) =>
-        lookup(s)
-          .then((result) => [s.key, result] as const)
-          .catch(() => [s.key, null] as const),
-      ),
-    ).then((entries) => {
-      const resolved = new Map<string, T>();
-      for (const [segKey, result] of entries) if (result) resolved.set(segKey, result);
-      return resolved;
-    }),
-  );
-  return value ?? (EMPTY_MAP as Map<string, T>);
+function segmentResultKey(segment: RouteSegment): string {
+  return segment.key;
 }
 
 // Fetches a real route-snapped path (Routes API, via directions.ts).
+// Segments not yet resolved (or that the API returned no result for) are
+// simply absent from the returned map — DayMapSidebarContent falls back to
+// that segment's own straight fromPoint→toPoint line meanwhile, the same
+// progressive-reveal treatment usePlaceCoordinates already gives markers.
 function useRoutePaths(segments: RouteSegment[]): Map<string, LatLngPoint[]> {
-  return useSegmentLookup(segments, (s) => lookupRoutePath(s.fromPlaceId, s.toPlaceId, s.mode));
+  return useSegmentLookup(segments, segmentCacheKey, segmentResultKey, (s) =>
+    lookupRoutePath(s.fromPlaceId, s.toPlaceId, s.mode),
+  ).value;
 }
 
 // Per-segment drive time/distance (Routes API), fetched for exactly the same
@@ -283,7 +263,9 @@ function useRoutePaths(segments: RouteSegment[]): Map<string, LatLngPoint[]> {
 // <next place>" for whichever leg leaves from it, and that number always
 // agrees with the line actually drawn on the map.
 function useSegmentTravelInfo(segments: RouteSegment[]): Map<string, DriveInfo> {
-  return useSegmentLookup(segments, (s) => lookupTravelInfo(s.fromPlaceId, s.toPlaceId, s.mode));
+  return useSegmentLookup(segments, segmentCacheKey, segmentResultKey, (s) =>
+    lookupTravelInfo(s.fromPlaceId, s.toPlaceId, s.mode),
+  ).value;
 }
 
 // The same data-testid DayTimeline's own TimelineRow stamps on every row

@@ -46,7 +46,7 @@ export interface NoteDraft {
 export interface NoteEditContextValue {
   // ref is whatever the new note should concern — an entity ref for a
   // row-attached note (see RowMenu), or a date/dateRange ref for a
-  // whole-day one (see DayBlock's AddDayNoteButton).
+  // whole-day one (see DayAccordion's AddNoteButton).
   openNoteCreate: (ref: Ref, kind: NoteKind) => void;
   openNoteEdit: (note: Note) => void;
   // Reviews a batch of already-drafted notes one at a time, each through the
