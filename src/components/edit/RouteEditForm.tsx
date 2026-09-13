@@ -12,6 +12,7 @@ import Typography from '@mui/material/Typography';
 
 import { lookupDriveInfo } from '../../model/directions';
 import { blankRoutePlaceEntry, blankRouteVariant, swapItems as swap } from '../../model/editForms';
+import { formatMinutes } from '../../model/formatting';
 import type { Route, RoutePlaceEntry, RouteVariant } from '../../model/types';
 import { PlacePickerField } from './PlacePickerField';
 
@@ -32,7 +33,7 @@ const PLACE_KIND_OPTIONS: { value: RoutePlaceEntry['kind']; label: string }[] = 
 // Formats a computed leg for the form's own read-only display — never fed
 // back into the data, just a sanity check on what the last lookup returned.
 function formatLeg(minutes: number, miles?: number): string {
-  return miles != null ? `~${minutes} min · ${miles} mi` : `~${minutes} min`;
+  return miles != null ? `~${formatMinutes(minutes)} · ${miles} mi` : `~${formatMinutes(minutes)}`;
 }
 
 // Place ID, durationMinutes/distanceMiles, and finalLegMinutes/finalLegMiles

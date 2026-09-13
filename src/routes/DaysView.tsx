@@ -18,6 +18,7 @@ import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import useScrollTrigger from '@mui/material/useScrollTrigger';
 import {
   type ComponentProps,
@@ -33,8 +34,10 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { AskAIDialog } from '../components/day/AskAIDialog';
 import { DayBlock } from '../components/day/DayBlock';
 import { DayMapPanel } from '../components/day/DayMapPanel';
+import { DayMapSidebar } from '../components/day/DayMapSidebar';
 import { FilterMenu } from '../components/day/FilterMenu';
 import { resolveActiveScenarioId } from '../components/day/scenarioSelection';
+import { useActiveDayDate } from '../components/day/useActiveDayDate';
 import { ActivityDetailPanel } from '../components/detail/ActivityDetailPanel';
 import { StayDetailPanel } from '../components/detail/StayDetailPanel';
 import { TransitDetailPanel } from '../components/detail/TransitDetailPanel';
@@ -202,12 +205,23 @@ export function DaysView() {
   // Flat while it's the page's own leading edge, shadowed only once content
   // has scrolled in underneath it — the M3 app-bar spec's own elevation rule.
   const elevated = useScrollTrigger({ disableHysteresis: true, threshold: 1 });
+  // Matches the `lg` breakpoint DayMapSidebar's own wrapping Box below is
+  // CSS-hidden behind on narrow viewports — gates the component's mount
+  // itself, not just its visibility, so its Places/Routes API lookups never
+  // fire on a screen where the map is never shown.
+  const isMapSidebarVisible = useMediaQuery((theme) => theme.breakpoints.up('lg'));
 
   const daysByDate = useMemo(() => new Map((view?.days ?? []).map((d) => [d.date, d])), [view]);
   const visibleDays = useMemo(
     () => (view?.days ?? []).filter((day) => dayHasVisibleContent(day, activeFilterTokens)),
     [view, activeFilterTokens],
   );
+  // Drives DayMapSidebar — see that hook's own comment for why this is a
+  // single scroll-tracked map rather than one per day. useActiveDayDate keys
+  // its own effect on the joined date string, not array identity, so this
+  // doesn't need its own memo.
+  const activeDate = useActiveDayDate(visibleDays.map((day) => day.date));
+  const activeDay = activeDate ? (daysByDate.get(activeDate) ?? null) : null;
 
   // `view` is a fresh object every time data is edited (setData ->
   // buildTripView recompute), so it can't be trusted as a "did the URL's
@@ -343,90 +357,122 @@ export function DaysView() {
 
   return (
     <Box>
-      <Box
-        sx={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 3,
-          display: 'flex',
-          justifyContent: 'flex-end',
-          alignItems: 'center',
-          minHeight: '4rem',
-          px: 2,
-          bgcolor: 'background.default',
-          boxShadow: elevated ? 2 : 0,
-          transition: 'box-shadow 150ms',
-        }}
-      >
-        {view.dateRange && (
-          <IconButton aria-label="Jump to a day" onClick={() => setDatePickerOpen(true)}>
-            <CalendarMonthIcon />
-          </IconButton>
-        )}
-        <FilterMenu legSummaries={view.legSummaries} />
-        <IconButton aria-label="Manage routes" onClick={() => setRoutesOpen(true)}>
-          <RouteIcon />
-        </IconButton>
-        <IconButton aria-label="Manage scenarios" onClick={() => setScenariosOpen(true)}>
-          <AltRouteIcon />
-        </IconButton>
-        <IconButton edge="end" aria-label="Ask AI" onClick={() => setAskAIOpen(true)}>
-          <AutoAwesomeIcon />
-        </IconButton>
-      </Box>
-      {visibleDays.length === 0 ? (
-        <Typography
-          variant="body1"
-          color="text.secondary"
-          sx={{ px: 3, py: 4, textAlign: 'center' }}
-        >
-          No days match the selected filters.
-        </Typography>
-      ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-        >
-          <Stack divider={<Box sx={{ borderBottom: 1, borderColor: 'divider' }} />}>
-            {visibleDays.map((day) => (
-              <DayBlock
-                key={day.date}
-                day={day}
-                daysByDate={daysByDate}
-                onOpenActivity={handleOpenActivity}
-                onOpenStay={stayPanel.onOpen}
-                onOpenTransit={transitPanel.onOpen}
-                onOpenMap={setMapDay}
-                onAddEvent={handleAddEvent}
-              />
-            ))}
-          </Stack>
-          <DragOverlay>
-            {draggingItemCount !== null ? (
-              <DragOverlayChip>
-                <Typography variant="subtitle2">{draggingItemCount} items</Typography>
-              </DragOverlayChip>
-            ) : draggingActivity ? (
-              <DragOverlayChip>
-                <Box>
-                  <Typography variant="subtitle2">{activityHeadline(draggingActivity)}</Typography>
-                  {draggingActivity.startAt && (
-                    <Typography variant="caption" color="text.secondary">
-                      {formatTime(draggingActivity.startAt)}
+      <Box sx={{ display: 'flex' }}>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box
+            sx={{
+              position: 'sticky',
+              top: 0,
+              zIndex: 3,
+              display: 'flex',
+              justifyContent: 'flex-end',
+              alignItems: 'center',
+              minHeight: '4rem',
+              px: 2,
+              bgcolor: 'background.default',
+              boxShadow: elevated ? 2 : 0,
+              transition: 'box-shadow 150ms',
+            }}
+          >
+            {view.dateRange && (
+              <IconButton aria-label="Jump to a day" onClick={() => setDatePickerOpen(true)}>
+                <CalendarMonthIcon />
+              </IconButton>
+            )}
+            <FilterMenu legSummaries={view.legSummaries} />
+            <IconButton aria-label="Manage routes" onClick={() => setRoutesOpen(true)}>
+              <RouteIcon />
+            </IconButton>
+            <IconButton aria-label="Manage scenarios" onClick={() => setScenariosOpen(true)}>
+              <AltRouteIcon />
+            </IconButton>
+            <IconButton edge="end" aria-label="Ask AI" onClick={() => setAskAIOpen(true)}>
+              <AutoAwesomeIcon />
+            </IconButton>
+          </Box>
+          {visibleDays.length === 0 ? (
+            <Typography
+              variant="body1"
+              color="text.secondary"
+              sx={{ px: 3, py: 4, textAlign: 'center' }}
+            >
+              No days match the selected filters.
+            </Typography>
+          ) : (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={handleDragStart}
+              onDragEnd={handleDragEnd}
+            >
+              <Stack divider={<Box sx={{ borderBottom: 1, borderColor: 'divider' }} />}>
+                {visibleDays.map((day) => (
+                  <DayBlock
+                    key={day.date}
+                    day={day}
+                    daysByDate={daysByDate}
+                    onOpenActivity={handleOpenActivity}
+                    onOpenStay={stayPanel.onOpen}
+                    onOpenTransit={transitPanel.onOpen}
+                    onOpenMap={setMapDay}
+                    onAddEvent={handleAddEvent}
+                  />
+                ))}
+              </Stack>
+              <DragOverlay>
+                {draggingItemCount !== null ? (
+                  <DragOverlayChip>
+                    <Typography variant="subtitle2">{draggingItemCount} items</Typography>
+                  </DragOverlayChip>
+                ) : draggingActivity ? (
+                  <DragOverlayChip>
+                    <Box>
+                      <Typography variant="subtitle2">
+                        {activityHeadline(draggingActivity)}
+                      </Typography>
+                      {draggingActivity.startAt && (
+                        <Typography variant="caption" color="text.secondary">
+                          {formatTime(draggingActivity.startAt)}
+                        </Typography>
+                      )}
+                    </Box>
+                  </DragOverlayChip>
+                ) : draggingTransit ? (
+                  <DragOverlayChip>
+                    <Typography variant="subtitle2">
+                      {transitRouteLabel(draggingTransit)}
                     </Typography>
-                  )}
-                </Box>
-              </DragOverlayChip>
-            ) : draggingTransit ? (
-              <DragOverlayChip>
-                <Typography variant="subtitle2">{transitRouteLabel(draggingTransit)}</Typography>
-              </DragOverlayChip>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-      )}
+                  </DragOverlayChip>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+          )}
+        </Box>
+        {/* Full viewport height, outside the day list's own scrolling
+            content — one persistent map (DayMapSidebar) that swaps to
+            whichever day useActiveDayDate says the reader has scrolled to,
+            rather than a map per day. Narrower screens keep the
+            map-icon-opens-a-dialog flow (onOpenMap/DayMapPanel) instead. */}
+        <Box
+          sx={{
+            display: { xs: 'none', lg: 'block' },
+            width: { lg: 440, xl: 560 },
+            flexShrink: 0,
+            position: 'sticky',
+            top: 0,
+            height: '100vh',
+          }}
+        >
+          {isMapSidebarVisible && (
+            <DayMapSidebar
+              activeDay={activeDay}
+              onOpenActivity={handleOpenActivity}
+              onOpenStay={stayPanel.onOpen}
+              onOpenTransit={transitPanel.onOpen}
+            />
+          )}
+        </Box>
+      </Box>
       <DayMapPanel day={mapDay} open={Boolean(mapDay)} onClose={() => setMapDay(null)} />
       <ActivityDetailPanel
         activity={activityPanel.entity}

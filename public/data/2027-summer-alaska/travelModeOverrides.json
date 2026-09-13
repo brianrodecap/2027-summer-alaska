@@ -1,0 +1,22 @@
+[
+  {
+    "segmentKey": "segment:activity-act_jun26_1->activity-act_jun26_2",
+    "mode": "TRANSIT"
+  },
+  {
+    "segmentKey": "segment:activity-act_jul6_2->activity-act_jul6_3",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:activity-act_jul6_3->activity-act_jul6_lunch",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:activity-act_jul6_6->stay-stay_kotzebue-2027-07-08",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:activity-act_jul7_dinner->stay-stay_kotzebue-2027-07-09",
+    "mode": "WALK"
+  }
+]

@@ -7,7 +7,14 @@ import type { TripData, TripView } from '../model/types';
 // see EditContext) knows which file(s) actually need re-copying into
 // public/data/<slug>/.
 export type CollectionName =
-  'legs' | 'stays' | 'transits' | 'activities' | 'scenarios' | 'notes' | 'routes';
+  | 'legs'
+  | 'stays'
+  | 'transits'
+  | 'activities'
+  | 'scenarios'
+  | 'notes'
+  | 'travelModeOverrides'
+  | 'routes';
 
 export interface TripDataContextValue {
   slug: string;

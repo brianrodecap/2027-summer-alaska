@@ -65,12 +65,22 @@ import type {
 
 export async function loadTripData(slug: string): Promise<TripData> {
   const base = `${import.meta.env.BASE_URL}data/${slug}/`;
-  const files = ['trip', 'legs', 'stays', 'transits', 'activities', 'scenarios', 'notes'] as const;
-  const [[trip, legs, stays, transits, activities, scenarios, notes], routes] = await Promise.all([
-    Promise.all(files.map((f) => fetch(`${base}${f}.json`).then((r) => r.json()))),
-    fetch(`${import.meta.env.BASE_URL}data/routes.json`).then((r) => r.json()),
-  ]);
-  return { trip, legs, stays, transits, activities, scenarios, notes, routes };
+  const files = [
+    'trip',
+    'legs',
+    'stays',
+    'transits',
+    'activities',
+    'scenarios',
+    'notes',
+    'travelModeOverrides',
+  ] as const;
+  const [[trip, legs, stays, transits, activities, scenarios, notes, travelModeOverrides], routes] =
+    await Promise.all([
+      Promise.all(files.map((f) => fetch(`${base}${f}.json`).then((r) => r.json()))),
+      fetch(`${import.meta.env.BASE_URL}data/routes.json`).then((r) => r.json()),
+    ]);
+  return { trip, legs, stays, transits, activities, scenarios, notes, travelModeOverrides, routes };
 }
 
 // public/data/trips.json lists only trip slugs (the folder names under
@@ -2011,45 +2021,64 @@ export function activeRouteTone(
 // away from the model's own default. All three fall back to their own model
 // default (routeInfo.selectedTone; idealOrFirstTrack; the first
 // place-bearing option) for whatever a caller didn't supply.
-// Pushes one transit-boundary/transit-stage item's own stop, honoring the
-// live route-tone selection for a stage — shared between dayFullRouteStops'
-// normal per-item walk and its spanning-Transit widen-out below, which feeds
-// this the Transit's full item list instead of just the day-filtered slice.
+// The real-world place a transit-boundary/transit-stage item's own stop
+// names — shared by dayFullRouteStops' pushTransitItemStop below and
+// walkDayMapRefs' own version further down, both of which otherwise
+// separately re-derived this same depart/arrive resolution and tone-filtered
+// stage lookup. undefined means the item belongs to a route variant the
+// reader isn't currently viewing (day.sequence carries every variant's
+// stages — see routeStageItems — each just tagged hidden for the
+// live-selection toggle, so without this a Transit with 2+ variants, e.g.
+// New vs. Old Glenn Highway, would mix both routes' via-points into one
+// link); callers skip the item entirely rather than falling back to a blank
+// stop. Prefers whichever tone the reader actually selected
+// (selections.routeTones) over routeInfo's own default.
+export function transitItemPlace(
+  item: TransitBoundarySequenceItem | TransitStageSequenceItem,
+  selections: DaySelections,
+): Place | undefined {
+  if (item.type === 'transit-boundary') {
+    return item.phase === 'depart' ? item.transit.from : item.transit.to;
+  }
+  const tone = activeRouteTone(item.transit, selections.routeTones);
+  if (item.variant.tone !== tone) return undefined;
+  // Carries the stage's own already-resolved image through — without this,
+  // a route waypoint/via has no `images`, even though stageTimesForVariant
+  // resolved one onto `stage.image` from this exact same place moments
+  // earlier (see its own `firstImage(seg.place)` call).
+  return {
+    id: item.stage.placeId,
+    label: item.stage.label,
+    images: item.stage.image ? [item.stage.image] : undefined,
+  };
+}
+
+// Pushes one transit-boundary/transit-stage item's own stop — shared between
+// dayFullRouteStops' normal per-item walk and its spanning-Transit
+// widen-out below, which feeds this the Transit's full item list instead of
+// just the day-filtered slice.
 function pushTransitItemStop(
   stops: RouteStop[],
   item: TransitBoundarySequenceItem | TransitStageSequenceItem,
   selections: DaySelections,
 ): void {
-  if (item.type === 'transit-boundary') {
-    const place = item.phase === 'depart' ? item.transit.from : item.transit.to;
-    // Trusted exactly when the movement itself is scheduled/chartered
-    // (mode !== 'drive': a flight, a tour bus) — that kind of transport
-    // always has one exact departure/arrival point (an airport, a
-    // depot), unlike a 'drive' Transit's from/to, which can legitimately
-    // be a whole city ("Anchorage") with no one correct point to route a
-    // waypoint through. This never reintroduces an excursion's own
-    // remote destination as a waypoint — drivableRuns above already
-    // drops that boundary event (and everything inside it) before
-    // pushSequence ever sees it; what's left here is only an
-    // excursion's *outer* boundary, which is drivable by construction,
-    // or a genuine relocation's own boundary, which is always its own
-    // run's first or last stop (never a mid-run waypoint) by the same
-    // logic.
-    const stop = routeStop(place, undefined, item.transit.mode !== 'drive');
-    if (stop) stops.push(stop);
-  } else {
-    // day.sequence carries every route variant's stages (see
-    // routeStageItems), each just tagged hidden for the live-selection
-    // toggle — so without this filter a Transit with 2+ variants (e.g.
-    // New vs. Old Glenn Highway) would mix both routes' via-points into
-    // one link. Prefer whichever tone the reader actually has selected
-    // (selections.routeTones); only fall back to routeInfo's own
-    // default when the caller didn't pass one.
-    const tone = activeRouteTone(item.transit, selections.routeTones);
-    if (item.variant.tone !== tone) return;
-    const stop = routeStop({ id: item.stage.placeId, label: item.stage.label });
-    if (stop) stops.push(stop);
-  }
+  const place = transitItemPlace(item, selections);
+  if (!place) return;
+  // Trusted as a waypoint exactly when the movement itself is
+  // scheduled/chartered (mode !== 'drive': a flight, a tour bus) — that kind
+  // of transport always has one exact departure/arrival point (an airport, a
+  // depot), unlike a 'drive' Transit's from/to, which can legitimately be a
+  // whole city ("Anchorage") with no one correct point to route a waypoint
+  // through. A transit-stage's own place is always trusted (routeStop's own
+  // default): this never reintroduces an excursion's own remote destination
+  // as a waypoint, since drivableRuns above already drops that boundary
+  // event (and everything inside it) before pushSequence ever sees it — what
+  // reaches here is only an excursion's *outer* boundary, drivable by
+  // construction, or a genuine relocation's own boundary, always its own
+  // run's first or last stop (never a mid-run waypoint) by the same logic.
+  const trustedAsWaypoint = item.type === 'transit-boundary' ? item.transit.mode !== 'drive' : true;
+  const stop = routeStop(place, undefined, trustedAsWaypoint);
+  if (stop) stops.push(stop);
 }
 
 function dayFullRouteStops(day: Day, selections: DaySelections = {}): RouteStop[][] {
@@ -2157,6 +2186,187 @@ export function dayFullRouteUrls(day: Day, selections: DaySelections = {}): stri
     }
     return urls;
   });
+}
+
+// ---------- day map markers — every real-world place resolvable for a day,
+// one entry per unique Google Place id, each carrying every Stay/Transit/
+// Activity entity that names it (so a marker click can open the right
+// detail sheet(s)), plus a routed Transit's own via/waypoint stages — unlike
+// dayMapEmbedUrl/dayFullRouteUrls above, which skip stages (that keyless
+// embed can't route through waypoints reliably), DayMapSidebar draws a real
+// Polyline through each place's own resolved coordinates, so the actual
+// route stages belong on it. `rowKey` on the stay/transit/transit-stage
+// variants is the same key DayTimeline's own TimelineRow stamps as that
+// row's `data-testid` (`stay-row-<rowKey>`, `transit-boundary-<rowKey>`,
+// `transit-stage-<rowKey>`) — DayMapSidebar's own visible-rows tracking
+// (useVisibleRowKeys) correlates back to this without DayTimeline needing to
+// know the map exists. A place with no real Google Place id (a Transit's
+// bare city-level from/to, a cruise ship mid-voyage, an unresolved via) is
+// dropped: a marker needs real coordinates (placeCoordinates.ts resolves
+// those from the id), unlike a Directions URL, which can still route
+// through a bare label. ----------
+
+export type DayMapPlaceRef =
+  | { kind: 'stay'; entity: EnrichedStay; relation: StayRelation; rowKey: string }
+  | { kind: 'transit'; entity: EnrichedTransit; phase: 'depart' | 'arrive'; rowKey: string }
+  | { kind: 'transit-stage'; entity: EnrichedTransit; stage: RouteStage; rowKey: string }
+  | { kind: 'activity'; entity: EnrichedActivity };
+
+export interface DayMapPlaceStop {
+  place: Place;
+  refs: DayMapPlaceRef[];
+}
+
+// A single chronological occurrence of a place — unlike DayMapPlaceStop,
+// never deduped against another occurrence of the same place. See
+// dayMapRouteNodes' own comment for why the route line needs this instead
+// of dedupeDayMapPlaceStops' deduped stops.
+export interface DayMapRouteNode {
+  place: Place;
+  ref: DayMapPlaceRef;
+}
+
+// Shared walk behind both dayMapPlaces and dayMapRouteNodes below — every
+// resolvable (place, ref) pair for the day, in real chronological order,
+// exactly once per occurrence (a place visited twice in one day, e.g. a
+// round-trip Transit's shared from/to, appears here twice too). dayMapPlaces
+// dedupes this by place id afterwards for markers; dayMapRouteNodes returns
+// it as-is.
+function walkDayMapRefs(day: Day, selections: DaySelections): DayMapRouteNode[] {
+  const { checkOuts, rest, checkIns } = splitOutStayBoundaries(day.sequence);
+  const track = selectedTrack(day, selections.scenarioTone);
+  const sequence = [...checkOuts, ...expandScenarioTabs(rest, track), ...checkIns];
+  const handledSpanningTransitIds = new Set<string>();
+  const nodes: DayMapRouteNode[] = [];
+
+  const push = (place: Place | null | undefined, ref: DayMapPlaceRef) => {
+    if (!place?.id) return;
+    nodes.push({ place, ref });
+  };
+
+  // Same tone-filtered place resolution as dayFullRouteStops' own
+  // pushTransitItemStop (see transitItemPlace above).
+  const pushRouteNodeStop = (item: TransitBoundarySequenceItem | TransitStageSequenceItem) => {
+    const place = transitItemPlace(item, selections);
+    if (!place) return;
+    if (item.type === 'transit-boundary') {
+      push(place, { kind: 'transit', entity: item.transit, phase: item.phase, rowKey: item.key });
+    } else {
+      push(place, {
+        kind: 'transit-stage',
+        entity: item.transit,
+        stage: item.stage,
+        rowKey: item.key,
+      });
+    }
+  };
+
+  for (const item of sequence) {
+    if (item.type === 'stay') {
+      // Same id gate as sequenceMapLabels/dayFullRouteStops above — a
+      // 'Staying' night with no fixed point (a cruise ship mid-voyage)
+      // shouldn't get a marker of its own; Check out/Check in still do.
+      if (item.relation === 'Staying' && !item.stay.lodging?.place.id) continue;
+      push(item.stay.lodging?.place, {
+        kind: 'stay',
+        entity: item.stay,
+        relation: item.relation,
+        rowKey: item.key,
+      });
+    } else if (item.type === 'transit-boundary' || item.type === 'transit-stage') {
+      for (const widened of widenSpanningTransitItems(item, handledSpanningTransitIds)) {
+        pushRouteNodeStop(widened);
+      }
+    } else if (item.type === 'section') {
+      for (const activity of item.activities) {
+        const place = resolveActivityPlace(activity, selections.mealPlaces);
+        push(place, { kind: 'activity', entity: activity });
+      }
+    }
+  }
+
+  return nodes;
+}
+
+// Collapses walkDayMapRefs' own chronological node list down to one stop per
+// place id — exposed separately from dayMapPlaces below so a caller already
+// holding a walkDayMapRefs-derived node list (e.g. DayMapSidebar, which also
+// needs the undeduped list for its route line) can dedupe it directly rather
+// than re-walking the day a second time for the same result.
+export function dedupeDayMapPlaceStops(nodes: DayMapRouteNode[]): DayMapPlaceStop[] {
+  const byPlaceId = new Map<string, DayMapPlaceStop>();
+  for (const { place, ref } of nodes) {
+    // walkDayMapRefs only ever pushes a node once place.id is truthy.
+    const placeId = place.id as string;
+    const existing = byPlaceId.get(placeId);
+    if (existing) existing.refs.push(ref);
+    else byPlaceId.set(placeId, { place, refs: [ref] });
+  }
+  return [...byPlaceId.values()];
+}
+
+// The same walk as dedupeDayMapPlaceStops, but not deduped by place — every
+// chronological occurrence gets its own node, in real sequence order.
+// dayMapPlaces' own dedup is correct for markers (no point drawing two
+// overlapping pins at one spot), but wrong for the route line: a
+// round-trip Transit (from === to, e.g. a shuttle-bus day tour that departs
+// and returns to the same depot) visits its own endpoint place twice, at
+// two different points in the day. Deduping by place — as dayMapPlaces does
+// — collapses both visits into one stop positioned at the *first*
+// occurrence, which silently deletes the return leg's own edge from a
+// route line built by connecting consecutive places in order. DayMapSidebar
+// walks this instead when drawing the route.
+export function dayMapRouteNodes(day: Day, selections: DaySelections = {}): DayMapRouteNode[] {
+  return walkDayMapRefs(day, selections);
+}
+
+// The row-identity scheme DayTimeline's own dragId/segmentKey construction
+// uses for a Stay/Transit-boundary/Activity row (see DayTimeline.tsx's
+// `nodes` build and reorder.ts's buildDragMeta, which must match it exactly)
+// — exposed here so any other reader of a DayMapPlaceRef (currently
+// DayMapSidebar, resolving which travelModeOverrides entry a map segment
+// corresponds to) can compute the same key without re-deriving the string
+// scheme by hand. Deliberately doesn't cover a transit-stage (keyed by its
+// position in DayTimeline's own flattened render sequence, an index no
+// other walk of the day's refs can reproduce) or a Stay's 'Staying' relation
+// (DayTimeline gives that a second, separately-keyed morning node with no
+// DayMapPlaceRef equivalent) — callers needing those still fall back to
+// their own default.
+export function stayNodeKey(stayId: string, date: string): string {
+  return `stay-${stayId}-${date}`;
+}
+
+export function transitBoundaryKey(transitId: string, phase: 'depart' | 'arrive'): string {
+  return `transit-${transitId}-${phase}`;
+}
+
+export function activityNodeKey(activityId: string): string {
+  return `activity-${activityId}`;
+}
+
+// A TravelModeOverride's own segmentKey: two adjacent rows' own node keys
+// (see stayNodeKey/transitBoundaryKey/activityNodeKey above), joined so
+// DayTimeline's TravelInfoControl (writing an override) and DayMapSidebar's
+// segmentTravelMode (reading one back) always agree on the same string.
+export function segmentKey(fromKey: string, toKey: string): string {
+  return `segment:${fromKey}->${toKey}`;
+}
+
+// The data-testid DayTimeline's own TimelineRow stamps on a Stay/Transit-
+// boundary/Transit-stage/Activity row — a separate identity scheme from
+// stayNodeKey/transitBoundaryKey/activityNodeKey above (this one's key is the
+// sequence item's own `key`/entity id, not a stay id + date), but the same
+// reasoning: exposed here so DayMapSidebar's domTestIdForRef can read the
+// same attribute off the DOM without re-deriving the string scheme by hand.
+const ROW_TEST_ID_PREFIX = {
+  stay: 'stay-row',
+  'transit-boundary': 'transit-boundary',
+  'transit-stage': 'transit-stage',
+  activity: 'activity-row',
+} as const;
+
+export function rowTestId(kind: keyof typeof ROW_TEST_ID_PREFIX, key: string): string {
+  return `${ROW_TEST_ID_PREFIX[kind]}-${key}`;
 }
 
 function buildDay(

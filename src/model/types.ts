@@ -333,6 +333,27 @@ export interface Activity {
   images: Image[];
 }
 
+// Mirrors the Google Routes API's own travelMode enum values this site
+// offers a picker for in the day timeline's travel-info footer (see
+// TravelModeOverride below and DayTimeline.tsx's TravelInfoControl) —
+// TWO_WHEELER (mopeds/scooters) is a real fifth value Google supports, but
+// nothing in this trip's data calls for it.
+export type TravelMode = 'DRIVE' | 'WALK' | 'BICYCLE' | 'TRANSIT';
+
+// A viewer's non-default travel-mode pick for one day-timeline segment (a
+// consecutive pair of rows that each name a real Place) — segmentKey is that
+// pair's own composite key (see DayTimeline.tsx's travelFooters pass), not a
+// reference to any other entity, so this never appears in a Note.concerns
+// Ref the way every other real content entity can. DRIVE is the default
+// every segment already falls back to without one of these, so this list
+// only ever holds a segment actually set to something else — picking DRIVE
+// back removes its entry rather than storing it explicitly (see
+// applyTravelModeSelection in editForms.ts).
+export interface TravelModeOverride {
+  segmentKey: string;
+  mode: TravelMode;
+}
+
 // ---------- raw, as-loaded data ----------
 
 export interface TripData {
@@ -343,6 +364,7 @@ export interface TripData {
   activities: Activity[];
   scenarios: Scenario[];
   notes: Note[];
+  travelModeOverrides: TravelModeOverride[];
   routes: Route[];
 }
 

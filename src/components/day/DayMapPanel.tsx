@@ -7,42 +7,9 @@ import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 
-import { activeMealOptions, isMealActivity } from '../../model/mealOptions';
 import { dayFullRouteUrls, dayMapEmbedUrl } from '../../model/tripModel';
-import type { Day, Place, SequenceItem } from '../../model/types';
-import {
-  useMealOptionSelection,
-  useRouteToneSelection,
-  useScenarioSelection,
-} from '../../state/useTripSelections';
-
-// Only activities the reader has actually switched away from the model's
-// default candidate get an entry here — dayMapStops/dayFullRouteUrls already
-// fall back to the first place-bearing option on their own for anything
-// left out of this map, same as the model's own "planned by default"
-// convention.
-function collectMealPlaces(
-  day: Day,
-  mealOptionIndex: Map<string, number>,
-): Map<string, Place | null> {
-  const result = new Map<string, Place | null>();
-  const walk = (sequence: SequenceItem[]) => {
-    for (const item of sequence) {
-      if (item.type === 'section') {
-        for (const activity of item.activities) {
-          if (!isMealActivity(activity) || !mealOptionIndex.has(activity._id)) continue;
-          const options = activeMealOptions(activity, day);
-          const option = options[mealOptionIndex.get(activity._id) as number];
-          if (option) result.set(activity._id, option.place);
-        }
-      } else if (item.type === 'scenario-tabs') {
-        for (const track of item.tracks ?? day.scenarioTracks) walk(track.sequence);
-      }
-    }
-  };
-  walk(day.sequence);
-  return result;
-}
+import type { Day } from '../../model/types';
+import { useDayMapSelections } from './useDayMapSelections';
 
 // dayMapEmbedUrl comes back empty when the day has nothing resolvable to
 // map yet (e.g. a still-unplanned day with no places named anywhere). It can
@@ -60,16 +27,9 @@ export function DayMapPanel({
   open: boolean;
   onClose: () => void;
 }) {
-  const { scenarioTone } = useScenarioSelection();
-  const { routeTones } = useRouteToneSelection();
-  const { mealOptionIndex } = useMealOptionSelection();
+  const selections = useDayMapSelections(day);
   if (!day) return null;
 
-  const selections = {
-    scenarioTone: scenarioTone.get(day.date),
-    routeTones,
-    mealPlaces: collectMealPlaces(day, mealOptionIndex),
-  };
   const urls = dayMapEmbedUrl(day, selections);
   const fullRouteUrls = dayFullRouteUrls(day, selections);
 

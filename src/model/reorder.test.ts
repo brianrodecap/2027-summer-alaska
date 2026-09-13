@@ -492,6 +492,7 @@ describe('Stay Check-out/Check-in drop targets', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -521,6 +522,7 @@ describe('Stay Check-out/Check-in drop targets', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -596,6 +598,7 @@ describe('Stay Check-out/Check-in drop targets', () => {
       activities: [activity({ _id: 'act1', startAt: '2027-06-01T08:00', scenarioId: 'scenario1' })],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     const next = applyActivityReorder(data, checkout, 'act1', DAY_START);
@@ -662,6 +665,7 @@ describe('Stay Check-out/Check-in drop targets', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -717,6 +721,7 @@ describe('applyActivityReorder', () => {
       activities: [activity({ legId: 'legA', scenarioId: 'sc1' })],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -783,6 +788,7 @@ describe('applyActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -839,6 +845,7 @@ describe('applyActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -888,6 +895,7 @@ describe('applyActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -932,6 +940,7 @@ describe('applyActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -970,6 +979,7 @@ describe('applyActivityReorder', () => {
       activities: [activity({ _id: 'act1', legId: 'legA', startAt: '2027-06-01T08:00' })],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -1013,6 +1023,7 @@ describe('applyActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -1055,6 +1066,7 @@ describe('applyActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -1100,6 +1112,7 @@ describe('applyActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -1136,6 +1149,7 @@ describe('applyTransitReorder', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     const next = applyTransitReorder(data, dropMeta, 'transit1', DAY_START);
@@ -1167,6 +1181,7 @@ describe('applyTransitReorder', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     const next = applyTransitReorder(data, dropMeta, 'transit1', DAY_START);
@@ -1196,6 +1211,7 @@ describe('applyTransitReorder', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     const next = applyTransitReorder(data, dropMeta, 'transit1', DAY_START);
@@ -1225,6 +1241,7 @@ describe('applyTransitReorder', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     const next = applyTransitReorder(data, dropMeta, 'transit1', '2027-07-13T00:00');
@@ -1254,6 +1271,7 @@ describe('applyTransitReorder', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     const next = applyTransitReorder(data, dropMeta, 'transit1', DAY_START, true);
@@ -1287,6 +1305,7 @@ describe('applyTransitReorder', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     const next = applyTransitReorder(data, dropMeta, 'transit1', DAY_START);
@@ -1318,6 +1337,7 @@ describe('applyStayReorder', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
   }
@@ -1386,6 +1406,7 @@ describe('applyBlockReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     const next = applyBlockReorder(
@@ -1432,6 +1453,7 @@ describe('applyBlockReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     const next = applyBlockReorder(
@@ -1482,6 +1504,7 @@ describe('applyBlockReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     const next = applyBlockReorder(
@@ -1531,6 +1554,7 @@ describe('applyBlockReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     const next = applyBlockReorder(
@@ -1596,6 +1620,7 @@ describe('applyBlockReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     const next = applyBlockReorder(
@@ -1642,6 +1667,7 @@ describe('applyBlockReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     const next = applyBlockReorder(
@@ -1693,6 +1719,7 @@ describe('applyBlockReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     const next = applyBlockReorder(
@@ -1745,6 +1772,7 @@ describe('applyGroupActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -1809,6 +1837,7 @@ describe('applyGroupActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -1891,6 +1920,7 @@ describe('applySingleRowDragEnd', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -1969,6 +1999,7 @@ describe('applySingleRowDragEnd', () => {
       activities: [snack],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -2007,6 +2038,7 @@ describe('applySingleRowDragEnd', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
     expect(applySingleRowDragEnd(data, notASource, notASource, 'c1', 'c1')).toBeNull();
@@ -2086,6 +2118,7 @@ describe('applySingleRowDragEnd', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -2142,6 +2175,7 @@ describe('applyGroupDragEnd', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -2215,6 +2249,7 @@ describe('applyGroupDragEnd', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 
@@ -2285,6 +2320,7 @@ describe('applyGroupDragEnd', () => {
       ],
       scenarios: [],
       notes: [],
+      travelModeOverrides: [],
       routes: [],
     };
 

@@ -31,6 +31,7 @@ function loadRealTripData(): TripData {
     activities: readJson('activities'),
     scenarios: readJson('scenarios'),
     notes: readJson('notes'),
+    travelModeOverrides: readJson('travelModeOverrides'),
     routes: JSON.parse(readFileSync(path.join(dataDir, '../routes.json'), 'utf-8')),
   };
 }

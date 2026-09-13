@@ -36,6 +36,8 @@ import type {
   Stay,
   TimeLabel,
   Transit,
+  TravelMode,
+  TravelModeOverride,
   Trip,
 } from './types';
 
@@ -175,6 +177,27 @@ export function swapItems<T>(arr: T[], i: number, j: number): T[] {
   const next = [...arr];
   [next[i], next[j]] = [next[j], next[i]];
   return next;
+}
+
+// The read side of the same segmentKey → mode lookup applyTravelModeSelection
+// writes below — an absent entry means DRIVE, never spelled out per call site
+// so that default can't drift between DayTimeline's TravelInfoControl and
+// DayMapSidebar's own segment-mode lookup.
+export function resolveTravelMode(overrides: TravelModeOverride[], segmentKey: string): TravelMode {
+  return overrides.find((o) => o.segmentKey === segmentKey)?.mode ?? 'DRIVE';
+}
+
+// DayTimeline's TravelInfoControl's own onChange — picking DRIVE removes the
+// segment's entry rather than storing it explicitly, since DRIVE is what an
+// absent entry already defaults to (see TravelModeOverride in types.ts), so
+// this never grows a list of no-op overrides.
+export function applyTravelModeSelection(
+  overrides: TravelModeOverride[],
+  segmentKey: string,
+  mode: TravelMode,
+): TravelModeOverride[] {
+  const withoutSegment = overrides.filter((o) => o.segmentKey !== segmentKey);
+  return mode === 'DRIVE' ? withoutSegment : [...withoutSegment, { segmentKey, mode }];
 }
 
 // ---------- includedIn (Activity's own decided dining format, and every

@@ -16,6 +16,7 @@ import type {
   DiningFormat,
   EnrichedActivity,
   EnrichedMealOption,
+  Place,
   Ref,
 } from './types';
 
@@ -59,6 +60,34 @@ export function activeMealOptions(
 
 export function mealOptionLabel(option: EnrichedMealOption): string {
   return option.place ? option.place.label : DINING_FORMAT_LABEL[option.diningFormat];
+}
+
+// Which of a still-open meal's active candidates is currently selected —
+// shared by every reader that needs the candidate itself rather than just
+// its index (activityPlace below, ActivityNode's note-menu targeting,
+// liveFormatOverrides' per-activity dining-format lookup).
+export function selectedMealOption(
+  options: EnrichedMealOption[],
+  mealOptionIndex: Map<string, number>,
+  activityId: string,
+): EnrichedMealOption | undefined {
+  return options[selectedMealOptionIndex(options, mealOptionIndex, activityId)];
+}
+
+// The Place a row on the day timeline actually names for travel-distance
+// purposes (TravelSegmentRow) — a plain Activity's own place, or, for a
+// still-open meal, whichever candidate is currently selected (the same
+// candidate ActivityNode's own noteTarget resolves for note-menu targeting),
+// since a meal's real-world location isn't decided until one candidate wins.
+export function activityPlace(
+  activity: EnrichedActivity,
+  day: Day,
+  mealOptionIndex: Map<string, number>,
+): Place | null {
+  if (!isMealActivity(activity)) return activity.place;
+  const options = activeMealOptions(activity, day);
+  const selected = selectedMealOption(options, mealOptionIndex, activity._id);
+  return selected?.place ?? null;
 }
 
 // A still-open meal has no durationMinutes of its own to show an end time
@@ -135,7 +164,7 @@ function liveFormatOverrides(
   for (const activity of dayActivities(day)) {
     if (!isMealActivity(activity)) continue;
     const options = activeMealOptions(activity, day);
-    const selected = options[selectedMealOptionIndex(options, mealOptionIndex, activity._id)];
+    const selected = selectedMealOption(options, mealOptionIndex, activity._id);
     if (selected) overrides.set(activity._id, selected.diningFormat);
   }
   liveFormatOverridesCache.set(day, { mealOptionIndex, overrides });

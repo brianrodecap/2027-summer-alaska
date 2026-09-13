@@ -149,7 +149,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJq1HFuXaxLlERly-xPwd2LII",
-              "label": "Finger Mountain"
+              "label": "Finger Mountain",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJq1HFuXaxLlERly-xPwd2LII/photos/AVoNoXQpsiwNAoMA1gG8S4A7Vmujgfdv3c50A5OFHwXSXHbpas4-AdLyXmC8Sn7096qJAiYEN0sN6yX4R70ZPfK4fUG46pOV5daYToR8vth3Q80WT71S0GnTNbEx9yp-QAhAPPkbo563lRC9EhjAKlaC6y1_aAGs_wMTQvp_IYE72v66dNaIv7H7-Aws6NxFBEqP6qgmyyeT8zcS1MZ-B031JZzULtW3neC7xAa3O894F8dAZ4K7zgmi_AFuy3IRo6TlmY3yZJYC4gVZUpR30JAWR1ZvRH4tr3xI_xOzZFIGjOJnS-LnxKNUnvAhPxB5rr1N8F6oSl-9rLfH66-98lEIUc2uPUV-cDYvAhm1JFcwvJ9vJ4WlL7T-OU6w09eE5T0kpujKW6fFG56vkSxsPHSqbVnfjYGZlh0_p6RlQX9ylxLVmQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "danny meerwijk",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 250,
             "distanceMiles": 176.9
@@ -158,7 +165,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJq1OY5MlJKVERzomrV_shh1E",
-              "label": "Arctic Circle Sign"
+              "label": "Arctic Circle Sign",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJq1OY5MlJKVERzomrV_shh1E/photos/AVoNoXRWhNdNd2OxUCUkoRdpwWD0gbFLZDgxlY-y2B9_VObH73uRkky97l_H_-EmAK_k5yXRLiyb-WdOGh-PfVF2xXbpa_AIJZMkbZPhAiLHEp49FW5ZMnt_0vrJyhsj4xSDMkRsXWwO-xVfZFi9qG5vy-_EJ8juEEpM6ReujXP7kv2f42CSRjwzjtvOA_Jtd_wWc0RKf6nR0t1vCH_eAroFUk7Maicz6EGfV9F8n1a6SAy7QbdEJgd6nr2C_AtaMlyaT8BGAQc2Ihrd50hQ4ERkcMSZEj3FvvjqRG8675smgcbJZZIRd0whVUqy3fURGDEq4KPqgQK9WM3pdjt7BSoxJ-fbQOu5QcGlzfHQ59atJ2pK-_bfENOMBTAJu7JSp9MgkquQuEeCLoonV1F5HGKGGrinuKF3CnqbL1gx5AnH0EXxOki9/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "F M P",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 27,
             "distanceMiles": 17.4
@@ -180,11 +194,25 @@
     "_id": "route_parks_highway",
     "from": {
       "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
-      "label": "Denali Visitor Center"
+      "label": "Denali Visitor Center",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJlwIYyVPfzFYR5iw_rFsr6xc/photos/AVoNoXSy6zmOMYePGJ_zJmSdibUENNrNvR-DgQlZT5OfrWlqRBSD1VU3TwigWZDN11UdCAfI8EFIBQKo9Az4vQhKJNQvkVXWw7g1GYgIgE-pjEJ26cdNotiXRA_nPcPQRF0S4CDiNox-jItWQ8GlugDLcGSu3aCzi-SheQuNjwbMn1Raw3hj45vAz-AwlYqCVX-lLrzQMaiW5DT2V6kkCKEJ14qAs8wq5ie2ZS9F8PQ-GDvwY3W5DMSHh3RNtUxbBAOe-BetrqQowORvU_QsKKFLeO8-haNkJv6ptYE1J7A-9uC6Pp9dfhqXvMuKJGkjQAP2ZbnKN1jRh2e0GVPYyXH59fJl_Atgj_zqQOVjgM9BfAUQ2HKgU8Q0oqCEPq9OFXPQLQkhu5nNt9GmWg_v_-QsxpfKWKHRNhOB-ggeTfDLvd5NgGfbI0jphvdHjTqghOvU/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Jim Getten",
+          "caption": null
+        }
+      ]
     },
     "to": {
       "id": "ChIJqWX9Z09FMlEROvf-CeAF2LM",
-      "label": "Fairbanks"
+      "label": "Fairbanks",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJqWX9Z09FMlEROvf-CeAF2LM/photos/AVoNoXRl642MSg91QGPKlG43lmoQbPwhZiEdTGRZMDTtgTqk75ZW6thumKMa-As8wvYzyi3-sgsHwvnWhs_5hCYiY8MRmSTRryZRGlZ5tx-nRwaZSPeNUcqYzPOPeEyXpBIaS0ABtY23fVEk1SjxWESCjkFpKHJ_mGi25q8aEWRfyzDG3HM9s9WeXQhRGFCe8XxcRfIMEz-4FVKNm7a25GZ_sKUuJWPPpYKupAiOt-J_Rdv6GsqyBwJjYTgoafxYcrQrzhHBn0zQzY58fA6gzeayUzTTcNERxbyaZ3Aws-7uuVyd77CwN7tfU-vxO9T2Sxr07004L3aLRkAlVLSbZXlDT0k5wQYSf-ecjPDOET75O4DiEWu5Oo-WKCPcvD1u9w3gv8mnPPxJj-krHjM5JtUkBEmnHWDhnrUdKe2kjgMQ7l0JNA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Marino Rodrigues",
+          "caption": null
+        }
+      ]
     },
     "variants": [
       {
@@ -464,11 +492,25 @@
     "_id": "route_new_13",
     "from": {
       "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
-      "label": "Denali Bus Depot"
+      "label": "Denali Bus Depot",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJh0yE6LLYzFYRkQ2PsoJ3EBk/photos/AVoNoXR3YubUGrYLJxGX3ofw4mfaDV9thLIIG1hfrzzRtD2e46Gb8QUe5fl8rxcX1Yf_PiULlbpJDp3lXSXA7eq6dSJhaSt8dfa0oSF9PvY8crzSVYM2RKRlY-_2P7XczhCAZkfGSgtCXPuGBEJiM6cslS7qBxLHQFhG8iD4o_g-zuGBuYdEyQrGPxQ10gBXDfrc91VFwOvrVP0UshllBNCKQDDnJD8U-jsz_3LVoZtWO8nxQlZsZY8jpE2a-JtmqzTf1x_5sG7tLNR_DyCSRYPLwp9duE2Iqk6n70gKZLk2bGKdy3FhZKnD7N5UeC6CGPn7Z6P0EP4egsxRHRfapTdnHMzFqWyPBf0HYoR5cB3KlZOMGi9455tOXsdsAUQHw1qO3vY_w36UuQzFnrVdxPV5mKeojCIE0NyDDF0cEZFa1yyyDA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Denali Bus Depot",
+          "caption": null
+        }
+      ]
     },
     "to": {
       "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
-      "label": "Denali Bus Depot"
+      "label": "Denali Bus Depot",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJh0yE6LLYzFYRkQ2PsoJ3EBk/photos/AVoNoXR3YubUGrYLJxGX3ofw4mfaDV9thLIIG1hfrzzRtD2e46Gb8QUe5fl8rxcX1Yf_PiULlbpJDp3lXSXA7eq6dSJhaSt8dfa0oSF9PvY8crzSVYM2RKRlY-_2P7XczhCAZkfGSgtCXPuGBEJiM6cslS7qBxLHQFhG8iD4o_g-zuGBuYdEyQrGPxQ10gBXDfrc91VFwOvrVP0UshllBNCKQDDnJD8U-jsz_3LVoZtWO8nxQlZsZY8jpE2a-JtmqzTf1x_5sG7tLNR_DyCSRYPLwp9duE2Iqk6n70gKZLk2bGKdy3FhZKnD7N5UeC6CGPn7Z6P0EP4egsxRHRfapTdnHMzFqWyPBf0HYoR5cB3KlZOMGi9455tOXsdsAUQHw1qO3vY_w36UuQzFnrVdxPV5mKeojCIE0NyDDF0cEZFa1yyyDA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Denali Bus Depot",
+          "caption": null
+        }
+      ]
     },
     "variants": [
       {

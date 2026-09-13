@@ -34,6 +34,7 @@ function minimalTripData(): TripData {
     activities: [],
     scenarios: [],
     notes: [],
+    travelModeOverrides: [],
     routes: [],
   };
 }

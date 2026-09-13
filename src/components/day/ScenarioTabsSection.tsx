@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 
 import type {
   Day,
@@ -37,6 +37,7 @@ export function ScenarioTabsSection({
   onOpenActivity,
   onOpenStay,
   onOpenTransit,
+  trailingTravelFooter,
 }: {
   day: Day;
   tracks: ScenarioTrack[];
@@ -50,6 +51,11 @@ export function ScenarioTabsSection({
   onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
   onOpenStay: (stay: EnrichedStay) => void;
   onOpenTransit: (transit: EnrichedTransit) => void;
+  // Forwarded straight through to the active track's own nested DayTimeline
+  // as its trailingTravelFooter — see DayTimeline.tsx's own note on that
+  // prop. Only ever set when this section itself sits inside another
+  // scenario-tabs node's own exit segment (ScenarioTabsNode below).
+  trailingTravelFooter?: ReactNode;
 }) {
   const { scenarioTone, selectScenario } = useScenarioSelection();
   const [localIndex, setLocalIndex] = useState(0);
@@ -103,6 +109,7 @@ export function ScenarioTabsSection({
           onOpenActivity={onOpenActivity}
           onOpenStay={onOpenStay}
           onOpenTransit={onOpenTransit}
+          trailingTravelFooter={trailingTravelFooter}
         />
       </Box>
     </Box>

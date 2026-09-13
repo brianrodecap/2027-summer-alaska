@@ -3,7 +3,16 @@
 // scoped to just one of those surfaces (see docs/data-model.html for the
 // entity shapes these draw on).
 import { activityTimeLabel } from './tripModel';
-import type { DiningFormat, Image, Leg, Lodging, MealOption, MealType, Place } from './types';
+import type {
+  DiningFormat,
+  Image,
+  Leg,
+  Lodging,
+  MealOption,
+  MealType,
+  Place,
+  RoutePlaceKind,
+} from './types';
 import type { PlaceSunriseSunset } from './weather';
 
 // ---------- leg skeleton-authority vocabulary ----------
@@ -95,6 +104,15 @@ const MEAL_TYPE_LABEL: Record<MealType, string> = {
   snack: 'Snack',
 };
 
+// A stage's kind ('waypoint' — a real, callable-out stop — or 'via' — a
+// point that exists only to steer routing onto the intended road, no stop).
+// Shared by DayTimeline's own TransitStageNode and DayMapSidebar's stop
+// labels, so both agree on the same overline word.
+export const STAGE_KIND_LABEL: Record<RoutePlaceKind, string> = {
+  waypoint: 'Waypoint',
+  via: 'Via',
+};
+
 // A meal's booking is called a reservation; everything else's is a booking.
 // One rule, one place — this previously sat inline at five call sites (the
 // two edit forms, the wizard's booking step and its review row, and
@@ -144,6 +162,19 @@ export function sunAnchoredTimeLabel(
 ): string {
   const time = timeLabel === 'Sunrise' ? resolved?.sunrise : resolved?.sunset;
   return time ? `${timeLabel} (${time})` : timeLabel;
+}
+
+// A drive-time/leg duration in minutes, formatted for display — plain
+// "N min" up to 59, "X hr Y min" (or just "X hr" on an even hour) from 60 on.
+// Shared by RouteEditForm's own read-only leg summary, DayTimeline's transit
+// stage rows, and DayMapSidebar's marker InfoWindows — all three show the
+// same Google-Directions-derived minute count and previously each spelled
+// out "N min" unconditionally, which read oddly once a leg passed an hour.
+export function formatMinutes(minutes: number): string {
+  if (minutes <= 59) return `${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return remainder === 0 ? `${hours} hr` : `${hours} hr ${remainder} min`;
 }
 
 // Every day-list row leads with "time · type" on its overline — mealType for

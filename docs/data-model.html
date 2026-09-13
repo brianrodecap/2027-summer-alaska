@@ -520,6 +520,9 @@
         <li>
           <a href="#note"><span class="n">09</span> Note</a>
         </li>
+        <li>
+          <a href="#travel-mode-override"><span class="n">10</span> TravelModeOverride</a>
+        </li>
       </ul>
       <h3>Reference data</h3>
       <ul>
@@ -1988,6 +1991,50 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
               >entity: 'activity'</code
             >) are unaffected either way, since they're about the meal choice as a whole rather than
             any one candidate.
+          </li>
+        </ul>
+      </article>
+
+      <!-- 10 TRAVEL MODE OVERRIDE -->
+      <article class="entity" id="travel-mode-override" data-kind="owned">
+        <div class="entity-head">
+          <span class="entity-num">10</span>
+          <div>
+            <span class="badge badge-owned">Trip-owned</span>
+            <h2>TravelModeOverride</h2>
+            <p class="entity-purpose">
+              A viewer's non-default travel-mode pick (walk/bike/bus instead of the default drive)
+              for one pair of consecutive day-timeline rows, in the day list's own travel-info
+              footer.
+            </p>
+          </div>
+        </div>
+        <pre
+          class="schema"
+        ><code>{ segmentKey: 'segment:activity-act_breakfast->stay-stay_lodge-2027-07-02',
+  mode: 'WALK' }</code></pre>
+        <ul class="rationale">
+          <li>
+            <strong>segmentKey is a composite key, not a foreign key.</strong> It names an ordered
+            pair of adjacent day-timeline rows (each row's own drag-id, joined with
+            <code>-&gt;</code>) rather than pointing at any single Stay/Transit/Activity — the
+            segment itself, "walk from breakfast to the lodge," isn't a stored entity anywhere else
+            in this schema. It never appears in a <code>Ref</code>, and nothing else in this
+            document points at it.
+          </li>
+          <li>
+            <strong>DRIVE is never stored.</strong> Every segment already defaults to driving
+            without an entry here — this list holds only the segments a viewer actually set to
+            something else, so picking Drive back on a segment removes its entry rather than writing
+            one.
+          </li>
+          <li>
+            <strong>Real trip content, not a per-browser preference.</strong> Unlike which
+            scenario/route/meal tab is showing (session-only UI state, reset every visit), a
+            travel-mode pick here is meant to last — it's loaded from and saved back to
+            <code>travelModeOverrides.json</code> the same way every other collection on this page
+            is, so it round-trips through the edit-and-export flow and is shared by every viewer
+            rather than sitting in one browser's own storage.
           </li>
         </ul>
       </article>

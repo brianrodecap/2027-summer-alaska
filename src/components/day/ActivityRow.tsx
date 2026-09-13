@@ -9,7 +9,7 @@ import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../mode
 import { useMealOptionSelection } from '../../state/useTripSelections';
 import { BookingChip } from '../shared/BookingChip';
 import { LinkifiedText } from '../shared/LinkifiedText';
-import { DEFAULT_PLACE_ICON, DINING_FORMAT_ICON } from '../shared/materialIcon';
+import { activityRowIconName } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
 import { OverlapWarnings } from '../shared/OverlapWarnings';
 import { ROW_OVERLINE_SX } from '../shared/rowLeadingTokens';
@@ -17,15 +17,6 @@ import { TravelerChips } from '../shared/TravelerChips';
 import { AvatarOrDotView } from './AvatarOrDot';
 import { PlaceConditionsLine } from './PlaceConditionsLine';
 import { useSunAnchoredTime } from './useSunAnchoredTime';
-
-// Activities don't carry an explicit category field — a committed meal's
-// diningFormat is the only synchronous signal richer than "does this
-// activity name a place at all".
-function activityRowIconName(activity: EnrichedActivity): string {
-  if (activity.diningFormat) return DINING_FORMAT_ICON[activity.diningFormat];
-  if (activity.place) return DEFAULT_PLACE_ICON;
-  return 'event';
-}
 
 // The image/icon a plain (non-meal) Activity contributes to the day
 // timeline's own dot column — DayTimeline's own ActivityNode picks this or

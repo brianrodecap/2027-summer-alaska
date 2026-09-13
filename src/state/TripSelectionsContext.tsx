@@ -31,6 +31,11 @@ function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
 // shape of state — a Map from some entity id to the tab currently picked for
 // it — differing only in the key/value types, so they share this one hook
 // rather than each hand-rolling its own useState + immutable-set updater.
+// Deliberately in-memory only (unlike a travel-mode pick — see
+// TravelInfoControl in DayTimeline.tsx, which stores its own non-default
+// choice as real trip content in TripData.travelModeOverrides instead of
+// here): a scenario/route/meal branch is a genuinely fresh decision every
+// visit, not something worth persisting.
 function useMapSlot<K, V>(): [Map<K, V>, (key: K, value: V) => void] {
   const [map, setMap] = useState<Map<K, V>>(() => new Map());
   const set = useCallback((key: K, value: V) => {

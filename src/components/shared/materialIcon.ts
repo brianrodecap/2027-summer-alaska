@@ -7,7 +7,10 @@ import CelebrationIcon from '@mui/icons-material/Celebration';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloudIcon from '@mui/icons-material/Cloud';
 import CommuteIcon from '@mui/icons-material/Commute';
+import DirectionsBikeIcon from '@mui/icons-material/DirectionsBike';
+import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
+import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
 import EventIcon from '@mui/icons-material/Event';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import FlightIcon from '@mui/icons-material/Flight';
@@ -49,7 +52,7 @@ import WaterIcon from '@mui/icons-material/Water';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
 import { type ComponentType, createElement, type ReactElement } from 'react';
 
-import type { DiningFormat } from '../../model/types';
+import type { Activity, DiningFormat, Transit, TravelMode } from '../../model/types';
 
 // Every Material Symbols icon *name string* used in the trip data or ported
 // from the old app's render code (Scenario.icon, Route variant tones, dining
@@ -61,6 +64,9 @@ type IconComponent = ComponentType<SvgIconProps>;
 const ICONS: Record<string, IconComponent> = {
   hotel: HotelIcon,
   directions_car: DirectionsCarIcon,
+  directions_walk: DirectionsWalkIcon,
+  directions_bike: DirectionsBikeIcon,
+  directions_bus: DirectionsBusIcon,
   flight: FlightIcon,
   flight_takeoff: FlightTakeoffIcon,
   cloud: CloudIcon,
@@ -176,7 +182,32 @@ export const DINING_FORMAT_ICON: Record<DiningFormat, string> = {
   'self-catered': 'kitchen',
 };
 
+// Activities don't carry an explicit category field — a committed meal's
+// diningFormat is the only synchronous signal richer than "does this
+// activity name a place at all". Shared by the day timeline's own row dot
+// (ActivityRow's ActivityLeading) and DayMapSidebar's markers, so both agree
+// on which icon represents a given activity.
+export function activityRowIconName(activity: Pick<Activity, 'diningFormat' | 'place'>): string {
+  if (activity.diningFormat) return DINING_FORMAT_ICON[activity.diningFormat];
+  if (activity.place) return DEFAULT_PLACE_ICON;
+  return 'event';
+}
+
+// Shared by the day timeline's own transit boundary dot (DayTimeline's
+// TransitBoundaryNode) and DayMapSidebar's markers, so both agree on which
+// icon represents a given Transit.
+export function transitModeIconName(transit: Pick<Transit, 'mode'>): string {
+  return transit.mode === 'flight' ? 'flight' : 'directions_car';
+}
+
 export const ROUTE_TONE_ICON: Record<string, string> = {
   direct: 'trending_flat',
   scenic: 'landscape',
+};
+
+export const TRAVEL_MODE_ICON: Record<TravelMode, string> = {
+  DRIVE: 'directions_car',
+  WALK: 'directions_walk',
+  BICYCLE: 'directions_bike',
+  TRANSIT: 'directions_bus',
 };
