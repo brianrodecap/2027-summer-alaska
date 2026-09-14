@@ -1684,44 +1684,26 @@
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
-    "text": "Lunch at Buffalo Center Drive-In, Delta Junction",
-    "place": null,
+    "text": null,
+    "place": {
+      "id": "ChIJM56Y08aLNFERXTjxur2q62I",
+      "label": "Buffalo Center Drive-In",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJM56Y08aLNFERXTjxur2q62I/photos/AVoNoXTN8JjfZxtoO1Xq4hh8RQvioQC1yH9Q-x1TCJf2GsRj4C9xSu1wZok1AznE553sZdiM3o4EHAOeJC_qI2bteamAtmPbCQnv1SUWvMwegZeKiByoXRth5H8xuETj327PvhHd0Po7_4AEfNiv122h4udBZRF4l-KS3LxarF-UwEeHcqc8-9HeVIZN-7rfOZ290NJ9vmRb_KMhswc9IT7L7wazWSojVFJgXO5H43MMzwXi-yBuYCwo7ZsKhRFw7PA2_GWV6XTNR6gID9fQ0hJ_Ao2KHzs3lKsCmdF1i0il44-es_Q4pYOqS1EUU-27b8uoWHvZiNjmoWj69UrjKUiZ1vR-E4iQ_pu16ZrWbgniT0gh4IkwZtY1H2VGk7zUNoBBglHy6zeWQuc74p3hctPi_OAh8hdOXuPVp6JZKoG2iibV2g/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Lorena Sims",
+          "caption": null
+        }
+      ]
+    },
     "booking": null,
     "mealType": "lunch",
     "diningFormat": "sit-down",
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jul2_3",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-02T14:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Arrive Copper Center, check into Copper River Princess Wilderness Lodge",
-    "place": {
-      "id": "ChIJmb_m9FyFtVYRza-EUEqwdfU",
-      "label": "Copper River Princess Wilderness Lodge",
-      "images": []
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [
-      {
-        "uri": "https://www.princesslodges.com/wp-content/uploads/2023/08/cpl-1.jpg",
-        "credit": "Courtesy of Copper River Princess Wilderness Lodge",
-        "caption": "Copper River Princess Wilderness Lodge"
-      }
-    ]
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul2_4",
@@ -1732,7 +1714,7 @@
     "durationMinutes": 60,
     "timeLabel": null,
     "priority": null,
-    "text": "Wrangell–St. Elias National Park Visitor Center",
+    "text": null,
     "place": {
       "id": "ChIJRabRJduQtVYRO5fDE4treEU",
       "label": "Wrangell-St. Elias Visitor Center",
@@ -1750,7 +1732,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul2_5",
@@ -1761,11 +1744,17 @@
     "durationMinutes": 45,
     "timeLabel": null,
     "priority": null,
-    "text": "George I. Ashby Memorial Museum",
+    "text": null,
     "place": {
       "id": "ChIJD_gXFWOWtVYRvSRwYiqDR2M",
       "label": "George I. Ashby Memorial Museum",
-      "images": []
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJD_gXFWOWtVYRvSRwYiqDR2M/photos/AVoNoXR86qzzTakMiWJEJd_e0iJyVBwZiqbqYYDZlhGbYIWQuYQOljc40YPQpfxqnAb-HdZc3DhmzSPkrmX6Uoh4I_1H4V4CTt4Zi2dCgP0PvpLpiKDZhmAFH-Ek3-bEhUVlH7BwqooPksHkDZw_94kWzjq-dxOrTF0QQ9LPFTmPARmfYrEtAr5PfY_eJ_6IHZZCjyf3vrNczKPA3s36AimjDFQRf2Ct09EnRE_KXmafxF63u0tEV0vn5UeVu6fl5q9G3KQe1naPON9ipNKCm3fEXQesIYCjWNZgEfFFiPMJ6_VQflndXMxD_g2onfqZk4zYYJgmvVxzXw3Y7X2zcA1jzTL1F7UtvI4QpbbAwwtLi4JcZRpceTO1IjgFrWDhu4k_J4Xc6Ay30aF_APm1Tc77iSxMEzPJ31pdkWbQSXvg-TGPCY9V/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Frank Neuber (FrankN)",
+          "caption": null
+        }
+      ]
     },
     "booking": null,
     "mealType": null,
@@ -1773,7 +1762,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul2_6",
@@ -5256,5 +5246,35 @@
     "travelers": null,
     "images": [],
     "date": null
+  },
+  {
+    "_id": "fc0a0421-4e0e-4bb2-8fa5-7cca154c98de",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Afternoon",
+    "date": "2027-07-02",
+    "priority": null,
+    "text": null,
+    "place": {
+      "id": "ChIJmb_m9FyFtVYRcM6RvzyFDFg",
+      "label": "Copper Valley Air Service",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJmb_m9FyFtVYRcM6RvzyFDFg/photos/AVoNoXQO-hJfm_7pETJIihuQUw_SJyTVBFpIA41L062x6NzMMh2eC3IpY1yFebbuqFRhPG0zReBEMGAqcvCwAqJSUsnBpOsZM4nay_ex1mhQBGMub3TNNGVEWSD9_JL8eDpxA9OaPPWn-hUeuOHFjbg9_Rkl26LtQdW9wDUQ1Sa581uzcAGcAv6YaXm-VTRseUiodPbVCn76FGX3Mm1uN6uCuEKnABl5F9vAlbV7k-RncxeSd2iym4u8oaNaWyafuJbvlxgjXAFYMh03yM9UBo9CVJ7WTzsLMvyX0vG00Bq0LxWpJ6KcLqEOiDOfyLR227GjZMmCHR0j_p16ExlnMRpTRcll_1cvP46jQUOrIXzRIQdxndWPcTR9qitKLw3HQrm2zqNR49Nbrt5zB04Hi3m1AbWpdRw-dMoA1kQFZw8w2RRMng/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Copper Valley Air Service",
+          "caption": null
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
   }
 ]

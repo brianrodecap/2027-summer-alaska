@@ -93,6 +93,12 @@ export function InfoChip({
         }}
         sx={{
           alignItems: 'center',
+          // Override ButtonBase's own default justifyContent: 'center' —
+          // this chip stretches to fill DayInfoStrip's column width (its
+          // sibling DayWeatherChips row does the same and stays left-aligned
+          // since a plain Box has no such default), so without this override
+          // the icon+text visibly center instead of hugging the left edge.
+          justifyContent: 'flex-start',
           font: 'inherit',
           color: 'inherit',
         }}
