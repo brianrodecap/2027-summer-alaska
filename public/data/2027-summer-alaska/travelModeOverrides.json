@@ -18,5 +18,17 @@
   {
     "segmentKey": "segment:activity-act_jul7_dinner->stay-stay_kotzebue-2027-07-09",
     "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:activity-act_jun28_2->activity-act_jun28_6",
+    "mode": "TRANSIT"
+  },
+  {
+    "segmentKey": "segment:transit-073e15c0-5d67-442d-b89e-0011a5cab44b-depart->stage-073e15c0-5d67-442d-b89e-0011a5cab44b-direct-5",
+    "mode": "TRANSIT"
+  },
+  {
+    "segmentKey": "segment:activity-act_jun28_6->activity-act_jun28_7",
+    "mode": "TRANSIT"
   }
 ]

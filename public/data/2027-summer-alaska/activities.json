@@ -727,35 +727,6 @@
     "images": []
   },
   {
-    "_id": "act_jun28_2",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-06-28T08:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Check in at the Denali Bus Depot / Wilderness Access Center",
-    "place": {
-      "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
-      "label": "Denali Bus Depot",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_Wilderness_Access_Center.jpg",
-          "credit": "Photo by Pat W. Sanders / CC BY 2.0",
-          "caption": "Denali Wilderness Access Center, Denali National Park"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
     "_id": "act_jun28_9",
     "legId": "leg_parks",
     "scenarioId": null,
@@ -1352,35 +1323,6 @@
     "travelers": null,
     "images": [],
     "date": null
-  },
-  {
-    "_id": "act_jul1_ideal_3",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jul1_ideal",
-    "status": "planning",
-    "startAt": "2027-07-01T14:30",
-    "durationMinutes": 30,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Arrive Fairbanks, check into Westmark Fairbanks",
-    "place": {
-      "id": "ChIJ_aR34k5FMlERqYeOQVWen5I",
-      "label": "Westmark Fairbanks Hotel & Conference Center",
-      "images": []
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [
-      {
-        "uri": "http://img1.wsimg.com/isteam/ip/4a011874-e82f-4945-b561-9350f89109a8/IMG_0252.jpeg",
-        "credit": "Courtesy of Westmark Fairbanks Hotel",
-        "caption": "Westmark Fairbanks Hotel"
-      }
-    ]
   },
   {
     "_id": "act_jul1_ideal_4",
@@ -2203,129 +2145,6 @@
     "images": []
   },
   {
-    "_id": "act_jul5_2",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-05T07:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Shuttle to the footbridge, cross, retrieve the car",
-    "place": {
-      "id": "ChIJFdOBjRuFs1YRYVu1TmFM1VY",
-      "label": "McCarthy Bridge",
-      "images": []
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_Kuskulana_Bridge.jpg",
-        "credit": "Photo by Henry Chen / CC BY-SA 2.0",
-        "caption": "Kuskulana Bridge on the McCarthy Road"
-      }
-    ]
-  },
-  {
-    "_id": "act_jul5_4",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-05T12:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Lunch at Sheep Mountain Lodge",
-    "place": {
-      "id": "ChIJ69kB6Dl1yVYRrWn-KL13EpE",
-      "label": "Sheep Mountain Lodge",
-      "images": [
-        {
-          "uri": "https://sheepmountain.com/wp-content/uploads/2016/01/DSC_0696.jpg",
-          "credit": "Courtesy of Sheep Mountain Lodge",
-          "caption": "Premier cabins at Sheep Mountain Lodge, Glenn Highway"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": "lunch",
-    "diningFormat": "sit-down",
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jul5_5",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-05T13:00",
-    "durationMinutes": 60,
-    "timeLabel": null,
-    "priority": "high",
-    "text": "Matanuska Glacier helicopter tour with Sheep Mountain Air",
-    "place": {
-      "id": "ChIJS37BSCqNyVYRmTFsCdbhoYA",
-      "label": "Sheep Mountain Air",
-      "images": [
-        {
-          "uri": "https://sheepmountain.com/wp-content/uploads/2022/07/Sheep-Mountain-Air-Breakfast-on-the-Matanuska-Glacier.jpg",
-          "credit": "Courtesy of Sheep Mountain Air",
-          "caption": "Sheep Mountain Air breakfast stop on the Matanuska Glacier"
-        }
-      ]
-    },
-    "booking": {
-      "status": "planning",
-      "cost": {
-        "amount": 299,
-        "currency": "USD"
-      },
-      "confirmationNumber": null
-    },
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jul5_8",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-07-05T18:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Dinner at Glacier BrewHouse",
-    "place": {
-      "id": "ChIJ7bXHMYe9yFYRdVPg648EZGY",
-      "label": "Glacier BrewHouse",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Glacier_Brewhouse.jpg",
-          "credit": "Photo by Justin Morgan / CC BY-SA 2.0",
-          "caption": "Glacier BrewHouse brewpub and restaurant in Anchorage"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": "dinner",
-    "diningFormat": "sit-down",
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
     "_id": "act_jul6_breakfast",
     "legId": "leg_parks",
     "scenarioId": null,
@@ -2347,7 +2166,13 @@
         "place": {
           "id": "ChIJQcnnU4G9yFYRRfrr7uDX1Rs",
           "label": "Snow City Cafe",
-          "images": []
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJQcnnU4G9yFYRRfrr7uDX1Rs/photos/AVoNoXRBEUiihQavRlHmZQEhELQ4U2T_8gOOeT3pAlD0YVdJmCjtLtYNzh05wVBFu3e3WfDfV2jET272BQXM46bpRqvggan1hQFsMTtEe10aMKpUH58v7PraVKzUdq50O_2q3oKg-U_wHFE1_W9_TZsToj1n02cL2MpEC4_0DbU8zXeYjW5ZoNGAA_UNToVz6SkaxUglrHWk5wPXzhqdbKfE8SdCols2Hspww5m35EHgbp48O8y51DDU9H_jYP9EQsBQTBTvubD1VtxvZqyUNSWV5GbyOfNxCPaF4pFlHxckBAoXgvHpeR-z6obu9FDgc7WL9y1E-2NUE4xRfmOvcliFIpEp3jFOn-YRPl230-IkYGdKgcY4bHmPlTqY8Zyczy6lmC837rS009eWX6XQZHJV90qwQ4m1gZDqVIS7QkUu7hZT6nQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Snow City Cafe",
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "booking": null
@@ -2361,7 +2186,8 @@
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul6_2",
@@ -2715,14 +2541,21 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-09T18:00",
+    "startAt": null,
     "durationMinutes": null,
-    "timeLabel": null,
+    "timeLabel": "Evening",
     "priority": null,
     "text": "Dinner at Little Louie's",
     "place": {
       "id": "ChIJyfidPVEXzVARzxH_okzDMHM",
-      "label": "Little Louie's"
+      "label": "Little Louie's",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJyfidPVEXzVARzxH_okzDMHM/photos/AVoNoXTw-H8RY3Sid2uh96cOX-NaPhCpXiUmXNEqNOmd3rQ867-llBIMFQehaE_v7uUAXzGRTzQgSONXUpjx0hIxXMjYrb1rKzBA1UMbnFDxl9Jvl0HgzzOeZwGIeGQLVhfNZMVbej2Ctkqo2eOSVwWXuxF5Y60ls8jDYnTw0wQ1S8KBpJhK9JB_Yd7_ZdcXal4sBL5xaLshTHS7FIXqmIPgL2grfNzZi-5EPcyHUVfhIioW7qR3sWjg5izOoY9MRzVJqg-UKWpjaVKcdAXoKpqZrAGbAD912_47Sy49vrX7h5TWa_SQCkNVEoeV2rcnQ_h8TfacuUReGd-Xr6VED9YNT_91SbUpgt4yIkm6PeRxktSC05AeFQKCa-upB3n2ybZAwgyI_QF9JODH6MSVbCPZKhcyDlVFxKs/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Swan Starling",
+          "caption": null
+        }
+      ]
     },
     "booking": null,
     "mealType": "dinner",
@@ -2731,7 +2564,7 @@
     "options": null,
     "travelers": null,
     "images": [],
-    "date": null
+    "date": "2027-07-09"
   },
   {
     "_id": "act_jul8_1",
@@ -2858,11 +2691,17 @@
     "durationMinutes": null,
     "timeLabel": "Morning",
     "priority": null,
-    "text": "Northwest Arctic Heritage Center",
+    "text": null,
     "place": {
       "id": "ChIJg65tX1cXzVAR9z2Gr7xJSN4",
       "label": "Northwest Arctic Heritage Center",
-      "images": []
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJg65tX1cXzVAR9z2Gr7xJSN4/photos/AVoNoXSfnTBXd5p1A7lj9QhzXkQDAGLOtKIV57nEsPnGyVqQz5XmjGtYNQvtHunyCljaLoU5imSc9BcolBXL_oKMS4tqX61mBFRLaDTV0LuAg8qSia5Wpe9VZvxoAkqA9RDDr6Lz13c30A5QMKTMAWDzR-1Q9PW9rFcXGtkASjdnn0SibdHOJ8iwaDps-RqPyYcm3YVMtE3aRbNQT3_CLUBFEgUjkmk6i6qi_W8WcLZ8BF5iME3BKhuypw8AlF9rP_wuqRFXHY5vUjiboF35RIIozdL6FX_Vkx8xw3vrKqMzihCPn8NCrujNsTQQexkmqw9T59QCKnleiwdyQLrvnX3dbauJyi2bFebhBnyrETtJlm6M5cVWFVPCOXbuH_mdchxSqNAzEwdtCe44ZoTrBfQ7QItjOPAl1fF4UBb7fzyiiJqV93U/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "N R",
+          "caption": null
+        }
+      ]
     },
     "booking": null,
     "mealType": null,
@@ -2882,11 +2721,17 @@
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
-    "text": "Breakfast at the Nullaġvik Hotel restaurant",
+    "text": null,
     "place": {
       "id": "ChIJo6lg1JGXyFYR5CruzmerxY8",
       "label": "Nullaġvik Hotel",
-      "images": []
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJo6lg1JGXyFYR5CruzmerxY8/photos/AVoNoXTK7JQf-iFcMTPRECBkj70F8DgAFcVn5-dXqCyRz8mjK7bVd3R5Dq4tpti5CcELsFCKs2IdgmTecp0bRbNmUFUu6aIp8e75dmnhUg-y2JzN8E3UzpJNjWReUo1kk5bxr_guuwW_Psy7vgBOvsA82CfFEkyLVQ4oj9kCBAHJ5MnelxTVQuAcn2Dqed-acV-vsJPqZXUF88Gwg08PVFa5rF9iDJShwC4KWsWnshcW0M-8oB0zr7rwFXJumjNuGvZJJw5VFSv37PM58HRUZE_WyR5-nKjgZiPNjqq1KiN5kmhMehA-_-J8FrYgL8eQybZg79HcL7CTgU2KjP-MkNsrKs6Vqv1LFRA3otHpekYNMMmCr8yyYVnQS8ivVPXuDRpqIhQA_6-A2jsQCisw4G4BPTdFXr028j_KMBuIpc38iuw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Ethan Shubert",
+          "caption": null
+        }
+      ]
     },
     "booking": null,
     "mealType": "breakfast",
@@ -2894,7 +2739,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul9_lunch",
@@ -2905,7 +2751,7 @@
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
-    "text": "Last Kotzebue lunch at Bison Store & Restaurant",
+    "text": null,
     "place": {
       "id": "ChIJHxwWQVIXzVARXZHgjj-LZwU",
       "label": "Bison Store & Restaurant",
@@ -2917,16 +2763,17 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul9_dinner",
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-10T19:15",
+    "startAt": null,
     "durationMinutes": null,
-    "timeLabel": null,
+    "timeLabel": "Evening",
     "priority": null,
     "text": "Late dinner in Anchorage — choosing where",
     "place": null,
@@ -2941,7 +2788,13 @@
         "place": {
           "id": "ChIJ3wBgzrmXyFYRbIyKWCfhB9c",
           "label": "Moose's Tooth Pub & Pizzeria",
-          "images": []
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJ3wBgzrmXyFYRbIyKWCfhB9c/photos/AVoNoXQ8zjpmnx8DeuoUFqQWfQvqqb3RA5CxHkJNPLOzL6cEMqSzrWxFY-vsQ97ZJq_U6sLl41PLgzC8NpxfkLErPKBC7XP6S5ariDakjC_5EgVlLfj7vsxrKE8IU30OhaBiw8FFaUHarDiedwVIw0M7ERPLu4tP4m7WOVRwdNbSIZIpVR7Biv8pIxJQxcDO-zeG4asLYsAwid3Fhy-xsNuEiZ72C7O_IM0dR8HgliiRsGXrh_fXWhS78eqHXKYvNByqWc0ywJU7oXYo80p7ECQhcYI1xZHWXjuetW-OZFOKntOllxuXHAt_wm45hLEDbV_aAg7UvgWsIBnCfRIe3niHNF-IKtvOxRhv2zZ2NK5krwPgIVXealfvIfB8C0fo8FhdU_nn2NNrZPRcjmiB2LmIf7udpl7ljNf-SEbSMbbeSrTD2zZ4/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Gayle V",
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "booking": null
@@ -2952,14 +2805,21 @@
         "place": {
           "id": "ChIJoUUNNIG9yFYRT1rea_yflgI",
           "label": "Hotel Captain Cook",
-          "images": []
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJoUUNNIG9yFYRT1rea_yflgI/photos/AVoNoXRPW7U5m5JOF-WdgA7A4fN12S_5J0ZvnGL5s1_GfdsQLmw-dqELnTXpHyE9iM1JYqJlni3BMjqt2pV58yZFK4AXocwhTSaeP8-Zfl19w9IouTEc_nAP26dpvumRDbRGU6B4XABtxfzYUqigjnquij4iY0O9Zf5MtcKSuayYKn7BCOsHP1mTXXeGnBixQIlfjo0Mv4be6HbXUnqqEZAWb-aZqqKHTADdp64upTVdH8Ky89XC_9yy1OHtvj7m41ehdCoSSkD1mUqPLXUclBLUxzemIcB5jL-Ck_0FF9JKz8rt_h6ZCn-mp2PVz-q4YuQLvW852dzWUkPXXD28n5gcJoGGr3pAWvizuGlR5qB-Nf_nsV7Qh67-eVCyCh4QKoH9GXqvQq_-252Dfge_osqHNiXrkfLBSaJbz2AuzeJCSsF3PYlFfHTiSinQSZH88YkT/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Nathan Pettyjohn",
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "booking": null
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-07-10"
   },
   {
     "_id": "act_jul10_breakfast",
@@ -2983,7 +2843,13 @@
         "place": {
           "id": "ChIJQcnnU4G9yFYRRfrr7uDX1Rs",
           "label": "Snow City Cafe",
-          "images": []
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJQcnnU4G9yFYRRfrr7uDX1Rs/photos/AVoNoXRBEUiihQavRlHmZQEhELQ4U2T_8gOOeT3pAlD0YVdJmCjtLtYNzh05wVBFu3e3WfDfV2jET272BQXM46bpRqvggan1hQFsMTtEe10aMKpUH58v7PraVKzUdq50O_2q3oKg-U_wHFE1_W9_TZsToj1n02cL2MpEC4_0DbU8zXeYjW5ZoNGAA_UNToVz6SkaxUglrHWk5wPXzhqdbKfE8SdCols2Hspww5m35EHgbp48O8y51DDU9H_jYP9EQsBQTBTvubD1VtxvZqyUNSWV5GbyOfNxCPaF4pFlHxckBAoXgvHpeR-z6obu9FDgc7WL9y1E-2NUE4xRfmOvcliFIpEp3jFOn-YRPl230-IkYGdKgcY4bHmPlTqY8Zyczy6lmC837rS009eWX6XQZHJV90qwQ4m1gZDqVIS7QkUu7hZT6nQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Snow City Cafe",
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "booking": null
@@ -2997,7 +2863,8 @@
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul10_1",
@@ -3064,7 +2931,13 @@
     "place": {
       "id": "ChIJTbp77Hecx1YRRQiYmotUsnM",
       "label": "Kenai Fjords Tours",
-      "images": []
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJTbp77Hecx1YRRQiYmotUsnM/photos/AVoNoXQd4BeG64dSXp0lO7FjasMsU7d5bdGHSHz0NHbvtD8rdr15lPpiSmCkg1CAwHWr61QoLg3ePK3D6L9Gd4ocLX0vxPhNZjyZVSBBTc-sitBe1oX8HzSqGJkmA2IQdMk_5VVnl3zcOEbIoubCMc_fApk00HJGcHwTxuHfN--o0k-ZfBmmhTJOeMnmR7AAbHajCjTo7ckl8dGiQTojU2NdboTLTKO0cEan7PDUjhyZnuD_TQtahk_d_tXInBaMmVqkUM28rnYXtR0KLuvvnX4GwgQUK0TG2Mz0J5e4-c16SQZ-KhZmy-z68A3LXWuAywpdQATkcmKIdgzYykkZha_3liWjuP-2rSFKdBsKEFqKd6nv6KsjGg-P3kgPQjOQTKAIiwqJ6DdZBl32s4flC5cz8vM4NmWO9rnZ_3slH_5gzM8Yunclx18NrUnI-DXrbXs0/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Kenai Fjords Tours",
+          "caption": null
+        }
+      ]
     },
     "booking": {
       "status": "planning",
@@ -3101,25 +2974,21 @@
         "place": {
           "id": "ChIJSUdVzGOcx1YR2p9uwkBAhww",
           "label": "Seward Brewing Company",
-          "images": []
-        },
-        "includedIn": null,
-        "booking": null
-      },
-      {
-        "_id": "act_jul10_dinner_opt1",
-        "diningFormat": "sit-down",
-        "place": {
-          "id": "ChIJ3wBgzrmXyFYRbIyKWCfhB9c",
-          "label": "Moose's Tooth Pub & Pizzeria",
-          "images": []
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJSUdVzGOcx1YR2p9uwkBAhww/photos/AVoNoXQgYZB-EMn6uQhNH8QuLGJY2WPOF3fIUuaea7t1u590JL5BrA092jqDNBRgFwDMjVmkNKKgbCNSZ77NfBsrIbydjoNrM8ggb9UwMsTrLyt8qsorXjtRRS04H7vVv5w_zAG6fDVBHoluyVk5Ixvx5_FUTiHNiN6WGDYfJYDVprji7kSjzq26lcHNU7Jc1DK55eXHV0xBY_8h47R6lck7paZxOCSRslL0-amLdqWFU4dyVLxBly6M56nK3se7IhSLK45nAS0-7JYeGw87XkJJ4YhV3mAKDWzbhQTxKFt5BLJoMimGnHXeq7nAAe4vrmdhDm1ErPIW-v3o7J8zk56P0eomMBHpjcOXKYEPO4VKX14e2gCEN9Zj8yQbvMx7CdNQKykBtg07Do6b4y3GVeaDVbXbZoazRlxit7xGd-gfwCDGR6_xk9ko_HsINWydnwmc/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Seward Brewing Company",
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "booking": null
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul17_lunch",
@@ -4536,19 +4405,30 @@
     "legId": "leg_parks",
     "scenarioId": "scenario_lc_d1_ideal",
     "status": "planning",
-    "startAt": "2027-07-11T09:00",
-    "durationMinutes": 420,
-    "timeLabel": null,
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Morning",
     "priority": "high",
     "text": "Brown bear viewing at Brooks Falls",
-    "place": null,
+    "place": {
+      "id": "ChIJbfu09edF6FYRk_QoziBown4",
+      "label": "Brooks Falls Bear Viewing Platform",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJbfu09edF6FYRk_QoziBown4/photos/AVoNoXRzAt12ZYIPMoRfte9VLsCPG7Its1p4Kh0zfe3jBXfVXgZNixhLjTv8JZWm_vV1pjZ0xHjARpR4oe4iZCcxju9G-JHarMr7F_4Bv6rX6_Dk4ePk9Kq_WK9Sd7uCwZT_ht7ZumY7410JlBHOPo-9yO_D15E2oejGLNMA2YnblbsfJVJGO1w5DkOA9fzd4ScznkaHh8wtY0L1xdUZIalmqg6s3EntWxEB-aPq2C-BejCl1DsjUS9bK8hZXUqAFX38iSdvOyKGTNn0ITYNOb40L5O9GGEeldSYvePRvFGQnJWikUBl5zptyfmF5tihkHtk6pDQ2lqACUjBe_0m1BvkLNJ04wQbZyRa_2GHKNBrHAJ5cUn6DX1DnCORgevyHaZ_oMiE7ffcxpPKWuhm8g7zZSvLbsuWLUUJO-zLVszyzifZUjUN/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Megan Zinck",
+          "caption": null
+        }
+      ]
+    },
     "booking": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-07-11"
   },
   {
     "_id": "act_lc_d1_katmai_lunch",
@@ -4602,7 +4482,17 @@
     "timeLabel": null,
     "priority": "high",
     "text": "Hike to Tanalian Falls and Kontrashibuna Lake",
-    "place": null,
+    "place": {
+      "id": "ChIJi_W6IRJnw1YR6WJaXFWJUxM",
+      "label": "Tanalian Falls Trailhead",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJi_W6IRJnw1YR6WJaXFWJUxM/photos/AVoNoXRN8oEncMoEp6-Ui6gOAjoLLKVvxTZYcFa_AteQ0eCT5FSNs69gpSooX4IgqJWKHyNNI7bQGRkR1TIEQx5p9JfZvnRUxfp8wtaPOPkUkjaZ3S1ajSqkLGbwhJXHcGbJXZ_GwURzycbDZm9GWDPxoLcxkJm76_Ebu75xtZR6iNYGp7b6ASVwvc9GQvZ9qXYt6up8SsRhuW4pkpX9LcDNXvFMEH5h8-56MyfHCF5HXMBmQIVrxBjTtbli_dyaYsfUIidDMAAM7gZ0qDCh2KWwptyNdqIfaE5vzFwI7e57CelbCjTkqGlRvBz0i0xCuXRO05bn-_UGaeQBdjTsB5gBtYVmDa6AhhnjBAT-Fjvc7kWBg9I3t3whE8n8Hsg_zdiRGYVouLMv01m9V8qHwKa0maUaPAZQDTF4__VbNE0ZNpG-iA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "David Western",
+          "caption": null
+        }
+      ]
+    },
     "booking": null,
     "mealType": null,
     "diningFormat": null,
@@ -4852,8 +4742,18 @@
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
-    "text": "Dinner at 49th State Brewing Company",
-    "place": null,
+    "text": null,
+    "place": {
+      "id": "ChIJcRhn_Ya9yFYRAgyWbeaWyFI",
+      "label": "49th State Brewing - Anchorage",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJcRhn_Ya9yFYRAgyWbeaWyFI/photos/AVoNoXQLcyMy5fKTR1tLUm2E-Dd0YtpE8GzCMqzHT9Cdf1-6BtdmFc-yF4dKViXygHxVsovru2n0Z1auhn7RewZvcXusDoMIgpNMBuYiqBAMGfdpzKoqd5r8_VDKzOfa9H5vIRhb5vyyIIWrflxwSV_3sU9VkOLgYCBLquQ4evDIqszQWjLr5d3duQQaBMWCERThNF3a8hTzYwufugjZpZ156oNKhsIjI6Z24kOVfDn53M6Ppp5I8uw-Vgb3UtEFL2mdmehr7-BfoOXYgHoHc2iP6PHXZ7QO918GZCAtXJNgqVMEvExmfnfX-9C_xas3EjKsKwz7ktt5_fLhS_gdOrM0uMaPvefQcMySH9J0SeoboMO9PSh5ZfPeRkEsaZ2ARg8AzEbTjtpI7KOA4Ht8haAP0aiT3jlyOjpGkdXS_0AkiokpcolVQWwU_Z52ZBJV9Y3j/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "49th State Brewing - Anchorage",
+          "caption": null
+        }
+      ]
+    },
     "booking": null,
     "mealType": "dinner",
     "diningFormat": "sit-down",
@@ -5192,11 +5092,11 @@
     "legId": "leg_parks",
     "scenarioId": "scenario_jun27_ideal",
     "status": "planning",
-    "startAt": null,
+    "startAt": "2027-06-28T10:00",
     "durationMinutes": null,
-    "timeLabel": "Morning",
+    "timeLabel": null,
     "priority": null,
-    "text": "Sled Dog Kennels demonstration",
+    "text": null,
     "place": {
       "id": "ChIJY28Rjp4gzVYRQFLw8NqoU-E",
       "label": "Denali Sled Dog Kennels",
@@ -5215,7 +5115,37 @@
     "options": null,
     "travelers": null,
     "images": [],
-    "date": "2027-06-28"
+    "date": null
+  },
+  {
+    "_id": "act_jun28_2",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_ideal",
+    "status": "planning",
+    "startAt": "2027-06-28T08:30",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "priority": null,
+    "text": null,
+    "place": {
+      "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
+      "label": "Denali Bus Depot",
+      "images": [
+        {
+          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_Wilderness_Access_Center.jpg",
+          "credit": "Photo by Pat W. Sanders / CC BY 2.0",
+          "caption": "Denali Wilderness Access Center, Denali National Park"
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jun28_5",
@@ -5265,6 +5195,133 @@
         {
           "uri": "https://places.googleapis.com/v1/places/ChIJmb_m9FyFtVYRcM6RvzyFDFg/photos/AVoNoXQO-hJfm_7pETJIihuQUw_SJyTVBFpIA41L062x6NzMMh2eC3IpY1yFebbuqFRhPG0zReBEMGAqcvCwAqJSUsnBpOsZM4nay_ex1mhQBGMub3TNNGVEWSD9_JL8eDpxA9OaPPWn-hUeuOHFjbg9_Rkl26LtQdW9wDUQ1Sa581uzcAGcAv6YaXm-VTRseUiodPbVCn76FGX3Mm1uN6uCuEKnABl5F9vAlbV7k-RncxeSd2iym4u8oaNaWyafuJbvlxgjXAFYMh03yM9UBo9CVJ7WTzsLMvyX0vG00Bq0LxWpJ6KcLqEOiDOfyLR227GjZMmCHR0j_p16ExlnMRpTRcll_1cvP46jQUOrIXzRIQdxndWPcTR9qitKLw3HQrm2zqNR49Nbrt5zB04Hi3m1AbWpdRw-dMoA1kQFZw8w2RRMng/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
           "credit": "Copper Valley Air Service",
+          "caption": null
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "act_jul5_4",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": "2027-07-07T12:30",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "priority": null,
+    "text": "Lunch at Sheep Mountain Lodge",
+    "place": {
+      "id": "ChIJ69kB6Dl1yVYRrWn-KL13EpE",
+      "label": "Sheep Mountain Lodge",
+      "images": [
+        {
+          "uri": "https://sheepmountain.com/wp-content/uploads/2016/01/DSC_0696.jpg",
+          "credit": "Courtesy of Sheep Mountain Lodge",
+          "caption": "Premier cabins at Sheep Mountain Lodge, Glenn Highway"
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": "lunch",
+    "diningFormat": "sit-down",
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [],
+    "date": null
+  },
+  {
+    "_id": "act_jul5_5",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": "2027-07-07T13:30",
+    "durationMinutes": 60,
+    "timeLabel": null,
+    "priority": "high",
+    "text": "Matanuska Glacier helicopter tour with Sheep Mountain Air",
+    "place": {
+      "id": "ChIJS37BSCqNyVYRmTFsCdbhoYA",
+      "label": "Sheep Mountain Air",
+      "images": [
+        {
+          "uri": "https://sheepmountain.com/wp-content/uploads/2022/07/Sheep-Mountain-Air-Breakfast-on-the-Matanuska-Glacier.jpg",
+          "credit": "Courtesy of Sheep Mountain Air",
+          "caption": "Sheep Mountain Air breakfast stop on the Matanuska Glacier"
+        }
+      ]
+    },
+    "booking": {
+      "status": "planning",
+      "cost": {
+        "amount": 299,
+        "currency": "USD"
+      },
+      "confirmationNumber": null
+    },
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [],
+    "date": null
+  },
+  {
+    "_id": "act_jul5_8",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Evening",
+    "priority": null,
+    "text": null,
+    "place": {
+      "id": "ChIJ7bXHMYe9yFYRdVPg648EZGY",
+      "label": "Glacier BrewHouse",
+      "images": [
+        {
+          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Glacier_Brewhouse.jpg",
+          "credit": "Photo by Justin Morgan / CC BY-SA 2.0",
+          "caption": "Glacier BrewHouse brewpub and restaurant in Anchorage"
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": "dinner",
+    "diningFormat": "sit-down",
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [],
+    "date": "2027-07-07"
+  },
+  {
+    "_id": "a570c483-3e78-47d0-ba9e-c688d8759d11",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_lc_d2_portalsworth_ideal",
+    "status": "planning",
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Morning",
+    "date": "2027-07-12",
+    "priority": null,
+    "text": null,
+    "place": {
+      "id": "ChIJH0pLWWtnw1YRjEtrw7olBe8",
+      "label": "Port Alsworth Visitor Center",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJH0pLWWtnw1YRjEtrw7olBe8/photos/AVoNoXQlroi_IO3UQqHtxLAFOP2iW2s2IGYJBrrBdNx-ONRkDJrJHrR7P7uYJL3u_xfB_d-EIiDge0SvjSsQzEq6XtFqoPVw2B8qpIwHryTE7UIJlbBbL4UZXRF1ipP-BwIT3H94iq2uMOi72EWMZu_m4O4zydijlnk41ImezrJ_naVd9UA3znFT5vpS1Bs0FTgIBSQWIy-CliPzNxg-p0SnzFblbA3RZCRdeyMy8IdWCOJh62N3PrT6K7OyLaQZaqwj2FEcJ8tjKVPlsR7qXkixWoYxB-NZjQ5UVO-iuZm1THhTEXiD_lajpljXTLZ8cVyAeGi_KkDxg2j9oGJX15k-oXiKmEkqXBgFdNf-ZUAb7BSeqhyCPNGWsGNrrkxmZwLHkQnMmuUutfhsUmWVHqv3FJ3bbZFAWkovxWmaLcXe0PIuRKU/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Erica Gantt",
           "caption": null
         }
       ]

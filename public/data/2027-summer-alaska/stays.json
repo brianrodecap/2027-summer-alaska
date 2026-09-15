@@ -99,7 +99,14 @@
     "lodging": {
       "place": {
         "id": "ChIJoUUNNIG9yFYRT1rea_yflgI",
-        "label": "Hotel Captain Cook"
+        "label": "Hotel Captain Cook",
+        "images": [
+          {
+            "uri": "https://places.googleapis.com/v1/places/ChIJoUUNNIG9yFYRT1rea_yflgI/photos/AVoNoXRPW7U5m5JOF-WdgA7A4fN12S_5J0ZvnGL5s1_GfdsQLmw-dqELnTXpHyE9iM1JYqJlni3BMjqt2pV58yZFK4AXocwhTSaeP8-Zfl19w9IouTEc_nAP26dpvumRDbRGU6B4XABtxfzYUqigjnquij4iY0O9Zf5MtcKSuayYKn7BCOsHP1mTXXeGnBixQIlfjo0Mv4be6HbXUnqqEZAWb-aZqqKHTADdp64upTVdH8Ky89XC_9yy1OHtvj7m41ehdCoSSkD1mUqPLXUclBLUxzemIcB5jL-Ck_0FF9JKz8rt_h6ZCn-mp2PVz-q4YuQLvW852dzWUkPXXD28n5gcJoGGr3pAWvizuGlR5qB-Nf_nsV7Qh67-eVCyCh4QKoH9GXqvQq_-252Dfge_osqHNiXrkfLBSaJbz2AuzeJCSsF3PYlFfHTiSinQSZH88YkT/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+            "credit": "Nathan Pettyjohn",
+            "caption": null
+          }
+        ]
       },
       "roomType": null,
       "roomNumber": null,
@@ -123,7 +130,14 @@
     "lodging": {
       "place": {
         "id": "ChIJo6lg1JGXyFYR5CruzmerxY8",
-        "label": "Nullaġvik Hotel"
+        "label": "Nullaġvik Hotel",
+        "images": [
+          {
+            "uri": "https://places.googleapis.com/v1/places/ChIJo6lg1JGXyFYR5CruzmerxY8/photos/AVoNoXTK7JQf-iFcMTPRECBkj70F8DgAFcVn5-dXqCyRz8mjK7bVd3R5Dq4tpti5CcELsFCKs2IdgmTecp0bRbNmUFUu6aIp8e75dmnhUg-y2JzN8E3UzpJNjWReUo1kk5bxr_guuwW_Psy7vgBOvsA82CfFEkyLVQ4oj9kCBAHJ5MnelxTVQuAcn2Dqed-acV-vsJPqZXUF88Gwg08PVFa5rF9iDJShwC4KWsWnshcW0M-8oB0zr7rwFXJumjNuGvZJJw5VFSv37PM58HRUZE_WyR5-nKjgZiPNjqq1KiN5kmhMehA-_-J8FrYgL8eQybZg79HcL7CTgU2KjP-MkNsrKs6Vqv1LFRA3otHpekYNMMmCr8yyYVnQS8ivVPXuDRpqIhQA_6-A2jsQCisw4G4BPTdFXr028j_KMBuIpc38iuw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+            "credit": "Ethan Shubert",
+            "caption": null
+          }
+        ]
       },
       "roomType": null,
       "roomNumber": null,
@@ -147,7 +161,14 @@
     "lodging": {
       "place": {
         "id": "ChIJoUUNNIG9yFYRT1rea_yflgI",
-        "label": "Hotel Captain Cook"
+        "label": "Hotel Captain Cook",
+        "images": [
+          {
+            "uri": "https://places.googleapis.com/v1/places/ChIJoUUNNIG9yFYRT1rea_yflgI/photos/AVoNoXRPW7U5m5JOF-WdgA7A4fN12S_5J0ZvnGL5s1_GfdsQLmw-dqELnTXpHyE9iM1JYqJlni3BMjqt2pV58yZFK4AXocwhTSaeP8-Zfl19w9IouTEc_nAP26dpvumRDbRGU6B4XABtxfzYUqigjnquij4iY0O9Zf5MtcKSuayYKn7BCOsHP1mTXXeGnBixQIlfjo0Mv4be6HbXUnqqEZAWb-aZqqKHTADdp64upTVdH8Ky89XC_9yy1OHtvj7m41ehdCoSSkD1mUqPLXUclBLUxzemIcB5jL-Ck_0FF9JKz8rt_h6ZCn-mp2PVz-q4YuQLvW852dzWUkPXXD28n5gcJoGGr3pAWvizuGlR5qB-Nf_nsV7Qh67-eVCyCh4QKoH9GXqvQq_-252Dfge_osqHNiXrkfLBSaJbz2AuzeJCSsF3PYlFfHTiSinQSZH88YkT/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+            "credit": "Nathan Pettyjohn",
+            "caption": null
+          }
+        ]
       },
       "roomType": null,
       "roomNumber": null,
@@ -341,6 +362,64 @@
         "amount": 990,
         "currency": "USD"
       }
+    },
+    "packages": null,
+    "images": []
+  },
+  {
+    "_id": "12cf84cc-6e52-48b2-a5aa-0f3a5d03616d",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "checkInAt": "2027-07-05T15:00",
+    "checkOutAt": "2027-07-06T11:00",
+    "status": "planning",
+    "lodging": {
+      "place": {
+        "id": "ChIJD9qRQo5GtlYRvRABJDjj8lE",
+        "label": "Best Western Valdez Harbor Inn",
+        "images": [
+          {
+            "uri": "https://places.googleapis.com/v1/places/ChIJD9qRQo5GtlYRvRABJDjj8lE/photos/AVoNoXT8GXaN2t9_4Sj0EMRizzqKcq7kofp83etwqw6volPx0WuS3g-0Vq6nqUvIEY0uVcyzIIkJfeRR0x1M03D6znkzMrNbXjoxTJ7pzSzESfmmQEWKaPsaZWayBm1MsVQ-TmjI6t-QsRsQYFKrWfTFN7vBZgNpHuNptePiDdM1SQFg0_R1KsBnADm53icu1vW_YwgjaTRru7DArSNre_HHrIhhIURfsMGDX_jdF1GKDjGiBzFzlr_e8To3m7cAGy7GI2Q3BIGqimc_pNv2dsI1NOjRTSE8ohQIFHogxi5kI7JMJNc_KA627n4gpNlVwVlukAQ-yu-jtMzLrzz7fWN3_6rQdXCSDC1jBnNjSmMJAgfy8tOwfGjnb8ELlBOPBQ7rsXuDkauIJdfVtYkRqRk3WT8D9n4wpoyZEehjIS4Ro2jOAn2kniPxIRUK_JU_ioFJ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+            "credit": "Best Western Valdez Harbor Inn",
+            "caption": null
+          }
+        ]
+      },
+      "roomType": null
+    },
+    "booking": {
+      "status": "planning",
+      "confirmationNumber": null,
+      "cost": null
+    },
+    "packages": null,
+    "images": []
+  },
+  {
+    "_id": "88f0ab9e-4e37-48fd-9507-a12986544fe5",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "checkInAt": "2027-07-06T15:00",
+    "checkOutAt": "2027-07-07T11:00",
+    "status": "planning",
+    "lodging": {
+      "place": {
+        "id": "ChIJ69kB6Dl1yVYRrWn-KL13EpE",
+        "label": "Sheep Mountain Lodge",
+        "images": [
+          {
+            "uri": "https://places.googleapis.com/v1/places/ChIJ69kB6Dl1yVYRrWn-KL13EpE/photos/AVoNoXTm-dpO61k3ViLLAQF_KdvNVgI2s_1_xF9BdVlBm7DRzwf0eLlXBgKSj6eXIVDpQsbfdHqex1coPAqG10WIF5EyKEPzoP6gucOlr2V6d4hwGcDtFQ6WI4CJ0GocoSdiyIDk4RmKSs1-YW3OP0Ek4L2RtJnSBslL7XYEo3StRmt7jyjbf1C0cv2P_cCQSh_LNvQQuJaQRT2bzGj8CcRyTTxTtp5SlPdCEzg56mPdfNwj05H0aXKeRXWqyH_Cgz62HxZBsRD4qdSqMD0vLXUQlMU9eEcYd9qtVjdIu9sRWz_0JAkUR5eEK_wyEKN1eDhPizN38MMLjNKMXya92RHggAMugPmuYFgLRojxgAXoNU9ZzTvl7wXhwvL0T2af--t746JHZsIsEkJ1tB9ZYnGSxJr883sZGKiQ3rsfC_t-yf9j5B9c/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+            "credit": "Sheep Mountain Lodge",
+            "caption": null
+          }
+        ]
+      },
+      "roomType": null
+    },
+    "booking": {
+      "status": "planning",
+      "confirmationNumber": null,
+      "cost": null
     },
     "packages": null,
     "images": []

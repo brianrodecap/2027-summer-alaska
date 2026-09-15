@@ -49,7 +49,7 @@
   {
     "_id": "note_jun28_bus_checkin",
     "kind": "footnote",
-    "text": "Book ahead at https://www.reservedenali.com/; arrive 20 minutes early.",
+    "text": "Free buses leave the Denali Visitor Center for the kennels approximately forty (40) minutes before each demonstration (9:20 am, 1:20 pm, 3:20 pm).",
     "concerns": [
       {
         "entity": "activity",
@@ -73,7 +73,7 @@
   {
     "_id": "note_jun28_kennel_details",
     "kind": "footnote",
-    "text": "Free shuttle from the Denali Visitor Center; 2:00pm show.",
+    "text": "Free shuttle from the Denali Visitor Center; 10AM, 2PM, and 4PM shows.\n\nhttps://www.nps.gov/dena/planyourvisit/sled-dog-demonstrations.htm",
     "concerns": [
       {
         "entity": "activity",

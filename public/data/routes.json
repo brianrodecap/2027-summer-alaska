@@ -382,7 +382,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJq1OY5MlJKVERzomrV_shh1E",
-              "label": "Arctic Circle Sign"
+              "label": "Arctic Circle Sign",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJq1OY5MlJKVERzomrV_shh1E/photos/AVoNoXTCtci0GaqAj3jM51dvO6kaG4RBSyo7pDknwupo3_dJZjtuNrh2t5HOB-w2sNWM4hmeCWS1Yq3UsNmsnEyIJwTKazNozI-FsSH4fQhICrRlOp_rS3wThgSxrqOBFieNUL8nvMe6whdyRRLHsLEBggP6SIVoTzjORLx_0-E17s4Y3eIslI_eSu58GDMTE2_TnU86BCWHykPJxwoDTSvcy5wDr-WqWu6A8tc-caZkVQCWkitPWpFe5k2z1k2g87grVMIUs0CLGyPyCAbwGmUbCNXU0HNZq7-J_FKnx6HkldPcpZIOrG54TJRI9FwjaUFr8uIUezVVCtN5ZxSd2S4btEN_-Aoz6Pr3r0jHFwljJqVyz8PMFOydDGeH1Glujnpsoi6mjeWhBcQvh3NvzVhYEHIrCSIc7GAcME3Q4BjVqkYlyjyQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "F M P",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 83,
             "distanceMiles": 59.9
@@ -391,7 +398,14 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJq1HFuXaxLlERly-xPwd2LII",
-              "label": "Finger Mountain"
+              "label": "Finger Mountain",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJq1HFuXaxLlERly-xPwd2LII/photos/AVoNoXRBxeoT0fPGcQ3HWlYckw6CLID3VYVURB_xVdpgrhdQMBNQXI6vSkrbIhV1xVZVWSWd0g377Pc24APBInP0u0w085akQgFLbhPTrn5jZeyF2474a7bc6uASfe_rkavZpO2S0am65ENXZ8tM5X-hJU8mr2Rwj5WgeciNwk1P8bu1VsD2p1nP2VZGowiWDbsjInCjDoXxw8vWhgHFOFNoO_4P8k2QTh-iKEjIi-R8KveBxXumhPJaq8CY1xDc447-bSt5wKFCIYB0YRNGZ0pdEcYr592HkxrR6uALivuXhXU1kkuB-uE5r7epmvjSo8w7yHwxe-E9b8hEjvdDIYcii5X1Vb2_z8kwSNi8r53iF9RATEE1R85wlW8KMV9lyvkOU7ooKZbTfIkT6jKGsHRukB-4OMon1Q9wAq63g0oCzfaN0g/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "danny meerwijk",
+                  "caption": null
+                }
+              ]
             },
             "durationMinutes": 27,
             "distanceMiles": 17.4

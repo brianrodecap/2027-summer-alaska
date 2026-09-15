@@ -104,32 +104,6 @@
     ]
   },
   {
-    "_id": "transit_kennecott_anchorage",
-    "legId": "leg_parks",
-    "journeyId": null,
-    "scenarioId": null,
-    "status": "planning",
-    "mode": "drive",
-    "from": {
-      "label": "Kennecott/McCarthy"
-    },
-    "to": {
-      "label": "Anchorage"
-    },
-    "departsAt": "2027-07-05T08:00",
-    "arrivesAt": null,
-    "routeId": "route_kennecott_anchorage",
-    "routeVariant": "direct",
-    "booking": null,
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Matanushka_glacier.jpg",
-        "credit": "Photo by Tifoultoute / CC BY-SA",
-        "caption": "Matanuska Glacier viewed from the Glenn Highway"
-      }
-    ]
-  },
-  {
     "_id": "transit_flight_anc_otz",
     "legId": "leg_parks",
     "journeyId": null,
@@ -178,8 +152,8 @@
     "routeVariant": null,
     "booking": {
       "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
+      "confirmationNumber": null,
+      "cost": null
     },
     "images": [
       {
@@ -347,10 +321,26 @@
     "status": "planning",
     "mode": "flight",
     "from": {
-      "label": "Rust's Flying Service"
+      "label": "Rust's Flying Service",
+      "id": "ChIJnaVbp1K9yFYRyaefNvkHj8k",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJnaVbp1K9yFYRyaefNvkHj8k/photos/AVoNoXRT4TaoMbk0HS6vMpRQHN3fhE7XWXEL1DaQOE9OM4EdjVPFIlDk_pdH3c3w7CqbgnbtZgwM9lsVngVmvma-0aFX3ZM3TOIOlcZODgLv2Fb0fuL2BJ2b43QK82zSqBTW5QkMrlsa590Y8VoskNHkojV68RCZ14v0pw9XzG9pYwRAFp7Gjavp7Q3KFfwpnUT6vThAC-_suiMlFPELiATTfiYUWFCzA02gOgEj2wema-ewz8ysIIodFAplgk8UrjrMglLiuscESzfz3tB2z3lbYgmobBNbnTRAloEI8Uxj0r-FYeEhGHxFbd7CUUQzgwnP5P5cTxUv7DFWP2bYYlI9ZITtPIG7zSaXeiXDBnm7oH6wF9EsztfqaDCljzUZOg2h8kuOT3C_x-B7MwqNs6TmoD9MKNzbiVV-9BOzshLvpEcLMefR/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Rust's Flying Service",
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Redoubt Bay Lodge"
+      "label": "Redoubt Bay Lodge",
+      "id": "ChIJQxwv6rO2xVYRSJZLdkGOLn4",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJQxwv6rO2xVYRSJZLdkGOLn4/photos/AVoNoXSWAeDWGP3H22FzFj4MGEM9Hmqndd0V5-ghtJkMNFUnITPnf0cs8m7RR0KZ9WLcRGmGIgM9_SDoyzZ7XBAd1NmjTz6_Zb1_GajwHLwE9mUZy1ZXgQUtQAHWpq95VYnNxWFO9MYAqGC79AsSQAIo4AbIMQ-15Nf_FCcZIufVS__f3IZCGXT5PLJClazIZWxjnz1cfSSQa-bQIjl_2sIFlFJ4mGaWXtrHIgqCpbh2lqDGW4iCs-KDaeI4ZWfmFtjI_jiyrSG9ySGyEN34S-GJOpEjU55KWQ8u-jdbDzbSL2zflJWRKz0Q3o13pGpScAnM9wY8dEznm7miAzkIN-mToue_sV0MkQHwX-NKZ4DSTMAifyI4pUN3zNibZVBfY_uolvAEo76EbQMmV067x0iRmzgxwZnXiIsp56H4zeRV7MEKWLsGDaYx9vUuB5N7jOZo/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Marilyn Oswald",
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-07-13T08:30",
     "arrivesAt": "2027-07-13T09:30",
@@ -358,8 +348,8 @@
     "routeVariant": null,
     "booking": {
       "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
+      "confirmationNumber": null,
+      "cost": null
     },
     "images": []
   },
@@ -371,10 +361,26 @@
     "status": "planning",
     "mode": "flight",
     "from": {
-      "label": "Redoubt Bay Lodge"
+      "label": "Redoubt Bay Lodge",
+      "id": "ChIJQxwv6rO2xVYRSJZLdkGOLn4",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJQxwv6rO2xVYRSJZLdkGOLn4/photos/AVoNoXSWAeDWGP3H22FzFj4MGEM9Hmqndd0V5-ghtJkMNFUnITPnf0cs8m7RR0KZ9WLcRGmGIgM9_SDoyzZ7XBAd1NmjTz6_Zb1_GajwHLwE9mUZy1ZXgQUtQAHWpq95VYnNxWFO9MYAqGC79AsSQAIo4AbIMQ-15Nf_FCcZIufVS__f3IZCGXT5PLJClazIZWxjnz1cfSSQa-bQIjl_2sIFlFJ4mGaWXtrHIgqCpbh2lqDGW4iCs-KDaeI4ZWfmFtjI_jiyrSG9ySGyEN34S-GJOpEjU55KWQ8u-jdbDzbSL2zflJWRKz0Q3o13pGpScAnM9wY8dEznm7miAzkIN-mToue_sV0MkQHwX-NKZ4DSTMAifyI4pUN3zNibZVBfY_uolvAEo76EbQMmV067x0iRmzgxwZnXiIsp56H4zeRV7MEKWLsGDaYx9vUuB5N7jOZo/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Marilyn Oswald",
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Rust's Flying Service"
+      "label": "Rust's Flying Service",
+      "id": "ChIJnaVbp1K9yFYRyaefNvkHj8k",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJnaVbp1K9yFYRyaefNvkHj8k/photos/AVoNoXRT4TaoMbk0HS6vMpRQHN3fhE7XWXEL1DaQOE9OM4EdjVPFIlDk_pdH3c3w7CqbgnbtZgwM9lsVngVmvma-0aFX3ZM3TOIOlcZODgLv2Fb0fuL2BJ2b43QK82zSqBTW5QkMrlsa590Y8VoskNHkojV68RCZ14v0pw9XzG9pYwRAFp7Gjavp7Q3KFfwpnUT6vThAC-_suiMlFPELiATTfiYUWFCzA02gOgEj2wema-ewz8ysIIodFAplgk8UrjrMglLiuscESzfz3tB2z3lbYgmobBNbnTRAloEI8Uxj0r-FYeEhGHxFbd7CUUQzgwnP5P5cTxUv7DFWP2bYYlI9ZITtPIG7zSaXeiXDBnm7oH6wF9EsztfqaDCljzUZOg2h8kuOT3C_x-B7MwqNs6TmoD9MKNzbiVV-9BOzshLvpEcLMefR/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Rust's Flying Service",
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-07-13T15:00",
     "arrivesAt": "2027-07-13T16:30",
@@ -391,10 +397,26 @@
     "status": "planning",
     "mode": "flight",
     "from": {
-      "label": "Rust's Flying Service"
+      "label": "Rust's Flying Service",
+      "id": "ChIJnaVbp1K9yFYRyaefNvkHj8k",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJnaVbp1K9yFYRyaefNvkHj8k/photos/AVoNoXRT4TaoMbk0HS6vMpRQHN3fhE7XWXEL1DaQOE9OM4EdjVPFIlDk_pdH3c3w7CqbgnbtZgwM9lsVngVmvma-0aFX3ZM3TOIOlcZODgLv2Fb0fuL2BJ2b43QK82zSqBTW5QkMrlsa590Y8VoskNHkojV68RCZ14v0pw9XzG9pYwRAFp7Gjavp7Q3KFfwpnUT6vThAC-_suiMlFPELiATTfiYUWFCzA02gOgEj2wema-ewz8ysIIodFAplgk8UrjrMglLiuscESzfz3tB2z3lbYgmobBNbnTRAloEI8Uxj0r-FYeEhGHxFbd7CUUQzgwnP5P5cTxUv7DFWP2bYYlI9ZITtPIG7zSaXeiXDBnm7oH6wF9EsztfqaDCljzUZOg2h8kuOT3C_x-B7MwqNs6TmoD9MKNzbiVV-9BOzshLvpEcLMefR/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Rust's Flying Service",
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Katmai — Brooks Camp"
+      "label": "Brooks Camp",
+      "id": "ChIJ_1SvpuFF6FYRbWqogSLA7Ww",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJ_1SvpuFF6FYRbWqogSLA7Ww/photos/AVoNoXQ-bFkFrjBE2zEeCaC8QSmO-zAlfq_vw3ARHXGE1_5tUuUG_eKMihWMShKowrqMWL_ljXFWEpM9gGwOOZm8mxbaytCl1Ps_e0Kn5zBXUdu--IKSbD9SKhvGu7esEWYFOuUHQNd9J8sd0DvZOiJDbJ5-SdYsrfWhBgvqTNhRC3e4mrco9yTzgsoljwfNbFPufBy9k52_5kxAHnt_7__9RSEMTarLwv2zBCkbCcrUVIJltAHf1PJQlxqucqzmNNEER5M30CM_ZbAaAZ5gfctjmCXOf-yGTyR5nNjqZ12lQXqFc68bMIvAsTVKG_0gG4F08KBYsbnfXQYQclkGyDNq1yIg4AL64_S8E77-JJpxS3np8rE3r__BhFscMHKZDZxQy0p06JRtv613iiU4Kjq6cPvyhgEymQTTxabWEX2ntBs/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "rod haines",
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-07-11T08:00",
     "arrivesAt": "2027-07-11T09:00",
@@ -402,8 +424,8 @@
     "routeVariant": null,
     "booking": {
       "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
+      "confirmationNumber": null,
+      "cost": null
     },
     "images": []
   },
@@ -415,10 +437,26 @@
     "status": "planning",
     "mode": "flight",
     "from": {
-      "label": "Katmai — Brooks Camp"
+      "label": "Brooks Camp",
+      "id": "ChIJ_1SvpuFF6FYRbWqogSLA7Ww",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJ_1SvpuFF6FYRbWqogSLA7Ww/photos/AVoNoXQ-bFkFrjBE2zEeCaC8QSmO-zAlfq_vw3ARHXGE1_5tUuUG_eKMihWMShKowrqMWL_ljXFWEpM9gGwOOZm8mxbaytCl1Ps_e0Kn5zBXUdu--IKSbD9SKhvGu7esEWYFOuUHQNd9J8sd0DvZOiJDbJ5-SdYsrfWhBgvqTNhRC3e4mrco9yTzgsoljwfNbFPufBy9k52_5kxAHnt_7__9RSEMTarLwv2zBCkbCcrUVIJltAHf1PJQlxqucqzmNNEER5M30CM_ZbAaAZ5gfctjmCXOf-yGTyR5nNjqZ12lQXqFc68bMIvAsTVKG_0gG4F08KBYsbnfXQYQclkGyDNq1yIg4AL64_S8E77-JJpxS3np8rE3r__BhFscMHKZDZxQy0p06JRtv613iiU4Kjq6cPvyhgEymQTTxabWEX2ntBs/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "rod haines",
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Rust's Flying Service"
+      "label": "Rust's Flying Service",
+      "id": "ChIJnaVbp1K9yFYRyaefNvkHj8k",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJnaVbp1K9yFYRyaefNvkHj8k/photos/AVoNoXRT4TaoMbk0HS6vMpRQHN3fhE7XWXEL1DaQOE9OM4EdjVPFIlDk_pdH3c3w7CqbgnbtZgwM9lsVngVmvma-0aFX3ZM3TOIOlcZODgLv2Fb0fuL2BJ2b43QK82zSqBTW5QkMrlsa590Y8VoskNHkojV68RCZ14v0pw9XzG9pYwRAFp7Gjavp7Q3KFfwpnUT6vThAC-_suiMlFPELiATTfiYUWFCzA02gOgEj2wema-ewz8ysIIodFAplgk8UrjrMglLiuscESzfz3tB2z3lbYgmobBNbnTRAloEI8Uxj0r-FYeEhGHxFbd7CUUQzgwnP5P5cTxUv7DFWP2bYYlI9ZITtPIG7zSaXeiXDBnm7oH6wF9EsztfqaDCljzUZOg2h8kuOT3C_x-B7MwqNs6TmoD9MKNzbiVV-9BOzshLvpEcLMefR/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Rust's Flying Service",
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-07-11T16:30",
     "arrivesAt": "2027-07-11T18:00",
@@ -435,10 +473,26 @@
     "status": "planning",
     "mode": "flight",
     "from": {
-      "label": "Lake Clark Air"
+      "label": "Lake Clark Air Services",
+      "id": "ChIJk1PG0UaWyFYRa7b0os7ZSgY",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJk1PG0UaWyFYRa7b0os7ZSgY/photos/AVoNoXQQoq8DfR2od9uVJYPyLIgw8ZfOGKNLDbd-oln7iZ2uzEH9Ot7ydeGLN6PohNj909IXj7O7czDKG4ErAtq7okakfQcEUmquBkYOnO_BMaTIhrDFArPttGKIutOejz1U6_Q9gydzE2_Z80KrmtubP-h3VA8wHrJ-_IxyEgxr5gmH9-9DtIrEefaDUIGAsaUt7fHisurcg6Mo0BgKPblDAwkbAy32EipJk6DZiDhqP4lkL0Umex2nWJByCQYTCsyGlwPnCdPWpVUQ3DFT5IG_UEZXqteVEMvz82zC5qn59qSr7AjFKdVLmkwDO68dZDiuzzfAbsD9flcAcn3z350OjCiBINw8aQDhrg1vlNcczkgv4BxnT14y2UjtRDezaSFLP3-mYC4cYZHAOTeg1D32fYyUkTkHS6DU3FwIOZgIrq-MShIJ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Elizabeth Sorrells",
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Port Alsworth"
+      "label": "Port Alsworth Airport",
+      "id": "ChIJh3QwWRNnw1YR2yU3iW7E7uU",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJh3QwWRNnw1YR2yU3iW7E7uU/photos/AVoNoXSlr78TkWuX0weuCfCE_188D3hp98KqZZhG95-R2o3wq8UwaWb1OVPvIkRhzRXx0trqFm4gifAYoqYNuHz1_bkWxnAdQEkAJ0elaw4zRilmbEdywEMVFYgofeEjBgtoANasC61jdj9fccFQBx8O9hAnweqe19SEEJ4W0bu2JZIDSGg3BoKxqtVTWUbUSxCPGx8HxjrNRTflP_4cacucRHFSCMi7Umx76CAbG14hCxo7dL9fu6kkfLJ3dt8DfINJShIuLhgbtbdu6tf1rdLNAO6QVV1AAxdzAIyHNkntHIfe91ndAvNRbvQ7yvwfWYBjGQMB5Pw61n0YgJD0b-9x-HvoJP4u-eri1pcBUoHgMAAL8vvtAsv7_FS8pdOI4susDZ1Ui0e_H67jZAf9zZbpxmkcK2H6ucZVLsuBvMMN3ElbPd0t/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "David Nicol",
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-07-12T08:00",
     "arrivesAt": "2027-07-12T09:00",
@@ -459,10 +513,26 @@
     "status": "planning",
     "mode": "flight",
     "from": {
-      "label": "Port Alsworth"
+      "label": "Port Alsworth Airport",
+      "id": "ChIJh3QwWRNnw1YR2yU3iW7E7uU",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJh3QwWRNnw1YR2yU3iW7E7uU/photos/AVoNoXSlr78TkWuX0weuCfCE_188D3hp98KqZZhG95-R2o3wq8UwaWb1OVPvIkRhzRXx0trqFm4gifAYoqYNuHz1_bkWxnAdQEkAJ0elaw4zRilmbEdywEMVFYgofeEjBgtoANasC61jdj9fccFQBx8O9hAnweqe19SEEJ4W0bu2JZIDSGg3BoKxqtVTWUbUSxCPGx8HxjrNRTflP_4cacucRHFSCMi7Umx76CAbG14hCxo7dL9fu6kkfLJ3dt8DfINJShIuLhgbtbdu6tf1rdLNAO6QVV1AAxdzAIyHNkntHIfe91ndAvNRbvQ7yvwfWYBjGQMB5Pw61n0YgJD0b-9x-HvoJP4u-eri1pcBUoHgMAAL8vvtAsv7_FS8pdOI4susDZ1Ui0e_H67jZAf9zZbpxmkcK2H6ucZVLsuBvMMN3ElbPd0t/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "David Nicol",
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Lake Clark Air"
+      "label": "Lake Clark Air Services",
+      "id": "ChIJk1PG0UaWyFYRa7b0os7ZSgY",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJk1PG0UaWyFYRa7b0os7ZSgY/photos/AVoNoXQQoq8DfR2od9uVJYPyLIgw8ZfOGKNLDbd-oln7iZ2uzEH9Ot7ydeGLN6PohNj909IXj7O7czDKG4ErAtq7okakfQcEUmquBkYOnO_BMaTIhrDFArPttGKIutOejz1U6_Q9gydzE2_Z80KrmtubP-h3VA8wHrJ-_IxyEgxr5gmH9-9DtIrEefaDUIGAsaUt7fHisurcg6Mo0BgKPblDAwkbAy32EipJk6DZiDhqP4lkL0Umex2nWJByCQYTCsyGlwPnCdPWpVUQ3DFT5IG_UEZXqteVEMvz82zC5qn59qSr7AjFKdVLmkwDO68dZDiuzzfAbsD9flcAcn3z350OjCiBINw8aQDhrg1vlNcczkgv4BxnT14y2UjtRDezaSFLP3-mYC4cYZHAOTeg1D32fYyUkTkHS6DU3FwIOZgIrq-MShIJ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Elizabeth Sorrells",
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-07-12T14:30",
     "arrivesAt": "2027-07-12T16:00",
@@ -642,6 +712,42 @@
     "arrivesAt": "2027-07-05T11:30",
     "routeId": null,
     "routeVariant": null,
+    "booking": null,
+    "images": []
+  },
+  {
+    "_id": "3e3c8d1b-3c8b-409f-bf17-c34f6cefea37",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "drive",
+    "from": {
+      "id": "ChIJ8X09aHSEs1YRhpKnyjO0wT4",
+      "label": "McCarthy",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJ8X09aHSEs1YRhpKnyjO0wT4/photos/AVoNoXQuwFOpO_sl8AW0HyZUaoEU4DYk2hqoy3AMV4ZxpWu0eeub0CZZCMzRYsCiFjlx5uUAJ9OmPeUGLwrkb0o0oRFrK-LrDr6p03268QaGlBKAOiUdlLjbAM0aZscHJllSh98dW5N0ZI26IhxUi44OZt-RP5T3LJzwJrRzlThhL-R45YTzfv-3kT_q2JS8gnLy_XjLQR6EzqWNNUcCF29RbE0mMum9e4-PXNGVDeRZlpQcPcZF-0c-EpY-O0OQbrPW1fogPS7UnZEOhR0u6aP-fRMAXN30jC0O8xuPgWkW_vQrXt07pn5urIQN-_Wzd8czvfB3WWvbN4lTwhGXDHp-5tSDfKU_BUtr5s2T-3nSziuMxguQul-D2qVJI0nTC5zgELa9UDRnK27X3-Gha5hrVyPKhfGB8CQ1pxdxHvoDMELaHilo/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "JPNSCC",
+          "caption": null
+        }
+      ]
+    },
+    "to": {
+      "id": "ChIJOXUaDwNEtlYRT6GRye20VB8",
+      "label": "Valdez",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJOXUaDwNEtlYRT6GRye20VB8/photos/AVoNoXS2_-Q6khN9vkb9zn9nrFWBsJxKuFKe8XkfwN6WgGhvKIQh4Pv4UKOnyYgGfLtG4ZNJvSVgFlLuEu-jEhgDKxQP_p_b13VejlxOehd6joWsDRTMeJ8_IeMD5d-3cgT_ct_1nxSqFb9pkBoLcI2TwVUFMD2yiwriVgMJx_TP9nV12lgbqz1MBiZfNQvcJRFidmSZLNAJqXorq6XvGQoeN0lmKb2z_sSlGO-8Tib98UVRSA1rDd8cxqWChXXlTbBarB0x5t0o95n8ZhgNpT0to6FE5kNKD4plnI8aYd07tKFX0g68JoEBVJmmIYDB2kpgkm5lcnTL2gHSCNt8DGb2M0qcsFzUITBjwFqQpToRJ0C3HL0T1C6IUq3KUN7OtHhUnDKiKP9EPqkBLwnav2wKBoRCA39m8kQYw9Vjb-00_d148G5R/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Natalee Moores",
+          "caption": null
+        }
+      ]
+    },
+    "departsAt": "2027-07-05T12:00",
+    "arrivesAt": null,
+    "routeId": "route_new_11",
+    "routeVariant": "direct",
     "booking": null,
     "images": []
   }
