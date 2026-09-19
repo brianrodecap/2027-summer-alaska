@@ -19,6 +19,12 @@ declare module '@mui/material/styles' {
   }
   interface Palette {
     tertiary: PaletteColor;
+    // Headline accent: every h4 (via `typography` below) plus day titles (an h6
+    // override in DayHeader — a theme-wide h6 color would also reach every
+    // DialogTitle). A brighter sibling of `error`'s mustard-gold, kept as its
+    // own role so headline color isn't tied to the alt-scenario semantic that
+    // `error` carries.
+    gold: PaletteColor;
     surfaceContainer: {
       lowest: string;
       low: string;
@@ -29,6 +35,7 @@ declare module '@mui/material/styles' {
   }
   interface PaletteOptions {
     tertiary?: PaletteColorOptions & { container?: string; onContainer?: string };
+    gold?: PaletteColorOptions;
     surfaceContainer?: {
       lowest: string;
       low: string;
@@ -66,6 +73,9 @@ export const theme = createTheme({
       container: '#3d1f12',
       onContainer: '#f5d8c8',
     } as PaletteColor,
+    gold: {
+      main: '#f2c14e',
+    },
     background: {
       default: '#1a140c',
       paper: '#221a10',
@@ -86,9 +96,10 @@ export const theme = createTheme({
   shape: {
     borderRadius: 12, // --md-sys-shape-corner-medium
   },
-  typography: {
+  typography: (palette) => ({
     fontFamily: "'Roboto Serif', serif",
-  },
+    h4: { color: palette.gold.main },
+  }),
   components: {
     // Native <button>s opt out of font inheritance by default (the
     // browser's own UA stylesheet, not an MUI choice) — MUI's CssBaseline

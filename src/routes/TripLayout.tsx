@@ -7,9 +7,10 @@ import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { Suspense } from 'react';
+import { Suspense, useEffect } from 'react';
 import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
 
+import { WORDMARK_SRC } from '../config/brand';
 import { exportEdits } from '../model/exportEdits';
 import { formatTripDateChip, tripDayCount } from '../model/tripModel';
 import { EditProvider } from '../state/EditContext';
@@ -22,6 +23,16 @@ function TripHero() {
   const navigate = useNavigate();
   const { slug } = useParams();
   const { view, data, loading, error, dirtyCollections } = useTripData();
+  const tripName = view?.trip.name;
+
+  useEffect(() => {
+    if (!tripName) return;
+    const defaultTitle = document.title;
+    document.title = `${defaultTitle} · ${tripName}`;
+    return () => {
+      document.title = defaultTitle;
+    };
+  }, [tripName]);
 
   if (loading) {
     return (
@@ -70,9 +81,7 @@ function TripHero() {
         <IconButton aria-label="Back to trips" onClick={() => navigate('/')} sx={heroIconSx}>
           <ArrowBackIcon />
         </IconButton>
-        <Typography variant="h4" sx={{ flexGrow: 1 }}>
-          {trip.name}
-        </Typography>
+        <Box sx={{ flexGrow: 1 }} />
         {dirtyCollections.size > 0 && (
           <IconButton
             aria-label="Export edits"
@@ -82,8 +91,17 @@ function TripHero() {
             <DownloadIcon />
           </IconButton>
         )}
+        <Box
+          component="img"
+          src={WORDMARK_SRC}
+          alt="Trippin'"
+          sx={{ height: { xs: 40, sm: 56 }, flexShrink: 0 }}
+        />
       </Stack>
-      <Stack direction="row" spacing={1} sx={{ ml: 6, flexWrap: 'wrap', rowGap: 1 }}>
+      <Typography variant="h4" sx={{ mb: 1.5 }}>
+        {trip.name}
+      </Typography>
+      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', rowGap: 1 }}>
         {view.dateRange && (
           <Chip
             label={formatTripDateChip(view.dateRange, tripDayCount(view.dateRange))}

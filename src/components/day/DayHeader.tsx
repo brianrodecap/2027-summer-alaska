@@ -27,7 +27,7 @@ export function DayHeader({
         </Typography>
         <DayHolidayChip date={day.date} />
       </Box>
-      <Typography variant="h6" noWrap={!expanded}>
+      <Typography variant="h6" noWrap={!expanded} sx={{ color: 'gold.main' }}>
         {title}
       </Typography>
     </Box>

@@ -9,5 +9,8 @@ dist/
 *.local
 *.tsbuildinfo
 
+# Playwright MCP session output (snapshots, screenshots, console logs)
+.playwright-mcp/
+
 # Plaintext API key file found sitting in the working tree — never commit it.
 /trippin-api-key.txt

@@ -5333,5 +5333,39 @@
     "options": null,
     "travelers": null,
     "images": []
+  },
+  {
+    "_id": "b319f6df-52b0-496e-ab75-5142b9a83b3e",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": "2027-06-29T06:30",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "date": null,
+    "priority": null,
+    "text": null,
+    "place": {
+      "id": "ChIJk1yonu9bMlER3tc_jXM9MiQ",
+      "label": "Alaska 4x4 Rentals",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJk1yonu9bMlER3tc_jXM9MiQ/photos/AVoNoXRooQrusNqg_3bEG5ZF8e0tlRKLd62cMp_aVakF_YOJuws6ECaHM2dIH_IWDhidTfdgZw7dp60lrxmASAORhrEnuDat-w9w5JwcAfWN2qvlRQIyRYSy74kx-aQl_FKXjaMUc3hLFgtuEX_K_uwf3K1MvDXWTQ54AJUeQf2dOOoDJ_LdkTTEp9M8Fxlb80dq2pNvap8VK2L1G5rd8JCPUg3_dkjLFFttNEaWQHu4N1JTxJM6stQ7xOvCXYRYpvzy8n2qa3c70U_3JImdI5Y7H3CJkdR66dyEHPLG71A8AMJ3nAhXy2sv84h0JduenkeRG7B9O6KBkBKq061-n3Ka7_FaPsXkx7cr1x5kq0en4x2PxnYOUBIWyouy9LLgkw7EX1el9SLakxSX3QF6JCLwJJ5Gmwf3-iU/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Alaska 4x4 Rentals",
+          "caption": null
+        }
+      ]
+    },
+    "booking": {
+      "status": "planning",
+      "confirmationNumber": null,
+      "cost": null
+    },
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
   }
 ]

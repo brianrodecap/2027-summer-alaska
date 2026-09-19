@@ -45,6 +45,7 @@ import { RoutesDialog } from '../components/edit/RoutesDialog';
 import { ScenariosDialog } from '../components/edit/ScenariosDialog';
 import { JumpToDayPicker } from '../components/pickers/JumpToDayPicker';
 import { AddEventWizard } from '../components/wizard/AddEventWizard';
+import { MARK_SRC, WORDMARK_SRC } from '../config/brand';
 import {
   applyScenarioDeletion,
   COLLECTION_FOR_KIND,
@@ -205,11 +206,32 @@ export function DaysView() {
   // Flat while it's the page's own leading edge, shadowed only once content
   // has scrolled in underneath it — the M3 app-bar spec's own elevation rule.
   const elevated = useScrollTrigger({ disableHysteresis: true, threshold: 1 });
+  // A zero-height marker at the bar's own natural (pre-stick) position: once
+  // it has scrolled off the top, the trip hero above is gone and the bar is
+  // pinned, which is when the logo fades in to stand in for the hero. The
+  // opacity is written straight to the DOM rather than through state so a
+  // crossing doesn't re-render this whole (large) day list before the fade.
+  const [barSentinel, setBarSentinel] = useState<HTMLElement | null>(null);
+  const barLogoRef = useRef<HTMLImageElement>(null);
+  useEffect(() => {
+    if (!barSentinel) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      const heroGone = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+      if (barLogoRef.current) barLogoRef.current.style.opacity = heroGone ? '1' : '0';
+    });
+    observer.observe(barSentinel);
+    return () => observer.disconnect();
+  }, [barSentinel]);
   // Matches the `lg` breakpoint DayMapSidebar's own wrapping Box below is
   // CSS-hidden behind on narrow viewports — gates the component's mount
   // itself, not just its visibility, so its Places/Routes API lookups never
   // fire on a screen where the map is never shown.
   const isMapSidebarVisible = useMediaQuery((theme) => theme.breakpoints.up('lg'));
+  // Below `sm` the centered wordmark would collide with the right-hand icon
+  // group, so the compact mark stands in for it.
+  const barLogo = useMediaQuery((theme) => theme.breakpoints.down('sm'))
+    ? { src: MARK_SRC, height: 28 }
+    : { src: WORDMARK_SRC, height: 36 };
 
   const daysByDate = useMemo(() => new Map((view?.days ?? []).map((d) => [d.date, d])), [view]);
   const visibleDays = useMemo(
@@ -359,13 +381,14 @@ export function DaysView() {
     <Box>
       <Box sx={{ display: 'flex' }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box ref={setBarSentinel} aria-hidden sx={{ height: 0 }} />
           <Box
             sx={{
               position: 'sticky',
               top: 0,
               zIndex: 3,
               display: 'flex',
-              justifyContent: 'flex-end',
+              justifyContent: 'space-between',
               alignItems: 'center',
               minHeight: '4rem',
               px: 2,
@@ -374,21 +397,45 @@ export function DaysView() {
               transition: 'box-shadow 150ms',
             }}
           >
-            {view.dateRange && (
-              <IconButton aria-label="Jump to a day" onClick={() => setDatePickerOpen(true)}>
-                <CalendarMonthIcon />
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              {view.dateRange && (
+                <IconButton
+                  edge="start"
+                  aria-label="Jump to a day"
+                  onClick={() => setDatePickerOpen(true)}
+                >
+                  <CalendarMonthIcon />
+                </IconButton>
+              )}
+              <FilterMenu legSummaries={view.legSummaries} />
+            </Box>
+            <Box
+              component="img"
+              ref={barLogoRef}
+              src={barLogo.src}
+              alt="Trippin'"
+              sx={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                height: barLogo.height,
+                transform: 'translate(-50%, -50%)',
+                opacity: 0,
+                transition: 'opacity 100ms',
+                pointerEvents: 'none',
+              }}
+            />
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <IconButton aria-label="Manage routes" onClick={() => setRoutesOpen(true)}>
+                <RouteIcon />
               </IconButton>
-            )}
-            <FilterMenu legSummaries={view.legSummaries} />
-            <IconButton aria-label="Manage routes" onClick={() => setRoutesOpen(true)}>
-              <RouteIcon />
-            </IconButton>
-            <IconButton aria-label="Manage scenarios" onClick={() => setScenariosOpen(true)}>
-              <AltRouteIcon />
-            </IconButton>
-            <IconButton edge="end" aria-label="Ask AI" onClick={() => setAskAIOpen(true)}>
-              <AutoAwesomeIcon />
-            </IconButton>
+              <IconButton aria-label="Manage scenarios" onClick={() => setScenariosOpen(true)}>
+                <AltRouteIcon />
+              </IconButton>
+              <IconButton edge="end" aria-label="Ask AI" onClick={() => setAskAIOpen(true)}>
+                <AutoAwesomeIcon />
+              </IconButton>
+            </Box>
           </Box>
           {visibleDays.length === 0 ? (
             <Typography
