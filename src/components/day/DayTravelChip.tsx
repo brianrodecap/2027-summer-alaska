@@ -12,8 +12,6 @@ import { useTripData } from '../../state/useTripData';
 import { InfoChip } from '../shared/InfoChip';
 import { useDayMapSelections } from './useDayMapSelections';
 
-const TRAVEL_COLOR = '#6d4c41'; // road-brown — distinct from DayWeatherChips' own palette
-
 function hopResultKey(segment: DayTravelSegment): string {
   return `${segment.originId}:${segment.destinationId}`;
 }
@@ -104,7 +102,7 @@ export function DayTravelChip({
   return (
     <InfoChip
       Icon={DirectionsIcon}
-      color={TRAVEL_COLOR}
+      color="conditions.travel"
       text={
         travel ? `${formatMinutes(travel.durationMinutes)} · ${travel.distanceMiles} mi` : 'Map'
       }

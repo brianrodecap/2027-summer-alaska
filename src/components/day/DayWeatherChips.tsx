@@ -16,12 +16,6 @@ import { InfoChip, type InfoChipData } from '../shared/InfoChip';
 import { useDayWeather } from './useDayWeather';
 import { usePlaceWeatherLink } from './usePlaceWeatherLink';
 
-const SUNRISE_COLOR = '#f9a825'; // warm gold
-const SUNSET_COLOR = '#5c6bc0'; // dusk indigo
-const MOON_COLOR = '#9575cd'; // night-sky violet — distinct from SUNSET_COLOR's indigo
-const WIND_COLOR = '#00897b'; // breeze teal
-const WAVE_COLOR = '#0277bd'; // ocean blue — distinct from WIND_COLOR's teal and SUNSET_COLOR's indigo
-
 // A Stay only ever carries deckGroup/shipZone when its Lodging is a cruise
 // cabin (see Lodging's own "cruise-cabin-only extensions" note in
 // model/types.ts) — the generic, trip-agnostic way to recognize "this day is
@@ -77,7 +71,7 @@ export function DayWeatherChips({ day, inView }: { day: Day; inView: boolean }) 
     rows.push({
       key: 'sunrise',
       Icon: LightModeIcon,
-      color: SUNRISE_COLOR,
+      color: 'conditions.sunrise',
       text: weather.sunrise,
       href: sunriseHref,
     });
@@ -86,13 +80,13 @@ export function DayWeatherChips({ day, inView }: { day: Day; inView: boolean }) 
     rows.push({
       key: 'sunset',
       Icon: NightsStayIcon,
-      color: SUNSET_COLOR,
+      color: 'conditions.sunset',
       text: weather.sunset,
       href: sunsetHref,
     });
   }
   const moon = getMoonPhase(day.date);
-  rows.push({ key: 'moon', emoji: moon.emoji, color: MOON_COLOR, text: moon.name });
+  rows.push({ key: 'moon', emoji: moon.emoji, color: 'conditions.moon', text: moon.name });
   if (weather.highF !== null && weather.lowF !== null) {
     rows.push({
       key: 'temp',
@@ -124,7 +118,7 @@ export function DayWeatherChips({ day, inView }: { day: Day; inView: boolean }) 
     rows.push({
       key: 'wind',
       Icon: AirIcon,
-      color: WIND_COLOR,
+      color: 'conditions.wind',
       text: `${weather.windMph} mph`,
       href: weatherHref,
     });
@@ -143,7 +137,7 @@ export function DayWeatherChips({ day, inView }: { day: Day; inView: boolean }) 
     rows.push({
       key: 'waves',
       Icon: WavesIcon,
-      color: WAVE_COLOR,
+      color: 'conditions.wave',
       text: `${weather.waveHeightFt} ft seas`,
       href: marineHref,
     });

@@ -2,7 +2,7 @@ import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Stack from '@mui/material/Stack';
-import { alpha } from '@mui/material/styles';
+import { alpha, type Theme, useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
@@ -16,26 +16,33 @@ import { useDayAlerts } from './useDayAlerts';
 // "alternate scenario" gold accent (see theme.ts's own note), not danger-red
 // — so a genuine severe-weather alert can't just reach for severity="error"
 // the way a stock MUI app would, or "Extreme" would render in the same color
-// as an unrelated day's backup-plan tab. Fixed, ungated-by-theme hex values
-// instead, same approach DayWeatherChips already takes for its own
-// domain-accurate colors (temperatureColor/AQI_BANDS) rather than routing
-// through palette roles. Reuses AQI_BANDS' exact amber for Moderate and
-// DayWeatherChips's rain-blue/cloud-grey for Minor/Unknown, so "amber = use
-// some caution" and "blue-grey = informational" mean the same thing across
-// every weather surface on the site; Extreme/Severe get two dedicated red
-// tones nothing else on the site uses, since no other reading here ever
-// needed to say "this can hurt someone."
-const SEVERITY_COLOR: Record<NwsSeverity, string> = {
-  Extreme: '#c62828',
-  Severe: '#e64a19',
-  Moderate: AQI_MODERATE_COLOR,
-  Minor: RAIN_COLOR,
-  Unknown: CLOUD_COLOR,
-};
+// as an unrelated day's backup-plan tab. Extreme/Severe instead read the
+// theme's dedicated `conditions.alertExtreme`/`alertSevere` reds (nothing else
+// on the site uses them, since no other reading here ever needed to say "this
+// can hurt someone"); the rest are fixed, domain-accurate weatherColors.ts
+// values — AQI_BANDS' exact amber for Moderate and DayWeatherChips's
+// rain-blue/cloud-grey for Minor/Unknown, so "amber = use some caution" and
+// "blue-grey = informational" mean the same thing across every weather
+// surface on the site.
+function severityColor(severity: NwsSeverity, palette: Theme['palette']): string {
+  switch (severity) {
+    case 'Extreme':
+      return palette.conditions.alertExtreme;
+    case 'Severe':
+      return palette.conditions.alertSevere;
+    case 'Moderate':
+      return AQI_MODERATE_COLOR;
+    case 'Minor':
+      return RAIN_COLOR;
+    case 'Unknown':
+      return CLOUD_COLOR;
+  }
+}
 
 function AlertCard({ alert }: { alert: NwsAlert }) {
   const [expanded, setExpanded] = useState(false);
-  const color = SEVERITY_COLOR[alert.severity];
+  const { palette } = useTheme();
+  const color = severityColor(alert.severity, palette);
   return (
     <Alert
       icon={<WarningAmberIcon sx={{ color }} />}

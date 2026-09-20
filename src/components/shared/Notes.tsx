@@ -5,14 +5,18 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { type MouseEvent, useState } from 'react';
 
-import type { Note, NoteKind } from '../../model/types';
+import type { Note } from '../../model/types';
 import { useNoteEdit } from '../../state/useNoteEdit';
 import { LinkifiedText } from './LinkifiedText';
 import { NOTE_ICON, sortNotes } from './noteKind';
 
-const ALERT_SEVERITY: Partial<Record<NoteKind, 'warning' | 'info'>> = {
-  warning: 'warning',
-  info: 'info',
+// A footnote is the quietest of the three kinds: neutral text/icon color and
+// no tinted fill, so it isn't mistaken for an `info` note. MUI Alert has no
+// neutral severity, so a footnote borrows `info` and this strips its blue tint.
+const FOOTNOTE_SX = {
+  color: 'text.secondary',
+  backgroundColor: 'transparent',
+  '& .MuiAlert-icon': { color: 'inherit' },
 };
 
 const CLAMPED_SX = {
@@ -37,16 +41,14 @@ const TRUNCATE_CHAR_THRESHOLD = 110;
 // so it reads as "there's more" rather than a hard cut. Clicking anywhere on
 // a note that actually overflows those two lines expands it to the full
 // text in place; a note that already fits in two lines has nothing more to
-// reveal, so it isn't clickable at all. warning/info render as a colored MUI
-// Alert; footnote stays a plain muted line (smaller type, since a footnote is
-// the quietest of the three kinds) — both carry an Edit action wired to
-// NoteEditContext.
+// reveal, so it isn't clickable at all. All three kinds render as an MUI
+// Alert (footnote in neutral, untinted colors and smaller type) and carry an
+// Edit action wired to NoteEditContext.
 function NoteChip({ note, expanded }: { note: Note; expanded: boolean }) {
   const [open, setOpen] = useState(false);
   const [tapped, setTapped] = useState(false);
   const { openNoteEdit } = useNoteEdit();
   const Icon = NOTE_ICON[note.kind];
-  const severity = ALERT_SEVERITY[note.kind];
   const truncatable = note.text.length > TRUNCATE_CHAR_THRESHOLD;
 
   const clamp = !expanded && !open;
@@ -77,42 +79,26 @@ function NoteChip({ note, expanded }: { note: Note; expanded: boolean }) {
     ...(clamp && CLAMPED_SX),
     ...(clamp && truncatable && { maskImage: FADE_MASK, WebkitMaskImage: FADE_MASK }),
   };
+  const isFootnote = note.kind === 'footnote';
   const clickable = !expanded;
   const showEdit = expanded || tapped;
 
-  if (severity) {
-    return (
-      <Alert
-        severity={severity}
-        icon={<Icon fontSize="inherit" />}
-        action={showEdit ? editButton : undefined}
-        onClick={toggle}
-        sx={{ cursor: clickable ? 'pointer' : 'default', alignItems: 'flex-start' }}
-      >
-        <Typography variant="body2" sx={textSx}>
-          <LinkifiedText text={note.text} />
-        </Typography>
-      </Alert>
-    );
-  }
-
   return (
-    <Stack
-      direction="row"
-      spacing={1}
+    <Alert
+      severity={note.kind === 'warning' ? 'warning' : 'info'}
+      icon={<Icon fontSize="inherit" />}
+      action={showEdit ? editButton : undefined}
       onClick={toggle}
       sx={{
-        alignItems: 'flex-start',
         cursor: clickable ? 'pointer' : 'default',
-        color: 'text.secondary',
+        alignItems: 'flex-start',
+        ...(isFootnote && FOOTNOTE_SX),
       }}
     >
-      <Icon fontSize="small" sx={{ mt: '2px', flexShrink: 0 }} />
-      <Typography variant="caption" color="inherit" sx={{ flexGrow: 1, minWidth: 0, ...textSx }}>
+      <Typography variant={isFootnote ? 'caption' : 'body2'} component="div" sx={textSx}>
         <LinkifiedText text={note.text} />
       </Typography>
-      {showEdit && editButton}
-    </Stack>
+    </Alert>
   );
 }
 

@@ -4,6 +4,8 @@
 // placeCoordinates.ts's own coordinate lookup, and elevation.ts all share
 // this rather than each hand-rolling the same pattern.
 
+import { safeGetItem, safeSetItem } from '../config/safeStorage';
+
 // Get-or-compute-and-cache the in-flight/resolved promise for `key` — a
 // repeat lookup within one page load never re-fires the underlying fetch.
 export function memoizeAsync<K, V>(
@@ -17,13 +19,13 @@ export function memoizeAsync<K, V>(
 
 // Wraps localStorage so a lookup already resolved on a previous visit
 // doesn't cost a network round-trip at all, not even a cached-but-still-async
-// one. Swallows quota/availability errors (Safari private browsing throws on
-// write) since this is purely an optimization: losing it just means falling
-// back to the in-memory-only behavior for that session.
+// one. Storage errors are swallowed by safeStorage (Safari private browsing
+// throws on write) since this is purely an optimization: losing it just means
+// falling back to the in-memory-only behavior for that session.
 function loadPersisted<T>(key: string, maxAgeMs: number): T | null {
+  const raw = safeGetItem(key);
+  if (!raw) return null;
   try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return null;
     const { value, savedAt } = JSON.parse(raw) as { value: T; savedAt: number };
     if (Date.now() - savedAt > maxAgeMs) return null;
     return value;
@@ -33,11 +35,7 @@ function loadPersisted<T>(key: string, maxAgeMs: number): T | null {
 }
 
 function savePersisted<T>(key: string, value: T): void {
-  try {
-    localStorage.setItem(key, JSON.stringify({ value, savedAt: Date.now() }));
-  } catch {
-    // best-effort — see loadPersisted's note above
-  }
+  safeSetItem(key, JSON.stringify({ value, savedAt: Date.now() }));
 }
 
 // Layers loadPersisted/savePersisted around a compute function — for a

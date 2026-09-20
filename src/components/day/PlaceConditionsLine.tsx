@@ -14,10 +14,6 @@ import { InfoLink } from '../shared/InfoChip';
 import { useInViewport } from './useInViewport';
 import { usePlaceWeatherLink } from './usePlaceWeatherLink';
 
-// Terrain brown — reviewed alongside the mockup, distinct from every color
-// DayWeatherChips's own palette already uses.
-const ELEVATION_COLOR = '#8d6e63';
-
 function usePlaceTemperature(placeId: string | null, date: string) {
   const key = placeId ? `${placeId}|${date}` : null;
   return useKeyedAsync<string, PlaceTemperature | null>(key, key !== null, () =>
@@ -93,9 +89,12 @@ export function PlaceConditionsLine({ place, date }: { place: Place | null; date
       )}
       {elevationFt !== null && (
         <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-          <TerrainIcon fontSize="inherit" sx={{ color: ELEVATION_COLOR, fontSize: '1rem' }} />
+          <TerrainIcon
+            fontSize="inherit"
+            sx={{ color: 'conditions.elevation', fontSize: '1rem' }}
+          />
           <Typography variant="body2" color="text.secondary">
-            <Typography component="span" variant="body2" sx={{ color: ELEVATION_COLOR }}>
+            <Typography component="span" variant="body2" sx={{ color: 'conditions.elevation' }}>
               ≈{elevationFt.toLocaleString()} ft
             </Typography>{' '}
             elevation

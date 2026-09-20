@@ -49,6 +49,8 @@ export interface InfoChipData {
   key: string;
   Icon?: ComponentType<SvgIconProps>;
   emoji?: string;
+  // A CSS color or a theme palette path (e.g. 'conditions.sunrise', which sx
+  // resolves per mode).
   color: string;
   text: string;
   href?: string | null;

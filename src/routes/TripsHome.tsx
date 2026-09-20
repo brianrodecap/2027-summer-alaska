@@ -16,6 +16,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { BookingProgressBar } from '../components/shared/BookingProgressBar';
+import { SettingsButton } from '../components/shared/SettingsButton';
+import { Wordmark } from '../components/shared/Wordmark';
 import { TripEditDialog } from '../components/trips/TripEditDialog';
 import type { StagedTripEntities } from '../model/documentImport';
 import { exportNewTrip, exportTripEdit, exportTripRename } from '../model/exportEdits';
@@ -115,9 +117,13 @@ export function TripsHome() {
     <Box sx={{ maxWidth: 960, mx: 'auto', p: 3 }}>
       <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
         <Typography variant="h4">Trips</Typography>
-        <Button startIcon={<AddIcon />} onClick={() => setDialogState({ mode: 'add' })}>
-          Add trip
-        </Button>
+        <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
+          <Button startIcon={<AddIcon />} onClick={() => setDialogState({ mode: 'add' })}>
+            Add trip
+          </Button>
+          <SettingsButton />
+          <Wordmark />
+        </Stack>
       </Stack>
       <Grid container spacing={2}>
         {sortedTrips.map(({ slug, trip, legs, stays, transits, activities, range }) => {

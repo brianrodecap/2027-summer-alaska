@@ -1,16 +1,18 @@
-import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import DownloadIcon from '@mui/icons-material/Download';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
+import Breadcrumbs from '@mui/material/Breadcrumbs';
 import Chip from '@mui/material/Chip';
 import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
+import MuiLink from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
+import { ThemeProvider } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import { Suspense, useEffect } from 'react';
-import { Link, Outlet, useNavigate, useParams } from 'react-router-dom';
+import { Link, Outlet, useMatch, useParams } from 'react-router-dom';
 
-import { WORDMARK_SRC } from '../config/brand';
+import { Wordmark } from '../components/shared/Wordmark';
 import { exportEdits } from '../model/exportEdits';
 import { formatTripDateChip, tripDayCount } from '../model/tripModel';
 import { EditProvider } from '../state/EditContext';
@@ -18,10 +20,11 @@ import { NoteEditProvider } from '../state/NoteEditContext';
 import { TripDataProvider } from '../state/TripDataContext';
 import { TripSelectionsProvider } from '../state/TripSelectionsContext';
 import { useTripData } from '../state/useTripData';
+import { THEMES } from '../theme';
 
 function TripHero() {
-  const navigate = useNavigate();
   const { slug } = useParams();
+  const section = useMatch('/:slug/:section/*')?.params.section;
   const { view, data, loading, error, dirtyCollections } = useTripData();
   const tripName = view?.trip.name;
 
@@ -50,14 +53,16 @@ function TripHero() {
   }
 
   const { trip } = view;
+  const sectionLabel = section === 'days' ? 'Days' : section === 'budget' ? 'Budget' : null;
   const heroImage = trip.images[0];
-  const heroIconSx = heroImage ? { color: 'inherit' } : undefined;
-  const heroChipSx = heroImage
-    ? { color: 'inherit', borderColor: 'rgba(255,255,255,0.7)' }
-    : undefined;
+  // The photo hero is a dark surface in both color modes, so it renders under the
+  // dark theme: its icons, chips and h4 gold then resolve to dark-mode values
+  // without any per-element overrides. Only the outlined chips' border needs a
+  // brighter line to read against the photo.
+  const heroChipSx = heroImage ? { borderColor: 'rgba(255,255,255,0.7)' } : undefined;
   const heroChipVariant = heroImage ? 'outlined' : 'filled';
 
-  return (
+  const header = (
     <Box
       component="header"
       title={heroImage?.credit ?? undefined}
@@ -69,7 +74,7 @@ function TripHero() {
         overflow: 'hidden',
         ...(heroImage
           ? {
-              color: '#fff',
+              color: 'common.white',
               backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.68)), url("${heroImage.uri}")`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
@@ -78,25 +83,45 @@ function TripHero() {
       }}
     >
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
-        <IconButton aria-label="Back to trips" onClick={() => navigate('/')} sx={heroIconSx}>
-          <ArrowBackIcon />
-        </IconButton>
-        <Box sx={{ flexGrow: 1 }} />
+        <Breadcrumbs
+          aria-label="Breadcrumb"
+          sx={{
+            flexGrow: 1,
+            minWidth: 0,
+            color: 'inherit',
+            '& .MuiBreadcrumbs-separator': { color: 'inherit' },
+          }}
+        >
+          <MuiLink component={Link} to="/" color="inherit" underline="hover">
+            Trips
+          </MuiLink>
+          {sectionLabel ? (
+            [
+              <MuiLink
+                key="trip"
+                component={Link}
+                to={`/${slug}`}
+                color="inherit"
+                underline="hover"
+              >
+                {trip.name}
+              </MuiLink>,
+              <Typography key="section" color="inherit" aria-current="page">
+                {sectionLabel}
+              </Typography>,
+            ]
+          ) : (
+            <Typography color="inherit" aria-current="page">
+              {trip.name}
+            </Typography>
+          )}
+        </Breadcrumbs>
         {dirtyCollections.size > 0 && (
-          <IconButton
-            aria-label="Export edits"
-            onClick={() => exportEdits(data, dirtyCollections)}
-            sx={heroIconSx}
-          >
+          <IconButton aria-label="Export edits" onClick={() => exportEdits(data, dirtyCollections)}>
             <DownloadIcon />
           </IconButton>
         )}
-        <Box
-          component="img"
-          src={WORDMARK_SRC}
-          alt="Trippin'"
-          sx={{ height: { xs: 40, sm: 56 }, flexShrink: 0 }}
-        />
+        <Wordmark />
       </Stack>
       <Typography variant="h4" sx={{ mb: 1.5 }}>
         {trip.name}
@@ -123,6 +148,8 @@ function TripHero() {
       </Stack>
     </Box>
   );
+
+  return heroImage ? <ThemeProvider theme={THEMES.dark}>{header}</ThemeProvider> : header;
 }
 
 export function TripLayout() {

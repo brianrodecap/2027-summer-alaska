@@ -43,5 +43,9 @@ export default [
       'simple-import-sort/exports': 'error',
     },
   },
+  {
+    files: ['scripts/**/*.mjs'],
+    languageOptions: { globals: globals.node },
+  },
   prettierConfig,
 ];
