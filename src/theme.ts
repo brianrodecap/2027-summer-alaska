@@ -187,9 +187,14 @@ const LIGHT_PALETTE: PaletteOptions = {
   },
 };
 
+const PALETTES: Record<PaletteMode, PaletteOptions> = {
+  light: LIGHT_PALETTE,
+  dark: DARK_PALETTE,
+};
+
 function buildTheme(mode: PaletteMode) {
   return createTheme({
-    palette: { mode, ...(mode === 'dark' ? DARK_PALETTE : LIGHT_PALETTE) },
+    palette: { mode, ...PALETTES[mode] },
     shape: {
       borderRadius: 12, // --md-sys-shape-corner-medium
     },

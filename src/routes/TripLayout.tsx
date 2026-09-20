@@ -22,6 +22,8 @@ import { TripSelectionsProvider } from '../state/TripSelectionsContext';
 import { useTripData } from '../state/useTripData';
 import { THEMES } from '../theme';
 
+const SECTION_LABELS: Record<string, string> = { days: 'Days', budget: 'Budget' };
+
 function TripHero() {
   const { slug } = useParams();
   const section = useMatch('/:slug/:section/*')?.params.section;
@@ -53,14 +55,20 @@ function TripHero() {
   }
 
   const { trip } = view;
-  const sectionLabel = section === 'days' ? 'Days' : section === 'budget' ? 'Budget' : null;
+  const sectionLabel = section ? SECTION_LABELS[section] : undefined;
+  const crumbs: { label: string; to?: string }[] = [
+    { label: 'Trips', to: '/' },
+    sectionLabel ? { label: trip.name, to: `/${slug}` } : { label: trip.name },
+    ...(sectionLabel ? [{ label: sectionLabel }] : []),
+  ];
   const heroImage = trip.images[0];
   // The photo hero is a dark surface in both color modes, so it renders under the
   // dark theme: its icons, chips and h4 gold then resolve to dark-mode values
   // without any per-element overrides. Only the outlined chips' border needs a
   // brighter line to read against the photo.
-  const heroChipSx = heroImage ? { borderColor: 'rgba(255,255,255,0.7)' } : undefined;
-  const heroChipVariant = heroImage ? 'outlined' : 'filled';
+  const heroChip = heroImage
+    ? ({ variant: 'outlined', sx: { borderColor: 'rgba(255,255,255,0.7)' } } as const)
+    : ({ variant: 'filled' } as const);
 
   const header = (
     <Box
@@ -85,6 +93,7 @@ function TripHero() {
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
         <Breadcrumbs
           aria-label="Breadcrumb"
+          maxItems={2}
           sx={{
             flexGrow: 1,
             minWidth: 0,
@@ -92,28 +101,16 @@ function TripHero() {
             '& .MuiBreadcrumbs-separator': { color: 'inherit' },
           }}
         >
-          <MuiLink component={Link} to="/" color="inherit" underline="hover">
-            Trips
-          </MuiLink>
-          {sectionLabel ? (
-            [
-              <MuiLink
-                key="trip"
-                component={Link}
-                to={`/${slug}`}
-                color="inherit"
-                underline="hover"
-              >
-                {trip.name}
-              </MuiLink>,
-              <Typography key="section" color="inherit" aria-current="page">
-                {sectionLabel}
-              </Typography>,
-            ]
-          ) : (
-            <Typography color="inherit" aria-current="page">
-              {trip.name}
-            </Typography>
+          {crumbs.map(({ label, to }) =>
+            to ? (
+              <MuiLink key={label} component={Link} to={to} color="inherit" underline="hover">
+                {label}
+              </MuiLink>
+            ) : (
+              <Typography key={label} color="inherit" aria-current="page">
+                {label}
+              </Typography>
+            ),
           )}
         </Breadcrumbs>
         {dirtyCollections.size > 0 && (
@@ -133,18 +130,10 @@ function TripHero() {
             component={Link}
             to={`/${slug}/days`}
             clickable
-            sx={heroChipSx}
-            variant={heroChipVariant}
+            {...heroChip}
           />
         )}
-        <Chip
-          label="Budget"
-          component={Link}
-          to={`/${slug}/budget`}
-          clickable
-          sx={heroChipSx}
-          variant={heroChipVariant}
-        />
+        <Chip label="Budget" component={Link} to={`/${slug}/budget`} clickable {...heroChip} />
       </Stack>
     </Box>
   );
