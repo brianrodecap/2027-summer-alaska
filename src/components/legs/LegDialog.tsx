@@ -20,6 +20,7 @@ import { type ReactNode, useMemo } from 'react';
 import { firstImage } from '../../model/formatting';
 import { formatDateRangeLabel, formatMoney, tripDayCount } from '../../model/tripModel';
 import type { Booking, Day, LegSummary } from '../../model/types';
+import { useLiveDays } from '../../state/useLiveDays';
 import { BookingChip } from '../shared/BookingChip';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
 import { NotesCluster } from '../shared/Notes';
@@ -127,8 +128,12 @@ export function LegDialog({
   onClose: () => void;
   onSelectDay: (date: string) => void;
 }) {
+  const live = useLiveDays();
   if (!summary) return null;
-  const { leg, dateRange, days, notes } = summary;
+  const { leg, dateRange, notes } = summary;
+  // Each day as the reader is looking at it — the summary line and location
+  // grouping follow the current scenario picks.
+  const days = summary.days.flatMap((d) => live.byDate.get(d.date) ?? []);
   const image = firstImage(leg);
   const dayCount = dateRange ? tripDayCount(dateRange) : 0;
 

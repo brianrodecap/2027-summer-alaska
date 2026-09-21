@@ -19,7 +19,3 @@ export function getStoredApiKey(): string | null {
 export function setStoredApiKey(key: string): void {
   localStorage.setItem(STORAGE_KEY, key);
 }
-
-export function clearStoredApiKey(): void {
-  localStorage.removeItem(STORAGE_KEY);
-}

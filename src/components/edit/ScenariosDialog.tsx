@@ -1,3 +1,4 @@
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
@@ -15,6 +16,7 @@ import Typography from '@mui/material/Typography';
 import { Fragment, useMemo, useState } from 'react';
 
 import { blankScenario } from '../../model/editForms';
+import type { ScenarioGroupProblemView } from '../../model/scenarioGroups';
 import {
   compareScenariosByToneAndLabel,
   formatDateLabel,
@@ -46,6 +48,7 @@ export function ScenariosDialog({
   activities,
   transits,
   open,
+  groupProblems,
   onClose,
   onSave,
   onDelete,
@@ -55,8 +58,10 @@ export function ScenariosDialog({
   activities: Activity[];
   transits: Transit[];
   open: boolean;
+  // Groups of alternatives that don't have exactly one Ideal member.
+  groupProblems: ScenarioGroupProblemView[];
   onClose: () => void;
-  onSave: (scenario: Scenario) => void;
+  onSave: (scenario: Scenario, isNew: boolean) => string | null;
   onDelete: (id: string) => void;
 }) {
   const [query, setQuery] = useState('');
@@ -69,6 +74,14 @@ export function ScenariosDialog({
     for (const t of transits) if (t.scenarioId) ids.add(t.scenarioId);
     return ids;
   }, [activities, transits]);
+
+  const problemByScenarioId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const problem of groupProblems) {
+      for (const id of problem.memberIds) map.set(id, problem.message);
+    }
+    return map;
+  }, [groupProblems]);
 
   const dateInfoById = useMemo(
     () => resolveScenarioDates(scenarios, activities, transits),
@@ -135,6 +148,9 @@ export function ScenariosDialog({
               {!scenarioIdsInUse.has(scenario._id) && (
                 <WarningBadge title="No activities or transits use this scenario yet" />
               )}
+              {problemByScenarioId.has(scenario._id) && (
+                <WarningBadge title={problemByScenarioId.get(scenario._id) as string} />
+              )}
             </Stack>
           }
           secondary={[legName(scenario.legId), scenario.tone, info?.tentative && 'estimated date']
@@ -150,6 +166,11 @@ export function ScenariosDialog({
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
         <DialogTitle>Scenarios</DialogTitle>
         <DialogContent dividers>
+          {groupProblems.map((problem) => (
+            <Alert key={problem.key} severity="warning" sx={{ mb: 1.5 }}>
+              <strong>{problem.labels.join(' · ')}</strong> — {problem.message}
+            </Alert>
+          ))}
           <TextField
             label="Search scenarios"
             value={query}
@@ -212,11 +233,14 @@ export function ScenariosDialog({
           isNew={!scenarios.some((s) => s._id === editing._id)}
           legs={legs}
           allScenarios={scenarios}
+          activities={activities}
+          transits={transits}
           dateInfoById={dateInfoById}
           onClose={() => setEditing(null)}
-          onSave={(scenario) => {
-            onSave(scenario);
-            setEditing(null);
+          onSave={(scenario, isNew) => {
+            const error = onSave(scenario, isNew);
+            if (!error) setEditing(null);
+            return error;
           }}
           onDelete={(id) => {
             onDelete(id);

@@ -3,14 +3,14 @@ import Skeleton from '@mui/material/Skeleton';
 import { useMemo } from 'react';
 
 import { useSegmentLookup } from '../../hooks/useSegmentLookup';
+import { travelSegments } from '../../model/dayMap';
 import { lookupTravelInfo } from '../../model/directions';
 import { resolveTravelMode } from '../../model/editForms';
 import { formatMinutes } from '../../model/formatting';
-import { type DayTravelSegment, dayTravelSegments } from '../../model/tripModel';
+import type { DayTravelSegment } from '../../model/tripModel';
 import type { Day, TravelModeOverride } from '../../model/types';
 import { useTripData } from '../../state/useTripData';
 import { InfoChip } from '../shared/InfoChip';
-import { useDayMapSelections } from './useDayMapSelections';
 
 function hopResultKey(segment: DayTravelSegment): string {
   return `${segment.originId}:${segment.destinationId}`;
@@ -25,7 +25,7 @@ function resolveHopMode(segment: DayTravelSegment, overrides: TravelModeOverride
   return segment.segmentKey ? resolveTravelMode(overrides, segment.segmentKey) : 'DRIVE';
 }
 
-// Every drivable hop the day's own real places lay out (dayTravelSegments,
+// Every drivable hop the day's own real places lay out (travelSegments,
 // tripModel.ts) gets looked up live and summed via the same shared
 // useSegmentLookup batching DayMapSidebar's own route-path/travel-info
 // lookups use — the same per-pair lookupTravelInfo call DayTimeline's own
@@ -78,8 +78,7 @@ export function DayTravelChip({
   onOpenMap: (day: Day) => void;
   inView: boolean;
 }) {
-  const selections = useDayMapSelections(day);
-  const segments = useMemo(() => dayTravelSegments(day, selections), [day, selections]);
+  const segments = useMemo(() => travelSegments(day.visits), [day.visits]);
   // travelModeOverrides may be undefined while the trip's own data is still
   // loading — resolveHopMode's own default (DRIVE) applies to every hop in
   // that case, same as once it's loaded but simply has no override for a

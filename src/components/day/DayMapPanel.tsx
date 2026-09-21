@@ -6,12 +6,12 @@ import DialogTitle from '@mui/material/DialogTitle';
 import IconButton from '@mui/material/IconButton';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
+import { useMemo } from 'react';
 
-import { dayFullRouteUrls, dayMapEmbedUrl } from '../../model/tripModel';
+import { mapEmbedUrls, routeUrls } from '../../model/dayMap';
 import type { Day } from '../../model/types';
-import { useDayMapSelections } from './useDayMapSelections';
 
-// dayMapEmbedUrl comes back empty when the day has nothing resolvable to
+// mapEmbedUrls comes back empty when the day has nothing resolvable to
 // map yet (e.g. a still-unplanned day with no places named anywhere). It can
 // also come back with more than one entry — a day that crosses a genuine
 // relocation (a one-way flight/ferry with no same-day return, e.g. Anchorage
@@ -27,11 +27,10 @@ export function DayMapPanel({
   open: boolean;
   onClose: () => void;
 }) {
-  const selections = useDayMapSelections(day);
+  const visits = day?.visits;
+  const urls = useMemo(() => (visits ? mapEmbedUrls(visits) : []), [visits]);
+  const fullRouteUrls = useMemo(() => (visits ? routeUrls(visits) : []), [visits]);
   if (!day) return null;
-
-  const urls = dayMapEmbedUrl(day, selections);
-  const fullRouteUrls = dayFullRouteUrls(day, selections);
 
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">

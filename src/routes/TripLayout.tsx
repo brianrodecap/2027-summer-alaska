@@ -16,6 +16,7 @@ import { Wordmark } from '../components/shared/Wordmark';
 import { exportEdits } from '../model/exportEdits';
 import { formatTripDateChip, tripDayCount } from '../model/tripModel';
 import { EditProvider } from '../state/EditContext';
+import { LiveDaysProvider } from '../state/LiveDaysContext';
 import { NoteEditProvider } from '../state/NoteEditContext';
 import { TripDataProvider } from '../state/TripDataContext';
 import { TripSelectionsProvider } from '../state/TripSelectionsContext';
@@ -147,20 +148,22 @@ export function TripLayout() {
   return (
     <TripDataProvider slug={slug}>
       <TripSelectionsProvider>
-        <EditProvider>
-          <NoteEditProvider>
-            <TripHero />
-            <Suspense
-              fallback={
-                <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
-                  <CircularProgress />
-                </Box>
-              }
-            >
-              <Outlet />
-            </Suspense>
-          </NoteEditProvider>
-        </EditProvider>
+        <LiveDaysProvider>
+          <EditProvider>
+            <NoteEditProvider>
+              <TripHero />
+              <Suspense
+                fallback={
+                  <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
+                    <CircularProgress />
+                  </Box>
+                }
+              >
+                <Outlet />
+              </Suspense>
+            </NoteEditProvider>
+          </EditProvider>
+        </LiveDaysProvider>
       </TripSelectionsProvider>
     </TripDataProvider>
   );

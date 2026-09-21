@@ -10,16 +10,24 @@ import {
   applyTransitReorder,
   beforeScenarioSplitDragId,
   buildDragMeta,
+  dragIdOf,
   type DragMeta,
   type ReorderMembers,
   resolveDropTiming,
 } from './reorder';
+import type { TimelineEvent } from './timeline';
+import { stageNodeKey } from './tripModel';
 import type {
+  ActivityRow,
+  BoxRow,
+  DayRow,
   EnrichedActivity,
   EnrichedStay,
   EnrichedTransit,
   ScenarioTrack,
-  SequenceItem,
+  StayRelation,
+  StayRow,
+  TransitRow,
   TripData,
 } from './types';
 
@@ -31,9 +39,109 @@ function scenarioGroupMembers(meta: DragMeta): ReorderMembers | undefined {
 
 const DAY_START = '2027-06-01T00:00';
 
+// ---------- row fixtures: one row per event ----------
+
+function fakeEvent(
+  id: string,
+  at: string,
+  kind: TimelineEvent['kind'],
+  source: TimelineEvent['source'],
+  stageIndex?: number,
+): TimelineEvent {
+  return {
+    id,
+    stageIndex,
+    kind,
+    at,
+    endAt: null,
+    date: at.slice(0, 10),
+    source,
+    place: null,
+    scenarioId: null,
+    fuzzy: false,
+  };
+}
+
+const activityRow = (activity: EnrichedActivity): ActivityRow => ({
+  type: 'activity',
+  event: fakeEvent(`activity:${activity._id}`, activity.startAt ?? '', 'activity', {
+    kind: 'activity',
+    id: activity._id,
+  }),
+  activity,
+  key: activity.startAt ?? '',
+});
+
+const stayRow = (stay: EnrichedStay, relation: StayRelation, key: string): StayRow => ({
+  type: 'stay',
+  event: null,
+  stay,
+  relation,
+  key,
+});
+
+const transitRow = (
+  transit: EnrichedTransit,
+  phase: TransitRow['phase'],
+  key: string,
+): TransitRow => {
+  const event = fakeEvent(
+    phase === 'stage' ? `route-stage:${transit._id}:0` : `${phase}:${transit._id}`,
+    key,
+    phase === 'stage' ? 'route-stage' : phase,
+    { kind: 'transit', id: transit._id },
+    phase === 'stage' ? 0 : undefined,
+  );
+  if (phase !== 'stage') return { type: 'transit', event, transit, phase, key };
+  return {
+    type: 'transit',
+    event,
+    transit,
+    phase,
+    stage: { kind: 'via', note: null, place: transit.from, key },
+    stageIndex: 0,
+    key,
+  };
+};
+
+const boxRow = (key: string, tracks: ScenarioTrack[]): BoxRow => ({ type: 'box', key, tracks });
+
+// Every entity id a track's rows name, including a nested box's — what
+// buildDayLayout derives from the data for a real track.
+function membersOf(rows: DayRow[]): ScenarioTrack['members'] {
+  const members = {
+    activityIds: new Set<string>(),
+    transitIds: new Set<string>(),
+    stayIds: new Set<string>(),
+  };
+  const walk = (list: DayRow[]) => {
+    for (const row of list) {
+      if (row.type === 'activity') members.activityIds.add(row.activity._id);
+      else if (row.type === 'transit') members.transitIds.add(row.transit._id);
+      else if (row.type === 'stay') members.stayIds.add(row.stay._id);
+      else for (const t of row.tracks) walk(t.rows);
+    }
+  };
+  walk(rows);
+  return {
+    activityIds: [...members.activityIds],
+    transitIds: [...members.transitIds],
+    stayIds: [...members.stayIds],
+  };
+}
+
+const track = (
+  t: Omit<ScenarioTrack, 'groupKey' | 'active' | 'members'> & { active?: boolean },
+): ScenarioTrack => ({
+  ...t,
+  groupKey: `group-${t.scenario._id}`,
+  active: t.active ?? true,
+  members: membersOf(t.rows),
+});
+
 // Returns an EnrichedActivity (a superset of Activity) so the same fixture
 // works both as a raw TripData.activities entry and inside a
-// SectionSequenceItem, which is typed against the enriched shape.
+// ActivityRow, which is typed against the enriched shape.
 function activity(overrides: Partial<EnrichedActivity>): EnrichedActivity {
   return {
     _id: 'act1',
@@ -129,23 +237,30 @@ describe('resolveDropTiming', () => {
   });
 });
 
+describe('dragIdOf', () => {
+  it('keys a route stage by its Transit and stage index, matching stageNodeKey', () => {
+    const t = transit({});
+    expect(dragIdOf(transitRow(t, 'stage', '2027-06-01T08:30'), '2027-06-01')).toBe(
+      stageNodeKey(t._id, 0),
+    );
+  });
+});
+
 describe('buildDragMeta', () => {
   it('anchors exactly on an instantaneous Transit boundary’s own key, with no anchorEntityId', () => {
-    // No nudge needed: mergeByTime's own tie-break (stays-then-transits-
+    // No nudge needed: the timeline's own tie-break (stays-then-transits-
     // then-activities array order) already resolves an exact tie in favor
     // of the Transit sorting first, for free.
     const t = transit({});
-    const flattened: SequenceItem[] = [
-      { type: 'transit-boundary', transit: t, phase: 'arrive', key: '2027-06-01T09:30' },
-    ];
+    const flattened: DayRow[] = [transitRow(t, 'arrive', '2027-06-01T09:30')];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     expect(dragMeta[0].endAt).toBe('2027-06-01T09:30');
     expect(dragMeta[0].anchorEntityId).toBeNull();
   });
 
   it('anchors exactly on a non-meal Activity’s own startAt when it has no duration, and names it as anchorEntityId', () => {
-    const flattened: SequenceItem[] = [
-      { type: 'section', activities: [activity({ _id: 'act1', startAt: '2027-06-01T10:00' })] },
+    const flattened: DayRow[] = [
+      activityRow(activity({ _id: 'act1', startAt: '2027-06-01T10:00' })),
     ];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     expect(dragMeta[0].endAt).toBe('2027-06-01T10:00');
@@ -153,28 +268,22 @@ describe('buildDragMeta', () => {
   });
 
   it('uses an explicit durationMinutes as the anchor end, with no extra cushion', () => {
-    const flattened: SequenceItem[] = [
-      {
-        type: 'section',
-        activities: [activity({ startAt: '2027-06-01T09:00', durationMinutes: 60 })],
-      },
+    const flattened: DayRow[] = [
+      activityRow(activity({ startAt: '2027-06-01T09:00', durationMinutes: 60 })),
     ];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     expect(dragMeta[0].endAt).toBe('2027-06-01T10:00');
   });
 
   it("uses a meal's estimated duration as its anchor end, with no extra cushion", () => {
-    const flattened: SequenceItem[] = [
-      {
-        type: 'section',
-        activities: [
-          activity({
-            startAt: '2027-06-01T10:15',
-            mealType: 'dinner',
-            diningFormat: 'sit-down',
-          }),
-        ],
-      },
+    const flattened: DayRow[] = [
+      activityRow(
+        activity({
+          startAt: '2027-06-01T10:15',
+          mealType: 'dinner',
+          diningFormat: 'sit-down',
+        }),
+      ),
     ];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     // 'sit-down' -> 60 minutes, tripModel.ts's DEFAULT_MEAL_DURATION_MINUTES.
@@ -183,9 +292,9 @@ describe('buildDragMeta', () => {
 
   it("only the Depart boundary carries a 'transit' source — Arrive does not", () => {
     const t = transit({});
-    const flattened: SequenceItem[] = [
-      { type: 'transit-boundary', transit: t, phase: 'depart', key: '2027-06-01T08:00' },
-      { type: 'transit-boundary', transit: t, phase: 'arrive', key: '2027-06-01T09:30' },
+    const flattened: DayRow[] = [
+      transitRow(t, 'depart', '2027-06-01T08:00'),
+      transitRow(t, 'arrive', '2027-06-01T09:30'),
     ];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     const depart = dragMeta.find((d) => d.id === 'transit-transit1-depart')!;
@@ -201,7 +310,7 @@ describe('buildDragMeta', () => {
       arrivesAt: '2027-06-01T09:00',
     });
     const tracks: ScenarioTrack[] = [
-      {
+      track({
         scenario: {
           _id: 'ideal',
           legId: 'legA',
@@ -211,41 +320,25 @@ describe('buildDragMeta', () => {
           images: [],
         },
         notes: [],
-        anchorKey: '2027-06-01T08:00',
-        realAnchorKey: '2027-06-01T08:00',
-        sequence: [
-          {
-            type: 'stay',
-            stay: enrichedStay({ _id: 'idealStay', scenarioId: 'ideal' }),
-            relation: 'Check in',
-            key: '2027-06-01T07:00',
-          },
-          {
-            type: 'transit-boundary',
-            transit: idealTransit,
-            phase: 'depart',
-            key: '2027-06-01T08:00',
-          },
+        rows: [
+          stayRow(
+            enrichedStay({ _id: 'idealStay', scenarioId: 'ideal' }),
+            'Check in',
+            '2027-06-01T07:00',
+          ),
+          transitRow(idealTransit, 'depart', '2027-06-01T08:00'),
           // Same transit, second row (its own Arrive boundary) — names the
           // same idealTransit._id a second time, so the assertion below on
           // transitIds' length actually exercises collectScenarioGroupMembers'
           // Set-based dedup rather than trivially passing with only one
           // reference to begin with.
-          {
-            type: 'transit-boundary',
-            transit: idealTransit,
-            phase: 'arrive',
-            key: '2027-06-01T09:00',
-          },
-          {
-            type: 'section',
-            activities: [
-              activity({ _id: 'idealAct', scenarioId: 'ideal', startAt: '2027-06-01T10:00' }),
-            ],
-          },
+          transitRow(idealTransit, 'arrive', '2027-06-01T09:00'),
+          activityRow(
+            activity({ _id: 'idealAct', scenarioId: 'ideal', startAt: '2027-06-01T10:00' }),
+          ),
         ],
-      },
-      {
+      }),
+      track({
         scenario: {
           _id: 'alt',
           legId: 'legA',
@@ -255,51 +348,35 @@ describe('buildDragMeta', () => {
           images: [],
         },
         notes: [],
-        anchorKey: '2027-06-01T08:00',
-        realAnchorKey: '2027-06-01T08:00',
-        sequence: [
-          {
-            type: 'section',
-            activities: [
-              activity({ _id: 'altAct', scenarioId: 'alt', startAt: '2027-06-01T09:00' }),
-            ],
-          },
-          {
-            type: 'scenario-tabs',
-            key: '2027-06-01T13:00',
-            tracks: [
-              {
-                scenario: {
-                  _id: 'nested',
-                  legId: 'legA',
-                  tone: 'alternate',
-                  label: 'Nested',
-                  icon: 'cloud',
-                  images: [],
-                  parentScenarioId: 'alt',
-                },
-                notes: [],
-                anchorKey: '2027-06-01T13:00',
-                realAnchorKey: '2027-06-01T13:00',
-                sequence: [
-                  {
-                    type: 'section',
-                    activities: [
-                      activity({
-                        _id: 'nestedAct',
-                        scenarioId: 'nested',
-                        startAt: '2027-06-01T13:00',
-                      }),
-                    ],
-                  },
-                ],
+        rows: [
+          activityRow(activity({ _id: 'altAct', scenarioId: 'alt', startAt: '2027-06-01T09:00' })),
+          boxRow('2027-06-01T13:00', [
+            track({
+              scenario: {
+                _id: 'nested',
+                legId: 'legA',
+                tone: 'alternate',
+                label: 'Nested',
+                icon: 'cloud',
+                images: [],
+                parentScenarioId: 'alt',
               },
-            ],
-          },
+              notes: [],
+              rows: [
+                activityRow(
+                  activity({
+                    _id: 'nestedAct',
+                    scenarioId: 'nested',
+                    startAt: '2027-06-01T13:00',
+                  }),
+                ),
+              ],
+            }),
+          ]),
         ],
-      },
+      }),
     ];
-    const flattened: SequenceItem[] = [{ type: 'scenario-tabs', key: '2027-06-01T08:00', tracks }];
+    const flattened: DayRow[] = [boxRow('2027-06-01T08:00', tracks)];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     // Two entries, not one: nothing real precedes this scenario-tabs split
     // in its own container, so buildDragMeta also emits a
@@ -317,9 +394,9 @@ describe('buildDragMeta', () => {
     expect(scenarioGroupMembers(scenarioEntry)?.stayIds).toEqual(['idealStay']);
   });
 
-  it("falls back to the day's own scenarioTracks for a top-level scenario-tabs placeholder, which (per tripModel.ts's buildSequence) carries no tracks of its own", () => {
+  it("collects a top-level scenario box's group from the tracks the box itself carries", () => {
     const tracks: ScenarioTrack[] = [
-      {
+      track({
         scenario: {
           _id: 'ideal',
           legId: 'legA',
@@ -329,20 +406,15 @@ describe('buildDragMeta', () => {
           images: [],
         },
         notes: [],
-        anchorKey: '2027-06-01T08:00',
-        realAnchorKey: '2027-06-01T08:00',
-        sequence: [
-          {
-            type: 'section',
-            activities: [
-              activity({ _id: 'idealAct', scenarioId: 'ideal', startAt: '2027-06-01T08:00' }),
-            ],
-          },
+        rows: [
+          activityRow(
+            activity({ _id: 'idealAct', scenarioId: 'ideal', startAt: '2027-06-01T08:00' }),
+          ),
         ],
-      },
+      }),
     ];
-    const flattened: SequenceItem[] = [{ type: 'scenario-tabs', key: '2027-06-01T08:00' }];
-    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA', tracks);
+    const flattened: DayRow[] = [boxRow('2027-06-01T08:00', tracks)];
+    const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     // Same spacer-entry reasoning as the test above.
     expect(dragMeta).toHaveLength(2);
     expect(scenarioGroupMembers(dragMeta[1])?.activityIds).toEqual(['idealAct']);
@@ -350,7 +422,7 @@ describe('buildDragMeta', () => {
 
   it('emits a droppable beforeScenarioSplitDragId spacer ahead of a scenario-tabs row when nothing real precedes it in its own container — the "Talkeetna has nothing but its own Flight-goes/Grounded split" bug', () => {
     const tracks: ScenarioTrack[] = [
-      {
+      track({
         scenario: {
           _id: 'ideal',
           legId: 'legA',
@@ -360,19 +432,14 @@ describe('buildDragMeta', () => {
           images: [],
         },
         notes: [],
-        anchorKey: '2027-06-01T09:00',
-        realAnchorKey: '2027-06-01T09:00',
-        sequence: [
-          {
-            type: 'section',
-            activities: [
-              activity({ _id: 'idealAct', scenarioId: 'ideal', startAt: '2027-06-01T09:00' }),
-            ],
-          },
+        rows: [
+          activityRow(
+            activity({ _id: 'idealAct', scenarioId: 'ideal', startAt: '2027-06-01T09:00' }),
+          ),
         ],
-      },
+      }),
     ];
-    const flattened: SequenceItem[] = [{ type: 'scenario-tabs', key: '2027-06-01T09:00', tracks }];
+    const flattened: DayRow[] = [boxRow('2027-06-01T09:00', tracks)];
     const dragMeta = buildDragMeta(flattened, 'talkeetna', DAY_START, 'legA');
     expect(dragMeta).toHaveLength(2);
     const [spacer, scenarioEntry] = dragMeta;
@@ -393,13 +460,13 @@ describe('buildDragMeta', () => {
     // data hits on 2027-07-10/11/12, where every day's own scenario-tabs
     // group used to collide on the identical id `scenario-tabs-0`.
     const dayOne = buildDragMeta(
-      [{ type: 'scenario-tabs', key: '2027-06-01T08:00', tracks: [] }],
+      [boxRow('2027-06-01T08:00', [])],
       null,
       '2027-06-01T00:00',
       'legA',
     );
     const dayTwo = buildDragMeta(
-      [{ type: 'scenario-tabs', key: '2027-06-02T08:00', tracks: [] }],
+      [boxRow('2027-06-02T08:00', [])],
       null,
       '2027-06-02T00:00',
       'legA',
@@ -407,23 +474,29 @@ describe('buildDragMeta', () => {
     expect(dayOne[0].id).not.toBe(dayTwo[0].id);
   });
 
-  it('gives two scenario-tabs rows on the SAME day distinct dragIds — a top-level group and a nested scenario tab’s own sub-group', () => {
-    // Both at local index 0 of their own respective flattened arrays (one
-    // top-level, scenarioId null; one inside a scenario tab, a real
-    // scenarioId) — date alone isn't enough to disambiguate these two.
-    const topLevel = buildDragMeta(
-      [{ type: 'scenario-tabs', key: '2027-06-01T08:00', tracks: [] }],
-      null,
-      DAY_START,
-      'legA',
-    );
-    const nested = buildDragMeta(
-      [{ type: 'scenario-tabs', key: '2027-06-01T08:00', tracks: [] }],
-      'scenario_jul1_alt',
-      DAY_START,
-      'legA',
-    );
-    expect(topLevel[0].id).not.toBe(nested[0].id);
+  it('gives scenario boxes distinct dragIds by their group and date — a top-level group and a nested group on the SAME day, and one group on two days', () => {
+    const groupTrack = (id: string) =>
+      track({
+        scenario: {
+          _id: id,
+          legId: 'legA',
+          tone: 'ideal',
+          label: id,
+          icon: 'sunny',
+          images: [],
+        },
+        notes: [],
+        rows: [],
+      });
+    const box = (id: string) => boxRow('2027-06-01T08:00', [groupTrack(id)]);
+    // No list index in the id: a top-level box and a nested one at the same
+    // local position are told apart by their group, and the same group on
+    // another day by its date.
+    const topLevel = buildDragMeta([box('top')], null, DAY_START, 'legA');
+    const nested = buildDragMeta([box('nested')], 'top', DAY_START, 'legA');
+    const nextDay = buildDragMeta([box('top')], null, '2027-06-02T00:00', 'legA');
+    const ids = [topLevel[0].id, nested[0].id, nextDay[0].id];
+    expect(new Set(ids).size).toBe(3);
   });
 });
 
@@ -450,15 +523,10 @@ describe('Stay Check-out/Check-in drop targets', () => {
   // time, so their own checkOutAt/checkInAt isn't what a drop there should
   // anchor to.
   it('Check-out anchors to the day’s previously-first Activity, not its own checkOutAt', () => {
-    const flattened: SequenceItem[] = [
-      { type: 'stay', stay: enrichedStay({}), relation: 'Check out', key: '2027-06-01T11:00' },
-      {
-        type: 'section',
-        activities: [
-          activity({ _id: 'act1', startAt: '2027-06-01T09:00', durationMinutes: 30 }),
-          activity({ _id: 'act2', startAt: '2027-06-01T11:00' }),
-        ],
-      },
+    const flattened: DayRow[] = [
+      stayRow(enrichedStay({}), 'Check out', '2027-06-01T11:00'),
+      activityRow(activity({ _id: 'act1', startAt: '2027-06-01T09:00', durationMinutes: 30 })),
+      activityRow(activity({ _id: 'act2', startAt: '2027-06-01T11:00' })),
     ];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     const checkout = dragMeta.find((d) => d.kind === 'day-start');
@@ -467,15 +535,10 @@ describe('Stay Check-out/Check-in drop targets', () => {
   });
 
   it('dropping an Activity onto Check-out takes over the old-first time, shifts the rest later, and leaves durationMinutes untouched', () => {
-    const flattened: SequenceItem[] = [
-      { type: 'stay', stay: enrichedStay({}), relation: 'Check out', key: '2027-06-01T11:00' },
-      {
-        type: 'section',
-        activities: [
-          activity({ _id: 'act1', startAt: '2027-06-01T09:00', durationMinutes: 30 }),
-          activity({ _id: 'act2', startAt: '2027-06-01T11:00' }),
-        ],
-      },
+    const flattened: DayRow[] = [
+      stayRow(enrichedStay({}), 'Check out', '2027-06-01T11:00'),
+      activityRow(activity({ _id: 'act1', startAt: '2027-06-01T09:00', durationMinutes: 30 })),
+      activityRow(activity({ _id: 'act2', startAt: '2027-06-01T11:00' })),
     ];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     const checkout = dragMeta.find((d) => d.kind === 'day-start')!;
@@ -504,9 +567,9 @@ describe('Stay Check-out/Check-in drop targets', () => {
   });
 
   it('shifts the rest by a nominal one minute when the dragged Activity has no duration of its own', () => {
-    const flattened: SequenceItem[] = [
-      { type: 'stay', stay: enrichedStay({}), relation: 'Check out', key: '2027-06-01T11:00' },
-      { type: 'section', activities: [activity({ _id: 'act1', startAt: '2027-06-01T09:00' })] },
+    const flattened: DayRow[] = [
+      stayRow(enrichedStay({}), 'Check out', '2027-06-01T11:00'),
+      activityRow(activity({ _id: 'act1', startAt: '2027-06-01T09:00' })),
     ];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     const checkout = dragMeta.find((d) => d.kind === 'day-start')!;
@@ -531,17 +594,12 @@ describe('Stay Check-out/Check-in drop targets', () => {
   });
 
   it('Check-in anchors to the day’s real last Activity/Transit, not its own checkInAt', () => {
-    const flattened: SequenceItem[] = [
-      {
-        type: 'section',
-        activities: [
-          activity({ _id: 'act1', startAt: '2027-06-01T09:00', durationMinutes: 30 }),
-          activity({ _id: 'act2', startAt: '2027-06-01T11:00' }), // no duration -> own startAt
-        ],
-      },
+    const flattened: DayRow[] = [
+      activityRow(activity({ _id: 'act1', startAt: '2027-06-01T09:00', durationMinutes: 30 })),
+      activityRow(activity({ _id: 'act2', startAt: '2027-06-01T11:00' })), // no duration -> own startAt
       // checkInAt (20:00) is much later than the day's real last Activity —
       // the anchor should still come from that Activity, not checkInAt.
-      { type: 'stay', stay: enrichedStay({}), relation: 'Check in', key: '2027-06-01T20:00' },
+      stayRow(enrichedStay({}), 'Check in', '2027-06-01T20:00'),
     ];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     const checkin = dragMeta.find((d) => d.id.startsWith('stay-'))!;
@@ -556,19 +614,19 @@ describe('Stay Check-out/Check-in drop targets', () => {
   it("gives only Check-in a 'stay' source (the one row a Stay is draggable via) — Check-out/Staying stay non-sources", () => {
     const stay = enrichedStay({ _id: 'stay1' });
     const checkIn = buildDragMeta(
-      [{ type: 'stay', stay, relation: 'Check in', key: '2027-06-01T20:00' }],
+      [stayRow(stay, 'Check in', '2027-06-01T20:00')],
       null,
       DAY_START,
       'legA',
     )[0];
     const checkOut = buildDragMeta(
-      [{ type: 'stay', stay, relation: 'Check out', key: '2027-06-01T11:00' }],
+      [stayRow(stay, 'Check out', '2027-06-01T11:00')],
       null,
       DAY_START,
       'legA',
     )[0];
     const staying = buildDragMeta(
-      [{ type: 'stay', stay, relation: 'Staying', key: DAY_START }],
+      [stayRow(stay, 'Staying', DAY_START)],
       null,
       DAY_START,
       'legA',
@@ -581,9 +639,9 @@ describe('Stay Check-out/Check-in drop targets', () => {
   it('Check-out on a day with no real top-level content has a null endAt, and a drop there keeps the dragged Activity’s own time', () => {
     // Everything on this day lives inside a Scenario (excluded from
     // realAnchors) — Check-out has nothing real to take a time from.
-    const flattened: SequenceItem[] = [
-      { type: 'stay', stay: enrichedStay({}), relation: 'Check out', key: '2027-06-01T11:00' },
-      { type: 'scenario-tabs', key: '2027-06-01T08:00' },
+    const flattened: DayRow[] = [
+      stayRow(enrichedStay({}), 'Check out', '2027-06-01T11:00'),
+      boxRow('2027-06-01T08:00', []),
     ];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     const checkout = dragMeta.find((d) => d.kind === 'day-start')!;
@@ -608,9 +666,9 @@ describe('Stay Check-out/Check-in drop targets', () => {
   });
 
   it('a mid-stay "Staying" row has a null endAt (its own key is only ever the synthetic day start)', () => {
-    const flattened: SequenceItem[] = [
-      { type: 'stay', stay: enrichedStay({}), relation: 'Staying', key: DAY_START },
-      { type: 'scenario-tabs', key: '2027-06-01T08:00' },
+    const flattened: DayRow[] = [
+      stayRow(enrichedStay({}), 'Staying', DAY_START),
+      boxRow('2027-06-01T08:00', []),
     ];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     const staying = dragMeta.find((d) => d.id.startsWith('stay-'))!;
@@ -621,13 +679,13 @@ describe('Stay Check-out/Check-in drop targets', () => {
   it('gives a Stay row a dragId unique per calendar day, not just per local row index, since a multi-night Stay renders one row per night under one shared DndContext', () => {
     const stay = enrichedStay({});
     const nightOne = buildDragMeta(
-      [{ type: 'stay', stay, relation: 'Staying', key: '2027-06-01T00:00' }],
+      [stayRow(stay, 'Staying', '2027-06-01T00:00')],
       null,
       '2027-06-01T00:00',
       'legA',
     );
     const checkOutDay = buildDragMeta(
-      [{ type: 'stay', stay, relation: 'Check out', key: '2027-06-02T11:00' }],
+      [stayRow(stay, 'Check out', '2027-06-02T11:00')],
       null,
       '2027-06-02T00:00',
       'legA',
@@ -638,14 +696,12 @@ describe('Stay Check-out/Check-in drop targets', () => {
   });
 
   it('lands a dropped Activity exactly on its anchor’s own instant, then resolves the tie by array position rather than nudging either timestamp', () => {
-    const flattened: SequenceItem[] = [
-      {
-        type: 'section',
-        activities: [
-          activity({ _id: 'act1', startAt: '2027-06-01T09:00' }), // no duration -> own startAt
-          activity({ _id: 'act2', startAt: '2027-06-01T11:00' }),
-        ],
-      },
+    const flattened: DayRow[] = [
+      activityRow(activity({ _id: 'act1', startAt: '2027-06-01T09:00' })),
+      activityRow(
+        // no duration -> own startAt
+        activity({ _id: 'act2', startAt: '2027-06-01T11:00' }),
+      ),
     ];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     const act1Anchor = dragMeta.find(
@@ -674,7 +730,7 @@ describe('Stay Check-out/Check-in drop targets', () => {
     // A genuine tie: act3 now starts at the exact same instant as act1.
     expect(act3?.startAt).toBe('2027-06-01T09:00');
     // Resolved by array order, not a fake time gap: act3 sits immediately
-    // after act1 (its anchor), so day.sequence's stable sort places it
+    // after act1 (its anchor), so the timeline's stable sort places it
     // right after act1 despite the tie.
     const ids = next.activities.map((a) => a._id);
     expect(ids.indexOf('act3')).toBe(ids.indexOf('act1') + 1);
@@ -702,14 +758,7 @@ describe('applyActivityReorder', () => {
       notes: [],
       hasWarningNote: false,
     };
-    const flattened: SequenceItem[] = [
-      {
-        type: 'transit-boundary',
-        transit: arrivingTransit,
-        phase: 'arrive',
-        key: '2027-06-01T09:30',
-      },
-    ];
+    const flattened: DayRow[] = [transitRow(arrivingTransit, 'arrive', '2027-06-01T09:30')];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legA');
     expect(dragMeta).toHaveLength(1);
 
@@ -757,20 +806,10 @@ describe('applyActivityReorder', () => {
       notes: [],
       hasWarningNote: false,
     };
-    const flattened: SequenceItem[] = [
-      {
-        type: 'transit-boundary',
-        transit: arrivingTransit,
-        phase: 'arrive',
-        key: '2027-06-27T09:00',
-      },
-      {
-        type: 'section',
-        activities: [
-          activity({ _id: 'checkin', startAt: '2027-06-27T09:00' }),
-          activity({ _id: 'westrib', startAt: '2027-06-27T15:00' }),
-        ],
-      },
+    const flattened: DayRow[] = [
+      transitRow(arrivingTransit, 'arrive', '2027-06-27T09:00'),
+      activityRow(activity({ _id: 'checkin', startAt: '2027-06-27T09:00' })),
+      activityRow(activity({ _id: 'westrib', startAt: '2027-06-27T15:00' })),
     ];
     const dragMeta = buildDragMeta(flattened, null, '2027-06-27T09:00', 'legA');
     const arrivalAnchor = dragMeta.find((d) => d.id === 'transit-transit1-arrive')!;
@@ -808,15 +847,12 @@ describe('applyActivityReorder', () => {
   // field over its plain fields — reproduced here directly rather than via
   // DaysView.tsx, which isn't unit-tested.
   it('dragging an Activity upward onto an earlier one takes over its slot and pushes it later, stopping at the first Activity with room', () => {
-    const flattened: SequenceItem[] = [
-      {
-        type: 'section',
-        activities: [
-          activity({ _id: 'checkin', startAt: '2027-06-27T09:00' }),
-          activity({ _id: 'flightseeing', startAt: '2027-06-27T09:30', durationMinutes: 120 }),
-          activity({ _id: 'westrib', startAt: '2027-06-27T12:00' }),
-        ],
-      },
+    const flattened: DayRow[] = [
+      activityRow(activity({ _id: 'checkin', startAt: '2027-06-27T09:00' })),
+      activityRow(
+        activity({ _id: 'flightseeing', startAt: '2027-06-27T09:30', durationMinutes: 120 }),
+      ),
+      activityRow(activity({ _id: 'westrib', startAt: '2027-06-27T12:00' })),
     ];
     const dragMeta = buildDragMeta(flattened, null, '2027-06-27T00:00', 'legA');
     const checkinMeta = dragMeta.find(
@@ -864,15 +900,10 @@ describe('applyActivityReorder', () => {
   // (and array position for tie-break purposes) without touching a
   // duration-less Activity's own time at all.
   it('dragging a duration-less Activity onto the front of a container leaves its own time untouched', () => {
-    const flattened: SequenceItem[] = [
-      {
-        type: 'section',
-        activities: [
-          activity({ _id: 'drive', startAt: '2027-07-13T06:00' }),
-          activity({ _id: 'explore', startAt: '2027-07-13T10:45' }),
-          activity({ _id: 'lunch', startAt: '2027-07-13T12:00' }),
-        ],
-      },
+    const flattened: DayRow[] = [
+      activityRow(activity({ _id: 'drive', startAt: '2027-07-13T06:00' })),
+      activityRow(activity({ _id: 'explore', startAt: '2027-07-13T10:45' })),
+      activityRow(activity({ _id: 'lunch', startAt: '2027-07-13T12:00' })),
     ];
     const dragMeta = buildDragMeta(flattened, null, '2027-07-13T00:00', 'legA');
     const driveMeta = dragMeta.find(
@@ -913,14 +944,11 @@ describe('applyActivityReorder', () => {
   // against the new 'front-takeover' kind rather than the old unconditional
   // rule, to pin down that this fix didn't regress it.
   it('still forces a takeover onto the front of a container when the dragged Activity has real duration', () => {
-    const flattened: SequenceItem[] = [
-      {
-        type: 'section',
-        activities: [
-          activity({ _id: 'checkin', startAt: '2027-06-27T09:00' }),
-          activity({ _id: 'flightseeing', startAt: '2027-06-27T09:30', durationMinutes: 120 }),
-        ],
-      },
+    const flattened: DayRow[] = [
+      activityRow(activity({ _id: 'checkin', startAt: '2027-06-27T09:00' })),
+      activityRow(
+        activity({ _id: 'flightseeing', startAt: '2027-06-27T09:30', durationMinutes: 120 }),
+      ),
     ];
     const dragMeta = buildDragMeta(flattened, null, '2027-06-27T00:00', 'legA');
     const checkinMeta = dragMeta.find(
@@ -1044,11 +1072,8 @@ describe('applyActivityReorder', () => {
   // `crossContainer: true` — this should leave the dragged Activity's own
   // time completely untouched, only moving its legId/scenarioId.
   it('a cross-container drop never forces a time takeover, regardless of the anchor it lands near', () => {
-    const flattened: SequenceItem[] = [
-      {
-        type: 'section',
-        activities: [activity({ _id: 'drive', startAt: '2027-07-13T06:00' })],
-      },
+    const flattened: DayRow[] = [
+      activityRow(activity({ _id: 'drive', startAt: '2027-07-13T06:00' })),
     ];
     const dragMeta = buildDragMeta(flattened, null, '2027-07-13T00:00', 'legA');
     const driveMeta = dragMeta.find(
@@ -1084,17 +1109,12 @@ describe('applyActivityReorder', () => {
   // another fuzzy Activity sharing the same timeLabel used to force it onto
   // that neighbor's sort-key surrogate instant (13:00 for "Afternoon"),
   // silently converting it from fuzzy to real-timed. It should stay fuzzy —
-  // same label, no startAt — and let mergeByTime's alphabetical fuzzy
+  // same label, no startAt — and let the timeline's alphabetical fuzzy
   // tie-break do the actual ordering.
   it('dropping a fuzzy Activity after another fuzzy Activity keeps it fuzzy under the same label', () => {
-    const flattened: SequenceItem[] = [
-      {
-        type: 'section',
-        activities: [
-          activity({ _id: 'riverwalk', timeLabel: 'Afternoon', date: '2027-06-27' }),
-          activity({ _id: 'callop', startAt: '2027-06-27T18:00' }),
-        ],
-      },
+    const flattened: DayRow[] = [
+      activityRow(activity({ _id: 'riverwalk', timeLabel: 'Afternoon', date: '2027-06-27' })),
+      activityRow(activity({ _id: 'callop', startAt: '2027-06-27T18:00' })),
     ];
     const dragMeta = buildDragMeta(flattened, null, '2027-06-27T00:00', 'legA');
     const riverwalkAnchor = dragMeta.find((d) => d.id === 'activity-riverwalk')!;
@@ -1875,29 +1895,23 @@ describe('applySingleRowDragEnd', () => {
   // drop — it should leave explore's own time untouched, only reassigning
   // legId/scenarioId to drive's own.
   it('resolves preserveOwnTiming itself for a same-day cross-container Activity drop', () => {
-    const topLevelFlattened: SequenceItem[] = [
-      {
-        type: 'section',
-        activities: [activity({ _id: 'drive', legId: 'legB', startAt: '2027-07-13T06:00' })],
-      },
+    const topLevelFlattened: DayRow[] = [
+      activityRow(activity({ _id: 'drive', legId: 'legB', startAt: '2027-07-13T06:00' })),
     ];
     const topLevelMeta = buildDragMeta(topLevelFlattened, null, '2027-07-13T00:00', 'legB');
     const driveMeta = topLevelMeta.find(
       (d) => d.source?.kind === 'activity' && d.source.id === 'drive',
     )!;
 
-    const scenarioFlattened: SequenceItem[] = [
-      {
-        type: 'section',
-        activities: [
-          activity({
-            _id: 'explore',
-            legId: 'legA',
-            scenarioId: 'bonus',
-            startAt: '2027-07-13T10:45',
-          }),
-        ],
-      },
+    const scenarioFlattened: DayRow[] = [
+      activityRow(
+        activity({
+          _id: 'explore',
+          legId: 'legA',
+          scenarioId: 'bonus',
+          startAt: '2027-07-13T10:45',
+        }),
+      ),
     ];
     const scenarioMeta = buildDragMeta(scenarioFlattened, 'bonus', '2027-07-13T00:00', 'legA');
     const exploreMeta = scenarioMeta.find(
@@ -1959,12 +1973,7 @@ describe('applySingleRowDragEnd', () => {
       mealType: 'snack',
       diningFormat: 'sit-down',
     });
-    const topLevelMeta = buildDragMeta(
-      [{ type: 'section', activities: [snack] }],
-      null,
-      '2027-06-27T00:00',
-      'legA',
-    );
+    const topLevelMeta = buildDragMeta([activityRow(snack)], null, '2027-06-27T00:00', 'legA');
     const snackMeta = topLevelMeta.find(
       (d) => d.source?.kind === 'activity' && d.source.id === 'spinachbread',
     )!;
@@ -1977,14 +1986,7 @@ describe('applySingleRowDragEnd', () => {
       arrivesAt: '2027-06-27T02:16',
     });
     const scenarioMeta = buildDragMeta(
-      [
-        {
-          type: 'transit-boundary',
-          transit: departTransit,
-          phase: 'depart',
-          key: '2027-06-27T00:15',
-        },
-      ],
+      [transitRow(departTransit, 'depart', '2027-06-27T00:15')],
       'scenario_jun27_alt',
       '2027-06-27T00:00',
       'legA',
@@ -2056,7 +2058,7 @@ describe('applySingleRowDragEnd', () => {
       arrivesAt: '2027-06-01T09:00',
     });
     const tracks: ScenarioTrack[] = [
-      {
+      track({
         scenario: {
           _id: 'ideal',
           legId: 'legA',
@@ -2066,35 +2068,22 @@ describe('applySingleRowDragEnd', () => {
           images: [],
         },
         notes: [],
-        anchorKey: '2027-06-01T08:00',
-        realAnchorKey: '2027-06-01T08:00',
-        sequence: [
-          {
-            type: 'transit-boundary',
-            transit: idealTransit,
-            phase: 'depart',
-            key: '2027-06-01T08:00',
-          },
-          {
-            type: 'section',
-            activities: [
-              activity({
-                _id: 'idealAct',
-                legId: 'legA',
-                scenarioId: 'ideal',
-                startAt: '2027-06-01T10:00',
-              }),
-            ],
-          },
+        rows: [
+          transitRow(idealTransit, 'depart', '2027-06-01T08:00'),
+          activityRow(
+            activity({
+              _id: 'idealAct',
+              legId: 'legA',
+              scenarioId: 'ideal',
+              startAt: '2027-06-01T10:00',
+            }),
+          ),
         ],
-      },
+      }),
     ];
-    const flattened: SequenceItem[] = [
-      {
-        type: 'section',
-        activities: [activity({ _id: 'anchorAct', legId: 'legB', startAt: '2027-06-01T07:00' })],
-      },
-      { type: 'scenario-tabs', key: '2027-06-01T08:00', tracks },
+    const flattened: DayRow[] = [
+      activityRow(activity({ _id: 'anchorAct', legId: 'legB', startAt: '2027-06-01T07:00' })),
+      boxRow('2027-06-01T08:00', tracks),
     ];
     const dragMeta = buildDragMeta(flattened, null, DAY_START, 'legB');
     const scenarioEntry = dragMeta.find((d) => d.source?.kind === 'scenario-group')!;

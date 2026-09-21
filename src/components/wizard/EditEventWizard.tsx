@@ -1,4 +1,3 @@
-import Button from '@mui/material/Button';
 import { useState } from 'react';
 
 import {
@@ -26,16 +25,10 @@ import {
   wizardStepsForCategory,
 } from '../../model/editForms';
 import type { Activity, Route, Stay, Transit, Traveler } from '../../model/types';
-import { ConfirmDialog } from '../shared/ConfirmDialog';
+import { ConfirmableDeleteButton } from '../shared/ConfirmableDeleteButton';
 import { renderWizardStep, type WizardStepContext } from './renderWizardStep';
 import { useMealDecision, useMealDuplicateMerge } from './useMealDecision';
 import { WizardShell, type WizardStep } from './WizardShell';
-
-const EDIT_TITLE: Record<EditKind, string> = {
-  activity: 'Edit activity',
-  stay: 'Edit stay',
-  transit: 'Edit transit',
-};
 
 interface EditEventWizardProps {
   kind: EditKind;
@@ -70,7 +63,6 @@ function EditEventWizardBody({
   onDelete,
 }: EditEventWizardProps) {
   const [error, setError] = useState<string | null>(null);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   // All three form states are always kept around (rather than just the one
   // matching `kind`) so WizardStepContext never has to special-case a
@@ -182,7 +174,7 @@ function EditEventWizardBody({
   return (
     <>
       <WizardShell
-        title={EDIT_TITLE[kind]}
+        title={`Edit ${kind}`}
         steps={steps}
         onCancel={onClose}
         onFinish={handleSave}
@@ -190,17 +182,14 @@ function EditEventWizardBody({
         error={error}
         onDismissError={() => setError(null)}
         deleteSlot={
-          <Button color="error" onClick={() => setConfirmingDelete(true)} sx={{ mt: 2 }}>
-            Delete this {kind}
-          </Button>
+          <ConfirmableDeleteButton
+            label={`Delete this ${kind}`}
+            title={`Delete this ${kind}?`}
+            message="This can't be undone from the app — it removes the entry entirely."
+            onConfirm={() => onDelete(kind, entity._id)}
+            sx={{ mt: 2 }}
+          />
         }
-      />
-      <ConfirmDialog
-        open={confirmingDelete}
-        title={`Delete this ${kind}?`}
-        message="This can't be undone from the app — it removes the entry entirely."
-        onCancel={() => setConfirmingDelete(false)}
-        onConfirm={() => onDelete(kind, entity._id)}
       />
     </>
   );

@@ -566,7 +566,7 @@ export function BookingStep({
 
 // ---------- Review ----------
 
-export function ReviewRow({ label, value }: { label: string; value: ReactNode }) {
+function ReviewRow({ label, value }: { label: string; value: ReactNode }) {
   if (!value) return null;
   return (
     <Stack direction="row" spacing={1}>
@@ -578,15 +578,13 @@ export function ReviewRow({ label, value }: { label: string; value: ReactNode })
   );
 }
 
-export function ReviewSection({ children }: { children: ReactNode }) {
+function ReviewSection({ children }: { children: ReactNode }) {
   return (
     <Stack spacing={0.75} sx={{ mb: 1.5 }}>
       {children}
     </Stack>
   );
 }
-
-export { Divider as ReviewDivider };
 
 function BookingReviewRow({
   booking,

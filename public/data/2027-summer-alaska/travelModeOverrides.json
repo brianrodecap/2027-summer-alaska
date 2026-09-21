@@ -24,7 +24,7 @@
     "mode": "TRANSIT"
   },
   {
-    "segmentKey": "segment:transit-073e15c0-5d67-442d-b89e-0011a5cab44b-depart->stage-073e15c0-5d67-442d-b89e-0011a5cab44b-direct-5",
+    "segmentKey": "segment:transit-073e15c0-5d67-442d-b89e-0011a5cab44b-depart->stage-073e15c0-5d67-442d-b89e-0011a5cab44b-0",
     "mode": "TRANSIT"
   },
   {

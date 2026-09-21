@@ -18,7 +18,7 @@ import { dateOnly, wallClockMs } from './tripModel';
 import type {
   Activity,
   Booking,
-  Day,
+  DayFrame,
   DiningFormat,
   MealType,
   NoteKind,
@@ -44,6 +44,15 @@ const SUPPORTED_TYPES = ['application/pdf', 'image/png', 'image/jpeg', 'image/we
 type SupportedType = (typeof SUPPORTED_TYPES)[number];
 
 export class DocumentImportError extends Error {}
+
+// The message an import UI shows for a failed extraction — a
+// DocumentImportError's own text is already user-facing; anything else
+// (network, unexpected shape) gets the generic line.
+export function importErrorMessage(err: unknown): string {
+  return err instanceof DocumentImportError
+    ? err.message
+    : 'Something went wrong reading that document.';
+}
 
 // ---------- 1. File -> base64 ----------
 
@@ -473,7 +482,7 @@ export function draftTripEntities(
 // leaving the caller to surface that as an error rather than guess.
 export function resolveLegAndDateForFields(
   fields: ExtractedFields,
-  days: Day[],
+  days: DayFrame[],
 ): { legId: string; date: string } | null {
   const candidates = [fields.startAt, fields.checkInAt, fields.endAt, fields.checkOutAt].filter(
     (v): v is string => Boolean(v),

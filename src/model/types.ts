@@ -1,6 +1,9 @@
 // TypeScript re-expression of docs/data-model.html's schema. The schema itself is not
 // redesigned here — every shape below mirrors that document's own field lists exactly.
 
+import type { DayVisits } from './dayMap';
+import type { TimelineEvent } from './timeline';
+
 export type PlanStatus = 'planning' | 'active' | 'completed' | 'cancelled';
 export type BookingStatus = 'planning' | 'booked' | 'cancelled';
 
@@ -119,8 +122,8 @@ export interface Place {
 // route's endpoint is frequently a whole city or highway junction
 // ('Anchorage', 'Coldfoot') rather than one specific point — fine as a
 // Directions-API duration lookup, but the wrong id to hand to a map/embed
-// URL that plots one exact pin (see dayMapEmbedUrl/dayFullRouteUrls in
-// tripModel.ts, which draw only from Transit.from/to and
+// URL that plots one exact pin (see mapEmbedUrls/routeUrls in
+// dayMap.ts, which draw only from Transit.from/to and
 // variants[].places[].place, never from a Route's own from/to). This type
 // exists so that boundary has to be crossed on purpose.
 export interface RouteEndpoint {
@@ -222,7 +225,7 @@ export interface Scenario {
   label: string;
   icon: string;
   // Placement hint for a scenario with no Activity/Transit of its own yet —
-  // consulted only while that's true (buildScenarioTracks in tripModel.ts),
+  // consulted only while that's true (scenarioGroups.ts),
   // so the day list has somewhere to show its (empty, droppable) tab. Once a
   // real Activity/Transit points its scenarioId here, that content's own
   // date takes over as the real anchor and this is ignored, same as
@@ -425,83 +428,119 @@ export interface EnrichedTransit extends Omit<Transit, 'arrivesAt'> {
   hasWarningNote: boolean;
 }
 
-// ---------- day.sequence ----------
+// ---------- day rows ----------
 
 export type StayRelation = 'Overnight' | 'Check in' | 'Check out' | 'Staying';
 
-export interface StaySequenceItem {
+// One row per timeline event — the day list's vocabulary. Only two things on
+// the list are NOT events: the stay you are in the middle of ("Staying", a
+// StayRow with no event) and a scenario box (BoxRow: its tab strip and the
+// active branch's own rows). `key` is the row's sort instant (an event row's
+// `event.at`), kept on every row because DayMapSidebar and the drag metas
+// identify rows by it.
+export interface ActivityRow {
+  type: 'activity';
+  event: TimelineEvent;
+  activity: EnrichedActivity;
+  key: string;
+}
+
+export interface StayRow {
   type: 'stay';
+  // Check in / Check out / Overnight rows carry the stay's own boundary event;
+  // a stay in progress has none.
+  event: TimelineEvent | null;
   stay: EnrichedStay;
   relation: StayRelation;
   key: string;
 }
 
-export interface TransitBoundarySequenceItem {
-  type: 'transit-boundary';
+export interface TransitBoundaryRow {
+  type: 'transit';
+  event: TimelineEvent;
   transit: EnrichedTransit;
   phase: 'depart' | 'arrive';
   key: string;
 }
 
-export interface TransitStageSequenceItem {
-  type: 'transit-stage';
+// A stop along the selected route variant.
+export interface TransitStageRow {
+  type: 'transit';
+  event: TimelineEvent;
   transit: EnrichedTransit;
-  variant: ResolvedRouteVariant;
+  phase: 'stage';
   stage: RouteStage;
-  hidden: boolean;
+  stageIndex: number; // its position in the variant's stages
   key: string;
 }
 
-export interface SectionSequenceItem {
-  type: 'section';
-  activities: EnrichedActivity[];
+export type TransitRow = TransitBoundaryRow | TransitStageRow;
+
+export interface BoxRow {
+  type: 'box';
+  key: string; // the box's anchor
+  // Every tab of the box: the active one carries the branch's rows, the others
+  // are just chips. A day's top-level box lists all of its groups' tabs; a
+  // nested box (inside a track's rows) lists one group's.
+  tracks: ScenarioTrack[];
 }
 
-export interface ScenarioTabsSequenceItem {
-  type: 'scenario-tabs';
-  key: string;
-  tracks?: ScenarioTrack[];
-}
+export type DayRow = ActivityRow | StayRow | TransitRow | BoxRow;
 
-export type SequenceItem =
-  | StaySequenceItem
-  | TransitBoundarySequenceItem
-  | TransitStageSequenceItem
-  | SectionSequenceItem
-  | ScenarioTabsSequenceItem;
-
+// One tab of a scenario box on one date.
 export interface ScenarioTrack {
   scenario: Scenario;
   notes: Note[];
-  sequence: SequenceItem[];
-  anchorKey: string | null;
-  realAnchorKey: string | null;
+  // The branch's own rows — empty for an inactive member, whose events aren't
+  // in the timeline.
+  rows: DayRow[];
+  groupKey: string; // the scenario group the track belongs to
+  active: boolean; // whether it is the group's active member
+  // Every Activity/Transit/Stay id the scenario owns on this date (including
+  // a nested group's), so a whole-group drag still moves the inactive
+  // alternatives along with the active one even though their rows aren't in
+  // `rows`.
+  members: { activityIds: string[]; transitIds: string[]; stayIds: string[] };
 }
 
-export interface Day {
+// A calendar day's data-only frame: which leg it belongs to, the stays and
+// transits that touch it, and its notes. Built once per trip load
+// (buildTripView) — everything about what a day CONTAINS is derived per
+// selection by buildLiveDays, which turns a frame into a full Day.
+export interface DayFrame {
   date: string;
   dateLabel: string;
   leg: Leg;
+  // Every leg whose computed range claims this date (`leg` is the first).
+  legIds: string[];
+  stays: EnrichedStay[]; // the stays overlapping this date
+  transits: EnrichedTransit[]; // the transits departing this date
+  notes: Note[];
+}
+
+// A day as the reader is looking at it: a frame plus what the reader's current
+// selections (scenario picks, route tones, meal choices) make of it — its rows,
+// scenario tabs, header and the places its map touches.
+export interface Day extends DayFrame {
   location: string;
-  // Real Google Place ids for the live weather strip — resolved once here
-  // rather than in the component, since each answers a different question:
-  // sunrise/sunset track wherever the day actually starts/ends (the first
-  // and last place with a resolvable id in `sequence`'s own chronological
-  // order — typically the morning's checkout Stay and the evening's
-  // check-in Stay), while the high/low temperature follows the same
-  // priority the day's own header title does (deriveTitle's priority
-  // Activity, e.g. a flightseeing day's temperature is the flightseeing
-  // spot's, not the hotel's) — falling back to the same place `location`'s
-  // label was drawn from when no priority Activity claims the day. null
-  // wherever nothing in that day resolves to a real geocodable point.
+  // Real Google Place ids for the live weather strip, each answering a
+  // different question: sunrise/sunset track wherever the day actually
+  // starts/ends (the first and last place with a resolvable id in
+  // the day's rows), while the high/low temperature follows the same priority the
+  // day's own header title does (a flightseeing day's temperature is the
+  // flightseeing spot's, not the hotel's) — falling back to the place
+  // `location` was drawn from. null wherever nothing resolves to a real
+  // geocodable point.
   sunrisePlaceId: string | null;
   sunsetPlaceId: string | null;
   weatherPlaceId: string | null;
-  stays: EnrichedStay[];
-  transits: EnrichedTransit[];
-  sequence: SequenceItem[];
+  rows: DayRow[];
+  // The day's top-level scenario tabs, flat (what the header and the follow
+  // lookups read); the same tracks the day's top-level box row carries.
   scenarioTracks: ScenarioTrack[];
-  notes: Note[];
+  // The places the day touches, which the map/route/travel queries (dayMap.ts)
+  // read instead of walking the rows.
+  visits: DayVisits;
   summary: string;
   title: string;
 }
@@ -513,7 +552,7 @@ export interface LegSummary {
   // owned by whichever leg sorts first for day-list/header purposes, but
   // still counts toward every leg touching it here.
   dateRange: DateRange | null;
-  days: Day[];
+  days: DayFrame[];
   notes: Note[];
   bookingProgress: BookingProgress;
   bookingPercent: number; // 0-100, see tripModel.ts's legBookingPercent — feeds BookingProgressBar
@@ -553,7 +592,7 @@ export interface BudgetLegGroup {
 }
 
 export interface BudgetDayGroup {
-  day: Day;
+  day: DayFrame;
   totals: BudgetTotals;
   rows: BudgetRow[];
 }
@@ -576,30 +615,26 @@ export interface BudgetView {
 export interface TripView {
   trip: Trip;
   dateRange: DateRange | null;
-  days: Day[];
+  days: DayFrame[];
   legSummaries: LegSummary[];
   activitiesById: Map<string, EnrichedActivity>;
   staysById: Map<string, EnrichedStay>;
   transitsById: Map<string, EnrichedTransit>;
   scenariosById: Map<string, Scenario>;
+  scenarioNotes: Map<string, Note[]>; // notes concerning each scenario, by scenario id
   routesById: Map<string, Route>;
   budget: BudgetView;
   bookingProgress: BookingProgress;
   bookingPercent: number;
 }
 
-// ---------- live selections — what a React caller feeds back into resolveTransitRoute /
-// dayMapStops / dayFullRouteUrls in place of the model's own authored defaults. Today's
-// vanilla-JS app read this off rendered DOM tab state; in the React app this is real state
-// (TripSelectionsContext) passed in as plain arguments instead. ----------
+// ---------- live selections — what a React caller feeds back into resolveTransitRoute
+// in place of the model's own authored defaults. Today's vanilla-JS app read this off
+// rendered DOM tab state; in the React app this is real state (TripSelectionsContext)
+// passed in as plain arguments instead (see buildLiveDays for the scenario/route/meal
+// picks that shape a whole day). ----------
 
 export interface LiveRouteOverrides {
   formatOverrides?: Map<string, DiningFormat>;
   routeVariant?: string;
-}
-
-export interface DaySelections {
-  scenarioTone?: string;
-  mealPlaces?: Map<string, Place | null>;
-  routeTones?: Map<string, string>;
 }

@@ -4,31 +4,30 @@
 // — logic shared by the meal row and the activity detail panel, so it lives
 // here rather than inside either's own component file.
 import { DINING_FORMAT_LABEL } from './formatting';
-import {
-  activityTimeLabel,
-  overlapWarningsFor,
-  sectionActivitiesDeep,
-  stayRelation,
-} from './tripModel';
+import { activitiesDeep, activityTimeLabel, overlapWarningsFor, stayRelation } from './tripModel';
 import type {
   Activity,
   Day,
   DiningFormat,
   EnrichedActivity,
   EnrichedMealOption,
+  MealOption,
   Place,
   Ref,
+  Stay,
 } from './types';
+
+type StayForOption = Pick<Stay, '_id' | 'packages' | 'checkInAt' | 'checkOutAt'>;
 
 // Which Stay a MealOption's includedIn ref is actually about — a plain
 // { entity: 'stay' } ref for 'included', or a { entity: 'package' } ref for
-// 'package', which requires looking inside each day.stays' own packages[] to
+// 'package', which requires looking inside each stay's own packages[] to
 // find the one that owns that package id.
-function stayForIncludedIn(day: Day, includedIn: Ref | null) {
+function stayForIncludedIn<S extends StayForOption>(stays: S[], includedIn: Ref | null): S | null {
   if (!includedIn || !('entity' in includedIn)) return null;
-  if (includedIn.entity === 'stay') return day.stays.find((s) => s._id === includedIn.id) ?? null;
+  if (includedIn.entity === 'stay') return stays.find((s) => s._id === includedIn.id) ?? null;
   if (includedIn.entity === 'package') {
-    return day.stays.find((s) => s.packages?.some((p) => p._id === includedIn.id)) ?? null;
+    return stays.find((s) => s.packages?.some((p) => p._id === includedIn.id)) ?? null;
   }
   return null;
 }
@@ -36,11 +35,16 @@ function stayForIncludedIn(day: Day, includedIn: Ref | null) {
 // An 'included' or 'package' candidate only actually reads as covered once its
 // stay is underway — this same day, before check-in has happened, there's no
 // room to have gotten breakfast bundled (or package-covered) into yet. Any
-// other diningFormat has no such precondition.
-function isIncludedOptionActive(day: Day, option: EnrichedMealOption): boolean {
+// other diningFormat has no such precondition. `stays` is whichever Stays
+// overlap `date` (a Day's own stays, or the timeline's date-filtered set).
+function isIncludedOptionActive(
+  stays: StayForOption[],
+  date: string,
+  option: Pick<MealOption, 'diningFormat' | 'includedIn'>,
+): boolean {
   if (option.diningFormat !== 'included' && option.diningFormat !== 'package') return true;
-  const stay = stayForIncludedIn(day, option.includedIn);
-  return !!stay && stayRelation(stay, day.date) !== 'Check in';
+  const stay = stayForIncludedIn(stays, option.includedIn);
+  return !!stay && stayRelation(stay, date) !== 'Check in';
 }
 
 // activity.options is only ever set while a meal is genuinely undecided
@@ -55,7 +59,17 @@ export function activeMealOptions(
   activity: { options: EnrichedMealOption[] | null },
   day: Day,
 ): EnrichedMealOption[] {
-  return (activity.options ?? []).filter((option) => isIncludedOptionActive(day, option));
+  return activeMealOptionsOn(activity.options ?? [], day.stays, day.date);
+}
+
+// The same filter for a caller with no Day — the timeline builder, which only
+// has the trip's Stays and an event's own date.
+export function activeMealOptionsOn<O extends Pick<MealOption, 'diningFormat' | 'includedIn'>>(
+  options: O[],
+  stays: StayForOption[],
+  date: string,
+): O[] {
+  return options.filter((option) => isIncludedOptionActive(stays, date, option));
 }
 
 export function mealOptionLabel(option: EnrichedMealOption): string {
@@ -64,7 +78,7 @@ export function mealOptionLabel(option: EnrichedMealOption): string {
 
 // Which of a still-open meal's active candidates is currently selected —
 // shared by every reader that needs the candidate itself rather than just
-// its index (activityPlace below, ActivityNode's note-menu targeting,
+// its index (resolveActivityPlace below, ActivityNode's note-menu targeting,
 // liveFormatOverrides' per-activity dining-format lookup).
 export function selectedMealOption(
   options: EnrichedMealOption[],
@@ -75,19 +89,20 @@ export function selectedMealOption(
 }
 
 // The Place a row on the day timeline actually names for travel-distance
-// purposes (TravelSegmentRow) — a plain Activity's own place, or, for a
-// still-open meal, whichever candidate is currently selected (the same
-// candidate ActivityNode's own noteTarget resolves for note-menu targeting),
-// since a meal's real-world location isn't decided until one candidate wins.
-export function activityPlace(
-  activity: EnrichedActivity,
-  day: Day,
-  mealOptionIndex: Map<string, number>,
+// purposes — a plain Activity's own place, or, for a still-open meal, whichever
+// candidate is currently selected, since a meal's real-world location isn't
+// decided until one candidate wins. The timeline builder resolves every
+// activity event's place through this (TimelineEvent.place), so the map, route
+// URLs, travel totals and the row footers all read the same answer.
+export function resolveActivityPlace(
+  activity: Pick<Activity, '_id' | 'place'> & { options: MealOption[] | null },
+  stays: StayForOption[],
+  date: string,
+  mealOptionIndex: ReadonlyMap<string, number>,
 ): Place | null {
   if (!isMealActivity(activity)) return activity.place;
-  const options = activeMealOptions(activity, day);
-  const selected = selectedMealOption(options, mealOptionIndex, activity._id);
-  return selected?.place ?? null;
+  const options = activeMealOptionsOn(activity.options ?? [], stays, date);
+  return options[selectedMealOptionIndex(options, mealOptionIndex, activity._id)]?.place ?? null;
 }
 
 // A still-open meal has no durationMinutes of its own to show an end time
@@ -112,8 +127,8 @@ export function mealOptionTimeLabel(
 // itself and displaced it) — shared by the meal row and the day-list note
 // menu, so both agree on which candidate "selected" means right now.
 export function selectedMealOptionIndex(
-  options: EnrichedMealOption[],
-  mealOptionIndex: Map<string, number>,
+  options: unknown[],
+  mealOptionIndex: ReadonlyMap<string, number>,
   activityId: string,
 ): number {
   const stored = mealOptionIndex.get(activityId);
@@ -133,10 +148,7 @@ function dayActivities(day: Day): EnrichedActivity[] {
   const cached = dayActivitiesCache.get(day);
   if (cached) return cached;
   const byId = new Map<string, EnrichedActivity>();
-  for (const activity of sectionActivitiesDeep(day.sequence)) byId.set(activity._id, activity);
-  for (const track of day.scenarioTracks) {
-    for (const activity of sectionActivitiesDeep(track.sequence)) byId.set(activity._id, activity);
-  }
+  for (const activity of activitiesDeep(day.rows)) byId.set(activity._id, activity);
   const result = [...byId.values()];
   dayActivitiesCache.set(day, result);
   return result;

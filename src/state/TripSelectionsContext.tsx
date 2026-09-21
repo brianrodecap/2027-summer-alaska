@@ -17,7 +17,7 @@ import {
 // Replaces the old vanilla-JS app's "read live tab state off the DOM" pattern
 // (readDaySelections/recomputeRoutedTransits) with real React state. Every
 // place trip-model.ts accepts a `live`/`selections` argument
-// (resolveTransitRoute, dayMapStops, dayFullRouteUrls) derives it from these
+// (resolveTransitRoute, buildLiveDays) derives it from these
 // contexts via a small selector, instead of querying rendered DOM nodes.
 
 function toggleInSet<T>(set: Set<T>, value: T): Set<T> {
@@ -45,15 +45,15 @@ function useMapSlot<K, V>(): [Map<K, V>, (key: K, value: V) => void] {
 }
 
 export function TripSelectionsProvider({ children }: { children: ReactNode }) {
-  const [scenarioTone, setScenarioTone] = useMapSlot<string, string>();
+  const [scenarioPicks, setScenarioPicks] = useMapSlot<string, string>();
   const [routeTones, setRouteTones] = useMapSlot<string, string>();
   const [mealOptionIndex, setMealOptionIndex] = useMapSlot<string, number>();
   const [activeFilterTokens, setActiveFilterTokens] = useState<Set<string>>(new Set());
   const [rowSelection, setRowSelection] = useState<RowSelection | null>(null);
 
   const scenarioValue = useMemo<ScenarioSelectionValue>(
-    () => ({ scenarioTone, selectScenario: setScenarioTone }),
-    [scenarioTone, setScenarioTone],
+    () => ({ scenarioPicks, selectScenario: setScenarioPicks }),
+    [scenarioPicks, setScenarioPicks],
   );
 
   const routeToneValue = useMemo<RouteToneSelectionValue>(

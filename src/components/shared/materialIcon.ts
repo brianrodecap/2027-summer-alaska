@@ -115,37 +115,6 @@ const ICONS: Record<string, IconComponent> = {
   celebration: CelebrationIcon,
 };
 
-// Maps a live Place's primaryType (Places API (New)) to an icon for the
-// activity side sheet's header — known only once hydratePlaceDetails
-// resolves. A meal option skips this entirely (its dining-format icon is
-// known synchronously — see DINING_FORMAT_ICON).
-export const PLACE_TYPE_ICON: Record<string, string> = {
-  museum: 'museum',
-  art_gallery: 'palette',
-  tourist_attraction: 'attractions',
-  visitor_center: 'info',
-  park: 'park',
-  national_park: 'park',
-  hiking_area: 'hiking',
-  campground: 'cabin',
-  rv_park: 'rv_hookup',
-  lodging: 'hotel',
-  hotel: 'hotel',
-  restaurant: 'restaurant',
-  cafe: 'local_cafe',
-  bakery: 'bakery_dining',
-  bar: 'local_bar',
-  brewery: 'sports_bar',
-  grocery_store: 'local_grocery_store',
-  supermarket: 'local_grocery_store',
-  gas_station: 'local_gas_station',
-  airport: 'flight',
-  zoo: 'pets',
-  aquarium: 'water',
-  natural_feature: 'terrain',
-  store: 'storefront',
-};
-
 export function materialIcon(name: string | null | undefined): IconComponent {
   return (name && ICONS[name]) || HelpOutlineIcon;
 }

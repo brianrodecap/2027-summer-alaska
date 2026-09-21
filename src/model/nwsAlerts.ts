@@ -14,7 +14,7 @@
 // since "is there a watch/warning out" only means something for a day that's
 // either happening now or about to.
 import { memoizeAsync } from './asyncCache';
-import { type Coordinates, getCoordinates } from './placeCoordinates';
+import { type Coordinates, coordKey, getCoordinates } from './placeCoordinates';
 
 export type NwsSeverity = 'Extreme' | 'Severe' | 'Moderate' | 'Minor' | 'Unknown';
 
@@ -56,9 +56,9 @@ interface NwsAlertsResponse {
 // without pretending to more precision than a county-sized alert zone needs.
 const alertsCache = new Map<string, Promise<NwsAlert[]>>();
 
-async function fetchAlertsForCoordinates({ lat, lng }: Coordinates): Promise<NwsAlert[]> {
-  const key = `${lat.toFixed(2)},${lng.toFixed(2)}`;
-  return memoizeAsync(alertsCache, key, async () => {
+async function fetchAlertsForCoordinates(coords: Coordinates): Promise<NwsAlert[]> {
+  const { lat, lng } = coords;
+  return memoizeAsync(alertsCache, coordKey(coords), async () => {
     const url = `https://api.weather.gov/alerts/active?point=${lat.toFixed(4)},${lng.toFixed(4)}`;
     const res = await fetch(url, { headers: { Accept: 'application/geo+json' } });
     if (!res.ok) return [];

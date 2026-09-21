@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 
+import { dayElementId } from './dayLayout';
+
 // Scrollspy for "which Day block is the reader actually looking at right
 // now" — drives DayMapSidebar, the single persistent map panel beside the
 // day list: rather than a map per day (a live google.maps.Map instance for
@@ -18,7 +20,7 @@ export function useActiveDayDate(dates: string[]): string | null {
   useEffect(() => {
     if (dates.length === 0) return;
     const elements = dates
-      .map((date) => document.getElementById(`day-${date}`))
+      .map((date) => document.getElementById(dayElementId(date)))
       .filter((el): el is HTMLElement => el !== null);
     if (elements.length === 0) return;
 

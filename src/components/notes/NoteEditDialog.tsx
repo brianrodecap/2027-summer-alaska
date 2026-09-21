@@ -12,7 +12,7 @@ import { useState } from 'react';
 
 import type { NoteKind, Ref, RefEntityKind } from '../../model/types';
 import type { NoteTarget } from '../../state/NoteEditContextObject';
-import { ConfirmDialog } from '../shared/ConfirmDialog';
+import { ConfirmableDeleteButton } from '../shared/ConfirmableDeleteButton';
 import { NOTE_ICON as KIND_ICON } from '../shared/noteKind';
 
 const KIND_LABEL: Record<NoteKind, string> = {
@@ -75,7 +75,6 @@ export function NoteEditDialog({
     target.mode === 'create' ? target.kind : target.note.kind,
   );
   const [text, setText] = useState(target.mode === 'edit' ? target.note.text : (target.text ?? ''));
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
   const about =
     target.mode === 'create' ? describeRef(target.ref) : describeRef(target.note.concerns[0]);
 
@@ -119,9 +118,11 @@ export function NoteEditDialog({
       </DialogContent>
       <DialogActions sx={{ justifyContent: onDelete ? 'space-between' : 'flex-end', px: 3, pb: 2 }}>
         {onDelete && (
-          <Button color="error" onClick={() => setConfirmingDelete(true)}>
-            Delete
-          </Button>
+          <ConfirmableDeleteButton
+            title="Delete this note?"
+            message="This can't be undone from the app — it removes the note entirely."
+            onConfirm={onDelete}
+          />
         )}
         <Stack direction="row" spacing={1}>
           <Button onClick={onClose}>{onSkip ? 'Cancel all' : 'Cancel'}</Button>
@@ -136,15 +137,6 @@ export function NoteEditDialog({
           </Button>
         </Stack>
       </DialogActions>
-      {onDelete && (
-        <ConfirmDialog
-          open={confirmingDelete}
-          title="Delete this note?"
-          message="This can't be undone from the app — it removes the note entirely."
-          onCancel={() => setConfirmingDelete(false)}
-          onConfirm={onDelete}
-        />
-      )}
     </Dialog>
   );
 }

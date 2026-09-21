@@ -12,7 +12,6 @@ import Divider from '@mui/material/Divider';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
-import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
@@ -21,10 +20,10 @@ import { useState } from 'react';
 import { getStoredApiKey, setStoredApiKey } from '../../config/aiKey';
 import {
   dateRangeFromExtractedEntities,
-  DocumentImportError,
   draftTripEntities,
   type ExtractedFields,
   extractTripEntitiesFromDocument,
+  importErrorMessage,
   type StagedTripEntities,
 } from '../../model/documentImport';
 import {
@@ -32,26 +31,22 @@ import {
   applyTripForm,
   blankLegForm,
   blankTripForm,
+  EDIT_KIND_LABEL,
+  type EditKind,
   type LegFormState,
   tripFormFrom,
 } from '../../model/editForms';
-import { AUTHORITY_OPTIONS } from '../../model/formatting';
 import { slugify } from '../../model/slug';
 import { todayDateStr } from '../../model/tripModel';
 import type { Leg, Trip } from '../../model/types';
+import { LegFormFields } from '../legs/LegFormFields';
 import { ApiKeyField } from '../shared/ApiKeyField';
-
-const KIND_LABEL: Record<ExtractedFields['kind'], string> = {
-  activity: 'Activity',
-  stay: 'Stay',
-  transit: 'Transit',
-};
 
 function summarizeExtraction(entities: ExtractedFields[]): string {
   const counts = new Map<string, number>();
   for (const e of entities) counts.set(e.kind, (counts.get(e.kind) ?? 0) + 1);
   return [...counts.entries()]
-    .map(([kind, n]) => `${n} ${KIND_LABEL[kind as ExtractedFields['kind']]}${n > 1 ? 's' : ''}`)
+    .map(([kind, n]) => `${n} ${EDIT_KIND_LABEL[kind as EditKind]}${n > 1 ? 's' : ''}`)
     .join(', ');
 }
 
@@ -150,11 +145,7 @@ export function TripEditDialog({
       setImportedEntities(result.entities);
       setImportStatus('success');
     } catch (err) {
-      setImportError(
-        err instanceof DocumentImportError
-          ? err.message
-          : 'Something went wrong reading that document.',
-      );
+      setImportError(importErrorMessage(err));
       setImportStatus('error');
     }
   };
@@ -292,36 +283,7 @@ export function TripEditDialog({
             )}
             {newLegForm ? (
               <Stack spacing={2} sx={{ mb: 1 }}>
-                <TextField
-                  label="Leg name"
-                  value={newLegForm.name}
-                  onChange={(e) =>
-                    setNewLegForm((prev) => (prev ? { ...prev, name: e.target.value } : prev))
-                  }
-                  fullWidth
-                  autoFocus
-                />
-                <TextField
-                  select
-                  label="Skeleton authority"
-                  value={newLegForm.skeletonAuthority}
-                  helperText={
-                    AUTHORITY_OPTIONS.find((o) => o.value === newLegForm.skeletonAuthority)?.helper
-                  }
-                  onChange={(e) =>
-                    setNewLegForm((prev) =>
-                      prev
-                        ? { ...prev, skeletonAuthority: e.target.value as Leg['skeletonAuthority'] }
-                        : prev,
-                    )
-                  }
-                >
-                  {AUTHORITY_OPTIONS.map((o) => (
-                    <MenuItem key={o.value} value={o.value}>
-                      {o.label}
-                    </MenuItem>
-                  ))}
-                </TextField>
+                <LegFormFields form={newLegForm} onChange={setNewLegForm} nameLabel="Leg name" />
                 <Stack direction="row" spacing={1}>
                   <Button variant="contained" size="small" onClick={handleAddLeg}>
                     Add

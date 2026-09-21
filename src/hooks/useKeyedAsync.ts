@@ -6,6 +6,12 @@ interface KeyedAsyncResult<K, V> {
   failed: boolean;
 }
 
+// A stable empty-Map identity, reused (via cast) by callers wherever a
+// `useKeyedAsync` result hasn't resolved yet (useSegmentLookup, DayMapSidebar's
+// own coordinate lookup) — a fresh Map per render would defeat the very
+// reference-stability `value` is meant to give a downstream memo/effect.
+export const EMPTY_MAP = new Map() as Map<never, never>;
+
 export interface KeyedAsyncState<V> {
   value: V | null;
   loading: boolean;

@@ -1,9 +1,4 @@
-import { useKeyedAsync } from './useKeyedAsync';
-
-// A stable empty-Map identity, reused (via cast) everywhere a `useKeyedAsync`
-// result hasn't resolved yet — see useKeyedAsync's own note on why a fresh
-// object per render would be the wrong default here.
-const EMPTY_MAP = new Map() as Map<never, never>;
+import { EMPTY_MAP, useKeyedAsync } from './useKeyedAsync';
 
 export interface SegmentLookupResult<T> {
   value: Map<string, T>;

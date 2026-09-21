@@ -1,14 +1,8 @@
-import Alert from '@mui/material/Alert';
-import Button from '@mui/material/Button';
-import Dialog from '@mui/material/Dialog';
-import DialogActions from '@mui/material/DialogActions';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
 import { useState } from 'react';
 
 import { applyRouteForm, routeFormFrom } from '../../model/editForms';
 import type { Route } from '../../model/types';
-import { ConfirmDialog } from '../shared/ConfirmDialog';
+import { EntityFormDialog } from '../shared/EntityFormDialog';
 import { RouteEditForm } from './RouteEditForm';
 
 // The chrome around RouteEditForm — mirrors EditDialog's own Save/Cancel/
@@ -30,52 +24,31 @@ export function RouteEditDialog({
   onDelete: (id: string) => void;
 }) {
   const [form, setForm] = useState<Route>(() => routeFormFrom(route));
-  const [error, setError] = useState<string | null>(null);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = (): string | null => {
     const clone = structuredClone(route);
     const message = applyRouteForm(clone, form);
-    if (message) {
-      setError(message);
-      return;
-    }
-    onSave(clone);
+    if (!message) onSave(clone);
+    return message;
   };
 
   return (
-    <Dialog open onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>{isNew ? 'Add route' : 'Edit route'}</DialogTitle>
-      <DialogContent dividers>
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }} onClose={() => setError(null)}>
-            {error}
-          </Alert>
-        )}
-        <RouteEditForm form={form} onChange={setForm} />
-      </DialogContent>
-      <DialogActions sx={{ justifyContent: 'space-between', px: 3 }}>
-        {isNew ? (
-          <span />
-        ) : (
-          <Button color="error" onClick={() => setConfirmingDelete(true)}>
-            Delete
-          </Button>
-        )}
-        <div>
-          <Button onClick={onClose}>Cancel</Button>
-          <Button variant="contained" onClick={handleSave}>
-            Save
-          </Button>
-        </div>
-      </DialogActions>
-      <ConfirmDialog
-        open={confirmingDelete}
-        title="Delete this route?"
-        message="This can't be undone from the app — it removes the route entirely, including all its variants."
-        onCancel={() => setConfirmingDelete(false)}
-        onConfirm={() => onDelete(route._id)}
-      />
-    </Dialog>
+    <EntityFormDialog
+      title={isNew ? 'Add route' : 'Edit route'}
+      onClose={onClose}
+      onSubmit={handleSave}
+      deletion={
+        isNew
+          ? undefined
+          : {
+              title: 'Delete this route?',
+              message:
+                "This can't be undone from the app — it removes the route entirely, including all its variants.",
+              onConfirm: () => onDelete(route._id),
+            }
+      }
+    >
+      <RouteEditForm form={form} onChange={setForm} />
+    </EntityFormDialog>
   );
 }

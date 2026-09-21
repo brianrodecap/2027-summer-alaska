@@ -1,26 +1,20 @@
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
-import { type ReactNode, useState } from 'react';
+import type { ReactNode } from 'react';
 
-import type {
-  Day,
-  EnrichedActivity,
-  EnrichedMealOption,
-  EnrichedStay,
-  EnrichedTransit,
-  ScenarioTrack,
-} from '../../model/types';
+import { activeTrackOf } from '../../model/tripModel';
+import type { Day, ScenarioTrack } from '../../model/types';
 import { useScenarioSelection } from '../../state/useTripSelections';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
 import { DayTimeline, ROW_CONTENT_PX } from './DayTimeline';
-import { resolveActiveTrack } from './scenarioSelection';
+import type { DayRowOpeners } from './openHandlers';
 
 // A branching day's scenarios each become one chip; the chip group picks
 // which branch's own timeline shows below. Each scenario's notes render once
 // at the top of that scenario's panel, not repeated per activity. See
-// scenarioSelection.ts for the follows/requires resolution this wires up to.
+// scenarioGroups.ts for the follows/requires resolution this wires up to.
 //
 // A flight-contingent day's own live cloud cover/rain chance/wind already
 // shows in DayWeatherChips, right above these chips — that strip's
@@ -31,48 +25,25 @@ import { resolveActiveTrack } from './scenarioSelection';
 export function ScenarioTabsSection({
   day,
   tracks,
-  visible,
-  topLevel,
-  daysByDate,
   onOpenActivity,
   onOpenStay,
   onOpenTransit,
   trailingTravelFooter,
-}: {
+}: DayRowOpeners & {
   day: Day;
+  // One scenario group's own tabs (tracksByGroup) — the active one is
+  // already marked, upstream (resolveActiveScenarios/layoutDay).
   tracks: ScenarioTrack[];
-  // Pre-filtered by the caller (ScenarioTabsNode, via visibleTracksFor) —
-  // it already needs this same list for its own emptiness check before
-  // rendering this component at all, so it's passed through rather than
-  // recomputed here.
-  visible: ScenarioTrack[];
-  topLevel: boolean;
-  daysByDate: Map<string, Day>;
-  onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
-  onOpenStay: (stay: EnrichedStay) => void;
-  onOpenTransit: (transit: EnrichedTransit) => void;
   // Forwarded straight through to the active track's own nested DayTimeline
   // as its trailingTravelFooter — see DayTimeline.tsx's own note on that
   // prop. Only ever set when this section itself sits inside another
   // scenario-tabs node's own exit segment (ScenarioTabsNode below).
   trailingTravelFooter?: ReactNode;
 }) {
-  const { scenarioTone, selectScenario } = useScenarioSelection();
-  const [localIndex, setLocalIndex] = useState(0);
+  const { selectScenario } = useScenarioSelection();
 
-  if (!visible.length) return null;
-
-  const activeTrack = topLevel
-    ? (resolveActiveTrack(day, tracks, daysByDate, scenarioTone, true) ?? visible[0])
-    : (visible[localIndex] ?? visible[0]);
-  const activeIndex = Math.max(visible.indexOf(activeTrack), 0);
-
-  const handleSelect = (newIndex: number) => {
-    const picked = visible[newIndex];
-    if (!picked) return;
-    if (topLevel) selectScenario(day.date, picked.scenario.tone);
-    else setLocalIndex(newIndex);
-  };
+  const activeTrack = activeTrackOf(tracks);
+  if (!activeTrack) return null;
 
   return (
     <Box sx={{ mb: 1 }}>
@@ -81,8 +52,8 @@ export function ScenarioTabsSection({
           nested DayTimeline below stays unindented; ROW_CONTENT_PX re-adds
           the usual inset here, scoped to just the chips/notes. */}
       <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', px: ROW_CONTENT_PX }}>
-        {visible.map((t, i) => {
-          const active = i === activeIndex;
+        {tracks.map((t) => {
+          const active = t === activeTrack;
           return (
             <Chip
               key={t.scenario._id}
@@ -91,7 +62,7 @@ export function ScenarioTabsSection({
               icon={renderMaterialIcon(t.scenario.icon, { fontSize: 'small' })}
               color={active ? (t.scenario.tone === 'ideal' ? 'primary' : 'error') : 'default'}
               variant={active ? 'filled' : 'outlined'}
-              onClick={() => handleSelect(i)}
+              onClick={() => selectScenario(t.groupKey, t.scenario._id)}
             />
           );
         })}
@@ -102,10 +73,9 @@ export function ScenarioTabsSection({
       <Box sx={{ mt: 1.5 }}>
         <DayTimeline
           day={day}
-          sequence={activeTrack.sequence}
+          rows={activeTrack.rows}
           containerId={`${day.date}::${activeTrack.scenario._id}`}
           scenarioId={activeTrack.scenario._id}
-          daysByDate={daysByDate}
           onOpenActivity={onOpenActivity}
           onOpenStay={onOpenStay}
           onOpenTransit={onOpenTransit}

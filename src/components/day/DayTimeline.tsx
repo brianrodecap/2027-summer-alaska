@@ -25,7 +25,7 @@ import {
 import { useKeyedAsync } from '../../hooks/useKeyedAsync';
 import { type DriveInfo, lookupTravelInfo } from '../../model/directions';
 import { applyTravelModeSelection, resolveTravelMode } from '../../model/editForms';
-import { filterSequenceItems } from '../../model/filters';
+import { filterRows } from '../../model/filters';
 import {
   firstImage,
   formatMinutes,
@@ -33,34 +33,27 @@ import {
   STAGE_KIND_LABEL,
   stayDetailBits,
 } from '../../model/formatting';
-import {
-  activeMealOptions,
-  activityPlace,
-  isMealActivity,
-  selectedMealOption,
-} from '../../model/mealOptions';
+import { activeMealOptions, isMealActivity, selectedMealOption } from '../../model/mealOptions';
 import {
   beforeScenarioSplitDragId,
   buildDragMeta,
+  dragIdOf,
   type DragMeta,
   rowMembersOf,
-  scenarioTabsDragId,
 } from '../../model/reorder';
 import {
-  activeRouteTone,
-  activityNodeKey,
+  activeTrackOf,
   findNextResolvableStop,
   formatTime,
   rowTestId,
   segmentKey,
   splitOutStayBoundaries,
-  stayNodeKey,
   stayRelation,
-  transitBoundaryKey,
-  transitItemPlace,
+  transitRowPlace,
 } from '../../model/tripModel';
 import type {
   Day,
+  DayRow,
   EnrichedActivity,
   EnrichedMealOption,
   EnrichedStay,
@@ -68,10 +61,9 @@ import type {
   Place,
   RefEntityKind,
   ScenarioTrack,
-  SequenceItem,
-  StaySequenceItem,
-  TransitBoundarySequenceItem,
-  TransitStageSequenceItem,
+  StayRow,
+  TransitBoundaryRow,
+  TransitStageRow,
   TravelMode,
 } from '../../model/types';
 import { isRowSelected, type RowSelectionMembers } from '../../state/TripSelectionsContextObject';
@@ -80,9 +72,7 @@ import { useTripData } from '../../state/useTripData';
 import {
   useFilterSelection,
   useMealOptionSelection,
-  useRouteToneSelection,
   useRowSelection,
-  useScenarioSelection,
 } from '../../state/useTripSelections';
 import { BookingChip } from '../shared/BookingChip';
 import { renderMaterialIcon, transitModeIconName, TRAVEL_MODE_ICON } from '../shared/materialIcon';
@@ -93,20 +83,14 @@ import { ROW_LEADING_SIZE, ROW_OVERLINE_SX } from '../shared/rowLeadingTokens';
 import { ActivityLeading, ActivityRow } from './ActivityRow';
 import { AvatarOrDot } from './AvatarOrDot';
 import { MealRow, MealRowLeading } from './MealRow';
+import type { DayRowOpeners } from './openHandlers';
 import { PlaceConditionsLine } from './PlaceConditionsLine';
 import { RouteVariantTabs } from './RouteVariantTabs';
 import { RowMenu } from './RowMenu';
-import { resolveActiveTrack, visibleTracksFor } from './scenarioSelection';
+import { tracksByGroup } from './scenarioSelection';
 import { ScenarioTabsSection } from './ScenarioTabsSection';
 import { useInViewport } from './useInViewport';
 
-// Every route variant's stages/arrival were already walked once in
-// buildTripView (transit.routeInfo.variants[]) — switching which tone is
-// "active" just picks a different already-computed variant, no re-walk
-// needed. (The one thing this doesn't do — a meal-format change nudging a
-// drive's estimated arrival live — is a documented, deliberately deferred
-// refinement; every variant's own stage/arrival times still reflect the
-// model's own default meal-format guess.)
 // Applied uniformly to every row (Stay/Transit/Activity alike) so the
 // dot/image column it sits beside stays aligned down the page regardless of
 // which individual rows actually carry a drag handle — an Activity row
@@ -256,14 +240,8 @@ function TimelineRow({
   );
 }
 
-function resolvedArrivesAtFor(
-  transit: EnrichedTransit,
-  routeTones: Map<string, string>,
-): string | null {
-  const tone = activeRouteTone(transit, routeTones);
-  if (!tone || !transit.routeInfo) return transit.arrivesAt;
-  return transit.routeInfo.variants.find((v) => v.tone === tone)?.arrivesAt ?? transit.arrivesAt;
-}
+const isBoundaryRow = (row: DayRow): row is TransitBoundaryRow =>
+  row.type === 'transit' && row.phase !== 'stage';
 
 const StayNode = memo(function StayNode({
   item,
@@ -274,7 +252,7 @@ const StayNode = memo(function StayNode({
   selected,
   travelFooter,
 }: {
-  item: StaySequenceItem;
+  item: StayRow;
   date: string;
   isLast: boolean;
   onOpen: (stay: EnrichedStay) => void;
@@ -342,7 +320,7 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
   selected,
   travelFooter,
 }: {
-  item: TransitBoundarySequenceItem;
+  item: TransitBoundaryRow;
   date: string;
   isLast: boolean;
   onOpen: (transit: EnrichedTransit) => void;
@@ -350,11 +328,11 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
   selected?: boolean;
   travelFooter?: ReactNode;
 }) {
-  const { routeTones } = useRouteToneSelection();
-  const { transit, phase } = item;
+  const { transit, phase, event } = item;
   const isDepart = phase === 'depart';
   const endpointPlace = isDepart ? transit.from : transit.to;
-  const time = isDepart ? transit.departsAt : resolvedArrivesAtFor(transit, routeTones);
+  // The timeline event already resolved the selected route variant's time.
+  const time = event.at;
   const modeIconName = transitModeIconName(transit);
   const image = firstImage(transit, endpointPlace);
   const { openEdit, deleteEntity } = useEdit();
@@ -420,14 +398,11 @@ const TransitStageNode = memo(function TransitStageNode({
   isLast,
   travelFooter,
 }: {
-  item: TransitStageSequenceItem;
+  item: TransitStageRow;
   isLast: boolean;
   travelFooter?: ReactNode;
 }) {
-  const { routeTones } = useRouteToneSelection();
-  const { transit, variant, stage } = item;
-  const tone = activeRouteTone(transit, routeTones);
-  if (variant.tone !== tone) return null; // a non-active variant's stages simply aren't rendered
+  const { stage } = item;
   return (
     <TimelineRow
       dot={<AvatarOrDot image={stage.place.images?.[0] ?? null} icon="signpost" />}
@@ -528,24 +503,17 @@ const ActivityNode = memo(function ActivityNode({
 const ScenarioTabsNode = memo(function ScenarioTabsNode({
   day,
   tracks,
-  topLevel,
   isLast,
-  daysByDate,
   onOpenActivity,
   onOpenStay,
   onOpenTransit,
   dragHandle,
   selected,
   travelFooter,
-}: {
+}: DayRowOpeners & {
   day: Day;
   tracks: ScenarioTrack[];
-  topLevel: boolean;
   isLast: boolean;
-  daysByDate: Map<string, Day>;
-  onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
-  onOpenStay: (stay: EnrichedStay) => void;
-  onOpenTransit: (transit: EnrichedTransit) => void;
   dragHandle?: ReactNode;
   selected?: boolean;
   // The footer for the segment starting where the active track's own content
@@ -555,16 +523,14 @@ const ScenarioTabsNode = memo(function ScenarioTabsNode({
   // list's own last row exactly the way any other in-list footer would.
   travelFooter?: ReactNode;
 }) {
-  const { scenarioTone } = useScenarioSelection();
-  // Mirrors ScenarioTabsSection's own emptiness check — a gated child track
-  // whose requires-list no longer matches the followed day's active branch
-  // (or a track list that's simply gone, e.g. right after the scenario it
-  // held was deleted) has nothing to show. Bail before rendering any of the
+  // Mirrors ScenarioTabsSection's own emptiness check — no active track (a
+  // track list that's simply gone, e.g. right after the scenario it held was
+  // deleted) has nothing to show. Bail before rendering any of the
   // TimelineItem chrome, same as TransitStageNode does for a non-active
   // route variant's stage — otherwise the dot/connector renders with an
   // empty panel underneath.
-  const visible = visibleTracksFor(tracks, daysByDate, scenarioTone, topLevel);
-  if (!visible.length) return null;
+  const groups = tracksByGroup(tracks).filter((group) => activeTrackOf(group));
+  if (!groups.length) return null;
   return (
     <TimelineRow
       dot={<RowLeadingDot icon="alt_route" />}
@@ -582,17 +548,17 @@ const ScenarioTabsNode = memo(function ScenarioTabsNode({
       // just its chips/notes.
       contentSx={{ pb: 0, px: 0 }}
     >
-      <ScenarioTabsSection
-        day={day}
-        tracks={tracks}
-        visible={visible}
-        topLevel={topLevel}
-        daysByDate={daysByDate}
-        onOpenActivity={onOpenActivity}
-        onOpenStay={onOpenStay}
-        onOpenTransit={onOpenTransit}
-        trailingTravelFooter={travelFooter}
-      />
+      {groups.map((group, i) => (
+        <ScenarioTabsSection
+          key={group[0].groupKey}
+          day={day}
+          tracks={group}
+          onOpenActivity={onOpenActivity}
+          onOpenStay={onOpenStay}
+          onOpenTransit={onOpenTransit}
+          trailingTravelFooter={i === groups.length - 1 ? travelFooter : undefined}
+        />
+      ))}
     </TimelineRow>
   );
 });
@@ -870,7 +836,7 @@ const ScenarioSplitDropSpacer = memo(function ScenarioSplitDropSpacer({
 });
 
 // A scenario-tabs split's own first/last real, resolvable Place — walked
-// through whichever track (resolveActiveTrack, the same resolution
+// through whichever track is active (activeTrackOf, the same one
 // ScenarioTabsSection itself renders) is currently active, recursing into a
 // nested scenario-tabs item's own active track when the branch's own
 // leading/trailing item is itself another split. Lets the travel-footer
@@ -879,64 +845,74 @@ const ScenarioSplitDropSpacer = memo(function ScenarioSplitDropSpacer({
 // actually on screen right now, rather than treating every scenario
 // boundary as unresolvable the way a bare `Place | null` on the split
 // itself would have to.
-// The live selections/lookups edgeRealPlace needs to resolve a real Place
-// deep inside a (possibly nested) scenario track — bundled into one object
-// since every recursive call and both external call sites otherwise had to
-// thread the same four values through unchanged alongside the one value
-// (`fromStart`) that actually varies per call.
-interface EdgePlaceContext {
-  daysByDate: Map<string, Day>;
-  scenarioTone: Map<string, string>;
-  mealOptionIndex: Map<string, number>;
-  routeTones: Map<string, string>;
-}
-
-function edgeRealPlace(
-  sequence: SequenceItem[],
-  day: Day,
-  ctx: EdgePlaceContext,
-  fromStart: boolean,
-): Place | null {
-  const { daysByDate, scenarioTone, mealOptionIndex, routeTones } = ctx;
-  const { checkOuts, rest, checkIns } = splitOutStayBoundaries(sequence, day.scenarioTracks);
+function edgeRealPlace(rows: DayRow[], fromStart: boolean): Place | null {
+  const { checkOuts, rest, checkIns } = splitOutStayBoundaries(rows);
   const flattened = [...checkOuts, ...rest, ...checkIns];
   const ordered = fromStart ? flattened : [...flattened].reverse();
   for (const item of ordered) {
     if (item.type === 'stay') {
       const place = placeFromLodging(item.stay.lodging);
       if (place?.id) return place;
-    } else if (item.type === 'transit-boundary' || item.type === 'transit-stage') {
-      const place = transitItemPlace(item, { routeTones });
+    } else if (item.type === 'transit') {
+      const place = transitRowPlace(item);
       if (place?.id) return place;
-    } else if (item.type === 'section') {
-      const activities = fromStart ? item.activities : [...item.activities].reverse();
-      for (const activity of activities) {
-        const place = activityPlace(activity, day, mealOptionIndex);
-        if (place?.id) return place;
-      }
+    } else if (item.type === 'activity') {
+      // Already resolved for the reader's selections (a still-open meal's
+      // currently-selected candidate) when the timeline was built.
+      const place = item.event.place;
+      if (place?.id) return place;
     } else {
-      const nestedTracks = item.tracks ?? day.scenarioTracks;
-      const active = resolveActiveTrack(day, nestedTracks, daysByDate, scenarioTone, !item.tracks);
-      const place = active ? edgeRealPlace(active.sequence, day, ctx, fromStart) : null;
+      const active = activeTrackOf(item.tracks);
+      const place = active ? edgeRealPlace(active.rows, fromStart) : null;
       if (place) return place;
     }
   }
   return null;
 }
 
+// A 'section' item bundles several same-moment activities into one array —
+// flatten it to one timeline row per activity so the connector runs
+// through every image/icon on the day, not just past the section as a
+// whole (each activity gets its own dot, matching every other node type).
+// `dragId` mirrors buildDragMeta's own id scheme exactly (see reorder.ts)
+// so a row and its DragMeta always resolve to the same dnd-kit id; null
+// for scenario-tabs, which isn't a single point in time to drop against.
+interface DayTimelineNode {
+  key: string;
+  dragId: string | null;
+  draggable: boolean;
+  droppable: boolean;
+  // The real-world Place(s) this row represents, for the travel-footer
+  // pass below — null for anything that isn't a single point in space (a
+  // drag spacer, or a non-active route variant's own stage row). Equal for
+  // every ordinary row (a Stay/Transit-boundary/stage/Activity names one
+  // Place, entered and exited at the same spot); a scenario-tabs split is
+  // the one node where they differ, since it can enter at one real Place
+  // and exit at a completely different one depending on which branch is
+  // active — see edgeRealPlace above.
+  entryPlace: Place | null;
+  exitPlace: Place | null;
+  render: (props: {
+    isLast: boolean;
+    dragHandle?: ReactNode;
+    selected?: boolean;
+    isOver?: boolean;
+    travelFooter?: ReactNode;
+  }) => ReactElement;
+}
+
 export const DayTimeline = memo(function DayTimeline({
   day,
-  sequence,
+  rows,
   containerId,
   scenarioId = null,
-  daysByDate,
   onOpenActivity,
   onOpenStay,
   onOpenTransit,
   trailingTravelFooter,
-}: {
+}: DayRowOpeners & {
   day: Day;
-  sequence: SequenceItem[];
+  rows: DayRow[];
   // Distinct per rendered timeline — the top-level day passes its own date,
   // a scenario tab passes `${date}::${scenarioId}` — so dnd-kit can tell
   // which of this day's (possibly several) sortable lists a drop landed in.
@@ -945,10 +921,6 @@ export const DayTimeline = memo(function DayTimeline({
   // own scenario._id, so a dropped Activity picks it up as its new
   // scenarioId.
   scenarioId?: string | null;
-  daysByDate: Map<string, Day>;
-  onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
-  onOpenStay: (stay: EnrichedStay) => void;
-  onOpenTransit: (transit: EnrichedTransit) => void;
   // The footer for the segment that starts where THIS list's own last real
   // row ends — handed down by ScenarioTabsNode/ScenarioTabsSection when this
   // DayTimeline is rendering a scenario branch's own content, since that
@@ -960,57 +932,279 @@ export const DayTimeline = memo(function DayTimeline({
   trailingTravelFooter?: ReactNode;
 }) {
   const { activeFilterTokens } = useFilterSelection();
-  const filtered = useMemo(
-    () => filterSequenceItems(sequence, activeFilterTokens),
-    [sequence, activeFilterTokens],
-  );
+  const filtered = useMemo(() => filterRows(rows, activeFilterTokens), [rows, activeFilterTokens]);
   const { selection, toggleRowSelection } = useRowSelection();
-  // Read here, not just inside ActivityNode/TransitStageNode, so the
-  // travel-segment pass below can resolve each node's Place exactly the way
-  // its own row actually renders it — a still-open meal's currently-selected
-  // candidate, and only the active route variant's own stages (a
-  // non-active variant's stage rows render nothing, same as
-  // TransitStageNode's own early-return).
-  const { mealOptionIndex } = useMealOptionSelection();
-  const { routeTones } = useRouteToneSelection();
-  // Only needed for a scenario-tabs node's own entry/exit Place (edgeRealPlace
-  // below) — every other node type's Place is fixed regardless of which
-  // branch is showing.
-  const { scenarioTone } = useScenarioSelection();
-
   // Safe to run unconditionally at every level — a scenario track whose own
   // branch carries no scenario-scoped Stay has nothing for this to touch, so
-  // it's a no-op there, same as the top-level day.sequence case; a branch
+  // it's a no-op there, same as the top-level day.rows case; a branch
   // that does carry one (Stay.scenarioId) gets its own Check-in/Check-out
   // pulled to the front/back of that branch's own timeline exactly like the
-  // top level's. Passing day.scenarioTracks opts splitOutStayBoundaries into
-  // also treating a scenario-tabs group as a bare Stay boundary when every
-  // one of its tracks agrees it is one (see its own comment) — pulled to the
-  // same front/back position a plain Stay item would get, alongside (not
-  // ahead of/behind) any real top-level Stay boundary already there.
+  // top level's. A scenario box whose active branch is nothing but Stay
+  // boundaries is treated as a bare Stay boundary too (see
+  // splitOutStayBoundaries) — pulled to the same front/back position a plain
+  // Stay row would get, alongside (not ahead of/behind) any real top-level
+  // Stay boundary already there.
   const flattened = useMemo(() => {
-    const { checkOuts, rest, checkIns } = splitOutStayBoundaries(filtered, day.scenarioTracks);
+    const { checkOuts, rest, checkIns } = splitOutStayBoundaries(filtered);
     return [...checkOuts, ...rest, ...checkIns];
-  }, [filtered, day.scenarioTracks]);
+  }, [filtered]);
   const dayStart = `${day.date}T00:00`;
 
   // Kept a stable reference across renders the filter/selection/scenario
   // contexts trigger elsewhere in the (unvirtualized, ~28-day) list — every
   // DayTimeline instance shares those contexts, so without this a toggle on
   // one day recomputes every other day's buildDragMeta (including its own
-  // recursive collectScenarioGroupMembers walk) for nothing.
+  // scenario-group members walk) for nothing.
   const dragMeta = useMemo(
-    () => buildDragMeta(flattened, scenarioId, dayStart, day.leg._id, day.scenarioTracks),
-    [flattened, scenarioId, dayStart, day.leg._id, day.scenarioTracks],
+    () => buildDragMeta(flattened, scenarioId, dayStart, day.leg._id),
+    [flattened, scenarioId, dayStart, day.leg._id],
   );
   const dragMetaById = useMemo(() => new Map(dragMeta.map((d) => [d.id, d])), [dragMeta]);
+
+  // Rebuilt only when this list's own rows change — an unrelated tab/meal/
+  // route selection elsewhere in the trip hands this day back as the very
+  // same object (see buildLiveDays' per-date cache) — since each rebuild
+  // re-walks every row's edge Place (edgeRealPlace) across an unvirtualized
+  // ~28-day list. Every row's Place was already resolved for the reader's
+  // selections when the timeline was built (event.place).
+  const allNodes = useMemo((): DayTimelineNode[] => {
+    const nodes: DayTimelineNode[] = flattened.flatMap((item): DayTimelineNode[] => {
+      if (item.type === 'stay') {
+        const dragId = dragIdOf(item, day.date);
+        // Only Check-in is a drag source (mirrors Transit's Depart-row-is-the-
+        // handle convention) — dropping it onto a scenario tab (or back out to
+        // the top-level day) reassigns the whole Stay's scenarioId, same as
+        // dragging any other row into/out of a branch. See applyStayReorder.
+        const draggable = item.relation === 'Check in';
+        return [
+          {
+            key: dragId,
+            dragId,
+            draggable,
+            droppable: true,
+            entryPlace: placeFromLodging(item.stay.lodging),
+            exitPlace: placeFromLodging(item.stay.lodging),
+            render: ({ isLast, dragHandle, selected, travelFooter }) => (
+              <StayNode
+                item={item}
+                date={day.date}
+                isLast={isLast}
+                onOpen={onOpenStay}
+                dragHandle={draggable ? dragHandle : undefined}
+                selected={draggable ? selected : undefined}
+                travelFooter={travelFooter}
+              />
+            ),
+          },
+        ];
+      }
+      if (isBoundaryRow(item)) {
+        const dragId = dragIdOf(item, day.date);
+        return [
+          {
+            key: dragId,
+            dragId,
+            draggable: item.phase === 'depart',
+            droppable: true,
+            entryPlace: item.phase === 'depart' ? item.transit.from : item.transit.to,
+            exitPlace: item.phase === 'depart' ? item.transit.from : item.transit.to,
+            render: ({ isLast, dragHandle, selected, travelFooter }) => (
+              <TransitBoundaryNode
+                item={item}
+                date={day.date}
+                isLast={isLast}
+                onOpen={onOpenTransit}
+                dragHandle={item.phase === 'depart' ? dragHandle : undefined}
+                selected={item.phase === 'depart' ? selected : undefined}
+                travelFooter={travelFooter}
+              />
+            ),
+          },
+        ];
+      }
+      if (item.type === 'transit') {
+        const dragId = dragIdOf(item, day.date);
+        // The stage's own already-resolved Place (with its image, alongside
+        // its id/label) — a live day only carries the selected variant's stages.
+        const stagePlace = transitRowPlace(item);
+        return [
+          {
+            key: dragId,
+            dragId,
+            draggable: false,
+            droppable: true,
+            entryPlace: stagePlace,
+            exitPlace: stagePlace,
+            render: ({ isLast, travelFooter }) => (
+              <TransitStageNode item={item} isLast={isLast} travelFooter={travelFooter} />
+            ),
+          },
+        ];
+      }
+      if (item.type === 'activity') {
+        const { activity } = item;
+        const dragId = dragIdOf(item, day.date);
+        return [
+          {
+            key: dragId,
+            dragId,
+            draggable: true,
+            droppable: true,
+            entryPlace: item.event.place,
+            exitPlace: item.event.place,
+            render: ({ isLast, dragHandle, selected, travelFooter }) => (
+              <ActivityNode
+                activity={activity}
+                day={day}
+                isLast={isLast}
+                onOpenActivity={onOpenActivity}
+                dragHandle={dragHandle}
+                selected={selected}
+                travelFooter={travelFooter}
+              />
+            ),
+          },
+        ];
+      }
+      // scenario box — the id comes from dragIdOf, the same function
+      // buildDragMeta uses, so a rendered row and its DragMeta always agree.
+      const scenarioDragId = dragIdOf(item, day.date);
+      // A branch point, not a single place — the entry/exit Place depends on
+      // which track is active, so it's resolved from whichever one actually is
+      // (activeTrackOf, same as ScenarioTabsSection's own tab) rather than
+      // left null. A track with no visible branch (nothing active, e.g. every
+      // tab gated out) still gets no footer on either side, same as before.
+      const activeScenarioTrack = activeTrackOf(item.tracks);
+      const resolveScenarioEdgePlace = (fromStart: boolean) =>
+        activeScenarioTrack ? edgeRealPlace(activeScenarioTrack.rows, fromStart) : null;
+      const scenarioEntryPlace = resolveScenarioEdgePlace(true);
+      const scenarioExitPlace = resolveScenarioEdgePlace(false);
+      const scenarioNode: DayTimelineNode = {
+        key: scenarioDragId,
+        dragId: scenarioDragId,
+        draggable: true,
+        droppable: false,
+        entryPlace: scenarioEntryPlace,
+        exitPlace: scenarioExitPlace,
+        render: ({ isLast, dragHandle, selected, travelFooter }) => (
+          <ScenarioTabsNode
+            day={day}
+            tracks={item.tracks}
+            isLast={isLast}
+            onOpenActivity={onOpenActivity}
+            onOpenStay={onOpenStay}
+            onOpenTransit={onOpenTransit}
+            dragHandle={dragHandle}
+            selected={selected}
+            travelFooter={travelFooter}
+          />
+        ),
+      };
+      // buildDragMeta (reorder.ts) already decided whether this container has
+      // nothing real preceding this split — that's exactly when it emits a
+      // beforeScenarioSplitDragId entry alongside the scenario-tabs one, so
+      // rather than re-detecting the same condition here, just check whether
+      // its id is present. A branch whose entire content is one nested
+      // scenario-tabs split would otherwise have zero droppable rows, since
+      // this scenario-tabs row never is one itself; this spacer is the one
+      // droppable anchor that case needs.
+      const spacerId = beforeScenarioSplitDragId(scenarioDragId);
+      if (dragMetaById.has(spacerId)) {
+        return [
+          {
+            key: spacerId,
+            dragId: spacerId,
+            draggable: false,
+            droppable: true,
+            entryPlace: null,
+            exitPlace: null,
+            render: ({ isOver }) => <ScenarioSplitDropSpacer isOver={isOver} />,
+          },
+          scenarioNode,
+        ];
+      }
+      return [scenarioNode];
+    });
+
+    // A 'Staying' night (relation 'Staying') is lodging that bookends the
+    // whole day — it's where the day starts (waking up there) as much as
+    // where it ends (going back to sleep there), unlike Check out/Check in
+    // which each name a single real event. splitOutStayBoundaries already
+    // renders its one canonical item at the end of the day, alongside Check
+    // in (dragMeta/dnd-kit, the map/route stops, and reorder.ts's drop
+    // targeting all key off that single occurrence) — this adds a second,
+    // purely decorative copy at the very top for the "woke up here" half,
+    // outside the sortable list entirely (dragId: null) so it never becomes a
+    // second drop target or a second map/route stop for the same lodging.
+    const morningStayNodes: DayTimelineNode[] = flattened
+      .filter((item): item is StayRow => item.type === 'stay' && item.relation === 'Staying')
+      .map((item) => ({
+        key: `stay-${item.stay._id}-${day.date}-morning`,
+        dragId: null,
+        draggable: false,
+        droppable: false,
+        entryPlace: placeFromLodging(item.stay.lodging),
+        exitPlace: placeFromLodging(item.stay.lodging),
+        render: ({ isLast }) => (
+          <StayNode item={item} date={day.date} isLast={isLast} onOpen={onOpenStay} />
+        ),
+      }));
+    return [...morningStayNodes, ...nodes];
+  }, [flattened, day, dragMetaById, onOpenActivity, onOpenStay, onOpenTransit]);
+
+  // Attached to the BOTTOM of a row's own content (see each *Node's own
+  // travelFooter prop) rather than inserted as a row of its own — the user
+  // didn't want a separate icon/dot on the timeline for this. Only computed
+  // between two rows that each name a different, actually resolvable (real
+  // Google Place id) Place — same-place neighbors (e.g. two activities at
+  // the same lodging) get no footer. A scenario-tabs split's own
+  // entryPlace/exitPlace (edgeRealPlace above) already resolves to whichever
+  // single branch is currently active, so a segment crossing into or out of
+  // one still gets a footer exactly when that active branch actually
+  // starts/ends on a real, resolvable Place. The very last node has no
+  // `next` inside this list at all — trailingTravelFooter is whatever the
+  // caller already worked out for the segment starting there (only ever
+  // non-undefined for a scenario branch's own nested DayTimeline).
+  //
+  // A row whose own Place has no real id (a whole city like "Fairbanks" as
+  // a Transit's arrival endpoint, or a park like "Denali National Park" —
+  // neither is specific enough to resolve to one Google Place) can't be
+  // BOTH ends of a segment, but it also shouldn't dead-end the pairing for
+  // its real, resolvable neighbors on either side. tripModel.ts's own
+  // findNextResolvableStop is the one shared implementation of that
+  // skip-forward-past-unresolvable-rows behavior — also used by
+  // travelSegments (dayMap.ts — the day header's own drive-time/distance
+  // total) and, via mapRouteNodes' own up-front filter, the map panel — so
+  // the timeline's footers land on the same pairs of real places both of
+  // those do.
+  // Memoized (on allNodes/trailingTravelFooter) so each footer element keeps its
+  // identity across unrelated re-renders instead of being recreated every time.
+  const travelFooters = useMemo(
+    (): (ReactNode | undefined)[] =>
+      allNodes.map((node, i) => {
+        if (i === allNodes.length - 1) return trailingTravelFooter;
+        if (!node.exitPlace?.id) return undefined;
+        const next = findNextResolvableStop(allNodes, i, (n) => n.entryPlace?.id);
+        if (!next || node.exitPlace.id === next.entryPlace!.id) return undefined;
+        const segKey = segmentKey(node.key, next.key);
+        return (
+          <TravelInfoControl
+            key={segKey}
+            segmentKey={segKey}
+            origin={node.exitPlace}
+            destination={next.entryPlace!}
+          />
+        );
+      }),
+    [allNodes, trailingTravelFooter],
+  );
 
   if (!flattened.length) {
     // Filtering everything out of an otherwise non-empty sequence renders
     // nothing at all here — DaysView's own dayHasVisibleContent check is
     // what hides the day-block itself; "Nothing scheduled yet" stays
     // reserved for a day that's genuinely empty, filters aside.
-    if (sequence.length && activeFilterTokens.size) return null;
+    if (rows.length && activeFilterTokens.size) return null;
     // Still wrapped in a SortableContext, same as the non-empty branch below
     // — a freshly-added, still-empty scenario (DaysView's "Add to this day"
     // > Scenario) needs somewhere to catch a drop, and a bare early-return
@@ -1038,286 +1232,6 @@ export const DayTimeline = memo(function DayTimeline({
       </SortableContext>
     );
   }
-
-  // A 'section' item bundles several same-moment activities into one array —
-  // flatten it to one timeline row per activity so the connector runs
-  // through every image/icon on the day, not just past the section as a
-  // whole (each activity gets its own dot, matching every other node type).
-  // `dragId` mirrors buildDragMeta's own id scheme exactly (see reorder.ts)
-  // so a row and its DragMeta always resolve to the same dnd-kit id; null
-  // for scenario-tabs, which isn't a single point in time to drop against.
-  interface DayTimelineNode {
-    key: string;
-    dragId: string | null;
-    draggable: boolean;
-    droppable: boolean;
-    // The real-world Place(s) this row represents, for the travel-footer
-    // pass below — null for anything that isn't a single point in space (a
-    // drag spacer, or a non-active route variant's own stage row). Equal for
-    // every ordinary row (a Stay/Transit-boundary/stage/Activity names one
-    // Place, entered and exited at the same spot); a scenario-tabs split is
-    // the one node where they differ, since it can enter at one real Place
-    // and exit at a completely different one depending on which branch is
-    // active — see edgeRealPlace above.
-    entryPlace: Place | null;
-    exitPlace: Place | null;
-    render: (props: {
-      isLast: boolean;
-      dragHandle?: ReactNode;
-      selected?: boolean;
-      isOver?: boolean;
-      travelFooter?: ReactNode;
-    }) => ReactElement;
-  }
-
-  const nodes: DayTimelineNode[] = flattened.flatMap((item, i): DayTimelineNode[] => {
-    if (item.type === 'stay') {
-      // Must match buildDragMeta's own id scheme exactly (reorder.ts) — keyed
-      // by date, not `i`, since a multi-night Stay renders its own row on
-      // every night under one shared DndContext (DaysView.tsx), and `i` alone
-      // can collide across different days' rows.
-      const dragId = stayNodeKey(item.stay._id, day.date);
-      // Only Check-in is a drag source (mirrors Transit's Depart-row-is-the-
-      // handle convention) — dropping it onto a scenario tab (or back out to
-      // the top-level day) reassigns the whole Stay's scenarioId, same as
-      // dragging any other row into/out of a branch. See applyStayReorder.
-      const draggable = item.relation === 'Check in';
-      return [
-        {
-          key: dragId,
-          dragId,
-          draggable,
-          droppable: true,
-          entryPlace: placeFromLodging(item.stay.lodging),
-          exitPlace: placeFromLodging(item.stay.lodging),
-          render: ({ isLast, dragHandle, selected, travelFooter }) => (
-            <StayNode
-              item={item}
-              date={day.date}
-              isLast={isLast}
-              onOpen={onOpenStay}
-              dragHandle={draggable ? dragHandle : undefined}
-              selected={draggable ? selected : undefined}
-              travelFooter={travelFooter}
-            />
-          ),
-        },
-      ];
-    }
-    if (item.type === 'transit-boundary') {
-      const dragId = transitBoundaryKey(item.transit._id, item.phase);
-      return [
-        {
-          key: dragId,
-          dragId,
-          draggable: item.phase === 'depart',
-          droppable: true,
-          entryPlace: item.phase === 'depart' ? item.transit.from : item.transit.to,
-          exitPlace: item.phase === 'depart' ? item.transit.from : item.transit.to,
-          render: ({ isLast, dragHandle, selected, travelFooter }) => (
-            <TransitBoundaryNode
-              item={item}
-              date={day.date}
-              isLast={isLast}
-              onOpen={onOpenTransit}
-              dragHandle={item.phase === 'depart' ? dragHandle : undefined}
-              selected={item.phase === 'depart' ? selected : undefined}
-              travelFooter={travelFooter}
-            />
-          ),
-        },
-      ];
-    }
-    if (item.type === 'transit-stage') {
-      const dragId = `stage-${item.transit._id}-${item.variant.tone}-${i}`;
-      // Mirrors TransitStageNode's own early-return for a non-active
-      // variant's stage — that row renders nothing, so it names no Place for
-      // travel-segment purposes either. transitItemPlace returns undefined
-      // for a non-active variant, or a stage's own already-resolved image
-      // alongside its id/label.
-      const stagePlace = transitItemPlace(item, { routeTones }) ?? null;
-      return [
-        {
-          key: dragId,
-          dragId,
-          draggable: false,
-          droppable: true,
-          entryPlace: stagePlace,
-          exitPlace: stagePlace,
-          render: ({ isLast, travelFooter }) => (
-            <TransitStageNode item={item} isLast={isLast} travelFooter={travelFooter} />
-          ),
-        },
-      ];
-    }
-    if (item.type === 'section') {
-      return item.activities.map((activity) => {
-        const dragId = activityNodeKey(activity._id);
-        return {
-          key: dragId,
-          dragId,
-          draggable: true,
-          droppable: true,
-          entryPlace: activityPlace(activity, day, mealOptionIndex),
-          exitPlace: activityPlace(activity, day, mealOptionIndex),
-          render: ({ isLast, dragHandle, selected, travelFooter }) => (
-            <ActivityNode
-              activity={activity}
-              day={day}
-              isLast={isLast}
-              onOpenActivity={onOpenActivity}
-              dragHandle={dragHandle}
-              selected={selected}
-              travelFooter={travelFooter}
-            />
-          ),
-        };
-      });
-    }
-    // scenario-tabs — id must match buildDragMeta's own id scheme exactly
-    // (reorder.ts): namespaced by calendar day AND scenarioId, not just `i`
-    // alone, since every DayTimeline instance shares one DndContext
-    // (DaysView.tsx) and a bare local index collides across different days'
-    // (or a nested group's own) scenario-tabs rows.
-    const scenarioDragId = scenarioTabsDragId(dayStart, scenarioId, i);
-    // A branch point, not a single place — the entry/exit Place depends on
-    // which track is active, so it's resolved from whichever one actually is
-    // (resolveActiveTrack, same as ScenarioTabsSection's own tab) rather than
-    // left null. A track with no visible branch (nothing active, e.g. every
-    // tab gated out) still gets no footer on either side, same as before.
-    const scenarioTracksForNode = item.tracks ?? day.scenarioTracks;
-    const activeScenarioTrack = resolveActiveTrack(
-      day,
-      scenarioTracksForNode,
-      daysByDate,
-      scenarioTone,
-      !item.tracks,
-    );
-    const resolveScenarioEdgePlace = (fromStart: boolean) =>
-      activeScenarioTrack
-        ? edgeRealPlace(
-            activeScenarioTrack.sequence,
-            day,
-            { daysByDate, scenarioTone, mealOptionIndex, routeTones },
-            fromStart,
-          )
-        : null;
-    const scenarioEntryPlace = resolveScenarioEdgePlace(true);
-    const scenarioExitPlace = resolveScenarioEdgePlace(false);
-    const scenarioNode: DayTimelineNode = {
-      key: scenarioDragId,
-      dragId: scenarioDragId,
-      draggable: true,
-      droppable: false,
-      entryPlace: scenarioEntryPlace,
-      exitPlace: scenarioExitPlace,
-      render: ({ isLast, dragHandle, selected, travelFooter }) => (
-        <ScenarioTabsNode
-          day={day}
-          tracks={item.tracks ?? day.scenarioTracks}
-          topLevel={!item.tracks}
-          isLast={isLast}
-          daysByDate={daysByDate}
-          onOpenActivity={onOpenActivity}
-          onOpenStay={onOpenStay}
-          onOpenTransit={onOpenTransit}
-          dragHandle={dragHandle}
-          selected={selected}
-          travelFooter={travelFooter}
-        />
-      ),
-    };
-    // buildDragMeta (reorder.ts) already decided whether this container has
-    // nothing real preceding this split — that's exactly when it emits a
-    // beforeScenarioSplitDragId entry alongside the scenario-tabs one, so
-    // rather than re-detecting the same condition here, just check whether
-    // its id is present. A branch whose entire content is one nested
-    // scenario-tabs split would otherwise have zero droppable rows, since
-    // this scenario-tabs row never is one itself; this spacer is the one
-    // droppable anchor that case needs.
-    const spacerId = beforeScenarioSplitDragId(scenarioDragId);
-    if (dragMetaById.has(spacerId)) {
-      return [
-        {
-          key: spacerId,
-          dragId: spacerId,
-          draggable: false,
-          droppable: true,
-          entryPlace: null,
-          exitPlace: null,
-          render: ({ isOver }) => <ScenarioSplitDropSpacer isOver={isOver} />,
-        },
-        scenarioNode,
-      ];
-    }
-    return [scenarioNode];
-  });
-
-  // A 'Staying' night (relation 'Staying') is lodging that bookends the
-  // whole day — it's where the day starts (waking up there) as much as
-  // where it ends (going back to sleep there), unlike Check out/Check in
-  // which each name a single real event. splitOutStayBoundaries already
-  // renders its one canonical item at the end of the day, alongside Check
-  // in (dragMeta/dnd-kit, the map/route stops, and reorder.ts's drop
-  // targeting all key off that single occurrence) — this adds a second,
-  // purely decorative copy at the very top for the "woke up here" half,
-  // outside the sortable list entirely (dragId: null) so it never becomes a
-  // second drop target or a second map/route stop for the same lodging.
-  const morningStayNodes: DayTimelineNode[] = flattened
-    .filter((item): item is StaySequenceItem => item.type === 'stay' && item.relation === 'Staying')
-    .map((item) => ({
-      key: `stay-${item.stay._id}-${day.date}-morning`,
-      dragId: null,
-      draggable: false,
-      droppable: false,
-      entryPlace: placeFromLodging(item.stay.lodging),
-      exitPlace: placeFromLodging(item.stay.lodging),
-      render: ({ isLast }) => (
-        <StayNode item={item} date={day.date} isLast={isLast} onOpen={onOpenStay} />
-      ),
-    }));
-  const allNodes = [...morningStayNodes, ...nodes];
-
-  // Attached to the BOTTOM of a row's own content (see each *Node's own
-  // travelFooter prop) rather than inserted as a row of its own — the user
-  // didn't want a separate icon/dot on the timeline for this. Only computed
-  // between two rows that each name a different, actually resolvable (real
-  // Google Place id) Place — same-place neighbors (e.g. two activities at
-  // the same lodging) get no footer. A scenario-tabs split's own
-  // entryPlace/exitPlace (edgeRealPlace above) already resolves to whichever
-  // single branch is currently active, so a segment crossing into or out of
-  // one still gets a footer exactly when that active branch actually
-  // starts/ends on a real, resolvable Place. The very last node has no
-  // `next` inside this list at all — trailingTravelFooter is whatever the
-  // caller already worked out for the segment starting there (only ever
-  // non-undefined for a scenario branch's own nested DayTimeline).
-  //
-  // A row whose own Place has no real id (a whole city like "Fairbanks" as
-  // a Transit's arrival endpoint, or a park like "Denali National Park" —
-  // neither is specific enough to resolve to one Google Place) can't be
-  // BOTH ends of a segment, but it also shouldn't dead-end the pairing for
-  // its real, resolvable neighbors on either side. tripModel.ts's own
-  // findNextResolvableStop is the one shared implementation of that
-  // skip-forward-past-unresolvable-rows behavior — also used by
-  // dayTravelSegments (the day header's own drive-time/distance total) and,
-  // via walkDayMapRefs' own up-front filter, the map panel — so the
-  // timeline's footers land on the same pairs of real places both of those
-  // do.
-  const travelFooters: (ReactNode | undefined)[] = allNodes.map((node, i) => {
-    if (i === allNodes.length - 1) return trailingTravelFooter;
-    if (!node.exitPlace?.id) return undefined;
-    const next = findNextResolvableStop(allNodes, i, (n) => n.entryPlace?.id);
-    if (!next || node.exitPlace.id === next.entryPlace!.id) return undefined;
-    const segKey = segmentKey(node.key, next.key);
-    return (
-      <TravelInfoControl
-        key={segKey}
-        segmentKey={segKey}
-        origin={node.exitPlace}
-        destination={next.entryPlace!}
-      />
-    );
-  });
 
   return (
     <SortableContext

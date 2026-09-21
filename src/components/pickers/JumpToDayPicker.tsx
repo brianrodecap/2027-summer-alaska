@@ -7,7 +7,7 @@ import { DateCalendar } from '@mui/x-date-pickers/DateCalendar';
 import dayjs, { type Dayjs } from 'dayjs';
 import { useMemo, useRef } from 'react';
 
-import type { Day } from '../../model/types';
+import type { DayFrame } from '../../model/types';
 
 // dayjs objects are constructed/read only at this component's own boundary —
 // tripModel.ts does all date math on plain ISO strings to dodge timezone
@@ -30,7 +30,7 @@ export function JumpToDayPicker({
 }: {
   open: boolean;
   onClose: () => void;
-  days: Day[];
+  days: DayFrame[];
   tripStart: string;
   tripEnd: string;
   onSelectDay: (date: string) => void;

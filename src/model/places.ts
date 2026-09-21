@@ -14,6 +14,7 @@
 // rating/reviews, which add review display/attribution obligations on top of
 // the extra cost).
 import { PLACES_API_KEY } from '../config/places';
+import { memoizeAsync } from './asyncCache';
 import { googleApiFetch } from './googleApiFetch';
 import type { Image } from './types';
 
@@ -137,8 +138,7 @@ export async function fetchPlace(id: string): Promise<PlaceDetails> {
 }
 
 export function getPlace(id: string): Promise<PlaceDetails> {
-  if (!cache.has(id)) cache.set(id, fetchPlace(id));
-  return cache.get(id) as Promise<PlaceDetails>;
+  return memoizeAsync(cache, id, () => fetchPlace(id));
 }
 
 // Free-text search — the Places API (New) Text Search endpoint, used only by

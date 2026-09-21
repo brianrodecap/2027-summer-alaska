@@ -11,8 +11,8 @@ import type { ReorderMembers } from '../model/reorder';
 // handful of components that actually read route tones.
 
 export interface ScenarioSelectionValue {
-  scenarioTone: Map<string, string>; // date -> tone
-  selectScenario: (date: string, tone: string) => void;
+  scenarioPicks: Map<string, string>; // scenario group key -> picked scenario id
+  selectScenario: (groupKey: string, scenarioId: string) => void;
 }
 
 export interface RouteToneSelectionValue {

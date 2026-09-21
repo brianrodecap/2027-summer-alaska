@@ -8,6 +8,7 @@ import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
 import type { BudgetView } from '../../model/types';
+import { useLiveDays } from '../../state/useLiveDays';
 import { BudgetGroup } from './BudgetGroup';
 
 function ByLegPanel({ byLeg }: { byLeg: BudgetView['byLeg'] }) {
@@ -28,6 +29,7 @@ function ByLegPanel({ byLeg }: { byLeg: BudgetView['byLeg'] }) {
 }
 
 function ByDayPanel({ byDay }: { byDay: BudgetView['byDay'] }) {
+  const live = useLiveDays();
   if (!byDay.length) {
     return (
       <Typography variant="body2" color="text.secondary">
@@ -44,7 +46,7 @@ function ByDayPanel({ byDay }: { byDay: BudgetView['byDay'] }) {
         <BudgetGroup
           key={g.day.date}
           headline={g.day.dateLabel}
-          meta={g.day.title}
+          meta={live.byDate.get(g.day.date)?.title}
           totals={g.totals}
           rows={g.rows}
         />

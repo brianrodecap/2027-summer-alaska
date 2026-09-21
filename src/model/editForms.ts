@@ -10,6 +10,7 @@ import {
   readBookingFormValue,
 } from '../components/edit/bookingFormValue';
 import { placeFromLodging } from './formatting';
+import { resolveScenarioToneChange } from './scenarioGroups';
 import {
   activityHeadline,
   addDaysStr,
@@ -39,6 +40,7 @@ import type {
   TravelMode,
   TravelModeOverride,
   Trip,
+  TripData,
 } from './types';
 
 // ---------- blank entities, for the day list's own "Add" button ----------
@@ -125,6 +127,14 @@ export const COLLECTION_FOR_KIND: Record<EditKind, 'activities' | 'stays' | 'tra
   transit: 'transits',
 };
 
+// Capitalized display name for each EditKind — shared by the document-import
+// panels' "Detected: ..." summaries rather than each re-spelling the table.
+export const EDIT_KIND_LABEL: Record<EditKind, string> = {
+  activity: 'Activity',
+  stay: 'Stay',
+  transit: 'Transit',
+};
+
 // Maps each EditKind literal to its concrete entity type, so a caller that
 // passes a literal kind (e.g. usePatchEntity('stay', id)) gets a patch
 // callback typed to that one entity — not the untyped Activity | Stay |
@@ -163,6 +173,36 @@ export function upsertById<T extends { _id: string }>(list: T[], item: T): T[] {
   return list.some((existing) => existing._id === item._id)
     ? list.map((existing) => (existing._id === item._id ? item : existing))
     : [...list, item];
+}
+
+// Replaces-or-appends `entity` in whichever collection its kind lives in —
+// the one shared write path for EditContext's Save and AddEventWizard's
+// onSaveEntity (a merged duplicate meal reuses an existing Activity's own id
+// and must replace it in place instead of adding a second copy).
+export function upsertByKind<
+  T extends { activities: Activity[]; stays: Stay[]; transits: Transit[] },
+>(data: T, kind: EditKind, entity: Entity): T {
+  const collection = COLLECTION_FOR_KIND[kind];
+  return { ...data, [collection]: upsertById(data[collection] as Entity[], entity) };
+}
+
+// The one write path for a scenario Save: the scenario-tone invariant (every
+// group keeps exactly one Ideal) is enforced HERE, at the write, rather than
+// by each dialog that offers a Save. `scenario` is the already-applied form
+// (applyScenarioForm's clone) and `data` the store BEFORE the edit. Returns
+// the new store — the scenario plus any siblings whose tone had to swap with
+// it — or a message naming why the edit can't be made to hold the invariant.
+export function applyScenarioSave<
+  T extends Pick<TripData, 'scenarios' | 'activities' | 'transits'>,
+>(data: T, scenario: Scenario, isNew: boolean): { data: T } | { error: string } {
+  const outcome = resolveScenarioToneChange(data, scenario, isNew);
+  if ('error' in outcome) return { error: outcome.error };
+  return {
+    data: {
+      ...data,
+      scenarios: [scenario, ...outcome.changed].reduce(upsertById, data.scenarios),
+    },
+  };
 }
 
 export function entityLabel(kind: EditKind, entity: Entity): string {
@@ -883,7 +923,7 @@ export function scenarioFormFrom(scenario: Scenario): Scenario {
 
 // A requiresScenarioId/parentScenarioId pointing at a scenario that's since
 // been deleted would silently break that scenario's own tab gating (see
-// scenarioSelection.ts), so both get scrubbed of any id no longer present in
+// scenarioGroups.ts), so both get scrubbed of any id no longer present in
 // allScenarios — same fail-closed spirit as a Route's required non-negative
 // durations, just applied to id references instead of numbers.
 export function applyScenarioForm(
@@ -913,9 +953,8 @@ export function applyScenarioForm(
   return null;
 }
 
-// tripModel.ts's buildScenarioTracks only ever builds a track for a
-// scenarioId still present in scenariosById (see its own top-of-function
-// comment) — and day.sequence is built from everything *without* a
+// dayLayout.ts's layoutDay only ever builds a track for a scenario
+// still present in the trip's scenarios — and day.rows is built from everything *without* a
 // scenarioId. So a Stay/Activity/Transit left pointing at a deleted scenario
 // doesn't fall back into the day's plain sequence, it silently stops
 // rendering anywhere. Deleting a scenario therefore has to clear that

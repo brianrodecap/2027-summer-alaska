@@ -10,26 +10,19 @@ import Button from '@mui/material/Button';
 import Menu from '@mui/material/Menu';
 import { memo, useState } from 'react';
 
-import { deriveTitle } from '../../model/tripModel';
-import type {
-  Day,
-  EnrichedActivity,
-  EnrichedMealOption,
-  EnrichedStay,
-  EnrichedTransit,
-} from '../../model/types';
+import type { Day } from '../../model/types';
 import { useNoteEdit } from '../../state/useNoteEdit';
-import { useScenarioSelection } from '../../state/useTripSelections';
 import { AddNoteMenuItems } from '../shared/AddNoteMenuItems';
 import { NotesCluster } from '../shared/Notes';
 import { useAnchorMenu } from '../shared/useAnchorMenu';
 import { DayAlertsBanner } from './DayAlertsBanner';
 import { DayHeader } from './DayHeader';
 import { DayInfoStrip } from './DayInfoStrip';
+import { DAY_SCROLL_GAP, dayElementId, DAYS_APP_BAR_HEIGHT } from './dayLayout';
 import { DayTimeline } from './DayTimeline';
 import { DayTravelChip } from './DayTravelChip';
 import { DayWeatherChips } from './DayWeatherChips';
-import { activeTitleCandidates } from './scenarioSelection';
+import type { DayRowOpeners } from './openHandlers';
 import { useInViewport } from './useInViewport';
 
 // One of the accordion's own two AccordionActions — lets a day that's
@@ -100,7 +93,6 @@ function AddNoteButton({ date, dateLabel }: { date: string; dateLabel: string })
 // actually clicked.
 export const DayAccordion = memo(function DayAccordion({
   day,
-  daysByDate,
   onOpenActivity,
   onOpenStay,
   onOpenTransit,
@@ -108,20 +100,18 @@ export const DayAccordion = memo(function DayAccordion({
   onAddEvent,
 }: {
   day: Day;
-  daysByDate: Map<string, Day>;
-  onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
-  onOpenStay: (stay: EnrichedStay) => void;
-  onOpenTransit: (transit: EnrichedTransit) => void;
   onOpenMap: (day: Day) => void;
   onAddEvent: (day: Day) => void;
-}) {
-  const { scenarioTone } = useScenarioSelection();
-  const title = deriveTitle(day.location, activeTitleCandidates(day, daysByDate, scenarioTone));
+} & DayRowOpeners) {
   const [expanded, setExpanded] = useState(true);
   const { ref: infoRef, inView } = useInViewport<HTMLDivElement>();
 
   return (
-    <Box component="section" id={`day-${day.date}`} sx={{ scrollMarginTop: '4.5rem' }}>
+    <Box
+      component="section"
+      id={dayElementId(day.date)}
+      sx={{ scrollMarginTop: `calc(${DAYS_APP_BAR_HEIGHT} + ${DAY_SCROLL_GAP})` }}
+    >
       <DayAlertsBanner day={day} />
       <Accordion
         expanded={expanded}
@@ -136,7 +126,7 @@ export const DayAccordion = memo(function DayAccordion({
           aria-label={expanded ? `Collapse ${day.dateLabel}` : `Expand ${day.dateLabel}`}
           sx={{
             position: 'sticky',
-            top: '4rem',
+            top: DAYS_APP_BAR_HEIGHT,
             zIndex: 2,
             bgcolor: 'background.default',
             borderBottom: 1,
@@ -160,7 +150,7 @@ export const DayAccordion = memo(function DayAccordion({
             }}
           >
             <Box sx={{ gridArea: 'title', minWidth: 0 }}>
-              <DayHeader day={day} title={title} expanded={expanded} />
+              <DayHeader day={day} title={day.title} expanded={expanded} />
             </Box>
             {/* Stays mounted while collapsed (hidden via display:none, not
                 unmounted) so this box's viewport latch and DayTravelChip/
@@ -189,9 +179,8 @@ export const DayAccordion = memo(function DayAccordion({
           <NotesCluster notes={day.notes} />
           <DayTimeline
             day={day}
-            sequence={day.sequence}
+            rows={day.rows}
             containerId={day.date}
-            daysByDate={daysByDate}
             onOpenActivity={onOpenActivity}
             onOpenStay={onOpenStay}
             onOpenTransit={onOpenTransit}

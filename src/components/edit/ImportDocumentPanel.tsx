@@ -7,18 +7,23 @@ import { useState } from 'react';
 
 import { setStoredApiKey } from '../../config/aiKey';
 import {
-  DocumentImportError,
   draftEntityFromExtraction,
   draftIncludedTransfers,
   type ExtractedFields,
   extractEntityFromDocument,
   findConflictCandidate,
+  importErrorMessage,
   notesFromExtraction,
   type ResolvedPlaces,
   resolveLegAndDateForFields,
   resolvePlacesForFields,
 } from '../../model/documentImport';
-import { COLLECTION_FOR_KIND, type EditKind, entityLabel } from '../../model/editForms';
+import {
+  COLLECTION_FOR_KIND,
+  EDIT_KIND_LABEL,
+  type EditKind,
+  entityLabel,
+} from '../../model/editForms';
 import { formatDateLabel } from '../../model/tripModel';
 import type { Activity, Stay, Transit } from '../../model/types';
 import type { NoteDraft } from '../../state/NoteEditContextObject';
@@ -39,12 +44,6 @@ function withNoteFollowUp(
   if (!notes.length) return undefined;
   return (advance) => openNoteDraftSequence(notes, advance);
 }
-
-const KIND_LABEL: Record<EditKind, string> = {
-  activity: 'Activity',
-  stay: 'Stay',
-  transit: 'Transit',
-};
 
 function collectionFor(
   kind: EditKind,
@@ -113,11 +112,7 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
       setPlacement(resolved);
       setStatus('success');
     } catch (err) {
-      setErrorMessage(
-        err instanceof DocumentImportError
-          ? err.message
-          : 'Something went wrong reading that document.',
-      );
+      setErrorMessage(importErrorMessage(err));
       setStatus('error');
     }
   };
@@ -214,7 +209,7 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
       </Box>
       {status === 'success' && extracted && placement && (
         <Box sx={{ p: 2, borderRadius: 1, bgcolor: 'action.hover' }}>
-          <Typography variant="subtitle2">Detected: {KIND_LABEL[extracted.kind]}</Typography>
+          <Typography variant="subtitle2">Detected: {EDIT_KIND_LABEL[extracted.kind]}</Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
             Placing on {formatDateLabel(placement.date)}.
           </Typography>
@@ -241,7 +236,8 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
           ) : null}
           {conflictEntity && (
             <Typography variant="body2" sx={{ mt: 1 }}>
-              This looks like it may replace an existing {KIND_LABEL[extracted.kind].toLowerCase()}:{' '}
+              This looks like it may replace an existing{' '}
+              {EDIT_KIND_LABEL[extracted.kind].toLowerCase()}:{' '}
               <strong>{entityLabel(extracted.kind, conflictEntity)}</strong>.
             </Typography>
           )}

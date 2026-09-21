@@ -27,12 +27,16 @@
 
 import {
   activityDurationMinutes,
+  activityNodeKey,
   activitySortKey,
   addMinutesIso,
   dateOnly,
   diffMinutesIso,
+  stageNodeKey,
+  stayNodeKey,
+  transitBoundaryKey,
 } from './tripModel';
-import type { Activity, ScenarioTrack, SequenceItem, Stay, Transit, TripData } from './types';
+import type { Activity, DayRow, ScenarioTrack, Stay, Transit, TripData } from './types';
 
 // An Activity's own fuzzy-timing label if it's fuzzy (no startAt), else
 // null — what a real anchor/drag-meta entry names as "after this" so a drop
@@ -103,7 +107,7 @@ type ActivityTiming = Pick<
 // An anchor row's own end-of-event moment — what a dropped Activity lands
 // on immediately after. An Activity with a real duration (explicit, or a
 // meal's mealType/diningFormat estimate — activityDurationMinutes) falls
-// strictly after that activity's own day.sequence sort key (startAt); one
+// strictly after that activity's own row sort key (startAt); one
 // with no real duration to lend reports the same instant as its own sort
 // key, same as a Stay/Transit boundary or stage always does (those are
 // inherently instantaneous). Landing a dropped Activity exactly on that
@@ -127,9 +131,9 @@ function activityAnchorEndAt(activity: ActivityTiming, dayStart: string): string
 //
 // A dropped Activity landing exactly on its anchor's own instant (a
 // Stay/Transit boundary/stage, or another Activity with no lendable
-// duration) needs day.sequence's stable sort (tripModel.ts's mergeByTime)
+// duration) needs the timeline's stable sort (timeline.ts's buildTimeline)
 // to break that tie in the dropped Activity's favor, not leave it looking
-// like nothing happened. mergeByTime's own tie-break is array order — the
+// like nothing happened. The timeline's own tie-break is array order — the
 // day's pre-sort items are built stays-then-transits-then-activities, so a
 // tie against a Stay/Transit boundary already resolves correctly for free
 // (that group always sorts first). A tie against another Activity doesn't,
@@ -224,7 +228,7 @@ export interface DragMeta {
   // fuzzy too (adopting this same label, startAt left null) rather than
   // taking over the surrogate instant as a genuine clock time: two same-label
   // fuzzy Activities already sort alphabetically against each other
-  // (tripModel.ts's mergeByTime fuzzy tie-break), so staying fuzzy is what
+  // (timeline.ts's fuzzy tie-break), so staying fuzzy is what
   // actually lands the drop "after" this row the way the label implies.
   // null for every other row kind (Transit boundaries/stages are never
   // fuzzy; a real-timed Activity carries its own startAt already).
@@ -264,107 +268,97 @@ interface RealAnchor {
   timeLabel: string | null;
 }
 
-// The container's own real (non-Stay-boundary) rows, in day.sequence's
+// The container's own real (non-Stay-boundary) rows, in day.rows'
 // true chronological order — what Check-out/Check-in's own drop targets
 // (above) resolve against, since they're excluded from this list even
 // though they're physically first/last in `flattened`.
-function buildRealAnchors(flattened: SequenceItem[], dayStart: string): RealAnchor[] {
+function buildRealAnchors(flattened: DayRow[], dayStart: string): RealAnchor[] {
   const anchors: RealAnchor[] = [];
-  for (const item of flattened) {
-    if (item.type === 'transit-boundary' || item.type === 'transit-stage') {
+  for (const row of flattened) {
+    if (row.type === 'transit') {
       anchors.push({
-        endAt: item.key,
-        legId: item.transit.legId,
-        entityId: { kind: 'transit', id: item.transit._id },
+        endAt: row.key,
+        legId: row.transit.legId,
+        entityId: { kind: 'transit', id: row.transit._id },
         activityStartAt: null,
         timeLabel: null,
       });
-    } else if (item.type === 'section') {
-      for (const activity of item.activities) {
-        anchors.push({
-          endAt: activityAnchorEndAt(activity, dayStart),
-          legId: activity.legId,
-          entityId: { kind: 'activity', id: activity._id },
-          activityStartAt: activity.startAt,
-          timeLabel: fuzzyTimeLabelOf(activity),
-        });
-      }
+    } else if (row.type === 'activity') {
+      const { activity } = row;
+      anchors.push({
+        endAt: activityAnchorEndAt(activity, dayStart),
+        legId: activity.legId,
+        entityId: { kind: 'activity', id: activity._id },
+        activityStartAt: activity.startAt,
+        timeLabel: fuzzyTimeLabelOf(activity),
+      });
     }
   }
   return anchors;
 }
 
 // Every Activity/Transit/Stay id under one scenario-tabs node's own subtree —
-// every branch (the tracks passed in), plus any nested child scenario-tabs
-// group each track's own sequence folds in (buildScenarioTracks' own
-// parentScenarioId nesting, tripModel.ts) — walked recursively so a
-// scenario-group drag picks up a nested weather-inside-a-delay split's
-// content too, not just the immediate tracks. A Transit's boundary and
+// the union of each branch's (the tracks passed in) own `members`, which
+// already roll up any nested child scenario-tabs group, so a scenario-group
+// drag picks up a nested weather-inside-a-delay split's content too, not
+// just the immediate tracks. A Transit's boundary and
 // stage rows both name the same transit._id, so transitIds is deduplicated;
-// an Activity/Stay only ever appears in one track's own sequence, so no
+// an Activity/Stay only ever appears in one track's own rows, so no
 // deduplication is needed for either of those.
 function collectScenarioGroupMembers(tracks: ScenarioTrack[]): ReorderMembers {
   const activityIds = new Set<string>();
   const transitIds = new Set<string>();
   const stayIds = new Set<string>();
-  const walk = (list: ScenarioTrack[]) => {
-    for (const track of list) {
-      for (const item of track.sequence) {
-        if (item.type === 'section') {
-          for (const a of item.activities) activityIds.add(a._id);
-        } else if (item.type === 'transit-boundary' || item.type === 'transit-stage') {
-          transitIds.add(item.transit._id);
-        } else if (item.type === 'stay') {
-          stayIds.add(item.stay._id);
-        } else if (item.type === 'scenario-tabs' && item.tracks) {
-          walk(item.tracks);
-        }
-      }
-    }
-  };
-  walk(tracks);
+  for (const { members } of tracks) {
+    for (const id of members.activityIds) activityIds.add(id);
+    for (const id of members.transitIds) transitIds.add(id);
+    for (const id of members.stayIds) stayIds.add(id);
+  }
   return { activityIds: [...activityIds], transitIds: [...transitIds], stayIds: [...stayIds] };
 }
 
-// A scenario-tabs row's own drag/render id — namespaced by calendar day AND
-// scenarioId, not just `i` alone, since every DayTimeline instance shares
-// one DndContext (DaysView.tsx) and a bare local index collides across
-// different days' (or a nested group's own) scenario-tabs rows. Shared by
-// this file's own buildDragMeta and DayTimeline.tsx's node-building walk,
-// which must produce the exact same id for the same row.
-export function scenarioTabsDragId(dayStart: string, scenarioId: string | null, i: number): string {
-  return `scenario-tabs-${dateOnly(dayStart)}-${scenarioId ?? 'top'}-${i}`;
+// A row's drag/render id — the ONE place it is decided, used by both this
+// file's buildDragMeta and DayTimeline.tsx's node-building walk, so a rendered
+// row and its DragMeta can never disagree. Every DayTimeline instance shares
+// one DndContext (DaysView.tsx), so an id must be unique across the whole day
+// list: a multi-night Stay row is keyed by date (it renders on every night), a
+// route stage by its Transit and stage number, and a scenario box by its group
+// and date. (No bare list index: it collides across days.)
+export function dragIdOf(row: DayRow, date: string): string {
+  switch (row.type) {
+    case 'stay':
+      return stayNodeKey(row.stay._id, date);
+    case 'activity':
+      return activityNodeKey(row.activity._id);
+    case 'transit':
+      return row.phase === 'stage'
+        ? stageNodeKey(row.transit._id, row.stageIndex)
+        : transitBoundaryKey(row.transit._id, row.phase);
+    case 'box':
+      return `box-${row.tracks[0]?.groupKey ?? 'empty'}-${dateOnly(date)}`;
+  }
 }
 
 // The one droppable row a container needs when NOTHING real precedes its
 // own scenario-tabs split — see buildDragMeta's own note below on when this
 // gets emitted. Exported so DayTimeline.tsx's node-building walk can render
-// a row sharing this exact id, the same contract scenarioTabsDragId already
-// keeps between the two files.
-export function beforeScenarioSplitDragId(scenarioDragId: string): string {
-  return `before-${scenarioDragId}`;
+// a row sharing this exact id, the same contract dragIdOf already keeps between
+// the two files.
+export function beforeScenarioSplitDragId(boxDragId: string): string {
+  return `before-${boxDragId}`;
 }
 
 // `id` mirrors DayTimeline's own node-key scheme exactly (same source
 // array, same index) so a rendered row and its DragMeta always share one id
 // — that's what lets a dnd-kit sortable id resolve straight back to this.
 export function buildDragMeta(
-  flattened: SequenceItem[],
+  flattened: DayRow[],
   scenarioId: string | null,
   dayStart: string,
-  // The day's own legId — used below as the legId for the scenario-tabs
+  // The day's own legId — used below as the legId for the scenario box's
   // DragMeta entry (a whole sub-timeline, not a single row, so it has no
   // real anchor of its own to take a legId from).
   dayLegId: string,
-  // A day's top-level { type: 'scenario-tabs' } placeholder (from
-  // tripModel.ts's buildSequence) carries no `tracks` of its own — the
-  // day's live branch selection lives in `Day.scenarioTracks` instead, the
-  // same fallback DayTimeline.tsx's own rendering already uses
-  // (`item.tracks ?? day.scenarioTracks`). Only a *nested* scenario-tabs
-  // placeholder (from buildTrack) carries its own `tracks`. Without this
-  // fallback, dragging a top-level scenario-group bundle collected an empty
-  // { activityIds: [], transitIds: [] } and silently moved nothing.
-  topLevelScenarioTracks: ScenarioTrack[] = [],
 ): DragMeta[] {
   const realAnchors = buildRealAnchors(flattened, dayStart);
   const firstActivityIdx = realAnchors.findIndex((a) => a.entityId?.kind === 'activity');
@@ -413,7 +407,8 @@ export function buildDragMeta(
   };
 
   return flattened
-    .flatMap((item, i): Array<Omit<DragMeta, 'index' | 'containerDayStart'>> => {
+    .flatMap((item): Array<Omit<DragMeta, 'index' | 'containerDayStart'>> => {
+      const id = dragIdOf(item, dateOnly(dayStart));
       if (item.type === 'stay') {
         // Keyed by date, not the per-day flatMap index `i` — a multi-night
         // Stay renders its own row on every night it covers (Check
@@ -421,7 +416,6 @@ export function buildDragMeta(
         // day list (DaysView.tsx), so `i` alone collides across days: two
         // different nights can both land at local index 0. The date is the
         // one thing guaranteed unique per Stay row regardless of relation.
-        const id = `stay-${item.stay._id}-${dateOnly(dayStart)}`;
         if (item.relation === 'Check out') {
           const first = firstActivityIdx >= 0 ? realAnchors[firstActivityIdx] : null;
           return [
@@ -477,11 +471,11 @@ export function buildDragMeta(
           },
         ];
       }
-      if (item.type === 'transit-boundary') {
+      if (item.type === 'transit' && item.phase !== 'stage') {
         realAnchorIdx += 1;
         return [
           {
-            id: `transit-${item.transit._id}-${item.phase}`,
+            id,
             endAt: item.key,
             legId: item.transit.legId,
             scenarioId,
@@ -498,11 +492,11 @@ export function buildDragMeta(
           },
         ];
       }
-      if (item.type === 'transit-stage') {
+      if (item.type === 'transit') {
         realAnchorIdx += 1;
         return [
           {
-            id: `stage-${item.transit._id}-${item.variant.tone}-${i}`,
+            id,
             endAt: item.key,
             legId: item.transit.legId,
             scenarioId,
@@ -515,11 +509,12 @@ export function buildDragMeta(
           },
         ];
       }
-      if (item.type === 'section') {
-        return item.activities.map((activity) => {
-          realAnchorIdx += 1;
-          return {
-            id: `activity-${activity._id}`,
+      if (item.type === 'activity') {
+        const { activity } = item;
+        realAnchorIdx += 1;
+        return [
+          {
+            id,
             endAt: activityAnchorEndAt(activity, dayStart),
             legId: activity.legId,
             scenarioId,
@@ -529,10 +524,10 @@ export function buildDragMeta(
             kind: 'after',
             cascadeActivityIds: downstreamActivityIds(realAnchorIdx + 1),
             ...beforeFieldsAt(realAnchorIdx, activity.legId),
-          };
-        });
+          },
+        ];
       }
-      // scenario-tabs — its own drag source (the whole bundle, every branch),
+      // scenario box — its own drag source (the whole bundle, every branch),
       // never a drop target: see DayTimeline.tsx's droppable: false wiring
       // (Task 7). `before` is intentionally omitted — only relevant for a row
       // that can be dropped onto, which this never is.
@@ -546,7 +541,6 @@ export function buildDragMeta(
       // and the date alone isn't enough either, since a nested scenario-tabs
       // group (Task 5's own `walk` recursion) can share a calendar day with
       // its own parent's top-level group.
-      const scenarioDragId = scenarioTabsDragId(dayStart, scenarioId, i);
       // Shared by both entries below — a scenario-tabs row's own drag-source
       // fields, and (when nothing real precedes it) its beforeScenarioSplit
       // spacer's drop-target fields, agree on everything but `id` and which
@@ -562,10 +556,10 @@ export function buildDragMeta(
       };
       const scenarioEntry: Omit<DragMeta, 'index' | 'containerDayStart'> = {
         ...sharedFields,
-        id: scenarioDragId,
+        id,
         source: {
           kind: 'scenario-group',
-          members: collectScenarioGroupMembers(item.tracks ?? topLevelScenarioTracks),
+          members: collectScenarioGroupMembers(item.tracks),
         },
       };
       // A scenario-tabs row being droppable:false is normally harmless — the
@@ -587,7 +581,7 @@ export function buildDragMeta(
         return [
           {
             ...sharedFields,
-            id: beforeScenarioSplitDragId(scenarioDragId),
+            id: beforeScenarioSplitDragId(id),
             source: null,
             cascadeActivityIds: downstreamActivityIds(realAnchorIdx + 1),
           },
@@ -707,7 +701,7 @@ function cascadeShift(
 // The dragged Activity's own position in the returned activities array
 // also moves — immediately after `dropMeta.anchorEntityId` when it names
 // an Activity, or to the end otherwise. Array position is never read for anything
-// but day.sequence's own tie-break (see DragMeta's note above), so this is
+// but the timeline's own tie-break (see DragMeta's note above), so this is
 // what makes an exact-timestamp tie against that anchor resolve correctly
 // without rewriting either Activity's own timestamp to fake a gap.
 export function applyActivityReorder(
@@ -993,7 +987,7 @@ export function applyBlockReorder(
     // original day here would silently strand that member behind on drag,
     // even though its own timeLabel/legId otherwise moved. Every member of
     // one day's scenario-group bundle is already on `dayStart`'s own date if
-    // fuzzy (buildScenarioTracks only ever folds a day's own same-date
+    // fuzzy (layoutDay only ever folds a day's own same-date
     // Activities into its tracks), so retargeting unconditionally to
     // dateOnly(dayStart) is always correct, not just on an actual
     // day-crossing drop.

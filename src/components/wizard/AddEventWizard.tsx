@@ -68,7 +68,8 @@ export function AddEventWizard({
   routes: Route[];
   onClose: () => void;
   onSaveEntity: (kind: EditKind, entity: Entity) => void;
-  onSaveScenario: (scenario: Scenario) => void;
+  // Returns a message when the scenario-tone invariant refuses the new scenario.
+  onSaveScenario: (scenario: Scenario) => string | null;
 }) {
   const [error, setError] = useState<string | null>(null);
   const [category, setCategory] = useState<WizardCategory>('activity');
@@ -146,7 +147,8 @@ export function AddEventWizard({
         setError(message);
         return;
       }
-      onSaveScenario(clone);
+      const error = onSaveScenario(clone);
+      if (error) setError(error);
       return;
     }
     if (category === 'stay') {

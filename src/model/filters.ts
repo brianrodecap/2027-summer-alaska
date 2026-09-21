@@ -2,11 +2,18 @@
 // what's Booked, still needs booking, tagged a highlight, flagged with a
 // warning note, or belongs to one leg. A direct port of docs/js/filters.js's
 // group vocabulary and AND-across/OR-within matching rule, adapted to filter
-// real Day/SequenceItem data (via filterTagsFor, tripModel.ts) instead of
+// real Day/DayRow data (via filterTagsFor, tripModel.ts) instead of
 // toggling CSS classes on rendered DOM nodes — the React tree here can just
 // not render a filtered-out row in the first place.
 import { filterTagsFor } from './tripModel';
-import type { Day, LegSummary, SequenceItem } from './types';
+import type {
+  Day,
+  DayRow,
+  EnrichedActivity,
+  EnrichedTransit,
+  LegSummary,
+  ScenarioTrack,
+} from './types';
 
 export interface FilterOption {
   token: string;
@@ -70,65 +77,85 @@ export function rowMatches(tags: string[], activeTokens: Set<string>): boolean {
   return true;
 }
 
-// Filters one day's (or one scenario track's) own sequence down to the items
-// that still match — a Stay/Transit's tags come from the whole entity (its
-// depart/arrive/stage items always show or hide together), a section keeps
-// only its still-matching activities and drops out entirely once none are
-// left. A scenario-tabs item is always kept as-is: it recurses into its own
-// nested DayTimeline render, which re-applies this same filter to that
-// track's own sequence.
-export function filterSequenceItems(
-  sequence: SequenceItem[],
-  activeTokens: Set<string>,
-): SequenceItem[] {
-  if (!activeTokens.size) return sequence;
-  const result: SequenceItem[] = [];
-  for (const item of sequence) {
-    if (item.type === 'stay') {
-      if (rowMatches(filterTagsFor(item.stay), activeTokens)) result.push(item);
-      continue;
+// Narrows a day's rows to the ones that still match every active filter. One
+// row per event, each tagged from its own entity; a scenario box passes
+// through unfiltered (its tabs are choices, not content).
+export function filterRows(rows: DayRow[], activeTokens: Set<string>): DayRow[] {
+  if (!activeTokens.size) return rows;
+  return rows.filter((row) => {
+    switch (row.type) {
+      case 'stay':
+        return rowMatches(filterTagsFor(row.stay), activeTokens);
+      case 'transit':
+        return rowMatches(filterTagsFor(row.transit), activeTokens);
+      case 'activity':
+        return rowMatches(filterTagsFor(row.activity), activeTokens);
+      case 'box':
+        return true;
     }
-    if (item.type === 'transit-boundary' || item.type === 'transit-stage') {
-      if (rowMatches(filterTagsFor(item.transit), activeTokens)) result.push(item);
-      continue;
-    }
-    if (item.type === 'section') {
-      const activities = item.activities.filter((a) => rowMatches(filterTagsFor(a), activeTokens));
-      if (activities.length) result.push({ ...item, activities });
-      continue;
-    }
-    result.push(item); // scenario-tabs
-  }
-  return result;
+  });
 }
 
-function sequenceHasVisibleContent(
-  sequence: SequenceItem[],
-  day: Day,
+// The entities an inactive scenario branch owns, looked up by id — its rows
+// aren't laid out (its events aren't in the timeline), only its member ids are.
+export interface EntityLookup {
+  activities: ReadonlyMap<string, EnrichedActivity>;
+  transits: ReadonlyMap<string, EnrichedTransit>;
+}
+
+function trackHasVisibleContent(
+  track: ScenarioTrack,
+  day: Pick<Day, 'stays'>,
   activeTokens: Set<string>,
+  lookup: EntityLookup,
 ): boolean {
-  for (const item of sequence) {
-    if (item.type === 'stay' && rowMatches(filterTagsFor(item.stay), activeTokens)) return true;
-    if (item.type === 'transit-boundary' && rowMatches(filterTagsFor(item.transit), activeTokens))
-      return true;
-    if (
-      item.type === 'section' &&
-      item.activities.some((a) => rowMatches(filterTagsFor(a), activeTokens))
-    )
-      return true;
-    if (item.type === 'scenario-tabs') {
-      const tracks = item.tracks ?? day.scenarioTracks;
-      if (tracks.some((t) => sequenceHasVisibleContent(t.sequence, day, activeTokens))) return true;
+  if (track.active) return rowsHaveVisibleContent(track.rows, day, activeTokens, lookup);
+  // An alternate the reader hasn't selected still counts: a day whose only
+  // match is behind another tab must stay in the list so the reader can switch
+  // to it.
+  const { activityIds, transitIds, stayIds } = track.members;
+  const matches = (entity: Parameters<typeof filterTagsFor>[0] | undefined) =>
+    entity !== undefined && rowMatches(filterTagsFor(entity), activeTokens);
+  return (
+    activityIds.some((id) => matches(lookup.activities.get(id))) ||
+    transitIds.some((id) => matches(lookup.transits.get(id))) ||
+    stayIds.some((id) => matches(day.stays.find((s) => s._id === id)))
+  );
+}
+
+function rowsHaveVisibleContent(
+  rows: DayRow[],
+  day: Pick<Day, 'stays'>,
+  activeTokens: Set<string>,
+  lookup: EntityLookup,
+): boolean {
+  return rows.some((row) => {
+    switch (row.type) {
+      case 'stay':
+        return rowMatches(filterTagsFor(row.stay), activeTokens);
+      case 'transit':
+        // A route stage never makes a day visible on its own — its Transit's
+        // Depart/Arrive rows carry the same tags.
+        return row.phase !== 'stage' && rowMatches(filterTagsFor(row.transit), activeTokens);
+      case 'activity':
+        return rowMatches(filterTagsFor(row.activity), activeTokens);
+      case 'box':
+        return row.tracks.some((t) => trackHasVisibleContent(t, day, activeTokens, lookup));
     }
-  }
-  return false;
+  });
 }
 
 // Whether a whole day-block has anything left to show once the active
 // filters are applied — a day-block with zero surviving rows hides entirely
 // rather than rendering an empty shell (docs/js/filters.js's own
 // applyFilters did the same via .filtered-out on the whole .day-block).
-export function dayHasVisibleContent(day: Day, activeTokens: Set<string>): boolean {
+// Scenario tabs the reader isn't on are searched too (via `lookup`), so a match
+// that lives only in another branch keeps its day visible.
+export function dayHasVisibleContent(
+  day: Day,
+  activeTokens: Set<string>,
+  lookup: EntityLookup,
+): boolean {
   if (!activeTokens.size) return true;
-  return sequenceHasVisibleContent(day.sequence, day, activeTokens);
+  return rowsHaveVisibleContent(day.rows, day, activeTokens, lookup);
 }

@@ -1,16 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
+import { buildLiveDays } from './liveDays';
 import {
   buildTripView,
-  dayFullRouteUrls,
-  dayMapStops,
-  dayTravelSegments,
   diffMinutesIso,
   splitOutStayBoundaries,
   tripDateRange,
   tripDayCount,
 } from './tripModel';
-import type { ScenarioTabsSequenceItem, StaySequenceItem, TripData } from './types';
+import type { BoxRow, StayRow, TripData } from './types';
 
 // A bare-minimum, synthetic TripData — one Trip and one Leg, nothing else —
 // for tests to extend with only the specific entities/fields they exercise.
@@ -84,19 +82,15 @@ function pushMinimalTransit(data: TripData, overrides: Partial<TripData['transit
   });
 }
 
-function pushMinimalStay(data: TripData, overrides: Partial<TripData['stays'][number]>) {
-  data.stays.push({
-    _id: 'test_stay',
-    legId: 'leg_test',
-    scenarioId: null,
-    checkInAt: '2027-06-01T15:00',
-    checkOutAt: '2027-06-05T11:00',
-    status: 'planning',
-    lodging: null,
-    booking: null,
-    images: [],
-    ...overrides,
+// A day as the reader sees it (rows, scenario tabs): the static frame from
+// buildTripView laid out for the given scenario picks.
+function liveDay(data: TripData, date: string, picks = new Map<string, string>()) {
+  const { days } = buildLiveDays(buildTripView(data), data, {
+    scenarioPicks: picks,
+    routeTones: new Map(),
+    mealOptionIndex: new Map(),
   });
+  return days.find((d) => d.date === date);
 }
 
 describe('buildTripView', () => {
@@ -126,7 +120,7 @@ describe('buildTripView', () => {
       arrivesAt: null,
       routeId: 'test_route',
     });
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-01');
+    const day = liveDay(data, '2027-06-01');
     expect(day).toBeDefined();
     const transit = day!.transits.find((t) => t._id === 'test_transit');
     expect(transit).toBeDefined();
@@ -178,15 +172,13 @@ describe('buildTripView', () => {
       startAt: '2027-06-01T09:00',
     });
 
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-01');
+    const day = liveDay(data, '2027-06-01');
     expect(day).toBeDefined();
     const parentTrack = day!.scenarioTracks.find((t) => t.scenario._id === 'test_parent');
     expect(parentTrack).toBeDefined();
-    const nested = parentTrack!.sequence.find(
-      (i): i is ScenarioTabsSequenceItem => i.type === 'scenario-tabs',
-    );
+    const nested = parentTrack!.rows.find((r): r is BoxRow => r.type === 'box');
     expect(nested).toBeDefined();
-    const nestedIds = nested!.tracks!.map((t) => t.scenario._id);
+    const nestedIds = nested!.tracks.map((t) => t.scenario._id);
     expect(nestedIds).toContain('test_child_a');
     expect(nestedIds).toContain('test_child_b');
   });
@@ -271,13 +263,13 @@ describe('buildTripView', () => {
       startAt: '2027-06-01T10:45',
     });
 
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-01')!;
+    const day = liveDay(data, '2027-06-01')!;
     expect(day).toBeDefined();
 
-    const gapIdx = day.sequence.findIndex(
-      (i) => i.type === 'section' && i.activities.some((a) => a._id === 'test_plain_gap'),
+    const gapIdx = day.rows.findIndex(
+      (r) => r.type === 'activity' && r.activity._id === 'test_plain_gap',
     );
-    const scenarioTabsIdx = day.sequence.findIndex((i) => i.type === 'scenario-tabs');
+    const scenarioTabsIdx = day.rows.findIndex((r) => r.type === 'box');
     expect(gapIdx).toBeGreaterThanOrEqual(0);
     expect(scenarioTabsIdx).toBeGreaterThanOrEqual(0);
     expect(gapIdx).toBeLessThan(scenarioTabsIdx);
@@ -349,11 +341,11 @@ describe('buildTripView', () => {
       arrivesAt: '2027-06-01T07:00',
     });
 
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-01')!;
+    const day = liveDay(data, '2027-06-01')!;
     expect(day).toBeDefined();
 
-    const transitIdx = day.sequence.findIndex((i) => i.type === 'transit-boundary');
-    const scenarioTabsIdx = day.sequence.findIndex((i) => i.type === 'scenario-tabs');
+    const transitIdx = day.rows.findIndex((r) => r.type === 'transit');
+    const scenarioTabsIdx = day.rows.findIndex((r) => r.type === 'box');
     expect(transitIdx).toBeGreaterThanOrEqual(0);
     expect(scenarioTabsIdx).toBeGreaterThanOrEqual(0);
     expect(scenarioTabsIdx).toBeLessThan(transitIdx);
@@ -364,10 +356,10 @@ describe('buildTripView', () => {
   // its own yet, placed only via its own `date` field. buildScenarioTracks
   // must still surface it — with an empty sequence, but a real (dayStart)
   // anchorKey rather than null — so the day's own scenario-tabs placeholder
-  // still splices into day.sequence and DayTimeline has somewhere to render
+  // still splices into day.rows and DayTimeline has somewhere to render
   // its droppable "Nothing here yet" zone (see reorder.test.ts's own test
   // for what a drop into that zone actually does).
-  it('surfaces a still-empty, date-anchored scenario as its own (empty) track, and still splices a scenario-tabs placeholder into day.sequence', () => {
+  it('surfaces a still-empty, date-anchored scenario as its own (empty) track, and still splices a scenario box into day.rows', () => {
     const data = minimalTripData();
     // Gives leg_test's computed date range coverage of 2027-06-01, so the
     // day actually gets built — a Scenario alone doesn't contribute to that.
@@ -381,18 +373,17 @@ describe('buildTripView', () => {
       date: '2027-06-01',
       images: [],
     });
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-01')!;
+    const day = liveDay(data, '2027-06-01')!;
     expect(day).toBeDefined();
 
     const track = day.scenarioTracks.find((t) => t.scenario._id === 'test_scenario_empty');
     expect(track).toBeDefined();
-    expect(track!.sequence).toEqual([]);
+    expect(track!.rows).toEqual([]);
 
-    // The track's own anchorKey (its earliest real content) legitimately
-    // stays null — buildScenarioTracks' own dayStart fallback only applies
-    // at the aggregate level (below), so the tab group still gets placed.
-    expect(track!.anchorKey).toBeNull();
-    expect(day.sequence.some((i) => i.type === 'scenario-tabs')).toBe(true);
+    // A still-empty scenario has no real content to anchor on, so its box sits
+    // at the start of its placement-hint day — which is what lets the tab group
+    // be placed (and stay droppable) at all.
+    expect(day.rows.some((r) => r.type === 'box')).toBe(true);
   });
 
   // A same-day (non-midnight-crossing) Transit's scenarioId used to leak
@@ -422,7 +413,7 @@ describe('buildTripView', () => {
     // Gives the following day its own leg coverage.
     pushMinimalActivity(data, { startAt: '2027-06-02T09:00' });
 
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-02')!;
+    const day = liveDay(data, '2027-06-02')!;
     expect(day).toBeDefined();
     expect(day.scenarioTracks.some((t) => t.scenario._id === 'test_scenario_sameday')).toBe(false);
   });
@@ -446,15 +437,13 @@ describe('buildTripView', () => {
       arrivesAt: '2027-06-05T18:00',
     });
 
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-05');
+    const day = liveDay(data, '2027-06-05');
     expect(day).toBeDefined();
     // day.leg resolves to whichever leg sorts first in legs' own authored order.
     expect(day!.leg._id).toBe('leg_test');
     // But entities from the incoming leg are not dropped from the sequence.
     expect(day!.transits.some((t) => t._id === 'test_transit')).toBe(true);
-    const activityIds = day!.sequence
-      .filter((i): i is Extract<typeof i, { type: 'section' }> => i.type === 'section')
-      .flatMap((i) => i.activities.map((a) => a._id));
+    const activityIds = day!.rows.flatMap((r) => (r.type === 'activity' ? [r.activity._id] : []));
     expect(activityIds).toContain('test_activity');
   });
 });
@@ -537,6 +526,101 @@ describe('activityOverlapWarning', () => {
   });
 });
 
+describe('overlap warnings are scoped to one leg + scenario branch', () => {
+  it('does not flag two time-overlapping Activities on different scenario branches', () => {
+    const data = minimalTripData();
+    pushMinimalActivity(data, {
+      _id: 'test_a',
+      startAt: '2027-06-28T09:00',
+      durationMinutes: 120,
+      scenarioId: 'scenario_one',
+    });
+    pushMinimalActivity(data, {
+      _id: 'test_b',
+      startAt: '2027-06-28T10:00',
+      durationMinutes: 60,
+      scenarioId: 'scenario_two',
+    });
+    const view = buildTripView(data);
+    expect(view.activitiesById.get('test_a')?.activityOverlapWarning).toBeNull();
+    expect(view.activitiesById.get('test_b')?.activityOverlapWarning).toBeNull();
+  });
+
+  it("flags a point-in-time Activity landing inside another's span, and vice versa", () => {
+    const data = minimalTripData();
+    pushMinimalActivity(data, {
+      _id: 'test_span',
+      text: 'Long hike',
+      startAt: '2027-06-28T09:00',
+      durationMinutes: 120,
+    });
+    pushMinimalActivity(data, {
+      _id: 'test_point',
+      text: 'Photo stop',
+      startAt: '2027-06-28T10:00',
+    });
+    const view = buildTripView(data);
+    expect(view.activitiesById.get('test_point')?.activityOverlapWarning).toBe(
+      'Overlaps with "Long hike".',
+    );
+    expect(view.activitiesById.get('test_span')?.activityOverlapWarning).toBe(
+      'Overlaps with "Photo stop".',
+    );
+  });
+
+  it('does not flag a Transit departure against an Activity on a different leg', () => {
+    const data = minimalTripData();
+    pushMinimalActivity(data, {
+      startAt: '2027-06-28T23:00',
+      durationMinutes: 30,
+      mealType: 'dinner',
+      diningFormat: 'sit-down',
+    });
+    pushMinimalTransit(data, {
+      legId: 'leg_other',
+      departsAt: '2027-06-28T23:15',
+      arrivesAt: '2027-06-28T23:45',
+    });
+    const view = buildTripView(data);
+    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBeNull();
+  });
+});
+
+describe('entity notes', () => {
+  it('attaches each note to every entity it names, once, and flags warning notes', () => {
+    const data = minimalTripData();
+    pushMinimalActivity(data, { _id: 'test_activity', startAt: '2027-06-28T09:00' });
+    pushMinimalActivity(data, { _id: 'test_other', startAt: '2027-06-28T15:00' });
+    data.notes.push(
+      {
+        _id: 'note_warn',
+        kind: 'warning',
+        text: 'Heads up',
+        // Two refs to the same activity still yield one note for it.
+        concerns: [
+          { entity: 'activity', id: 'test_activity' },
+          { entity: 'activity', id: 'test_activity' },
+        ],
+        images: [],
+      },
+      {
+        _id: 'note_info',
+        kind: 'info',
+        text: 'FYI',
+        concerns: [{ entity: 'leg', id: 'leg_test' }],
+        images: [],
+      },
+    );
+    const view = buildTripView(data);
+    const withNote = view.activitiesById.get('test_activity');
+    expect(withNote?.notes.map((n) => n._id)).toEqual(['note_warn']);
+    expect(withNote?.hasWarningNote).toBe(true);
+    const without = view.activitiesById.get('test_other');
+    expect(without?.notes).toEqual([]);
+    expect(without?.hasWarningNote).toBe(false);
+  });
+});
+
 describe('same-startAt Activity ordering', () => {
   it('puts a defaulted (timeLabel-anchored) startAt first; two real-startAt Activities left tied keep their own array order regardless of durationMinutes', () => {
     const data = minimalTripData();
@@ -554,12 +638,9 @@ describe('same-startAt Activity ordering', () => {
       durationMinutes: 15,
     });
 
-    const view = buildTripView(data);
-    const day = view.days.find((d) => d.date === '2027-06-28');
+    const day = liveDay(data, '2027-06-28');
     expect(day).toBeDefined();
-    const activityIds = day!.sequence
-      .filter((i): i is Extract<typeof i, { type: 'section' }> => i.type === 'section')
-      .flatMap((i) => i.activities.map((a) => a._id));
+    const activityIds = day!.rows.flatMap((r) => (r.type === 'activity' ? [r.activity._id] : []));
 
     // durationMinutes is never used as a tie-break — test_long (45min) stays
     // ahead of test_short (15min) here purely because it was pushed first;
@@ -584,12 +665,9 @@ describe('same-startAt Activity ordering', () => {
       text: 'Apple picking',
     });
 
-    const view = buildTripView(data);
-    const day = view.days.find((d) => d.date === '2027-06-28');
+    const day = liveDay(data, '2027-06-28');
     expect(day).toBeDefined();
-    const activityIds = day!.sequence
-      .filter((i): i is Extract<typeof i, { type: 'section' }> => i.type === 'section')
-      .flatMap((i) => i.activities.map((a) => a._id));
+    const activityIds = day!.rows.flatMap((r) => (r.type === 'activity' ? [r.activity._id] : []));
 
     // test_zebra was authored first, but alphabetically 'Apple picking'
     // comes before 'Zebra viewing'.
@@ -599,20 +677,23 @@ describe('same-startAt Activity ordering', () => {
 
 describe('splitOutStayBoundaries', () => {
   it('always orders checkouts first and check-ins last, regardless of clock time', () => {
-    const checkout: StaySequenceItem = {
+    const checkout: StayRow = {
       type: 'stay',
+      event: null,
       relation: 'Check out',
       key: '2027-07-01T11:00',
       stay: { _id: 's1' } as never,
     };
-    const checkin: StaySequenceItem = {
+    const checkin: StayRow = {
       type: 'stay',
+      event: null,
       relation: 'Check in',
       key: '2027-07-01T03:00', // earlier clock time than checkout, but must still render last
       stay: { _id: 's2' } as never,
     };
-    const middle: StaySequenceItem = {
+    const middle: StayRow = {
       type: 'stay',
+      event: null,
       relation: 'Overnight',
       key: '2027-07-01T07:00',
       stay: { _id: 's3' } as never,
@@ -625,8 +706,9 @@ describe('splitOutStayBoundaries', () => {
   });
 
   it('groups a mid-stay "Staying" row with check-in rather than leaving it in rest, so it renders at the end of the day like check-in does', () => {
-    const staying: StaySequenceItem = {
+    const staying: StayRow = {
       type: 'stay',
+      event: null,
       relation: 'Staying',
       key: '2027-07-01T00:00', // synthetic dayStart anchor — earliest possible key
       stay: { _id: 's1' } as never,
@@ -637,236 +719,26 @@ describe('splitOutStayBoundaries', () => {
     expect(rest).toEqual([]);
     expect(checkIns).toEqual([staying]);
   });
-});
 
-describe('dayMapStops', () => {
-  it('includes a mid-stay lodging (relation "Staying") on the map, not just its check-in/check-out days', () => {
-    const data = minimalTripData();
-    pushMinimalStay(data, { lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } } });
-    // 2027-06-03 falls strictly inside the stay's checkIn/checkOut span —
-    // a genuine "Staying" night, not a check-in or check-out day.
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-03')!;
-    expect(dayMapStops(day).flat()).toContain('Test Lodge');
-  });
-
-  // A same-day fly-in-only excursion: a non-'drive' Transit pair (a
-  // floatplane out and back) whose destination — the remote lodge/lake, only
-  // reachable by air — is what dropExcursionInteriors strips from a driving
-  // route, keeping only the drivable near-side dock the outbound leg departs
-  // from and the return leg comes back to.
-  function pushExcursionPair(data: TripData) {
-    pushMinimalTransit(data, {
-      _id: 'test_excursion_out',
-      mode: 'flight',
-      from: { id: null, label: 'Test Dock' }, // drivable, no resolved placeId
-      to: { id: null, label: 'Remote Lodge' }, // fly-in-only destination
-      departsAt: '2027-06-03T08:00',
-      arrivesAt: '2027-06-03T08:30',
-    });
-    pushMinimalTransit(data, {
-      _id: 'test_excursion_back',
-      mode: 'flight',
-      from: { id: null, label: 'Remote Lodge' },
-      to: { id: null, label: 'Test Dock' },
-      departsAt: '2027-06-03T16:00',
-      arrivesAt: '2027-06-03T16:30',
-    });
-  }
-
-  it('bookends a "Staying" day\'s stops with the lodging at both the start and the end, not just the end', () => {
-    const data = minimalTripData();
-    pushMinimalStay(data, { lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } } });
-    pushExcursionPair(data);
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-03')!;
-    const segments = dayMapStops(day);
-    // A same-day excursion (out and back to the same dock) never splits the
-    // day into more than one drivable run — only a genuine relocation does.
-    expect(segments.length).toBe(1);
-    const stops = segments[0];
-    expect(stops[0]).toBe('Test Lodge');
-    expect(stops[stops.length - 1]).toBe('Test Lodge');
-  });
-
-  it("bookends the full Google Maps route link the same way, routes through the excursion's drivable dock as its only waypoint, and never routes through the fly-in-only destination itself despite that place carrying no resolved placeId either", () => {
-    const data = minimalTripData();
-    pushMinimalStay(data, { lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } } });
-    pushExcursionPair(data);
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-03')!;
-    const urls = dayFullRouteUrls(day);
-    expect(urls.length).toBeGreaterThan(0);
-    expect(new URL(urls[0]).searchParams.get('origin')).toBe('Test Lodge');
-    expect(new URL(urls[urls.length - 1]).searchParams.get('destination')).toBe('Test Lodge');
-    expect(new URL(urls[0]).searchParams.get('waypoints')).toBe('Test Dock');
-  });
-
-  it("drops a same-day excursion's remote destination (and everything that happened there) from the map stops entirely, keeping only its drivable near-side dock", () => {
-    const data = minimalTripData();
-    pushMinimalStay(data, { lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } } });
-    pushExcursionPair(data);
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-03')!;
-    const stops = dayMapStops(day);
-    expect(stops).toEqual([['Test Lodge', 'Test Dock', 'Test Lodge']]);
-    expect(stops.flat()).not.toContain('Remote Lodge');
-  });
-
-  it('still excludes a mid-voyage cruise cabin (no fixed placeId) from the map on a "Staying" night', () => {
-    const data = minimalTripData();
-    pushMinimalStay(data, { lodging: { place: { id: null, label: 'Test Ship' } } });
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-03')!;
-    expect(dayMapStops(day).flat()).not.toContain('Test Ship');
-  });
-
-  // A genuine relocation — a non-'drive' Transit with no same-day return —
-  // splits the day into separate drivable runs instead of trying to draw
-  // one continuous route across two disconnected road networks (the real
-  // bug this was built to catch: a one-way flight produced a "driving
-  // route" straight across two towns with no road between them at all).
-  it('splits a genuine one-way relocation (no same-day return) into two separate drivable runs, never bridging them into one route', () => {
-    const data = minimalTripData();
-    pushMinimalActivity(data, {
-      _id: 'test_before_flight',
-      startAt: '2027-06-03T08:00',
-      place: { id: 'place_a', label: 'Origin Cafe' },
-    });
-    pushMinimalTransit(data, {
-      _id: 'test_relocation',
-      mode: 'flight',
-      from: { id: null, label: 'Origin Airport' },
-      to: { id: null, label: 'Destination Airport' },
-      departsAt: '2027-06-03T10:00',
-      arrivesAt: '2027-06-03T12:00',
-    });
-    pushMinimalActivity(data, {
-      _id: 'test_after_flight',
-      startAt: '2027-06-03T14:00',
-      place: { id: 'place_b', label: 'Destination Diner' },
-    });
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-03')!;
-
-    const segments = dayMapStops(day);
-    expect(segments).toEqual([
-      ['Origin Cafe', 'Origin Airport'],
-      ['Destination Airport', 'Destination Diner'],
-    ]);
-
-    const urls = dayFullRouteUrls(day);
-    expect(urls.length).toBe(2);
-    expect(new URL(urls[0]).searchParams.get('destination')).toBe('Origin Airport');
-    expect(new URL(urls[1]).searchParams.get('origin')).toBe('Destination Airport');
-  });
-
-  // An overnight Transit (e.g. a late ferry/drive) has its Depart boundary
-  // land on the departure day's sequence and its Arrive boundary land on the
-  // next day's (see transitItemsOnDate in tripModel.ts) — so a map/route link
-  // built from either day's own sequence must still widen out to the
-  // Transit's full origin-to-destination stop list, never truncate at
-  // whichever endpoint fell on the day being mapped.
-  it('includes both endpoints of a midnight-crossing Transit on the map for both the departure day and the arrival day', () => {
-    const data = minimalTripData();
-    pushMinimalStay(data, { lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } } });
-    pushMinimalTransit(data, {
-      _id: 'test_overnight',
-      from: { id: 'place_origin', label: 'Origin Port' },
-      to: { id: 'place_dest', label: 'Destination Port' },
-      departsAt: '2027-06-02T23:00',
-      arrivesAt: '2027-06-03T01:00',
-    });
-    const view = buildTripView(data);
-    const departureDay = view.days.find((d) => d.date === '2027-06-02')!;
-    const arrivalDay = view.days.find((d) => d.date === '2027-06-03')!;
-
-    expect(dayMapStops(departureDay).flat()).toEqual(
-      expect.arrayContaining(['Origin Port', 'Destination Port']),
-    );
-    expect(dayMapStops(arrivalDay).flat()).toEqual(
-      expect.arrayContaining(['Origin Port', 'Destination Port']),
-    );
-  });
-
-  it("routes a midnight-crossing Transit's full-route link through both its real endpoints as waypoints, from either day", () => {
-    const data = minimalTripData();
-    // No bookending Stay here — this Transit is the whole day, so its own
-    // endpoints (not a Stay's lodging) become the link's origin/destination.
-    pushMinimalTransit(data, {
-      _id: 'test_overnight',
-      from: { id: 'place_origin', label: 'Origin Port' },
-      to: { id: 'place_dest', label: 'Destination Port' },
-      departsAt: '2027-06-02T23:00',
-      arrivesAt: '2027-06-03T01:00',
-    });
-    const view = buildTripView(data);
-    const departureDay = view.days.find((d) => d.date === '2027-06-02')!;
-    const arrivalDay = view.days.find((d) => d.date === '2027-06-03')!;
-
-    for (const day of [departureDay, arrivalDay]) {
-      const urls = dayFullRouteUrls(day);
-      expect(urls.length).toBe(1);
-      expect(new URL(urls[0]).searchParams.get('origin')).toBe('Origin Port');
-      expect(new URL(urls[0]).searchParams.get('destination')).toBe('Destination Port');
-    }
-  });
-});
-
-describe('dayTravelSegments', () => {
-  // The real bug this catches: a drive Transit's own from/to is routinely
-  // just a plain label with no resolved placeId ("Fairbanks" -> "Copper
-  // Center"), which used to score BOTH the checkout->transit hop and the
-  // transit->checkin hop as unresolvable and drop the entire drive from the
-  // day's total — even though the checkout and checkin stays on either side
-  // both have real, resolved places and a real drive genuinely connects
-  // them.
-  it('still totals the drive across a Transit whose own from/to has no resolved placeId, connecting the checkout and checkin stays on either side of it', () => {
-    const data = minimalTripData();
-    pushMinimalStay(data, {
-      _id: 'test_checkout_stay',
-      checkOutAt: '2027-06-01T11:00',
-      lodging: { place: { id: 'place_origin_lodge', label: 'Origin Lodge' } },
-    });
-    pushMinimalTransit(data, {
-      mode: 'drive',
-      from: { id: null, label: 'Origin Town' },
-      to: { id: null, label: 'Destination Town' },
-      departsAt: '2027-06-01T12:00',
-      arrivesAt: '2027-06-01T16:00',
-    });
-    pushMinimalStay(data, {
-      _id: 'test_checkin_stay',
-      checkInAt: '2027-06-01T17:00',
-      checkOutAt: '2027-06-05T11:00',
-      lodging: { place: { id: 'place_dest_lodge', label: 'Destination Lodge' } },
-    });
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-01')!;
-
-    const segments = dayTravelSegments(day);
-    expect(segments).toEqual([
-      {
-        originId: 'place_origin_lodge',
-        destinationId: 'place_dest_lodge',
-        segmentKey: 'segment:stay-test_checkout_stay-2027-06-01->stay-test_checkin_stay-2027-06-01',
-      },
-    ]);
-  });
-
-  // segmentKey is what a caller (DayTravelChip) resolves a
-  // TravelModeOverride against — null here means "no override to look up,
-  // fall back to DRIVE" (see RouteStop's own nodeKey note for why a
-  // 'Staying' night's stop has no single-row equivalent to key off).
-  it('comes back with a null segmentKey for a hop touching a Staying night', () => {
-    const data = minimalTripData();
-    pushMinimalStay(data, {
-      _id: 'test_checkin_stay',
-      checkInAt: '2027-05-31T17:00',
-      checkOutAt: '2027-06-03T11:00',
-      lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } },
-    });
-    pushMinimalActivity(data, {
-      startAt: '2027-06-01T09:00',
-      place: { id: 'place_activity', label: 'Test Activity Place' },
-    });
-    const day = buildTripView(data).days.find((d) => d.date === '2027-06-01')!;
-
-    const segments = dayTravelSegments(day);
-    expect(segments.every((s) => s.segmentKey === null)).toBe(true);
+  it('treats a scenario box whose ACTIVE branch is only stay boundaries as a boundary itself — the inactive tabs carry no rows and cannot disagree', () => {
+    const track = (active: boolean, rows: StayRow[]) =>
+      ({ scenario: { _id: active ? 'a' : 'b' }, rows, active }) as never;
+    const checkoutRow: StayRow = {
+      type: 'stay',
+      event: null,
+      relation: 'Check out',
+      key: '2027-07-01T11:00',
+      stay: { _id: 's1' } as never,
+    };
+    const box: BoxRow = {
+      type: 'box',
+      key: '2027-07-01T10:00',
+      tracks: [track(true, [checkoutRow]), track(false, [])],
+    };
+    const { checkOuts, rest, checkIns } = splitOutStayBoundaries([box]);
+    expect(checkOuts).toEqual([box]);
+    expect(rest).toEqual([]);
+    expect(checkIns).toEqual([]);
   });
 });
 

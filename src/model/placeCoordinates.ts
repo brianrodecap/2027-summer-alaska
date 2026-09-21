@@ -10,6 +10,13 @@ export interface Coordinates {
   lng: number;
 }
 
+// Cache-key form of a point, rounded to 2 decimals (~0.7 mile) — shared by
+// weather.ts's and nwsAlerts.ts's per-point caches so several Day fields
+// resolving to the same place dedupe without implying finer precision than
+// the forecast/alert zones have.
+export const coordKey = ({ lat, lng }: Coordinates): string =>
+  `${lat.toFixed(2)},${lng.toFixed(2)}`;
+
 const CACHE_VERSION = 'v1';
 // Coordinates never change, so once persisted they're reused forever (well,
 // until CACHE_VERSION bumps) rather than expiring on a timer.

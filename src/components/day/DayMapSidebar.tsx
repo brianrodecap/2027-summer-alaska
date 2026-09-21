@@ -14,8 +14,9 @@ import {
 import { useEffect, useMemo, useState } from 'react';
 
 import { GOOGLE_MAPS_MAP_ID } from '../../config/places';
-import { useKeyedAsync } from '../../hooks/useKeyedAsync';
+import { EMPTY_MAP, useKeyedAsync } from '../../hooks/useKeyedAsync';
 import { useSegmentLookup } from '../../hooks/useSegmentLookup';
+import { mapRouteNodes } from '../../model/dayMap';
 import {
   type DriveInfo,
   type LatLngPoint,
@@ -31,23 +32,15 @@ import {
   type DayMapPlaceRef,
   type DayMapPlaceStop,
   type DayMapRouteNode,
-  dayMapRouteNodes,
   dedupeDayMapPlaceStops,
   rowTestId,
   segmentKey,
+  stageNodeKey,
   stayNodeKey,
   transitBoundaryKey,
   transitRouteLabel,
 } from '../../model/tripModel';
-import type {
-  Day,
-  EnrichedActivity,
-  EnrichedMealOption,
-  EnrichedStay,
-  EnrichedTransit,
-  TravelMode,
-  TravelModeOverride,
-} from '../../model/types';
+import type { Day, TravelMode, TravelModeOverride } from '../../model/types';
 import { useTripData } from '../../state/useTripData';
 import {
   activityRowIconName,
@@ -55,13 +48,8 @@ import {
   renderMaterialIcon,
   transitModeIconName,
 } from '../shared/materialIcon';
-import { useDayMapSelections } from './useDayMapSelections';
-
-type OpenHandlers = {
-  onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
-  onOpenStay: (stay: EnrichedStay) => void;
-  onOpenTransit: (transit: EnrichedTransit) => void;
-};
+import { dayElementId } from './dayLayout';
+import type { DayRowOpeners } from './openHandlers';
 
 // A stop's icon reflects whichever kind of entity it is — stay (lodging)
 // takes priority over transit-boundary over transit-stage over activity,
@@ -81,7 +69,7 @@ function markerIconName(stop: DayMapPlaceStop): string {
 
 // `placeLabel` is the InfoWindow's own already-shown heading (stop.place.label)
 // — a transit-stage's own label is always that same place's name (see
-// walkDayMapRefs' pushTransitItemStop, which names the stop from
+// mapRouteNodes in dayMap.ts, which names the stop from
 // `stage.place.label` directly), so spelling it out a second time here would just
 // repeat the heading right back at the reader; the kind word alone
 // ("Waypoint"/"Via") is the only part this line actually adds.
@@ -99,17 +87,12 @@ function refLabel(ref: DayMapPlaceRef, placeLabel: string): string {
   return activityHeadline(ref.entity) || 'Activity';
 }
 
-function openRef(ref: DayMapPlaceRef, handlers: OpenHandlers): void {
+function openRef(ref: DayMapPlaceRef, handlers: DayRowOpeners): void {
   if (ref.kind === 'stay') handlers.onOpenStay(ref.entity);
   else if (ref.kind === 'transit' || ref.kind === 'transit-stage')
     handlers.onOpenTransit(ref.entity);
   else handlers.onOpenActivity(ref.entity);
 }
-
-// A stable empty-Map identity, reused (via cast) everywhere a `useKeyedAsync`
-// hook below needs a `value ?? EMPTY` fallback — one shared constant instead
-// of a separate one per value type.
-const EMPTY_MAP = new Map() as Map<never, never>;
 
 // Coordinates are resolved async (a Places API round-trip, cached forever —
 // see placeCoordinates.ts) and independently per place id, so markers pop in
@@ -133,22 +116,18 @@ function usePlaceCoordinates(placeIds: string[]): Map<string, Coordinates> {
 // segment here looks up the exact same travelModeOverrides entry
 // TravelInfoControl's own mode picker writes to. Returns null — meaning "no
 // override lookup possible here, always default to DRIVE" (the same
-// default an absent override already means, never a wrong one) — for two
-// cases this file's own walk (dayMapRouteNodes) can't reliably match back
-// to DayTimeline's: a transit-stage ref (DayTimeline keys those by their
-// position in its own flattened sequence, `stage-<transitId>-<tone>-<i>`, an
-// index this file has no way to reproduce, since its scenario-tabs handling
-// doesn't count the same way DayTimeline's flattened array does), and a
-// 'Staying' relation (DayTimeline gives that a second, separately-keyed
-// "-morning" node representing "woke up here" that this walk has no
-// equivalent for).
+// default an absent override already means, never a wrong one) — for the
+// one case this file's own walk (mapRouteNodes) can't match back to
+// DayTimeline's: a 'Staying' relation (DayTimeline gives that a second,
+// separately-keyed "-morning" node representing "woke up here" that this
+// walk has no equivalent for).
 function dayTimelineNodeKey(ref: DayMapPlaceRef, date: string): string | null {
   if (ref.kind === 'stay') {
     if (ref.relation === 'Staying') return null;
     return stayNodeKey(ref.entity._id, date);
   }
   if (ref.kind === 'transit') return transitBoundaryKey(ref.entity._id, ref.phase);
-  if (ref.kind === 'transit-stage') return null;
+  if (ref.kind === 'transit-stage') return stageNodeKey(ref.entity._id, ref.stageIndex);
   return activityNodeKey(ref.entity._id);
 }
 
@@ -184,10 +163,10 @@ interface RouteSegment {
 }
 
 // One segment per adjacent pair of currently-visible, coordinate-resolved
-// route nodes — walked from dayMapRouteNodes' own undeduped, chronological
-// list, not dayMapPlaces' deduped stops: a place visited twice in one day
+// route nodes — walked from mapRouteNodes' own undeduped, chronological
+// list, not the deduped stops: a place visited twice in one day
 // (a round-trip Transit's shared from/to) needs its own two separate edges,
-// which deduping-by-place would collapse into one — see dayMapRouteNodes'
+// which deduping-by-place would collapse into one — see mapRouteNodes'
 // own comment. Deliberately not one flat path through all of them either,
 // since each segment gets its own real, mode-specific route (useRoutePaths)
 // rather than one path drawn straight through every stop. Same-place
@@ -270,7 +249,7 @@ function useSegmentTravelInfo(segments: RouteSegment[]): Map<string, DriveInfo> 
 
 // The same data-testid DayTimeline's own TimelineRow stamps on every row
 // (`stay-row-<key>`, `transit-boundary-<key>`, `transit-stage-<key>`,
-// `activity-row-<id>`) — see dayMapPlaces' own comment for why `rowKey`
+// `activity-row-<id>`) — see DayMapPlaceRef (tripModel.ts) for why `rowKey`
 // exists on those ref variants. Letting this map read that attribute
 // straight off the DOM means DayTimeline never has to know a map exists.
 function domTestIdForRef(ref: DayMapPlaceRef): string {
@@ -297,7 +276,7 @@ function useVisibleTestIds(day: Day, testIds: string[]): Set<string> {
   const idsKey = `${day.date}|${testIds.join(',')}`;
 
   useEffect(() => {
-    const dayRoot = document.getElementById(`day-${day.date}`);
+    const dayRoot = document.getElementById(dayElementId(day.date));
     if (!dayRoot) return;
 
     const testIdByElement = new Map<Element, string>();
@@ -405,7 +384,7 @@ function PlaceMarker({
   stop: DayMapPlaceStop;
   coordinates: Coordinates;
   nextPlace: NextPlaceInfo | null;
-} & OpenHandlers) {
+} & DayRowOpeners) {
   const [markerRef, marker] = useAdvancedMarkerRef();
   const [infoOpen, setInfoOpen] = useState(false);
   const image = firstImage(stop.place);
@@ -488,9 +467,12 @@ function PlaceMarker({
 // to DayMapPanel's own keyless iframe embed: real markers per place, each
 // clickable straight through to that place's own Stay/Transit/Activity
 // detail sheet(s), rather than a static picture of a start→end route. Needs
-// the Maps JavaScript API (loaded once, at the app root — see main.tsx's
-// APIProvider) and a real Map ID (GOOGLE_MAPS_MAP_ID) for AdvancedMarker to
-// render at all.
+// the Maps JavaScript API (loaded lazily by DaysView's APIProvider around
+// this component — mounted only while the sidebar is, so narrow screens
+// never load the script; the loader itself bootstraps the script only once
+// per page load, but the map instance and provider context are rebuilt each
+// time the sidebar remounts, e.g. on resizing across the lg breakpoint) and
+// a real Map ID (GOOGLE_MAPS_MAP_ID) for AdvancedMarker to render at all.
 //
 // One map, not one per day: DaysView tracks whichever Day block the reader
 // has scrolled to (useActiveDayDate) and swaps this same map's markers to
@@ -500,7 +482,7 @@ function PlaceMarker({
 export function DayMapSidebar({
   activeDay,
   ...handlers
-}: { activeDay: Day | null } & OpenHandlers) {
+}: { activeDay: Day | null } & DayRowOpeners) {
   if (!activeDay) {
     return (
       <Box
@@ -527,17 +509,16 @@ function DayMapSidebarContent({
   onOpenActivity,
   onOpenStay,
   onOpenTransit,
-}: { day: Day } & OpenHandlers) {
-  const selections = useDayMapSelections(day);
-  // One walk of the day's sequence, shared by both the deduped markers below
+}: { day: Day } & DayRowOpeners) {
+  // One walk of the day's visits, shared by both the deduped markers below
   // and the route line's own undeduped nodes — see dedupeDayMapPlaceStops'
   // own comment for why a place visited twice in one day (a round-trip
   // Transit's shared from/to) needs two separate route nodes even though it
   // gets one marker.
-  const routeNodes = useMemo(() => dayMapRouteNodes(day, selections), [day, selections]);
+  const routeNodes = useMemo(() => mapRouteNodes(day.visits), [day.visits]);
   const stops = useMemo(() => dedupeDayMapPlaceStops(routeNodes), [routeNodes]);
   // dedupeDayMapPlaceStops only ever adds a stop once its place has a real
-  // Google Place id (see walkDayMapRefs' own comment), so this cast is safe.
+  // Google Place id (see mapRouteNodes' own comment), so this cast is safe.
   const placeIds = stops.map((stop) => stop.place.id as string);
   // Resolved (has real coordinates) over every one of the day's stops, not
   // just the currently-visible ones — so a place that's already warm stays

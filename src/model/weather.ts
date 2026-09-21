@@ -12,7 +12,7 @@
 import { memoizeAsync, persisted } from './asyncCache';
 import { parseIsoDateUTC, parseMonthDayUTC } from './isoDate';
 import { fetchOpenMeteoJson } from './openMeteoClient';
-import { type Coordinates, getCoordinates } from './placeCoordinates';
+import { type Coordinates, coordKey, getCoordinates } from './placeCoordinates';
 import { isPlacesApiKeyConfigured } from './places';
 import { addDaysStr, formatTime, todayDateStr } from './tripModel';
 
@@ -131,8 +131,9 @@ const forecastCache = new Map<string, Promise<PlaceForecast | null>>();
 // Requests cloud cover/precip chance/wind alongside temperature/sunrise/
 // sunset in the same call, since getPlaceWeather/getDayWeather want all of
 // them together for the same place+date anyway.
-function fetchForecastDay({ lat, lng }: Coordinates, date: string): Promise<PlaceForecast | null> {
-  const key = `${lat.toFixed(2)},${lng.toFixed(2)}|${date}`;
+function fetchForecastDay(coords: Coordinates, date: string): Promise<PlaceForecast | null> {
+  const { lat, lng } = coords;
+  const key = `${coordKey(coords)}|${date}`;
   return memoizeAsync(forecastCache, key, () => {
     const url =
       `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
@@ -222,7 +223,7 @@ async function fetchClimateYears(
 }
 
 function getClimateYears(coords: Coordinates, monthDay: string): Promise<ClimateDay[]> {
-  const key = `${coords.lat.toFixed(2)},${coords.lng.toFixed(2)}|${monthDay}`;
+  const key = `${coordKey(coords)}|${monthDay}`;
   // CLIMATE_YEARS and CLIMATE_WINDOW_DAYS are folded into the storage key so
   // that changing either invalidates old entries automatically instead of
   // serving a stale-shaped average under the new settings.
@@ -342,7 +343,7 @@ const AIR_QUALITY_FORECAST_WINDOW_DAYS = 7;
 const airQualityCache = new Map<string, Promise<number | null>>();
 
 async function fetchAirQuality(coords: Coordinates, date: string): Promise<number | null> {
-  const key = `${coords.lat.toFixed(2)},${coords.lng.toFixed(2)}|${date}`;
+  const key = `${coordKey(coords)}|${date}`;
   return memoizeAsync(airQualityCache, key, () => {
     const url =
       `https://air-quality-api.open-meteo.com/v1/air-quality?latitude=${coords.lat}&longitude=${coords.lng}` +
@@ -381,7 +382,7 @@ const MARINE_FORECAST_WINDOW_DAYS = FORECAST_WINDOW_DAYS;
 const waveHeightCache = new Map<string, Promise<number | null>>();
 
 function fetchWaveHeightFt(coords: Coordinates, date: string): Promise<number | null> {
-  const key = `${coords.lat.toFixed(2)},${coords.lng.toFixed(2)}|${date}`;
+  const key = `${coordKey(coords)}|${date}`;
   return memoizeAsync(waveHeightCache, key, async () => {
     const url =
       `https://marine-api.open-meteo.com/v1/marine?latitude=${coords.lat}&longitude=${coords.lng}` +

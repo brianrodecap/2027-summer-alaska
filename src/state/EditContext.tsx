@@ -5,7 +5,7 @@ import {
   type EditKind,
   type Entity,
   findByKind,
-  upsertById,
+  upsertByKind,
 } from '../model/editForms';
 import { EditContext } from './EditContextObject';
 import { useTripData } from './useTripData';
@@ -20,8 +20,6 @@ const EditDialog = lazy(() =>
 const EditEventWizard = lazy(() =>
   import('../components/wizard/EditEventWizard').then((m) => ({ default: m.EditEventWizard })),
 );
-
-export type { EditKind };
 
 // One draft still waiting in openDraftSequence's own queue — same shape
 // openFromDraft takes a single one of, but plural, so a document import
@@ -123,13 +121,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
     (updated: Entity) => {
       if (!state) return;
       const collection = COLLECTION_FOR_KIND[state.kind];
-      setData(
-        (prev) => ({
-          ...prev,
-          [collection]: upsertById(prev[collection] as Entity[], updated),
-        }),
-        [collection],
-      );
+      setData((prev) => upsertByKind(prev, state.kind, updated), [collection]);
       if (state.mode === 'edit' && state.via === 'wizard') {
         closeEdit();
         return;
