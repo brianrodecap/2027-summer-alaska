@@ -2,11 +2,10 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import { firstImage } from '../../model/formatting';
-import { activeArrivesAt, formatTime, transitRouteLabel } from '../../model/tripModel';
+import { formatTime, transitRouteLabel } from '../../model/tripModel';
 import type { EnrichedTransit } from '../../model/types';
 import { useHeroImageSelect } from '../../state/useHeroImageSelect';
 import { useTransitPlaceImagePersist } from '../../state/usePlaceImagePersist';
-import { useRouteToneSelection } from '../../state/useTripSelections';
 import { BookingSection } from '../shared/BookingChip';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
@@ -35,12 +34,10 @@ export function TransitDetailPanel({
   const onSelectImage = useHeroImageSelect('transit', transit?._id);
   const onAutoImageFrom = useTransitPlaceImagePersist(transit, 'from');
   const onAutoImageTo = useTransitPlaceImagePersist(transit, 'to');
-  const { routeTones } = useRouteToneSelection();
 
   if (!transit) return null;
 
   const image = firstImage(transit, transit.from, transit.to);
-  const arrivesAt = activeArrivesAt(transit, routeTones);
   const endpoints = [
     { place: transit.from, onAutoImage: onAutoImageFrom },
     { place: transit.to, onAutoImage: onAutoImageTo },
@@ -57,7 +54,7 @@ export function TransitDetailPanel({
       <EntityHeroImage image={image} />
       <Typography variant="body1">
         {formatTime(transit.departsAt)} depart ·{' '}
-        {arrivesAt ? `${formatTime(arrivesAt)} arrive` : 'arrival time TBD'}
+        {transit.arrivesAt ? `${formatTime(transit.arrivesAt)} arrive` : 'arrival time TBD'}
       </Typography>
       <BookingSection booking={transit.booking} />
       <NotesCluster notes={transit.notes} expanded />

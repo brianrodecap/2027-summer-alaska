@@ -7,6 +7,7 @@ import type {
   EnrichedTransit,
 } from '../../model/types';
 import { useEdit } from '../../state/useEdit';
+import { useLiveDays } from '../../state/useLiveDays';
 import { useTripData } from '../../state/useTripData';
 
 // Stay's, Transit's and Activity's detail panels are all opened/closed/edited
@@ -21,7 +22,7 @@ import { useTripData } from '../../state/useTripData';
 // Looking it up by id from `byId` every render instead means the open sheet
 // always reflects whatever `view` currently holds.
 function useDetailPanel<T extends { _id: string }, S = never>(
-  byId: Map<string, T> | undefined,
+  byId: ReadonlyMap<string, T> | undefined,
   openEdit: (id: string) => void,
   resolveSecondary?: (entity: T, secondaryId: string) => S | undefined,
 ) {
@@ -62,13 +63,17 @@ function useDetailPanel<T extends { _id: string }, S = never>(
 export function useDetailPanels() {
   const { view } = useTripData();
   const { openEdit } = useEdit();
+  const liveDays = useLiveDays();
   const activityPanel = useDetailPanel<EnrichedActivity, EnrichedMealOption>(
     view?.activitiesById,
     (id) => openEdit('activity', id),
     (activity, optionId) => activity.options?.find((o) => o._id === optionId),
   );
   const stayPanel = useDetailPanel<EnrichedStay>(view?.staysById, (id) => openEdit('stay', id));
-  const transitPanel = useDetailPanel<EnrichedTransit>(view?.transitsById, (id) =>
+  // The live Transits (selected route tab, meals picked along the drive), so
+  // the sheet shows the same arrival as the Transit's own rows. DaysView
+  // builds the live days anyway, so reading them here costs nothing extra.
+  const transitPanel = useDetailPanel<EnrichedTransit>(liveDays.transitsById, (id) =>
     openEdit('transit', id),
   );
   // Memoized (unlike an inline arrow in the day-list map) so it doesn't defeat

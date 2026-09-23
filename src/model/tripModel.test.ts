@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildLiveDays } from './liveDays';
+import { liveOverlapWarnings } from './mealOptions';
 import {
   buildTripView,
   diffMinutesIso,
@@ -111,7 +112,7 @@ describe('buildTripView', () => {
       _id: 'test_route',
       from: { id: null, label: 'A' },
       to: { id: null, label: 'B' },
-      variants: [{ tone: 'direct', label: 'Direct', places: [], finalLegMinutes: 60 }],
+      variants: [{ tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 60 } }],
       images: [],
     });
     pushMinimalTransit(data, {
@@ -484,6 +485,195 @@ describe('transitOverlapWarning', () => {
     expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBe(
       'During transit: A → B',
     );
+  });
+});
+
+describe('a routed drive and the Activities along it', () => {
+  // Departs 09:00 on the scenic variant: 60 min to a waypoint, its stop, then
+  // a via 30 min on, then 60 min to the destination. (The direct variant can't
+  // carry a via, so it's a plain two-hour drive.)
+  function routedDrive(waypointMinutes?: number): TripData {
+    const data = minimalTripData();
+    data.routes.push({
+      _id: 'test_route',
+      from: { id: null, label: 'A' },
+      to: { id: null, label: 'B' },
+      variants: [
+        { tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 120 } },
+        {
+          tone: 'scenic',
+          label: 'Direct',
+          places: [
+            {
+              kind: 'waypoint',
+              place: { id: 'p_view', label: 'View' },
+              travel: { minutes: 60 },
+              ...(waypointMinutes === undefined ? {} : { durationMinutes: waypointMinutes }),
+            },
+            { kind: 'via', place: { id: 'p_fork', label: 'Fork' }, travel: { minutes: 30 } },
+          ],
+          finalTravel: { minutes: 60 },
+        },
+      ],
+      images: [],
+    });
+    pushMinimalTransit(data, {
+      departsAt: '2027-06-01T09:00',
+      arrivesAt: null,
+      routeId: 'test_route',
+      routeVariant: 'scenic',
+    });
+    return data;
+  }
+  const routeOf = (data: TripData) => buildTripView(data).transitsById.get('test_transit')!;
+
+  it('stops at a waypoint for the default 15 minutes, and a via not at all', () => {
+    const transit = routeOf(routedDrive());
+    expect(
+      transit.routeInfo!.variants.find((v) => v.tone === 'scenic')!.stages.map((s) => s.key),
+    ).toEqual([
+      '2027-06-01T10:00', // arrive at View
+      '2027-06-01T10:45', // 15 min stop, then 30 min to the Fork
+    ]);
+    expect(transit.arrivesAt).toBe('2027-06-01T11:45');
+  });
+
+  it("uses a waypoint's own stop duration when it has one", () => {
+    expect(routeOf(routedDrive(40)).arrivesAt).toBe('2027-06-01T12:10');
+    expect(routeOf(routedDrive(0)).arrivesAt).toBe('2027-06-01T11:30');
+  });
+
+  it('folds an Activity inside the drive into its timing, and flags it', () => {
+    const data = routedDrive();
+    pushMinimalActivity(data, { startAt: '2027-06-01T10:30', durationMinutes: 20 });
+    const view = buildTripView(data);
+    // 10:15 leave View, drive 15 min, stop 20 min at 10:30, 15 min to the Fork.
+    expect(view.transitsById.get('test_transit')!.arrivesAt).toBe('2027-06-01T12:05');
+    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBe(
+      'During transit: A → B',
+    );
+  });
+
+  it('folds a meal inside the drive into its timing, without flagging it', () => {
+    const data = routedDrive();
+    pushMinimalActivity(data, {
+      startAt: '2027-06-01T11:00',
+      mealType: 'lunch',
+      diningFormat: 'sit-down',
+    });
+    const view = buildTripView(data);
+    expect(view.transitsById.get('test_transit')!.arrivesAt).toBe('2027-06-01T12:45');
+    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBeNull();
+  });
+
+  it('places an Activity at the exact departure time before the drive, not inside it', () => {
+    const data = routedDrive();
+    pushMinimalActivity(data, { startAt: '2027-06-01T09:00' });
+    const view = buildTripView(data);
+    expect(view.transitsById.get('test_transit')!.arrivesAt).toBe('2027-06-01T11:45');
+    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBeNull();
+    const rows = liveDay(data, '2027-06-01')!.rows.map((r) =>
+      r.type === 'transit' ? `transit:${r.phase}` : r.type,
+    );
+    expect(rows.slice(0, 2)).toEqual(['activity', 'transit:depart']);
+  });
+
+  it('leaves an Activity after the arrival out of the drive', () => {
+    const data = routedDrive();
+    pushMinimalActivity(data, { startAt: '2027-06-01T11:45', durationMinutes: 60 });
+    const view = buildTripView(data);
+    expect(view.transitsById.get('test_transit')!.arrivesAt).toBe('2027-06-01T11:45');
+    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBeNull();
+  });
+});
+
+describe('the direct route variant', () => {
+  // Scenic is listed first on purpose: the default must never come from array order.
+  function twoTones(): TripData {
+    const data = minimalTripData();
+    data.routes.push({
+      _id: 'test_route',
+      from: { id: null, label: 'A' },
+      to: { id: null, label: 'B' },
+      variants: [
+        {
+          tone: 'scenic',
+          label: 'Scenic',
+          places: [
+            { kind: 'via', place: { id: 'p_fork', label: 'Fork' }, travel: { minutes: 60 } },
+          ],
+          finalTravel: { minutes: 120 },
+        },
+        { tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 60 } },
+      ],
+      images: [],
+    });
+    pushMinimalTransit(data, {
+      departsAt: '2027-06-01T09:00',
+      arrivesAt: null,
+      routeId: 'test_route',
+    });
+    return data;
+  }
+
+  it('is the default when the Transit names no valid variant', () => {
+    for (const routeVariant of [null, 'no-such-tone']) {
+      const data = twoTones();
+      data.transits[0].routeVariant = routeVariant;
+      const transit = buildTripView(data).transitsById.get('test_transit')!;
+      expect(transit.routeInfo!.selectedTone).toBe('direct');
+      expect(transit.arrivesAt).toBe('2027-06-01T10:00');
+    }
+  });
+
+  it('must exist exactly once and carry no vias', () => {
+    const noDirect = twoTones();
+    noDirect.routes[0].variants[1].tone = 'scenic';
+    expect(() => buildTripView(noDirect)).toThrow(/exactly one 'direct' variant \(has 0\)/);
+
+    const twoDirect = twoTones();
+    twoDirect.routes[0].variants[0].tone = 'direct';
+    expect(() => buildTripView(twoDirect)).toThrow(/exactly one 'direct' variant \(has 2\)/);
+
+    const viaOnDirect = twoTones();
+    viaOnDirect.routes[0].variants[1].places = [
+      { kind: 'via', place: { id: 'p_fork', label: 'Fork' }, travel: { minutes: 30 } },
+    ];
+    expect(() => buildTripView(viaOnDirect)).toThrow(/'direct' variant can't have vias/);
+  });
+
+  it('rechecks "during transit" when the route tab switches', () => {
+    const data = twoTones();
+    // 10:30 is after the direct arrival (10:00) but inside the scenic drive (12:00).
+    pushMinimalActivity(data, { startAt: '2027-06-01T10:30', durationMinutes: 15 });
+    const warningFor = (tone: string) => {
+      const { days } = buildLiveDays(buildTripView(data), data, {
+        scenarioPicks: new Map(),
+        routeTones: new Map([['test_transit', tone]]),
+        mealOptionIndex: new Map(),
+      });
+      const day = days.find((d) => d.date === '2027-06-01')!;
+      const activity = buildTripView(data).activitiesById.get('test_activity')!;
+      return liveOverlapWarnings(activity, day).transitOverlapWarning;
+    };
+    expect(warningFor('direct')).toBeNull();
+    expect(warningFor('scenic')).toBe('During transit: A → B');
+  });
+
+  it('hands every reader the same live Transit for the selected tab', () => {
+    const data = twoTones();
+    const live = buildLiveDays(buildTripView(data), data, {
+      scenarioPicks: new Map(),
+      routeTones: new Map([['test_transit', 'scenic']]),
+      mealOptionIndex: new Map(),
+    });
+    const day = live.days.find((d) => d.date === '2027-06-01')!;
+    const row = day.rows.find((r) => r.type === 'transit' && r.phase === 'depart');
+    const transit = live.transitsById.get('test_transit')!;
+    expect(transit.routeInfo!.selectedTone).toBe('scenic');
+    expect(transit.arrivesAt).toBe('2027-06-01T12:00');
+    expect(row?.type === 'transit' && row.transit).toBe(transit);
+    expect(day.transits[0]).toBe(transit);
   });
 });
 

@@ -1149,9 +1149,11 @@
   arrivesAt: null,                // blank whenever routeId is set — nothing ever
                                    // authors this for a routed drive; the computed
                                    // view always walks the Route's own drive times
-                                   // (see Route's finalLegMinutes, below) instead
+                                   // (see Route's finalTravel, below) instead
   routeId: 'route_anc_to_whittier',
   routeVariant: 'scenic',
+  showEndpointsOnMap: true,  // optional, routed drives only — omitted = false:
+                             // from/to are left off maps, links and drive totals
   booking: null,           // own car, no reservation — status still tracks the plan
   images: [],
 }</code></pre>
@@ -1252,15 +1254,32 @@
             whatever anyone might guess at authoring time, and once every reader of it derives from
             the walk anyway, there's nothing left for an authored value to do but go stale — so it's
             left blank and the computed view (trip-model.js's <code>resolveTransitRoute</code>)
-            walks the Route's own place chain plus <code>finalLegMinutes</code> forward from
-            <code>departsAt</code> instead, folding in any real Activity reached along the way. This
-            walk isn't only run once at page load, either: <code>app.js</code>'s
-            <code>recomputeRoutedTransits</code> re-runs it live, right in the browser, whenever a
-            route-variant tab or an in-transit meal's own option tab changes, so a picked route or a
-            picked lunch format actually moves the displayed arrival instead of only changing its
-            own row. A mode with a genuine external schedule (a flight's ticketed landing time, a
-            ferry's posted arrival), or a Transit with no <code>routeId</code> at all, is the one
-            case <code>arrivesAt</code> stays real and authored — there's no walk to prefer it over.
+            walks the Route's own place chain (each place's calculated <code>travel</code>, plus a
+            waypoint's stop <code>durationMinutes</code>) and <code>finalTravel</code> forward from
+            <code>departsAt</code> instead, folding in any real Activity reached along the way. An
+            Activity starting exactly at <code>departsAt</code> happens before leaving — it sorts
+            ahead of the Depart row and isn't folded in. One that starts inside the drive may
+            happen, but it's flagged on its row ("During transit"); a meal is the one exemption,
+            since eating on a long drive is normal. This walk isn't only run once at page load,
+            either: <code>app.js</code>'s <code>recomputeRoutedTransits</code> re-runs it live,
+            right in the browser, whenever a route-variant tab or an in-transit meal's own option
+            tab changes, so a picked route or a picked lunch format actually moves the displayed
+            arrival instead of only changing its own row. A mode with a genuine external schedule (a
+            flight's ticketed landing time, a ferry's posted arrival), or a Transit with no
+            <code>routeId</code> at all, is the one case <code>arrivesAt</code> stays real and
+            authored — there's no walk to prefer it over.
+          </li>
+          <li>
+            <strong
+              >showEndpointsOnMap is an opt-in for a routed drive's own from/to on maps.</strong
+            >
+            A routed drive's <code>from</code>/<code>to</code> are usually general places — a whole
+            city or park — so the day map, its "Open in Google Maps" link, the map sidebar's markers
+            and route line, the drive-time total and the per-row travel footers all leave them out
+            by default and use the real places around the drive plus the selected variant's own
+            waypoints/vias instead. Set it when the endpoints do name one exact point (a loop that
+            starts and ends at one bus depot). A Transit with no <code>routeId</code> (a flight, a
+            shuttle) always keeps its endpoints.
           </li>
           <li>
             <strong>booking stays null for a drive in your own car</strong> — there's nothing to
@@ -1356,17 +1375,17 @@
     {
       tone: 'scenic',
       label: 'Scenic — via the Seward Highway',
-      places: [ { kind: 'waypoint', place: { id: 'ChIJ...', label: 'Girdwood' }, durationMinutes: 40,
-               distanceMiles: 37, note: 'photo stop' },
+      places: [ { kind: 'waypoint', place: { id: 'ChIJ...', label: 'Girdwood' },
+               travel: { minutes: 40, miles: 37 },  // calculated — drive from the
+                                                     // previous place (or Depart)
+               durationMinutes: 30,  // authored stop time; omitted = 15 for a waypoint
+               note: 'photo stop' },
              { kind: 'via', place: { id: 'ChIJ...', label: 'Portage Glacier / Whittier junction' },
-               note: 'Anchorage–Whittier drives split off here', durationMinutes: 15,
-               distanceMiles: 12 } ],
-      finalLegMinutes: 20,  // drive time from the last place (or Depart, if none)
-                             // to this route's own `to` — completes the chain
-                             // places[].durationMinutes only carries stop-to-stop
-      finalLegMiles: 9,      // same idea, distance instead of time — both this and
-                             // places[].distanceMiles are informational only, never
-                             // read by any time math
+               note: 'Anchorage–Whittier drives split off here',
+               travel: { minutes: 15, miles: 12 } } ],  // a via never stops
+      finalTravel: { minutes: 20, miles: 9 },  // calculated — drive from the last place
+                                                // (or Depart, if none) to this route's
+                                                // own `to`; completes the chain
     },
   ],
   images: [],
@@ -1392,15 +1411,27 @@
             itself: the day-list map/Directions code (<code>dayMapEmbedUrl</code>/<code
               >dayFullRouteUrl</code
             >
-            in <code>tripModel.ts</code>) reads only <code>Transit.from</code>/<code>to</code> and
-            <code>variants[].places[].place</code>, never a Route's own
-            <code>from</code>/<code>to</code>.
+            in <code>tripModel.ts</code>) reads only <code>variants[].places[].place</code> (plus
+            <code>Transit.from</code>/<code>to</code> when that Transit sets
+            <code>showEndpointsOnMap</code>), never a Route's own <code>from</code>/<code>to</code>.
           </li>
           <li>
             <strong>variants[].tone has its own vocabulary</strong> —
             <code>scenic</code>/<code>direct</code>, deliberately not reusing Scenario's
             <code>ideal</code>/<code>alternate</code>. A route choice isn't a go/no-go safety
             branch.
+          </li>
+          <li>
+            <strong
+              >Every Route has exactly one <code>direct</code> variant, and it has no vias.</strong
+            >
+            The direct variant is the default path — the one a Transit follows when its
+            <code>routeVariant</code> names no valid variant, and the one the edit UI picks when a
+            route is first chosen (never "whichever variant is listed first"). A via exists only to
+            steer routing off that default path, so vias belong on the other variants; waypoints
+            (real stops) are fine on the direct one. Enforced at load time
+            (<code>validateRoutes</code>) and in the route editor (<code>applyRouteForm</code>),
+            through one shared check (<code>directVariantProblem</code>).
           </li>
           <li>
             <strong
@@ -1444,7 +1475,7 @@
           </li>
           <li>
             <strong
-              >places[].durationMinutes is the drive time from whichever place (or Depart) came
+              >places[].travel.minutes is the drive time from whichever place (or Depart) came
               before it</strong
             >
             — geography, same as the rest of Route, so it stays reusable across trips instead of
@@ -1452,14 +1483,29 @@
             computed Day (trip-model.js's <code>stageTimesForVariant</code>) turns that into an
             actual estimated time by walking it forward from a specific Transit's
             <code>departsAt</code>, nudged later by any real Activity — a lunch stop, say — actually
-            reached along the way. Superseded the earlier <code>waypoints[]</code> idea (a separate
-            list of suggested stops with no timing at all): once every place already carries a real
-            duration, a stop worth calling out is just an ordinary waypoint entry with a
-            <code>note</code>, not a second parallel array — <code>kind</code> now carries the "is
-            this really just a stop" distinction that array split used to.
+            reached along the way. It's calculated, never typed —
+            <code>RouteEditForm</code> recomputes every <code>travel</code> (and
+            <code>finalTravel</code>) from Google Directions whenever the stop sequence or endpoints
+            change, and it's stored only so the timeline can be built without an API call.
+            Superseded the earlier <code>waypoints[]</code> idea (a separate list of suggested stops
+            with no timing at all): once every place already carries a real duration, a stop worth
+            calling out is just an ordinary waypoint entry with a <code>note</code>, not a second
+            parallel array — <code>kind</code> now carries the "is this really just a stop"
+            distinction that array split used to.
           </li>
           <li>
-            <strong>variants[].finalLegMinutes completes the chain places[] leaves open.</strong> A
+            <strong
+              >places[].durationMinutes is the authored stop time at a waypoint — 15 minutes when
+              omitted.</strong
+            >
+            A waypoint is a real stop, so reaching one costs time beyond the drive to it; the walk
+            adds it after the stage's own arrival. A via is a pass-through and never stops. The name
+            matches <code>Activity.durationMinutes</code> on purpose — both are time spent at a
+            place, decided by a person — while the calculated drive values sit under
+            <code>travel</code> so the two can't be confused.
+          </li>
+          <li>
+            <strong>variants[].finalTravel completes the chain places[] leaves open.</strong> A
             place entry only ever carries the drive time <em>to</em> itself — nothing represents the
             remaining drive from the last named stop to the route's actual destination, so without
             this field a walked arrival would always land short of where the movement really ends.
@@ -1472,7 +1518,8 @@
           </li>
           <li>
             <strong
-              >places[].distanceMiles and variants[].finalLegMiles are purely informational.</strong
+              >places[].travel.miles and variants[].finalTravel.miles are purely
+              informational.</strong
             >
             Unlike every duration on this page, nothing in <code>stageTimesForVariant</code> or any
             other computed view ever reads them — they exist only so the route editor (and a future

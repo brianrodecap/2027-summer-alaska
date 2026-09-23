@@ -6,7 +6,6 @@ import { firstImage, timeAndMealTypeLabel } from '../../model/formatting';
 import { liveOverlapWarnings } from '../../model/mealOptions';
 import { activityHeadline } from '../../model/tripModel';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
-import { useMealOptionSelection } from '../../state/useTripSelections';
 import { BookingChip } from '../shared/BookingChip';
 import { LinkifiedText } from '../shared/LinkifiedText';
 import { activityRowIconName } from '../shared/materialIcon';
@@ -49,7 +48,6 @@ export function ActivityRow({
   inView: boolean;
   buttonRef: (node: HTMLButtonElement | null) => void;
 }) {
-  const { mealOptionIndex } = useMealOptionSelection();
   const timeText = useSunAnchoredTime(activity, day, inView);
 
   return (
@@ -80,7 +78,7 @@ export function ActivityRow({
             <BookingChip booking={activity.booking} />
           </Box>
         )}
-        <OverlapWarnings activity={liveOverlapWarnings(activity, day, mealOptionIndex)} />
+        <OverlapWarnings activity={liveOverlapWarnings(activity, day)} />
       </Box>
     </ButtonBase>
   );

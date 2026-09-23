@@ -2995,11 +2995,11 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-17T12:00",
+    "startAt": null,
     "durationMinutes": null,
-    "timeLabel": null,
+    "timeLabel": "Midday",
     "priority": null,
-    "text": "Lunch before the drive to Whittier — choosing where",
+    "text": "Lunch in Whittier before boarding — choosing where",
     "place": null,
     "booking": null,
     "mealType": "lunch",
@@ -3007,37 +3007,43 @@
     "includedIn": null,
     "options": [
       {
-        "_id": "act_jul17_lunch_opt0",
-        "diningFormat": "sit-down",
-        "place": {
-          "id": "ChIJ3wBgzrmXyFYRbIyKWCfhB9c",
-          "label": "Moose's Tooth Pub & Pizzeria",
-          "images": []
-        },
-        "includedIn": null,
-        "booking": null
-      },
-      {
         "_id": "act_jul17_lunch_opt1",
         "diningFormat": "sit-down",
         "place": {
-          "id": "ChIJ_yDfgQ-YyFYRsOJ565MqoZ4",
-          "label": "The Bake Shop",
-          "images": []
+          "id": "ChIJmYKErWcMyFYRXK2Z2rCuuZU",
+          "label": "Varly's Swiftwater Seafood Cafe",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJmYKErWcMyFYRXK2Z2rCuuZU/photos/AVoNoXQnyeyQDVzgZbHuKyh4K7dxnHNXTOLXiQHpxvtfbMFDWC1O4AKunTAFFB1082pQfn5si9k4GLeQzwkBXA2eQuDhp8O62RVuqJ_btOwrP3_76xaeGxWKM58c2ZrC5Xv-mSH-kC1nvwrP86bf22T-8-f_LG4V7GqzhGFO-vqI8eSGcPhTfSeUeG99g3vZgOQYP1_R0-Rzy7uXGnGnxt6nJb_gE4eWEnjHTaAenKWZYEtzBHQKYfPyyfOMnB5MZmaDDF2Cb8vjPdhUS3jEj1csP-tKQS6bl2pe29oyM_OBrSa-dfithB-IfKW_62MsMe7ncKQk9Od1Bqi_JOuKlcGF6_xvM-EkubxZjudg_ciEZNbZhZ9Edn1AZgtZIQ5KNF044e86wy1pB-OlAsXW9dn6Nx8WMh8/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "MyT Life",
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "booking": null
       },
       {
         "_id": "act_jul17_lunch_opt2",
-        "diningFormat": "grab-and-go",
-        "place": null,
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJmYKErWcMyFYRd4UxrsTOyJA",
+          "label": "Whittier Ice Cream and Pizza",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJmYKErWcMyFYRd4UxrsTOyJA/photos/AVoNoXR9NyuFIRUHI6GWnehvwDPhiOzLr2c8dzOfANrtb0J33ZcrOCBkYwPKgfZ_AyoGpD15j9Zr_nk0-3MWhFAT6JwBmLD8vaNbZNxgEqTIDMDNz_7gEnKkKLRArvgtVn7S4vDMFGcXQhy45SKcpZKvq7a3dtcMEWJuiOND1D3NFTwi7GjyXMTzmOcbXaqlY3aCa7NgoeYSsFMJbFnixLIfhM6ahn30iNAcPNxqOZOCz5Vcz9QHYXVkYysfk1EBWX7D9Vu3Xu01JSbddvqVkpwBW2egBRgN6mya4W7q8BtVzNVDUUxxI4K1HjSiXkGQzCnnBG7m7nmxesyIOQaQraZeACWkCDdfQBGn97xHivsUQDhugqNrQlMjq0EVJxIKdvveGVdn4rCwiqSaTJg9UZ9j2_ivhqDpVrNDn7xtJzYeX5Q/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Whittier Ice Cream and Pizza",
+              "caption": null
+            }
+          ]
+        },
         "includedIn": null,
         "booking": null
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-07-17"
   },
   {
     "_id": "act_jul17_1",
@@ -3052,7 +3058,13 @@
     "place": {
       "id": "ChIJmVCAZBYNyFYRgccbPfb2SBI",
       "label": "Whittier Alaska Cruise Ship Terminal 1",
-      "images": []
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJmVCAZBYNyFYRgccbPfb2SBI/photos/AVoNoXQNMjc_4qocFVEN-F24K9EbAAeKJP-J5VQSsiCyIIuyez0-W_idX1N0zScdyIi3w4Ujky699l5cl_ZeeItG3j1RVPFjh52z2th-6mlMW16yBu8YrqcdvbWGihn3oFe0fOMiup6IXVxxnzzCNi5sm-K1-TTo7YKgoXLvHyJShN_NyOXWP8N4Ji9e496qcOhSSBp163wOF7-2ssnYPWKohAKwz3zss1GgHijIfGArHQAKwQJd-bAMlqsgGJWxPdJR40WXAFGJayFz7iEVvnMbBl9YAZ-ABmISPkkHu0Eazu37uXaMqe_TmUJZfKzp_0oDTBZ6dURDasgTbV2FkWOpzlnm8gFI-zLb2kS35RiJeK1spfPrtrC4QLfzzOmUSuu7QxJDbIAPSiXhe1cmFJry43egTggCAK_Kqp9i27Vz25L5bh_M/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "virgil Ellsworth",
+          "caption": null
+        }
+      ]
     },
     "booking": null,
     "mealType": null,
@@ -3060,14 +3072,15 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul17_dinner",
     "legId": "leg_cruise",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-07-17T19:30",
+    "startAt": "2027-07-17T20:30",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -3122,7 +3135,8 @@
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul18_breakfast",
@@ -3938,9 +3952,15 @@
         "_id": "act_jul22_lunch_opt0",
         "diningFormat": "sit-down",
         "place": {
-          "id": null,
-          "label": "Alaska Fish House at Salmon Landing",
-          "images": []
+          "id": "ChIJMRMY-wQlDFQRAiENUPcxRho",
+          "label": "The Alaska Fish House",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJMRMY-wQlDFQRAiENUPcxRho/photos/AVoNoXSKaY1bLx7THCvgsyYl_E4iZ99RZPZ9wNAzJ1YeGHoEZ-cQNKlrnrVhuZ0Y5Aa1jpJJrVTpLopCQa2D5t854s7BDPs8NshcHZ9Y_qVzlhCfn4XKRc1gMAZuSQEmRmbRURD9KXvtrrsh2M2b_zSZ7z6gg511-ijrwURDayoQqcO-GSpHQthv6N0cLp2Rwh2uZWS4dw4DhYk3OOMQrj7loZFR9WQio9WajVx-J4I-X0KCn671eIDvEc-M76hJvAL5LYnaJx14U0W7Bvxzy5XgHsmxtpYSzh6raIGn7Rpm3m1h84_yRN7LOLqKVpqaxWrk9xiqTqdsLPjI9fmkucTmwOSpL23II1rcfyB7MIFGH15BqLxy2OFr3zW7CK1wWb56VN6DO0d1lSXYwhYgY9uGJbY2q77Ry-s3coAwkCZLoAg1dg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "The Alaska Fish House",
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "booking": null
@@ -3949,16 +3969,23 @@
         "_id": "act_jul22_lunch_opt1",
         "diningFormat": "sit-down",
         "place": {
-          "id": null,
-          "label": "Annabelle's Famous Keg and Chowder House on Front Street",
-          "images": []
+          "id": "ChIJE8iWLAQlDFQRDFmpCh0rZTQ",
+          "label": "Annabelle's Famous Keg and Chowder House",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJE8iWLAQlDFQRDFmpCh0rZTQ/photos/AVoNoXQ6ldlbgG8qo9BiA_9t4DpW7c0nxmih0NEaXdVerSriT9w-EqmR6lm9VIul6ZsHOYhcI6Gkmas0degru_akABv53LxJ8K88v32oiTOC6Pq_8cUqmg8uWW3-OnOmYGoUgLWWTyrqVrTTBizr-XKRxxW9DXDTL2Ij--RKX66QbpT6UEajaxK-2AComAlQTnI6CYAtyZayoowq58Ou68ukkXmy7vJFhWzU7E21MuSmLrKARgV9jjIzKukKKyMvMGfTGJTBxoQhWjp_40uYMW8PBIHx-7EWQICEIaTbW_pTLFwhTL7KbatK9CoXtIyPHUeOlPVZOVMhM6eiRhbyGsjo9X11inwyh8AotkB0ZZD8OWRMsdKLMvdyeqDxI2AIAiefHNMMmLsP4EcOkN3Dx-P9gpVEtgsjDpBYwNCuQ2TOug1tog/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Annabelle's Famous Keg and Chowder House",
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "booking": null
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul22_2",
@@ -4460,9 +4487,15 @@
     "priority": null,
     "text": "Check with Rust's Flying Service — grounded, free day in Anchorage",
     "place": {
-      "id": null,
+      "id": "ChIJnaVbp1K9yFYRyaefNvkHj8k",
       "label": "Rust's Flying Service",
-      "images": []
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJnaVbp1K9yFYRyaefNvkHj8k/photos/AVoNoXRcBNdkRpp77SttTmD6_GeGflceQSFTB2rIzy_Kk27d-hZbtR8gII8BygVczXwNf3jHWRq9oCz8Gx5zPifaGUNoATMoY3r60Ss2EvNW2G4L4ucxq_ch0Kk-8WAUiMU35nhCkOwyOAMryvMtpDBUSPTj65qaFCmoItDFGidraKD_Nmc8M8Uk7HJ8KXBo9xobz4PXYxE3WB0pmC_DIFEavzVnPLRo7dV6ChQ0eKOvd6lKYlvn54zq0SuqEvCoxw6ZDQb_LNQmUyqLpx9HyFmY7doSyzesgAk8An-WlkRbNgf_cMV0zAc3d2FjewIvdrFp07veWn0AycIidg0-H0_q2zU8ehL4BR3sTgYvossJv8zKp5eYYYKHwOnkS80dRSYn3PDDkjZEWXHmN4L6GavxEWV9m5oUwSd79YWo3Jg8RL3pcIDk/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Rust's Flying Service",
+          "caption": null
+        }
+      ]
     },
     "booking": null,
     "mealType": null,
@@ -4470,7 +4503,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_lc_d2_portalsworth_hike",
@@ -4532,9 +4566,15 @@
     "priority": null,
     "text": "Check with Lake Clark Air — grounded, free day in Anchorage",
     "place": {
-      "id": null,
-      "label": "Lake Clark Air",
-      "images": []
+      "id": "ChIJk1PG0UaWyFYRa7b0os7ZSgY",
+      "label": "Lake Clark Air Services",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJk1PG0UaWyFYRa7b0os7ZSgY/photos/AVoNoXSiQVGNRNsr8182ZAdNTbd7nln25BHg7ED310kpz_xHJWxwlJ9DqvQdltZ0oiAwHSK16_oEqieiJZ1uF7s0jiKkz4VgRieh5fsmLwlY4JPzRn-O2s4IWh6cm7fLwTm8JW5gjrDI_Q7X7fo0faNnOmSNnvTiADGz5yoV7w30shZhXBiEdOxRxGModKO275asLL0S4ppWuHnDLAqQLPvfAFAToCiXlQ4W2moHoGs6r0yw-x88w-jwQGvj5_03-D31fHy2mdQOhrnNLIZhbkc5gj55UTSeVLHRZbD92FaZyjyWFADoqSPPqQweQCo5PIKlIGS2kTgBDBt8jN4iUVFHAMvbIPkxxU3zpDlIOQf2lslyM3pBYyG29pmomQkpGkjHdZprtvhihmgubNwuy6ymer32o8GmDYhXn9Nb_LZYGcM/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Melissa Bubash",
+          "caption": null
+        }
+      ]
     },
     "booking": null,
     "mealType": null,
@@ -4542,7 +4582,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_lc_d3_redoubt_bears",
@@ -4555,9 +4596,15 @@
     "priority": "high",
     "text": "Coastal brown bear viewing at Redoubt Bay",
     "place": {
-      "id": null,
+      "id": "ChIJQxwv6rO2xVYRSJZLdkGOLn4",
       "label": "Redoubt Bay Lodge",
-      "images": []
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJQxwv6rO2xVYRSJZLdkGOLn4/photos/AVoNoXS8jJFEwnL7wVkKc-5BWs7gSlN46BpepBtu0-OOE8R-h8J9uFGYBqA5HzrDvpw9Jv_KepjqC3VayaMV3lu4CLNnNTBoYF4eLRLCxE0-JYSfn1TIy3IilVJkBuSHgwa4flXvm4sBq4fenagyfe5k8shfc4jKpwG_TARSd8ibBmKjfn1PqjA9RL_nO_wAxhK7AOiV0DuCF6rYhqNYbw1xmaWfLIlP1av99dcCI2T8lETYwMHSYRHpVyZZBruzcEDLhsen0a_CCsWv9Cv0HW82oJQZ0xtGCytd6lGWJTEQrduNg21WBDwhsRrM_qON-wsdaJ3Ud0KvzpDrO2HgWt-qa_RaFYMufB_z1QxqJfY3JqPK0DX-IZ7ToGR3GHK7s7MAOr7sTXh21_3rV6ydcCJhoOyyk3aBqca94C5z3RPfEpquw5Hl2XRyV-Qs2ZZ7kUzT/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Marilyn Oswald",
+          "caption": null
+        }
+      ]
     },
     "booking": null,
     "mealType": null,
@@ -4565,7 +4612,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_lc_d3_redoubt_lunch",
@@ -4597,9 +4645,15 @@
     "priority": null,
     "text": "Check with Rust's Flying Service — grounded, free day in Anchorage",
     "place": {
-      "id": null,
+      "id": "ChIJnaVbp1K9yFYRyaefNvkHj8k",
       "label": "Rust's Flying Service",
-      "images": []
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJnaVbp1K9yFYRyaefNvkHj8k/photos/AVoNoXRcBNdkRpp77SttTmD6_GeGflceQSFTB2rIzy_Kk27d-hZbtR8gII8BygVczXwNf3jHWRq9oCz8Gx5zPifaGUNoATMoY3r60Ss2EvNW2G4L4ucxq_ch0Kk-8WAUiMU35nhCkOwyOAMryvMtpDBUSPTj65qaFCmoItDFGidraKD_Nmc8M8Uk7HJ8KXBo9xobz4PXYxE3WB0pmC_DIFEavzVnPLRo7dV6ChQ0eKOvd6lKYlvn54zq0SuqEvCoxw6ZDQb_LNQmUyqLpx9HyFmY7doSyzesgAk8An-WlkRbNgf_cMV0zAc3d2FjewIvdrFp07veWn0AycIidg0-H0_q2zU8ehL4BR3sTgYvossJv8zKp5eYYYKHwOnkS80dRSYn3PDDkjZEWXHmN4L6GavxEWV9m5oUwSd79YWo3Jg8RL3pcIDk/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Rust's Flying Service",
+          "caption": null
+        }
+      ]
     },
     "booking": null,
     "mealType": null,
@@ -4607,7 +4661,8 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul17_breakfast",
@@ -4964,8 +5019,15 @@
     "priority": null,
     "text": "Pratt Museum or Alaska Islands and Ocean Visitor Center",
     "place": {
-      "id": null,
-      "label": "Pratt Museum"
+      "id": "ChIJ3UP9TgsywVYRrixGjH6GKfM",
+      "label": "Pratt Museum",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJ3UP9TgsywVYRrixGjH6GKfM/photos/AVoNoXT0-3o8CPqoIROI4Ky07US031MuTjaP7kYgPyY_LzJq70XQJA2Ti0SebgnzK8g1_-Zgdxq1deuEh3SvXF2-B_SpAxHOLXvYuWM7t42j9whkQ3qg2NV4VjUH7jahyQQnyxa8fFj131md6kaVLAik62VbVM-SqwO_UOBbdngPVkhaw2_TGUs8NXD_uuHXP-S9tyLpAov_V1u0CsrFBlTA59sQD7x_urBNKAsQsuSLXHLBnfigz3iY2liZr-ZuyFZgPM3tOSrYI3RK8DRu0TXcxIJC3v8O-HjLx35dh2F5j-DFxVG-m6KRZ7L8GBnVnJg6YzUlX8jvOIFBVo2zongPr_SF5a8Z6xnPxJ08F0sTZmOidyKU9d7i7r2nZtL-qPKimPfwQDVCjKBUbV1hbuy8CXn-pgWE0sDBvPTLDg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Chris Yust LaClaire",
+          "caption": null
+        }
+      ]
     },
     "booking": null,
     "mealType": null,

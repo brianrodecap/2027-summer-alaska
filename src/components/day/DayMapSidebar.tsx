@@ -24,7 +24,7 @@ import {
   lookupTravelInfo,
 } from '../../model/directions';
 import { resolveTravelMode } from '../../model/editForms';
-import { firstImage, formatMinutes, STAGE_KIND_LABEL } from '../../model/formatting';
+import { firstImage, formatTravel, STAGE_KIND_LABEL } from '../../model/formatting';
 import { type Coordinates, getCoordinates } from '../../model/placeCoordinates';
 import {
   activityHeadline,
@@ -451,7 +451,7 @@ function PlaceMarker({
             {nextPlace && (
               <Typography variant="caption" sx={{ color: 'rgba(0, 0, 0, 0.6)' }}>
                 {nextPlace.travel
-                  ? `~${formatMinutes(nextPlace.travel.minutes)} · ${nextPlace.travel.miles} mi to ${nextPlace.label}`
+                  ? `${formatTravel(nextPlace.travel)} to ${nextPlace.label}`
                   : `Next: ${nextPlace.label}`}
               </Typography>
             )}

@@ -190,26 +190,6 @@
     ]
   },
   {
-    "_id": "transit_seward_anchorage",
-    "legId": "leg_parks",
-    "journeyId": null,
-    "scenarioId": null,
-    "status": "planning",
-    "mode": "drive",
-    "from": {
-      "label": "Seward"
-    },
-    "to": {
-      "label": "Anchorage"
-    },
-    "departsAt": "2027-07-15T18:00",
-    "arrivesAt": null,
-    "routeId": "route_seward_highway",
-    "routeVariant": "direct",
-    "booking": null,
-    "images": []
-  },
-  {
     "_id": "transit_coldfoot_fairbanks_ideal",
     "legId": "leg_parks",
     "journeyId": null,
@@ -295,12 +275,28 @@
     "status": "planning",
     "mode": "drive",
     "from": {
-      "label": "Anchorage area"
+      "label": "Anchorage",
+      "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJQT-zBHaRyFYR42iEp1q6fSU/photos/AVoNoXSRfAczTYrQHIKa6WQ6SxfPqw2-muMLVlLeu2bK0wQf93LvNW5BEcZT6Quvl2GrcnZyV6gN3WUX0xue-CQWt1mLbj0BcFvHCLmh2856jOywpvfo_dnoKYerPblsDEL_ObsZuy__5hrLIvii53LXF6dY4SuMB6SYBDtqeP6aeGXNZeaE5k-Hoc-1VszLK6SlmK0Fm63q5Hwd_e-9SLoO1itW-3Y1csG-tD0Bh2bLYX2SB06Swx1Ds10FdfzwKabNhZWTh0BG66BVHmgW3O9opLqZZVdxq68YRq0HYgcw7pgwpRHp38eStC-3os_D_u0w3TVMOX8OiiSUg2qieBohTP1OQVhzZsWYbzDjeGxjLHluwp75h9TG7SqgzhONxGwWH2xF32pPitlENDQa6Zj25QmC0Ho/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Jeffery Montague",
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Whittier"
+      "label": "Whittier",
+      "id": "ChIJU5WSntkauFYR4i5djg8b1_Y",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJU5WSntkauFYR4i5djg8b1_Y/photos/AVoNoXSb9KMPMwavd24Le8hYfVDdGqOgcicsOgOll8ZRXsTuYxI3o0sZIHbK9_a8J5kKv5_CH_afgj3TMdBugZp24DYHbnMjYncYu-PiXAogM6WNJkoSdrQ4KNUwGi8KKQ8SmziCNv0jtCYm5N7Y7TNM5dXs2nIZGUbatecD_9qFucbVT-CrXnk6ytJ6BcpGZl5ZWtTMmaqHR9JFRiRbP75iHYDrRHplSVZRt_N8Nj0EqzqImuhQM47_boEaw9n1plmHMfhOiJYLhbwlKrY4ABhUfdl1wC92FFiTAc8AjFgYTAb5pflKwuixHTv9QqdPwIfwMm14p1fQhCzuYsoo-isozWFiuUknf2hVwhCUTAOj7GacT_eRayKETVYZFj5j8kUjeBoV1HzbxGau0SYGtV3xoJ7mZqA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "_ _",
+          "caption": null
+        }
+      ]
     },
-    "departsAt": "2027-07-17T14:00",
+    "departsAt": "2027-07-17T09:30",
     "arrivesAt": null,
     "routeId": "route_anchorage_whittier",
     "routeVariant": "direct",
@@ -401,7 +397,7 @@
       "id": "ChIJnaVbp1K9yFYRyaefNvkHj8k",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJnaVbp1K9yFYRyaefNvkHj8k/photos/AVoNoXRT4TaoMbk0HS6vMpRQHN3fhE7XWXEL1DaQOE9OM4EdjVPFIlDk_pdH3c3w7CqbgnbtZgwM9lsVngVmvma-0aFX3ZM3TOIOlcZODgLv2Fb0fuL2BJ2b43QK82zSqBTW5QkMrlsa590Y8VoskNHkojV68RCZ14v0pw9XzG9pYwRAFp7Gjavp7Q3KFfwpnUT6vThAC-_suiMlFPELiATTfiYUWFCzA02gOgEj2wema-ewz8ysIIodFAplgk8UrjrMglLiuscESzfz3tB2z3lbYgmobBNbnTRAloEI8Uxj0r-FYeEhGHxFbd7CUUQzgwnP5P5cTxUv7DFWP2bYYlI9ZITtPIG7zSaXeiXDBnm7oH6wF9EsztfqaDCljzUZOg2h8kuOT3C_x-B7MwqNs6TmoD9MKNzbiVV-9BOzshLvpEcLMefR/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "uri": "https://places.googleapis.com/v1/places/ChIJnaVbp1K9yFYRyaefNvkHj8k/photos/AVoNoXRcBNdkRpp77SttTmD6_GeGflceQSFTB2rIzy_Kk27d-hZbtR8gII8BygVczXwNf3jHWRq9oCz8Gx5zPifaGUNoATMoY3r60Ss2EvNW2G4L4ucxq_ch0Kk-8WAUiMU35nhCkOwyOAMryvMtpDBUSPTj65qaFCmoItDFGidraKD_Nmc8M8Uk7HJ8KXBo9xobz4PXYxE3WB0pmC_DIFEavzVnPLRo7dV6ChQ0eKOvd6lKYlvn54zq0SuqEvCoxw6ZDQb_LNQmUyqLpx9HyFmY7doSyzesgAk8An-WlkRbNgf_cMV0zAc3d2FjewIvdrFp07veWn0AycIidg0-H0_q2zU8ehL4BR3sTgYvossJv8zKp5eYYYKHwOnkS80dRSYn3PDDkjZEWXHmN4L6GavxEWV9m5oUwSd79YWo3Jg8RL3pcIDk/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
           "credit": "Rust's Flying Service",
           "caption": null
         }
@@ -636,6 +632,7 @@
     "arrivesAt": null,
     "routeId": "route_new_13",
     "routeVariant": "direct",
+    "showEndpointsOnMap": true,
     "booking": {
       "status": "planning",
       "confirmationNumber": null,

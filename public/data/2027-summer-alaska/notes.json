@@ -1525,21 +1525,9 @@
     "images": []
   },
   {
-    "_id": "note_act_jul17_lunch_opt0",
-    "kind": "footnote",
-    "text": "In Anchorage, before hitting the road.",
-    "concerns": [
-      {
-        "entity": "mealOption",
-        "id": "act_jul17_lunch_opt0"
-      }
-    ],
-    "images": []
-  },
-  {
     "_id": "note_act_jul17_lunch_opt1",
     "kind": "footnote",
-    "text": "Push it to a stop in Girdwood along the way — sourdough pancakes or a sandwich.",
+    "text": "Seafood by the harbor.",
     "concerns": [
       {
         "entity": "mealOption",
@@ -1551,7 +1539,7 @@
   {
     "_id": "note_act_jul17_lunch_opt2",
     "kind": "footnote",
-    "text": "Something quick, to leave more buffer before the tunnel and the 3:30pm boarding window.",
+    "text": "Pizza and ice cream — the quicker pick, leaving more buffer before the 3:30pm boarding window.",
     "concerns": [
       {
         "entity": "mealOption",

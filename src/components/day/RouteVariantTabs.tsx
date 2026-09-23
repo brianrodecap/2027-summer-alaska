@@ -1,7 +1,6 @@
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 
-import { activeRouteTone } from '../../model/tripModel';
 import type { EnrichedTransit } from '../../model/types';
 import { useRouteToneSelection } from '../../state/useTripSelections';
 import { renderMaterialIcon, ROUTE_TONE_ICON } from '../shared/materialIcon';
@@ -11,13 +10,12 @@ import { renderMaterialIcon, ROUTE_TONE_ICON } from '../shared/materialIcon';
 // the timeline that's unambiguously "the start of this route." Every
 // variant's stages were already walked in buildTripView, so switching here
 // just changes which precomputed variant's stages/arrival the rest of the
-// timeline shows (see activeArrivesAt/activeRouteTone in tripModel.ts)
-// — no re-walk needed for a plain route-tone switch.
+// timeline shows. The row's transit is the live one (liveDays.ts's
+// liveTransits), so its routeInfo.selectedTone is already the picked tab.
 export function RouteVariantTabs({ transit }: { transit: EnrichedTransit }) {
   const info = transit.routeInfo;
-  const { routeTones, selectRouteTone } = useRouteToneSelection();
+  const { selectRouteTone } = useRouteToneSelection();
   if (!info || info.variants.length < 2) return null;
-  const selectedTone = activeRouteTone(transit, routeTones);
   return (
     <Stack
       direction="row"
@@ -26,7 +24,7 @@ export function RouteVariantTabs({ transit }: { transit: EnrichedTransit }) {
       onClick={(e) => e.stopPropagation()}
     >
       {info.variants.map((v) => {
-        const active = v.tone === selectedTone;
+        const active = v.tone === info.selectedTone;
         return (
           <Chip
             key={v.tone}

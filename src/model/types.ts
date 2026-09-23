@@ -186,19 +186,37 @@ export interface Transit {
   arrivesAt: string | null; // null whenever routeId is set — never authored for a routed drive
   routeId: string | null;
   routeVariant: string | null;
+  // A routed drive's from/to are usually general places (a whole city or
+  // park), so maps, directions links and drive totals leave them out unless
+  // this is set — e.g. a loop that starts and ends at one specific depot.
+  showEndpointsOnMap?: boolean;
   booking: Booking | null;
   images: Image[];
 }
 
 export type RoutePlaceKind = 'waypoint' | 'via';
 
+// Calculated drive time/distance for one stretch of a route (from the
+// previous place, or Depart, to this one; or, as a variant's finalTravel,
+// from the last place to the route's own `to`). Never hand-typed —
+// RouteEditForm recomputes it from Google Directions whenever the stop
+// sequence or endpoints change; stored only so the timeline can be built
+// without an API call. miles is informational only — never fed into any
+// time math.
+export interface RouteTravel {
+  minutes: number;
+  miles?: number;
+}
+
 export interface RoutePlaceEntry {
   kind: RoutePlaceKind;
   place?: Place;
   coordinates?: { lat: number; lng: number }; // fallback only when place has no resolvable id
   label?: string; // used together with coordinates, when place is absent
-  durationMinutes: number;
-  distanceMiles?: number; // informational only — never fed into any time math
+  travel: RouteTravel;
+  // Authored time spent stopped here — a waypoint only (a via is a
+  // pass-through with no stop). Absent = DEFAULT_WAYPOINT_DURATION_MINUTES.
+  durationMinutes?: number;
   note?: string | null;
 }
 
@@ -206,8 +224,7 @@ export interface RouteVariant {
   tone: string; // e.g. 'scenic' | 'direct' — a route choice, not a go/no-go branch
   label: string;
   places: RoutePlaceEntry[];
-  finalLegMinutes: number;
-  finalLegMiles?: number; // informational only — never fed into any time math
+  finalTravel: RouteTravel;
 }
 
 export interface Route {
@@ -541,6 +558,10 @@ export interface Day extends DayFrame {
   // The places the day touches, which the map/route/travel queries (dayMap.ts)
   // read instead of walking the rows.
   visits: DayVisits;
+  // Each still-open meal's selected diningFormat (the timeline's own
+  // formatOverrides), which the rows' live overlap warnings read so they
+  // agree with the route walk's timing.
+  mealFormats: ReadonlyMap<string, DiningFormat>;
   summary: string;
   title: string;
 }
@@ -635,6 +656,6 @@ export interface TripView {
 // picks that shape a whole day). ----------
 
 export interface LiveRouteOverrides {
-  formatOverrides?: Map<string, DiningFormat>;
+  formatOverrides?: ReadonlyMap<string, DiningFormat>;
   routeVariant?: string;
 }

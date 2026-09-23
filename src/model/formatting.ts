@@ -177,6 +177,14 @@ export function formatMinutes(minutes: number): string {
   return remainder === 0 ? `${hours} hr` : `${hours} hr ${remainder} min`;
 }
 
+// "~1 hr 5 min · 42 mi" (or just the time when miles isn't known) — the one
+// spelling of a drive stretch shared by RouteEditForm's read-only leg
+// summary, DayTimeline's travel footers and DayMapSidebar's InfoWindows.
+export function formatTravel(travel: { minutes: number; miles?: number }): string {
+  const time = `~${formatMinutes(travel.minutes)}`;
+  return travel.miles != null ? `${time} · ${travel.miles} mi` : time;
+}
+
 // Every day-list row leads with "time · type" on its overline — mealType for
 // a meal Activity, 'Activity' for a plain one — matching Depart/Via/Waypoint/
 // Arrive's own time-plus-type overline and Stay's relation-only one.

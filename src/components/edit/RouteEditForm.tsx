@@ -12,12 +12,17 @@ import Typography from '@mui/material/Typography';
 
 import { lookupDriveInfo } from '../../model/directions';
 import { blankRoutePlaceEntry, blankRouteVariant, swapItems as swap } from '../../model/editForms';
-import { formatMinutes } from '../../model/formatting';
+import { formatTravel } from '../../model/formatting';
+import {
+  DEFAULT_ROUTE_TONE,
+  DEFAULT_WAYPOINT_DURATION_MINUTES,
+  hasDirectVariant,
+} from '../../model/tripModel';
 import type { Route, RoutePlaceEntry, RouteVariant } from '../../model/types';
 import { PlacePickerField } from './PlacePickerField';
 
 const ROUTE_TONE_OPTIONS = [
-  { value: 'direct', label: 'Direct' },
+  { value: DEFAULT_ROUTE_TONE, label: 'Direct' },
   { value: 'scenic', label: 'Scenic' },
 ];
 
@@ -30,13 +35,7 @@ const PLACE_KIND_OPTIONS: { value: RoutePlaceEntry['kind']; label: string }[] = 
   { value: 'via', label: 'Via — steers routing onto the right road, no stop' },
 ];
 
-// Formats a computed leg for the form's own read-only display — never fed
-// back into the data, just a sanity check on what the last lookup returned.
-function formatLeg(minutes: number, miles?: number): string {
-  return miles != null ? `~${formatMinutes(minutes)} · ${miles} mi` : `~${formatMinutes(minutes)}`;
-}
-
-// Place ID, durationMinutes/distanceMiles, and finalLegMinutes/finalLegMiles
+// Place ID, each place's travel, and each variant's finalTravel
 // are never hand-typed in this form — they're re-derived here from Google's
 // live drive time and distance (via lookupDriveInfo) every time the stop
 // sequence or the route's own From/To changes, walking places[] in its own
@@ -81,14 +80,15 @@ async function recomputeVariant(
 
   const places = variant.places.map((p, i) => {
     const info = placeResults[i];
-    return info ? { ...p, durationMinutes: info.minutes, distanceMiles: info.miles } : p;
+    return info ? { ...p, travel: { minutes: info.minutes, miles: info.miles } } : p;
   });
 
   return {
     ...variant,
     places,
-    finalLegMinutes: finalInfo ? finalInfo.minutes : variant.finalLegMinutes,
-    finalLegMiles: finalInfo ? finalInfo.miles : variant.finalLegMiles,
+    finalTravel: finalInfo
+      ? { minutes: finalInfo.minutes, miles: finalInfo.miles }
+      : variant.finalTravel,
   };
 }
 
@@ -115,10 +115,9 @@ export function RouteEditForm({
     });
   };
 
-  // Recomputes every variant's durationMinutes/finalLegMinutes from scratch —
-  // used after From/To itself changes, since that shifts the origin every
-  // first-place duration (and a places-less variant's finalLegMinutes) is
-  // measured from.
+  // Recomputes every variant's travel/finalTravel from scratch — used after
+  // From/To itself changes, since that shifts the origin every first place's
+  // travel (and a places-less variant's finalTravel) is measured from.
   const recomputeAllVariants = async (route: Route) => {
     const updated = await Promise.all(
       route.variants.map((v) => recomputeVariant(v, route.from.id, route.to.id)),
@@ -159,7 +158,16 @@ export function RouteEditForm({
                 sx={{ minWidth: 130 }}
               >
                 {ROUTE_TONE_OPTIONS.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>
+                  <MenuItem
+                    key={o.value}
+                    value={o.value}
+                    // Only one variant can be the direct one (directVariantProblem).
+                    disabled={
+                      o.value === DEFAULT_ROUTE_TONE &&
+                      variant.tone !== DEFAULT_ROUTE_TONE &&
+                      hasDirectVariant(form.variants)
+                    }
+                  >
                     {o.label}
                   </MenuItem>
                 ))}
@@ -211,11 +219,22 @@ export function RouteEditForm({
                     value={place.kind}
                     onChange={(e) => {
                       const kind = e.target.value as RoutePlaceEntry['kind'];
-                      updatePlace(vi, variant, pi, (p) => ({ ...p, kind }));
+                      // A via has no stop, so it never carries a stop duration.
+                      updatePlace(vi, variant, pi, ({ durationMinutes, ...rest }) =>
+                        kind === 'waypoint'
+                          ? { ...rest, kind, durationMinutes }
+                          : { ...rest, kind },
+                      );
                     }}
                   >
                     {PLACE_KIND_OPTIONS.map((o) => (
-                      <MenuItem key={o.value} value={o.value}>
+                      <MenuItem
+                        key={o.value}
+                        value={o.value}
+                        // The direct variant is the default path — vias only
+                        // steer other variants off it (directVariantProblem).
+                        disabled={o.value === 'via' && variant.tone === DEFAULT_ROUTE_TONE}
+                      >
                         {o.label}
                       </MenuItem>
                     ))}
@@ -264,8 +283,34 @@ export function RouteEditForm({
                       <DeleteIcon fontSize="small" />
                     </IconButton>
                   </Stack>
+                  {place.kind === 'waypoint' && (
+                    <TextField
+                      label="Stop duration (minutes)"
+                      size="small"
+                      type="number"
+                      value={place.durationMinutes ?? ''}
+                      placeholder={String(DEFAULT_WAYPOINT_DURATION_MINUTES)}
+                      slotProps={{
+                        inputLabel: { shrink: true },
+                        htmlInput: { min: 0, step: 5 },
+                      }}
+                      helperText={
+                        place.durationMinutes === undefined
+                          ? `Blank = ${DEFAULT_WAYPOINT_DURATION_MINUTES} minutes`
+                          : undefined
+                      }
+                      onChange={(e) => {
+                        const raw = e.target.value;
+                        updatePlace(vi, variant, pi, (p) => {
+                          const { durationMinutes: _prev, ...rest } = p;
+                          return raw === '' ? rest : { ...rest, durationMinutes: Number(raw) };
+                        });
+                      }}
+                      sx={{ maxWidth: 220 }}
+                    />
+                  )}
                   <Typography variant="caption" color="text.secondary">
-                    {formatLeg(place.durationMinutes, place.distanceMiles)} from previous stop
+                    {formatTravel(place.travel)} from previous stop
                   </Typography>
                 </Stack>
               </Paper>
@@ -282,8 +327,7 @@ export function RouteEditForm({
               Add place
             </Button>
             <Typography variant="caption" color="text.secondary">
-              Final leg to {form.to.label || 'To'}:{' '}
-              {formatLeg(variant.finalLegMinutes, variant.finalLegMiles)}
+              Final leg to {form.to.label || 'To'}: {formatTravel(variant.finalTravel)}
             </Typography>
           </Stack>
         </Paper>
@@ -292,7 +336,7 @@ export function RouteEditForm({
         onClick={() =>
           onChange({
             ...form,
-            variants: [...form.variants, blankRouteVariant()],
+            variants: [...form.variants, blankRouteVariant(form.variants)],
           })
         }
       >

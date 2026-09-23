@@ -9,6 +9,10 @@
 //   - a route variant that isn't selected, a scenario branch that isn't
 //     active, a meal candidate that isn't chosen, never exist to begin with.
 //
+// A routed drive's own Depart/Arrive endpoints are left out unless the
+// Transit opts in (transitPhaseOnMap) — they're usually a whole city or
+// park, so its selected variant's stages carry the drive instead.
+//
 // Output rules: the day list's Stay check-outs first and check-ins last (the
 // same split the list uses), a same-day excursion's interior dropped, a
 // genuine one-way relocation splitting the day into separate drivable runs.
@@ -21,7 +25,6 @@ import {
   buildDirectionsUrl,
   type DayMapRouteNode,
   type DayTravelSegment,
-  findNextResolvableStop,
   MAX_ROUTE_WAYPOINTS,
   type RouteStop,
   routeStop,
@@ -30,6 +33,7 @@ import {
   stageNodeKey,
   stayNodeKey,
   transitBoundaryKey,
+  transitPhaseOnMap,
 } from './tripModel';
 import type {
   DayRow,
@@ -104,9 +108,7 @@ function rowVisits(row: DayRow): DayVisit[] {
   switch (row.type) {
     case 'stay': {
       const place = row.stay.lodging?.place;
-      // A stay merely "in progress" only counts with a real, geocodable id — a
-      // cruise ship mid-voyage names a ship, not a point on the map.
-      if (!place || (row.relation === 'Staying' && !place.id)) return [];
+      if (!place) return [];
       return [{ kind: 'stay', stay: row.stay, relation: row.relation, place, key: row.key }];
     }
     case 'activity':
@@ -115,7 +117,7 @@ function rowVisits(row: DayRow): DayVisit[] {
         : [];
     case 'transit': {
       const place = row.event.place;
-      if (!place) return [];
+      if (!place || !transitPhaseOnMap(row.transit, row.phase)) return [];
       return row.phase === 'stage'
         ? [
             {
@@ -165,6 +167,7 @@ function eventVisit(event: TimelineEvent, transit: EnrichedTransit): DayVisit | 
       : null;
   }
   const phase = event.kind === 'depart' ? 'depart' : 'arrive';
+  if (!transitPhaseOnMap(transit, phase)) return null;
   return { kind: 'transit', transit, phase, place: event.place, key: event.at };
 }
 
@@ -266,13 +269,25 @@ function bookendedRuns<T>(
 
 // ---------- queries ----------
 
+// Only a place with a resolved Google place id is ever a map stop, in every
+// query below. A bare label goes to Google's text search, which resolves it
+// however it likes — "Discovery Princess" (a cruise ship) and "Main Dining
+// Room" (an onboard venue) both land in California. Unresolved visits stay in
+// DayVisits itself, though: a flight's "Kotzebue (OTZ)" endpoint is still
+// what splits the day into separate drivable runs (drivableRuns), so the
+// filter applies per run, after that split.
+const resolved = (list: DayVisit[]) => list.filter((v) => v.place.id);
+
 // Plain labels, one list per drivable run. Route stages are left out: the
 // keyless embed only ever draws start -> end, and mis-plots when fed
 // waypoints via daddr's "+to:" chaining.
 export function mapStopLabels(visits: DayVisits): string[][] {
   return bookendedRuns(
     visits,
-    (list) => list.filter((v) => v.kind !== 'stage' && v.place.label).map((v) => v.place.label),
+    (list) =>
+      resolved(list)
+        .filter((v) => v.kind !== 'stage')
+        .map((v) => v.place.label),
     (a, b) => a === b,
   );
 }
@@ -293,36 +308,21 @@ function visitStop(visit: DayVisit, date: string): RouteStop | null {
     case 'stay':
       return routeStop(
         visit.place,
-        undefined,
-        true,
         visit.relation === 'Staying' ? null : stayNodeKey(visit.stay._id, date),
       );
     case 'activity':
-      return routeStop(visit.place, undefined, true, activityNodeKey(visit.activity._id));
+      return routeStop(visit.place, activityNodeKey(visit.activity._id));
     case 'stage':
-      return routeStop(
-        visit.place,
-        undefined,
-        true,
-        stageNodeKey(visit.transit._id, visit.stageIndex),
-      );
+      return routeStop(visit.place, stageNodeKey(visit.transit._id, visit.stageIndex));
     case 'transit':
-      // A scheduled/chartered movement (a flight, a tour bus) always has one
-      // exact departure/arrival point, unlike a drive's from/to, which can be
-      // a whole city with no one correct point to route through.
-      return routeStop(
-        visit.place,
-        undefined,
-        visit.transit.mode !== 'drive',
-        transitBoundaryKey(visit.transit._id, visit.phase),
-      );
+      return routeStop(visit.place, transitBoundaryKey(visit.transit._id, visit.phase));
   }
 }
 
 function routeStops(visits: DayVisits): RouteStop[][] {
   return bookendedRuns(
     visits,
-    (list) => list.flatMap((v) => visitStop(v, visits.date) ?? []),
+    (list) => resolved(list).flatMap((v) => visitStop(v, visits.date) ?? []),
     (a, b) => a.label === b.label,
   );
 }
@@ -330,19 +330,15 @@ function routeStops(visits: DayVisits): RouteStop[][] {
 export function routeUrls(visits: DayVisits): string[] {
   return routeStops(visits).flatMap((stops) => {
     if (stops.length < 2) return [];
-    const first = stops[0];
-    const last = stops[stops.length - 1];
-    const candidates = stops.slice(1, -1).filter((stop) => stop.placeId || stop.trustedAsWaypoint);
-    const points = [first, ...candidates, last];
     const urls: string[] = [];
     let originIndex = 0;
-    while (originIndex < points.length - 1) {
-      const destinationIndex = Math.min(originIndex + MAX_ROUTE_WAYPOINTS + 1, points.length - 1);
+    while (originIndex < stops.length - 1) {
+      const destinationIndex = Math.min(originIndex + MAX_ROUTE_WAYPOINTS + 1, stops.length - 1);
       urls.push(
         buildDirectionsUrl(
-          points[originIndex],
-          points[destinationIndex],
-          points.slice(originIndex + 1, destinationIndex),
+          stops[originIndex],
+          stops[destinationIndex],
+          stops.slice(originIndex + 1, destinationIndex),
         ),
       );
       originIndex = destinationIndex;
@@ -351,21 +347,17 @@ export function routeUrls(visits: DayVisits): string[] {
   });
 }
 
-// Every drivable hop between two consecutive stops with different real place
-// ids (a stop with no id is skipped over, not treated as a break).
+// Every drivable hop between two consecutive stops with different place ids
+// (every RouteStop already has a resolved id — see `resolved`).
 export function travelSegments(visits: DayVisits): DayTravelSegment[] {
-  return routeStops(visits).flatMap((stops) => {
-    const segments: DayTravelSegment[] = [];
-    stops.forEach((stop, i) => {
-      if (!stop.placeId) return;
-      const next = findNextResolvableStop(stops, i, (s) => s.placeId);
-      if (next && stop.placeId !== next.placeId) {
-        const hopKey = stop.nodeKey && next.nodeKey ? segmentKey(stop.nodeKey, next.nodeKey) : null;
-        segments.push({ originId: stop.placeId, destinationId: next.placeId!, segmentKey: hopKey });
-      }
-    });
-    return segments;
-  });
+  return routeStops(visits).flatMap((stops) =>
+    stops.slice(0, -1).flatMap((stop, i): DayTravelSegment[] => {
+      const next = stops[i + 1];
+      if (stop.placeId === next.placeId) return [];
+      const hopKey = stop.nodeKey && next.nodeKey ? segmentKey(stop.nodeKey, next.nodeKey) : null;
+      return [{ originId: stop.placeId, destinationId: next.placeId, segmentKey: hopKey }];
+    }),
+  );
 }
 
 // One node per chronological occurrence of a place that has a real id (never

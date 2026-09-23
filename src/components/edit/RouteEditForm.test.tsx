@@ -46,9 +46,9 @@ function routeWithPlaces(labels: string[]): Route {
         places: labels.map((label) => ({
           kind: 'waypoint' as const,
           place: { id: null, label },
-          durationMinutes: 0,
+          travel: { minutes: 0 },
         })),
-        finalLegMinutes: 0,
+        finalTravel: { minutes: 0 },
       },
     ],
     images: [],

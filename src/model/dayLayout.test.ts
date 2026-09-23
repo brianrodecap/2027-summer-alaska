@@ -181,9 +181,9 @@ describe('layoutDay', () => {
         ],
         "2027-06-02": [
           "stay:s1:Staying@2027-06-02T00:00",
-          "t1:depart@2027-06-02T09:00",
           "activity:f2",
           "activity:f1",
+          "t1:depart@2027-06-02T09:00",
           "t1:arrive@2027-06-02T10:00",
           "activity:a1",
           "activity:a2",
@@ -206,15 +206,22 @@ describe('layoutDay', () => {
           tone: 'scenic',
           label: 'Scenic',
           places: [
-            { kind: 'waypoint', place: { id: 'p_mid', label: 'Mid' }, durationMinutes: 150 },
+            { kind: 'waypoint', place: { id: 'p_mid', label: 'Mid' }, travel: { minutes: 150 } },
           ],
-          finalLegMinutes: 120,
+          finalTravel: { minutes: 120 },
         },
-        { tone: 'direct', label: 'Direct', places: [], finalLegMinutes: 100 },
+        { tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 100 } },
       ],
       images: [],
     });
-    data.transits.push(transit({ departsAt: '2027-06-02T22:00', arrivesAt: null, routeId: 'r1' }));
+    data.transits.push(
+      transit({
+        departsAt: '2027-06-02T22:00',
+        arrivesAt: null,
+        routeId: 'r1',
+        routeVariant: 'scenic',
+      }),
+    );
     data.activities.push(activity('a1', '2027-06-03T09:00'));
     const dates = ['2027-06-02', '2027-06-03'];
     expect(Object.fromEntries(dates.map((d) => [d, rowsOf(data, d)]))).toMatchInlineSnapshot(`
@@ -224,7 +231,7 @@ describe('layoutDay', () => {
         ],
         "2027-06-03": [
           "stage:t1@2027-06-03T00:30",
-          "t1:arrive@2027-06-03T02:30",
+          "t1:arrive@2027-06-03T02:45",
           "activity:a1",
         ],
       }

@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useMemo } from 'react';
 
 import { buildLiveDays, type LiveDayCache, type LiveSelections } from '../model/liveDays';
-import type { Day, TripData, TripView } from '../model/types';
+import type { Day, EnrichedTransit, TripData, TripView } from '../model/types';
 import { LiveDaysContext, type LiveDaysValue } from './LiveDaysContextObject';
 import { useTripData } from './useTripData';
 import {
@@ -22,6 +22,7 @@ const lastLiveDays = new WeakMap<TripView, Map<string, LiveDayCache>>();
 interface BuiltLiveDays {
   days: Day[];
   byDate: Map<string, Day>;
+  transitsById: ReadonlyMap<string, EnrichedTransit>;
   cache: Map<string, LiveDayCache>;
 }
 
@@ -44,15 +45,15 @@ class LazyLiveDays {
   get(): BuiltLiveDays {
     if (this.built) return this.built;
     if (!this.view || !this.data) {
-      this.built = { days: [], byDate: new Map(), cache: new Map() };
+      this.built = { days: [], byDate: new Map(), transitsById: new Map(), cache: new Map() };
     } else {
-      const { days, cache } = buildLiveDays(
+      const { days, transitsById, cache } = buildLiveDays(
         this.view,
         this.data,
         this.selections,
         lastLiveDays.get(this.view),
       );
-      this.built = { days, byDate: new Map(days.map((d) => [d.date, d])), cache };
+      this.built = { days, byDate: new Map(days.map((d) => [d.date, d])), transitsById, cache };
     }
     return this.built;
   }
@@ -85,6 +86,9 @@ export function LiveDaysProvider({ children }: { children: ReactNode }) {
       },
       get byDate() {
         return lazy.get().byDate;
+      },
+      get transitsById() {
+        return lazy.get().transitsById;
       },
     }),
     [lazy],

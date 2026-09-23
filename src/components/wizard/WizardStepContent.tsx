@@ -20,8 +20,6 @@ import {
   DINING_FORMATS_WITH_INCLUDED_IN,
   MEAL_TYPE_VALUES,
   PRIORITY_OPTIONS,
-  routeSelectOptions,
-  routeVariantOptions,
   WIZARD_CATEGORY_META,
 } from '../../model/editForms';
 import { bookingNoun, DINING_FORMAT_LABEL } from '../../model/formatting';
@@ -51,6 +49,7 @@ import { IncludedInField } from '../edit/IncludedInField';
 import { MealOptionList } from '../edit/MealOptionList';
 import { PlaceConditionsTogglesFor } from '../edit/PlaceConditionsToggles';
 import { PlacePickerField } from '../edit/PlacePickerField';
+import { TransitRouteFields } from '../edit/TransitRouteFields';
 import { TravelerCheckboxList } from '../edit/TravelerCheckboxList';
 import { InfoTip } from '../shared/LabelWithTip';
 import { renderMaterialIcon } from '../shared/materialIcon';
@@ -167,39 +166,9 @@ export function TransitRouteStep({
   onChange: (form: TransitFormState) => void;
   routes: Route[];
 }) {
-  const selectedRoute = routes.find((r) => r._id === form.routeId) ?? null;
   return (
     <Stack spacing={2}>
-      <TextField
-        select
-        label="Route"
-        value={form.routeId ?? ''}
-        onChange={(e) => {
-          const routeId = e.target.value || null;
-          const route = routes.find((r) => r._id === routeId) ?? null;
-          onChange({ ...form, routeId, routeVariant: route?.variants[0]?.tone ?? null });
-        }}
-      >
-        {routeSelectOptions(routes).map((o) => (
-          <MenuItem key={o.value} value={o.value}>
-            {o.label}
-          </MenuItem>
-        ))}
-      </TextField>
-      {selectedRoute && (
-        <TextField
-          select
-          label="Route variant"
-          value={form.routeVariant ?? ''}
-          onChange={(e) => onChange({ ...form, routeVariant: e.target.value || null })}
-        >
-          {routeVariantOptions(selectedRoute).map((o) => (
-            <MenuItem key={o.value} value={o.value}>
-              {o.label}
-            </MenuItem>
-          ))}
-        </TextField>
-      )}
+      <TransitRouteFields form={form} onChange={onChange} routes={routes} />
     </Stack>
   );
 }

@@ -28,7 +28,7 @@ import { applyTravelModeSelection, resolveTravelMode } from '../../model/editFor
 import { filterRows } from '../../model/filters';
 import {
   firstImage,
-  formatMinutes,
+  formatTravel,
   placeFromLodging,
   STAGE_KIND_LABEL,
   stayDetailBits,
@@ -610,7 +610,7 @@ function TravelModeSummary({
     <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
       {renderMaterialIcon(TRAVEL_MODE_ICON[mode], { fontSize: 'small' })}
       <Typography variant="caption" color="text.secondary" component="span">
-        {loading ? '…' : info ? `~${formatMinutes(info.minutes)} · ${info.miles} mi` : 'No route'}
+        {loading ? '…' : info ? formatTravel(info) : 'No route'}
       </Typography>
     </Stack>
   );
@@ -1000,14 +1000,15 @@ export const DayTimeline = memo(function DayTimeline({
       }
       if (isBoundaryRow(item)) {
         const dragId = dragIdOf(item, day.date);
+        const boundaryPlace = transitRowPlace(item);
         return [
           {
             key: dragId,
             dragId,
             draggable: item.phase === 'depart',
             droppable: true,
-            entryPlace: item.phase === 'depart' ? item.transit.from : item.transit.to,
-            exitPlace: item.phase === 'depart' ? item.transit.from : item.transit.to,
+            entryPlace: boundaryPlace,
+            exitPlace: boundaryPlace,
             render: ({ isLast, dragHandle, selected, travelFooter }) => (
               <TransitBoundaryNode
                 item={item}
@@ -1170,13 +1171,11 @@ export const DayTimeline = memo(function DayTimeline({
   // a Transit's arrival endpoint, or a park like "Denali National Park" —
   // neither is specific enough to resolve to one Google Place) can't be
   // BOTH ends of a segment, but it also shouldn't dead-end the pairing for
-  // its real, resolvable neighbors on either side. tripModel.ts's own
-  // findNextResolvableStop is the one shared implementation of that
-  // skip-forward-past-unresolvable-rows behavior — also used by
-  // travelSegments (dayMap.ts — the day header's own drive-time/distance
-  // total) and, via mapRouteNodes' own up-front filter, the map panel — so
-  // the timeline's footers land on the same pairs of real places both of
-  // those do.
+  // its real, resolvable neighbors on either side. tripModel.ts's
+  // findNextResolvableStop does that skip-forward, so the footers land on
+  // the same pairs of real places that dayMap.ts's travelSegments (the day
+  // header's drive-time/distance total) and the map panel reach by filtering
+  // their stops down to resolved places up front.
   // Memoized (on allNodes/trailingTravelFooter) so each footer element keeps its
   // identity across unrelated re-renders instead of being recreated every time.
   const travelFooters = useMemo(

@@ -6,6 +6,13 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "4173"],
       "port": 4173
+    },
+    {
+      "name": "alaska-dev",
+      "runtimeExecutable": "bash",
+      "runtimeArgs": ["-lc", "source ~/.nvm/nvm.sh && npm run dev -- --port 5173 --strictPort"],
+      "port": 5173,
+      "url": "http://localhost:5173"
     }
   ]
 }

@@ -4,7 +4,13 @@
 // — logic shared by the meal row and the activity detail panel, so it lives
 // here rather than inside either's own component file.
 import { DINING_FORMAT_LABEL } from './formatting';
-import { activitiesDeep, activityTimeLabel, overlapWarningsFor, stayRelation } from './tripModel';
+import {
+  activitiesDeep,
+  activityTimeLabel,
+  activityTimelineKey,
+  overlapWarningsFor,
+  stayRelation,
+} from './tripModel';
 import type {
   Activity,
   Day,
@@ -33,18 +39,22 @@ function stayForIncludedIn<S extends StayForOption>(stays: S[], includedIn: Ref 
 }
 
 // An 'included' or 'package' candidate only actually reads as covered once its
-// stay is underway — this same day, before check-in has happened, there's no
-// room to have gotten breakfast bundled (or package-covered) into yet. Any
-// other diningFormat has no such precondition. `stays` is whichever Stays
+// stay is underway — before check-in has happened there's no room to have
+// gotten breakfast bundled (or package-covered) into yet. On the check-in day
+// that's decided by the meal's own time (`at`, its timeline instant), not the
+// whole date: a first-night dinner onboard after a 3pm embarkation is covered.
+// Any other diningFormat has no such precondition. `stays` is whichever Stays
 // overlap `date` (a Day's own stays, or the timeline's date-filtered set).
 function isIncludedOptionActive(
   stays: StayForOption[],
   date: string,
+  at: string,
   option: Pick<MealOption, 'diningFormat' | 'includedIn'>,
 ): boolean {
   if (option.diningFormat !== 'included' && option.diningFormat !== 'package') return true;
   const stay = stayForIncludedIn(stays, option.includedIn);
-  return !!stay && stayRelation(stay, date) !== 'Check in';
+  if (!stay) return false;
+  return stayRelation(stay, date) !== 'Check in' || at >= stay.checkInAt;
 }
 
 // activity.options is only ever set while a meal is genuinely undecided
@@ -55,11 +65,9 @@ export function isMealActivity(activity: { options: unknown[] | null }): boolean
   return Boolean(activity.options?.length);
 }
 
-export function activeMealOptions(
-  activity: { options: EnrichedMealOption[] | null },
-  day: Day,
-): EnrichedMealOption[] {
-  return activeMealOptionsOn(activity.options ?? [], day.stays, day.date);
+export function activeMealOptions(activity: EnrichedActivity, day: Day): EnrichedMealOption[] {
+  const at = activityTimelineKey(activity)?.at ?? `${day.date}T00:00`;
+  return activeMealOptionsOn(activity.options ?? [], day.stays, day.date, at);
 }
 
 // The same filter for a caller with no Day — the timeline builder, which only
@@ -68,8 +76,9 @@ export function activeMealOptionsOn<O extends Pick<MealOption, 'diningFormat' | 
   options: O[],
   stays: StayForOption[],
   date: string,
+  at: string,
 ): O[] {
-  return options.filter((option) => isIncludedOptionActive(stays, date, option));
+  return options.filter((option) => isIncludedOptionActive(stays, date, at, option));
 }
 
 export function mealOptionLabel(option: EnrichedMealOption): string {
@@ -79,13 +88,27 @@ export function mealOptionLabel(option: EnrichedMealOption): string {
 // Which of a still-open meal's active candidates is currently selected —
 // shared by every reader that needs the candidate itself rather than just
 // its index (resolveActivityPlace below, ActivityNode's note-menu targeting,
-// liveFormatOverrides' per-activity dining-format lookup).
-export function selectedMealOption(
-  options: EnrichedMealOption[],
-  mealOptionIndex: Map<string, number>,
+// mealFormatOverrides' per-activity dining-format lookup).
+export function selectedMealOption<O>(
+  options: O[],
+  mealOptionIndex: ReadonlyMap<string, number>,
   activityId: string,
-): EnrichedMealOption | undefined {
+): O | undefined {
   return options[selectedMealOptionIndex(options, mealOptionIndex, activityId)];
+}
+
+// The same selection for a caller with no Day (the timeline builder, and
+// resolveActivityPlace below): filter a meal's candidates down to the active
+// ones on `date`/`at`, then take whichever one is currently selected.
+export function selectedMealOptionOn(
+  activity: Pick<Activity, '_id'> & { options: MealOption[] | null },
+  stays: StayForOption[],
+  date: string,
+  at: string,
+  mealOptionIndex: ReadonlyMap<string, number>,
+): MealOption | undefined {
+  const options = activeMealOptionsOn(activity.options ?? [], stays, date, at);
+  return selectedMealOption(options, mealOptionIndex, activity._id);
 }
 
 // The Place a row on the day timeline actually names for travel-distance
@@ -98,11 +121,11 @@ export function resolveActivityPlace(
   activity: Pick<Activity, '_id' | 'place'> & { options: MealOption[] | null },
   stays: StayForOption[],
   date: string,
+  at: string,
   mealOptionIndex: ReadonlyMap<string, number>,
 ): Place | null {
   if (!isMealActivity(activity)) return activity.place;
-  const options = activeMealOptionsOn(activity.options ?? [], stays, date);
-  return options[selectedMealOptionIndex(options, mealOptionIndex, activity._id)]?.place ?? null;
+  return selectedMealOptionOn(activity, stays, date, at, mealOptionIndex)?.place ?? null;
 }
 
 // A still-open meal has no durationMinutes of its own to show an end time
@@ -154,32 +177,33 @@ function dayActivities(day: Day): EnrichedActivity[] {
   return result;
 }
 
-// Every still-open meal in the day, keyed to whichever candidate its own
-// chip row currently has selected — the live counterpart to each Activity's
-// own diningFormat/first-candidate default that overlapWarningsFor falls
-// back to at page load. Every row on the day calls this once per render
-// (via liveOverlapWarnings below), so it's cached per (day, mealOptionIndex)
-// the same way dayActivities is — without it, a day with M activities would
-// redo this whole M-activity scan for each of its M rows.
-const liveFormatOverridesCache = new WeakMap<
-  Day,
-  { mealOptionIndex: Map<string, number>; overrides: Map<string, DiningFormat> }
->();
-
-function liveFormatOverrides(
-  day: Day,
-  mealOptionIndex: Map<string, number>,
+// Every still-open meal's currently selected candidate's diningFormat, keyed
+// by activity id — the one shared answer to "which dining format is live
+// right now". Built once per selection by the timeline builder (so a lunch
+// stop folded into a drive runs as long as the meal actually picked) and
+// handed on to each live Day as day.mealFormats, which the rows' overlap
+// warnings below read — so the two can never disagree about the same meal.
+// An activity with no timeline key of its own isn't on the timeline, so it's
+// skipped.
+export function mealFormatOverrides(
+  activities: Iterable<Activity>,
+  staysOn: (date: string) => StayForOption[],
+  mealOptionIndex: ReadonlyMap<string, number>,
 ): Map<string, DiningFormat> {
-  const cached = liveFormatOverridesCache.get(day);
-  if (cached && cached.mealOptionIndex === mealOptionIndex) return cached.overrides;
   const overrides = new Map<string, DiningFormat>();
-  for (const activity of dayActivities(day)) {
+  for (const activity of activities) {
     if (!isMealActivity(activity)) continue;
-    const options = activeMealOptions(activity, day);
-    const selected = selectedMealOption(options, mealOptionIndex, activity._id);
+    const key = activityTimelineKey(activity);
+    if (!key) continue;
+    const selected = selectedMealOptionOn(
+      activity,
+      staysOn(key.date),
+      key.date,
+      key.at,
+      mealOptionIndex,
+    );
     if (selected) overrides.set(activity._id, selected.diningFormat);
   }
-  liveFormatOverridesCache.set(day, { mealOptionIndex, overrides });
   return overrides;
 }
 
@@ -192,12 +216,6 @@ function liveFormatOverrides(
 export function liveOverlapWarnings(
   activity: EnrichedActivity,
   day: Day,
-  mealOptionIndex: Map<string, number>,
 ): { transitOverlapWarning: string | null; activityOverlapWarning: string | null } {
-  return overlapWarningsFor(
-    activity,
-    dayActivities(day),
-    day.transits,
-    liveFormatOverrides(day, mealOptionIndex),
-  );
+  return overlapWarningsFor(activity, dayActivities(day), day.transits, day.mealFormats);
 }

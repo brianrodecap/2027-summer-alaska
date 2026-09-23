@@ -11,7 +11,7 @@
 // (resolveTransitRoute/stageTimesForVariant) and sort keys (activitySortKey)
 // rather than re-deriving them, so it agrees with buildTripView wherever the
 // two overlap.
-import { resolveActivityPlace } from './mealOptions';
+import { mealFormatOverrides, resolveActivityPlace } from './mealOptions';
 import {
   activityHeadline,
   activityTimelineKey,
@@ -21,7 +21,15 @@ import {
   resolveTransitRoute,
   stayOverlapsDay,
 } from './tripModel';
-import type { Place, RouteStage, Stay, Transit, TripData } from './types';
+import type {
+  DiningFormat,
+  Place,
+  ResolvedRouteInfo,
+  RouteStage,
+  Stay,
+  Transit,
+  TripData,
+} from './types';
 
 export interface TimelineSelections {
   // Already resolved (resolveActiveScenarios): an entity scoped to a scenario
@@ -52,6 +60,13 @@ export interface Timeline {
   // transitId -> arrival for the selected route tone (or the authored
   // arrivesAt for an unrouted Transit that has one).
   arrivalOf: ReadonlyMap<string, string>;
+  // transitId -> the route walk for these selections (selectedTone = the
+  // picked tone, stages timed with the meals actually picked along it).
+  routeInfoOf: ReadonlyMap<string, ResolvedRouteInfo>;
+  // activityId -> the selected candidate's diningFormat, per still-open meal
+  // (mealFormatOverrides) — the same answer the route walk above used, so a
+  // day's overlap warnings can't disagree with the drive's timing.
+  formatOverrides: ReadonlyMap<string, DiningFormat>;
 }
 
 type TimelineData = Pick<TripData, 'stays' | 'transits' | 'activities' | 'routes'>;
@@ -61,13 +76,17 @@ interface Pending {
   headline: string | null; // set for an Activity — its same-instant tie-break key
 }
 
-// Same rule as tripModel's activityTieBreak: only two Activities tied on the
-// exact same instant are reordered (a fuzzy one before a real one; two fuzzy
-// ones alphabetically). Everything else — including two real-startAt
-// Activities, which drag-and-drop deliberately lands on one instant — falls
-// through to the stable sort's insertion order (stays, transits, activities,
-// each in data order).
+// An Activity tied with a Transit's Depart on the exact same instant happens
+// before leaving, so it sorts ahead of the Depart (and isn't folded into the
+// drive — see tripModel's routeWalkCandidates). Otherwise only two
+// Activities tied on the exact same instant are reordered (a fuzzy one before a real one; two fuzzy ones
+// alphabetically). Everything else — including two real-startAt Activities,
+// which drag-and-drop deliberately lands on one instant — falls through to
+// the stable sort's insertion order (stays, transits, activities, each in
+// data order).
 function tieBreak(a: Pending, b: Pending): number {
+  if (a.event.kind === 'activity' && b.event.kind === 'depart') return -1;
+  if (a.event.kind === 'depart' && b.event.kind === 'activity') return 1;
   if (a.headline === null || b.headline === null) return 0;
   if (a.event.fuzzy !== b.event.fuzzy) return a.event.fuzzy ? -1 : 1;
   if (!a.event.fuzzy) return 0;
@@ -82,6 +101,7 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
   const activities = data.activities.filter((a) => inScope(a.scenarioId));
   const pending: Pending[] = [];
   const arrivalOf = new Map<string, string>();
+  const routeInfoOf = new Map<string, ResolvedRouteInfo>();
 
   const push = (
     event: Omit<TimelineEvent, 'date' | 'endAt' | 'fuzzy'> &
@@ -115,6 +135,23 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
     });
   }
 
+  const staysOn = new Map<string, Stay[]>();
+  const staysForDate = (date: string): Stay[] => {
+    let list = staysOn.get(date);
+    if (!list) {
+      const dayStart = `${date}T00:00`;
+      const dayEnd = `${addDaysStr(date, 1)}T00:00`;
+      list = (data.stays as Stay[]).filter((s) => stayOverlapsDay(s, dayStart, dayEnd));
+      staysOn.set(date, list);
+    }
+    return list;
+  };
+
+  // The selected candidate's diningFormat for every still-open meal, so a
+  // lunch stop folded into a drive runs as long as the meal actually picked
+  // (a sit-down lunch vs. a drive-thru), not the first candidate's estimate.
+  const formatOverrides = mealFormatOverrides(activities, staysForDate, mealOptionIndex);
+
   for (const transit of data.transits as Transit[]) {
     if (!inScope(transit.scenarioId)) continue;
     const source = { kind: 'transit' as const, id: transit._id };
@@ -131,7 +168,9 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
     // variant) applies when the reader hasn't picked a tone for this Transit.
     const info = resolveTransitRoute(transit, routesById, activities, {
       routeVariant: routeTones.get(transit._id),
+      formatOverrides,
     });
+    if (info) routeInfoOf.set(transit._id, info);
     const variant = info?.variants.find((v) => v.tone === info.selectedTone);
     const arrivesAt = variant ? variant.arrivesAt : transit.arrivesAt;
     variant?.stages.forEach((stage, i) =>
@@ -157,18 +196,6 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
     }
   }
 
-  const staysOn = new Map<string, Stay[]>();
-  const staysForDate = (date: string): Stay[] => {
-    let list = staysOn.get(date);
-    if (!list) {
-      const dayStart = `${date}T00:00`;
-      const dayEnd = `${addDaysStr(date, 1)}T00:00`;
-      list = (data.stays as Stay[]).filter((s) => stayOverlapsDay(s, dayStart, dayEnd));
-      staysOn.set(date, list);
-    }
-    return list;
-  };
-
   for (const a of activities) {
     const key = activityTimelineKey(a);
     if (!key) continue; // undated: not on the timeline yet
@@ -180,7 +207,7 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
         at,
         endAt: a.startAt && a.durationMinutes ? addMinutesIso(a.startAt, a.durationMinutes) : null,
         source: { kind: 'activity', id: a._id },
-        place: resolveActivityPlace(a, staysForDate(date), date, mealOptionIndex),
+        place: resolveActivityPlace(a, staysForDate(date), date, at, mealOptionIndex),
         scenarioId: a.scenarioId,
         fuzzy: !a.startAt,
       },
@@ -196,5 +223,5 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
       return tieBreak(a, b);
     })
     .map((p) => p.event);
-  return { events, arrivalOf };
+  return { events, arrivalOf, routeInfoOf, formatOverrides };
 }

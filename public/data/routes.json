@@ -14,8 +14,10 @@
         "tone": "direct",
         "label": "Glenn Highway and George Parks Highway",
         "places": [],
-        "finalLegMinutes": 121,
-        "finalLegMiles": 113.6
+        "finalTravel": {
+          "minutes": 121,
+          "miles": 113.6
+        }
       },
       {
         "tone": "scenic",
@@ -34,12 +36,16 @@
                 }
               ]
             },
-            "durationMinutes": 47,
-            "distanceMiles": 42.1
+            "travel": {
+              "minutes": 47,
+              "miles": 42.1
+            }
           }
         ],
-        "finalLegMinutes": 100,
-        "finalLegMiles": 90.5
+        "finalTravel": {
+          "minutes": 100,
+          "miles": 90.5
+        }
       }
     ],
     "images": [
@@ -65,7 +71,9 @@
         "tone": "direct",
         "label": "Richardson Highway and Glenn Highway",
         "places": [],
-        "finalLegMinutes": 345
+        "finalTravel": {
+          "minutes": 345
+        }
       },
       {
         "tone": "scenic",
@@ -77,12 +85,16 @@
               "id": "ChIJe9iB48DiyFYR0c3w5-2X6No",
               "label": "Butte"
             },
-            "durationMinutes": 337,
-            "distanceMiles": 270.6
+            "travel": {
+              "minutes": 337,
+              "miles": 270.6
+            }
           }
         ],
-        "finalLegMinutes": 46,
-        "finalLegMiles": 41.9
+        "finalTravel": {
+          "minutes": 46,
+          "miles": 41.9
+        }
       }
     ],
     "images": [
@@ -114,12 +126,16 @@
               "id": "ChIJd8zQE4t3yFYR6ON3mmwv0mw",
               "label": "Turnagain Pass"
             },
-            "durationMinutes": 65,
-            "distanceMiles": 58.3
+            "travel": {
+              "minutes": 65,
+              "miles": 58.3
+            }
           }
         ],
-        "finalLegMinutes": 73,
-        "finalLegMiles": 68.4
+        "finalTravel": {
+          "minutes": 73,
+          "miles": 68.4
+        }
       }
     ],
     "images": [
@@ -158,8 +174,10 @@
                 }
               ]
             },
-            "durationMinutes": 250,
-            "distanceMiles": 176.9
+            "travel": {
+              "minutes": 250,
+              "miles": 176.9
+            }
           },
           {
             "kind": "waypoint",
@@ -174,12 +192,16 @@
                 }
               ]
             },
-            "durationMinutes": 27,
-            "distanceMiles": 17.4
+            "travel": {
+              "minutes": 27,
+              "miles": 17.4
+            }
           }
         ],
-        "finalLegMinutes": 88,
-        "finalLegMiles": 59.9
+        "finalTravel": {
+          "minutes": 88,
+          "miles": 59.9
+        }
       }
     ],
     "images": [
@@ -232,12 +254,16 @@
                 }
               ]
             },
-            "durationMinutes": 45,
-            "distanceMiles": 40.4
+            "travel": {
+              "minutes": 45,
+              "miles": 40.4
+            }
           }
         ],
-        "finalLegMinutes": 89,
-        "finalLegMiles": 82.9
+        "finalTravel": {
+          "minutes": 89,
+          "miles": 82.9
+        }
       }
     ],
     "images": [
@@ -261,7 +287,9 @@
         "tone": "direct",
         "label": "Richardson Highway",
         "places": [],
-        "finalLegMinutes": 275
+        "finalTravel": {
+          "minutes": 275
+        }
       }
     ],
     "images": [
@@ -300,8 +328,10 @@
                 }
               ]
             },
-            "durationMinutes": 53,
-            "distanceMiles": 50.4
+            "travel": {
+              "minutes": 53,
+              "miles": 50.4
+            }
           },
           {
             "kind": "waypoint",
@@ -316,12 +346,16 @@
                 }
               ]
             },
-            "durationMinutes": 28,
-            "distanceMiles": 28
+            "travel": {
+              "minutes": 28,
+              "miles": 28
+            }
           }
         ],
-        "finalLegMinutes": 77,
-        "finalLegMiles": 75.5
+        "finalTravel": {
+          "minutes": 77,
+          "miles": 75.5
+        }
       }
     ]
   },
@@ -341,18 +375,29 @@
         "label": "Seward Highway and Whittier Access Road",
         "places": [
           {
-            "kind": "via",
+            "kind": "waypoint",
             "place": {
-              "id": "ChIJZyfB370NyFYR9QAqNUYxru4",
-              "label": "Portage Glacier / Whittier junction"
+              "id": "ChIJP-mqa6UMyFYR9H38x2090-k",
+              "label": "Anton Anderson Memorial Tunnel",
+              "images": [
+                {
+                  "uri": "https://places.googleapis.com/v1/places/ChIJP-mqa6UMyFYR9H38x2090-k/photos/AVoNoXRAd3aV8WM6CHCddKd8f17IyftdYish0HGHNsTSi5QiTr85sn-JS8SCg95REMy76C7-XRIh9a6ww4rRwer0Qp8yC4gjCxzY8Lt97FLfc4wai9tnn0XQfsrt2iFU44t9mUnETs8FmfxExbk17TM8tENhVsTt_g6LJ4CZfA3ggAYjFaebwkCoHo-9OqpvXN0CSszvyNMAz6VpMLZSSdShOH3BrTpObkmWzaceThQ0bUS_xcrPFy3L5h2BpldWVniy41F2F5nL8d0f41iQSG2n9H4Y56gbGRbX7vMfNRo7BFU00viN5IijMU57I8G80y-Tl3IP54gv3tHCz5a1Z7Kqgf0zkqBdV-7K5dLQ9q_yWRcLrsIN7mi1ovqAbo1JXYs9S9ScNOi3TNUZzmAf2bYNtNMcS3z9w1c/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+                  "credit": "Jessica DePatie",
+                  "caption": null
+                }
+              ]
             },
-            "note": "Splits off the Seward Highway here onto the Whittier Access Road and through the tunnel",
-            "durationMinutes": 83,
-            "distanceMiles": 61.7
+            "note": null,
+            "travel": {
+              "minutes": 83,
+              "miles": 61.7
+            }
           }
         ],
-        "finalLegMinutes": 28,
-        "finalLegMiles": 10.3
+        "finalTravel": {
+          "minutes": 28,
+          "miles": 10.3
+        }
       }
     ],
     "images": [
@@ -391,8 +436,10 @@
                 }
               ]
             },
-            "durationMinutes": 83,
-            "distanceMiles": 59.9
+            "travel": {
+              "minutes": 83,
+              "miles": 59.9
+            }
           },
           {
             "kind": "waypoint",
@@ -407,12 +454,16 @@
                 }
               ]
             },
-            "durationMinutes": 27,
-            "distanceMiles": 17.4
+            "travel": {
+              "minutes": 27,
+              "miles": 17.4
+            }
           }
         ],
-        "finalLegMinutes": 234,
-        "finalLegMiles": 176.9
+        "finalTravel": {
+          "minutes": 234,
+          "miles": 176.9
+        }
       }
     ],
     "images": []
@@ -438,12 +489,16 @@
               "id": "ChIJR4vyQQVhtlYRFITVHZkXzZQ",
               "label": "Scenic Pullover"
             },
-            "durationMinutes": 202,
-            "distanceMiles": 145.7
+            "travel": {
+              "minutes": 202,
+              "miles": 145.7
+            }
           }
         ],
-        "finalLegMinutes": 38,
-        "finalLegMiles": 34.5
+        "finalTravel": {
+          "minutes": 38,
+          "miles": 34.5
+        }
       }
     ],
     "images": []
@@ -476,8 +531,10 @@
                 }
               ]
             },
-            "durationMinutes": 142,
-            "distanceMiles": 135.9
+            "travel": {
+              "minutes": 142,
+              "miles": 135.9
+            }
           },
           {
             "kind": "waypoint",
@@ -492,12 +549,16 @@
                 }
               ]
             },
-            "durationMinutes": 28,
-            "distanceMiles": 28
+            "travel": {
+              "minutes": 28,
+              "miles": 28
+            }
           }
         ],
-        "finalLegMinutes": 66,
-        "finalLegMiles": 67.7
+        "finalTravel": {
+          "minutes": 66,
+          "miles": 67.7
+        }
       }
     ],
     "images": []
@@ -544,8 +605,10 @@
                 }
               ]
             },
-            "durationMinutes": 28,
-            "distanceMiles": 14.4
+            "travel": {
+              "minutes": 28,
+              "miles": 14.4
+            }
           },
           {
             "kind": "waypoint",
@@ -560,8 +623,10 @@
                 }
               ]
             },
-            "durationMinutes": 34,
-            "distanceMiles": 15.7
+            "travel": {
+              "minutes": 34,
+              "miles": 15.7
+            }
           },
           {
             "kind": "waypoint",
@@ -576,8 +641,10 @@
                 }
               ]
             },
-            "durationMinutes": 38,
-            "distanceMiles": 15.6
+            "travel": {
+              "minutes": 38,
+              "miles": 15.6
+            }
           },
           {
             "kind": "waypoint",
@@ -592,8 +659,10 @@
                 }
               ]
             },
-            "durationMinutes": 20,
-            "distanceMiles": 7.7
+            "travel": {
+              "minutes": 20,
+              "miles": 7.7
+            }
           },
           {
             "kind": "waypoint",
@@ -608,8 +677,10 @@
                 }
               ]
             },
-            "durationMinutes": 22,
-            "distanceMiles": 8.5
+            "travel": {
+              "minutes": 22,
+              "miles": 8.5
+            }
           },
           {
             "kind": "waypoint",
@@ -624,12 +695,16 @@
                 }
               ]
             },
-            "durationMinutes": 11,
-            "distanceMiles": 4
+            "travel": {
+              "minutes": 11,
+              "miles": 4
+            }
           }
         ],
-        "finalLegMinutes": 150,
-        "finalLegMiles": 65.5
+        "finalTravel": {
+          "minutes": 150,
+          "miles": 65.5
+        }
       }
     ],
     "images": []

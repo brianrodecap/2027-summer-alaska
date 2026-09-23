@@ -140,15 +140,15 @@ describe('map stops for a day', () => {
     data.transits.push(
       transit('out', 'Dock', 'Remote', {
         mode: 'flight',
-        from: place(null, 'Test Dock'),
-        to: place(null, 'Remote Lodge'),
+        from: place('p_Test Dock', 'Test Dock'),
+        to: place('p_Remote Lodge', 'Remote Lodge'),
         departsAt: '2027-06-02T08:00',
         arrivesAt: '2027-06-02T08:30',
       }),
       transit('back', 'Remote', 'Dock', {
         mode: 'flight',
-        from: place(null, 'Remote Lodge'),
-        to: place(null, 'Test Dock'),
+        from: place('p_Remote Lodge', 'Remote Lodge'),
+        to: place('p_Test Dock', 'Test Dock'),
         departsAt: '2027-06-02T16:00',
         arrivesAt: '2027-06-02T16:30',
       }),
@@ -174,8 +174,8 @@ describe('map stops for a day', () => {
     data.transits.push(
       transit('fly', 'Origin Airport', 'Destination Airport', {
         mode: 'flight',
-        from: place(null, 'Origin Airport'),
-        to: place(null, 'Destination Airport'),
+        from: place('p_Origin Airport', 'Origin Airport'),
+        to: place('p_Destination Airport', 'Destination Airport'),
         departsAt: '2027-06-03T10:00',
         arrivesAt: '2027-06-03T12:00',
       }),
@@ -191,6 +191,41 @@ describe('map stops for a day', () => {
     expect(embed).toHaveLength(2);
   });
 
+  it('still splits the day at a flight whose own endpoints have no place id, but never maps them', () => {
+    const data = tripData();
+    data.activities.push(
+      activity('before', '2027-06-03T08:00', 'Origin Cafe'),
+      activity('after', '2027-06-03T14:00', 'Destination Diner'),
+    );
+    data.transits.push(
+      transit('fly', 'Origin Airport', 'Destination Airport', {
+        mode: 'flight',
+        from: place(null, 'Origin Airport'),
+        to: place(null, 'Destination Airport'),
+        departsAt: '2027-06-03T10:00',
+        arrivesAt: '2027-06-03T12:00',
+      }),
+    );
+    const { stops, urls } = live(data, '2027-06-03');
+    expect(stops).toEqual([['Origin Cafe'], ['Destination Diner']]);
+    expect(urls).toEqual([]); // one real place per run — nothing to route between
+  });
+
+  it('never sends a place with no id to Google, as an end or a middle stop', () => {
+    const data = tripData();
+    data.activities.push(
+      activity('cafe', '2027-06-03T08:00', 'Cafe'),
+      activity('onboard', '2027-06-03T12:00', null, { place: place(null, 'Main Dining Room') }),
+      activity('museum', '2027-06-03T14:00', 'Museum'),
+      activity('dinner', '2027-06-03T19:00', null, { place: place(null, 'Crown Grill') }),
+    );
+    const { stops, urls } = live(data, '2027-06-03');
+    expect(stops).toEqual([['Cafe', 'Museum']]);
+    expect(param(urls[0], 'origin')).toBe('Cafe');
+    expect(param(urls[0], 'destination')).toBe('Museum');
+    expect(param(urls[0], 'waypoints')).toBeNull();
+  });
+
   it('leaves out a cruise-cabin stay with no fixed place id on a "Staying" night', () => {
     const data = tripData();
     data.stays.push(
@@ -202,6 +237,26 @@ describe('map stops for a day', () => {
     const { stops } = live(data, '2027-06-03');
     expect(stops).toEqual([['Port']]);
     expect(stops.flat()).not.toContain('Test Ship');
+  });
+
+  it('leaves out a cruise-cabin stay with no place id on its check-in and check-out days too', () => {
+    const data = tripData();
+    data.stays.push(
+      stay('ship', 'Ship', '2027-06-01T15:00', '2027-06-05T08:00', {
+        lodging: { place: place(null, 'Test Ship') },
+      }),
+    );
+    data.activities.push(
+      activity('cafe', '2027-06-01T09:00', 'Cafe'),
+      activity('terminal', '2027-06-01T14:00', 'Terminal'),
+      activity('dock', '2027-06-05T08:30', 'Dock'),
+      activity('lunch', '2027-06-05T12:00', 'Diner'),
+    );
+    const embark = live(data, '2027-06-01');
+    expect(embark.stops).toEqual([['Cafe', 'Terminal']]);
+    // The Directions link ends at the terminal, never at the bare "Test Ship" label.
+    expect(param(embark.urls[0], 'destination')).toBe('Terminal');
+    expect(live(data, '2027-06-05').stops).toEqual([['Dock', 'Diner']]);
   });
 
   it('follows the active scenario branch, and a picked alternate', () => {
@@ -275,8 +330,8 @@ describe('a Transit that crosses midnight', () => {
           places:
             options.stage === false
               ? []
-              : [{ kind: 'waypoint', place: place('p_Mid', 'Mid'), durationMinutes: 150 }],
-          finalLegMinutes: options.stage === false ? 210 : 60,
+              : [{ kind: 'waypoint', place: place('p_Mid', 'Mid'), travel: { minutes: 150 } }],
+          finalTravel: { minutes: options.stage === false ? 210 : 60 },
         },
       ],
       images: [],
@@ -286,6 +341,9 @@ describe('a Transit that crosses midnight', () => {
         departsAt: '2027-06-02T22:00',
         arrivesAt: null,
         routeId: 'r1',
+        // Opted in, so these tests see the endpoints cross midnight; the
+        // default (endpoints left out) is covered in its own block below.
+        showEndpointsOnMap: true,
       }),
     );
     if (options.midDrive) data.activities.push(activity('snack', '2027-06-03T01:00', 'Snack'));
@@ -326,8 +384,8 @@ describe('route variants that arrive on different days', () => {
       from: place('p_From', 'From'),
       to: place('p_To', 'To'),
       variants: [
-        { tone: 'direct', label: 'Direct', places: [], finalLegMinutes: 100 },
-        { tone: 'scenic', label: 'Scenic', places: [], finalLegMinutes: 240 },
+        { tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 100 } },
+        { tone: 'scenic', label: 'Scenic', places: [], finalTravel: { minutes: 240 } },
       ],
       images: [],
     });
@@ -336,6 +394,7 @@ describe('route variants that arrive on different days', () => {
         departsAt: '2027-06-02T22:00',
         arrivesAt: null,
         routeId: 'r1',
+        showEndpointsOnMap: true,
       }),
     );
     return data;
@@ -348,6 +407,79 @@ describe('route variants that arrive on different days', () => {
     // Direct never reaches Jun 3, so nothing on that day belongs to it.
     const direct = live(data, '2027-06-03', { routeTones: new Map([['t1', 'direct']]) });
     expect(direct.stops.flat()).toEqual([]);
+  });
+});
+
+describe("a routed drive's own endpoints", () => {
+  // Lodge -> (drive: Anchorage -> Fairbanks, via one waypoint) -> Hotel. The
+  // drive's own from/to are whole cities with real place ids.
+  function routedDay(extra: Partial<Transit> = {}): TripData {
+    const data = tripData();
+    data.stays.push(
+      stay('s_out', 'Lodge', '2027-05-30T15:00', '2027-06-02T08:00'),
+      stay('s_in', 'Hotel', '2027-06-02T17:00', '2027-06-04T11:00'),
+    );
+    data.routes.push({
+      _id: 'r1',
+      from: place('p_Anchorage', 'Anchorage'),
+      to: place('p_Fairbanks', 'Fairbanks'),
+      variants: [
+        {
+          tone: 'direct',
+          label: 'Direct',
+          places: [{ kind: 'waypoint', place: place('p_View', 'View'), travel: { minutes: 120 } }],
+          finalTravel: { minutes: 120 },
+        },
+      ],
+      images: [],
+    });
+    data.transits.push(
+      transit('t1', 'Anchorage', 'Fairbanks', {
+        departsAt: '2027-06-02T09:00',
+        arrivesAt: null,
+        routeId: 'r1',
+        ...extra,
+      }),
+    );
+    return data;
+  }
+
+  it('are left out of every map, link, marker and drive-total by default', () => {
+    const { stops, urls, segments, nodes } = live(routedDay(), '2027-06-02');
+    expect(stops).toEqual([['Lodge', 'Hotel']]);
+    expect(urls).toHaveLength(1);
+    expect(param(urls[0], 'origin')).toBe('Lodge');
+    expect(param(urls[0], 'waypoints')).toBe('View');
+    expect(param(urls[0], 'destination')).toBe('Hotel');
+    expect(segments.map((s) => `${s.originId}->${s.destinationId}`)).toEqual([
+      'p_Lodge->p_View',
+      'p_View->p_Hotel',
+    ]);
+    expect(nodes.map((n) => n.split(':').slice(0, 2).join(':'))).toEqual([
+      'stay:p_Lodge',
+      'transit-stage:p_View',
+      'stay:p_Hotel',
+    ]);
+  });
+
+  it('are included when the Transit opts in', () => {
+    const { stops, segments } = live(routedDay({ showEndpointsOnMap: true }), '2027-06-02');
+    expect(stops).toEqual([['Lodge', 'Anchorage', 'Fairbanks', 'Hotel']]);
+    expect(segments.map((s) => `${s.originId}->${s.destinationId}`)).toEqual([
+      'p_Lodge->p_Anchorage',
+      'p_Anchorage->p_View',
+      'p_View->p_Fairbanks',
+      'p_Fairbanks->p_Hotel',
+    ]);
+  });
+
+  it("never drop an unrouted Transit's endpoints", () => {
+    const data = routedDay();
+    data.transits[0] = transit('t1', 'Anchorage', 'Fairbanks', {
+      departsAt: '2027-06-02T09:00',
+      arrivesAt: '2027-06-02T13:00',
+    });
+    expect(live(data, '2027-06-02').stops).toEqual([['Lodge', 'Anchorage', 'Fairbanks', 'Hotel']]);
   });
 });
 

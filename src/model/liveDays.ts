@@ -14,9 +14,9 @@ import {
   scenarioMembersOn,
   type ScenarioPicks,
 } from './scenarioGroups';
-import { buildTimeline } from './timeline';
+import { buildTimeline, type Timeline } from './timeline';
 import { deriveTitle } from './tripModel';
-import type { Day, DayFrame, TripData, TripView } from './types';
+import type { Day, DayFrame, EnrichedTransit, TripData, TripView } from './types';
 
 export interface LiveSelections {
   scenarioPicks: ScenarioPicks;
@@ -36,6 +36,9 @@ export interface LiveDayCache {
 
 export interface LiveDays {
   days: Day[];
+  // Every Transit as the reader is looking at it (see liveTransits) — the
+  // same objects the rows and day.transits carry.
+  transitsById: ReadonlyMap<string, EnrichedTransit>;
   cache: Map<string, LiveDayCache>;
 }
 
@@ -46,6 +49,31 @@ function groupsSignature(groups: ScenarioGroup[], date: string): string {
       (g) => `${g.key}:${g.activeId}:${g.anchorAtByDate[date]}:${g.membersByDate[date]?.join(',')}`,
     )
     .join(';');
+}
+
+// buildTripView's Transits carry their default route variant, walked with
+// default meal formats. This swaps in the timeline's live walk — routeInfo
+// (selectedTone = the picked tab, stages timed with the meals actually
+// picked) and arrivesAt — so every reader of a Transit (its rows, the header,
+// day.transits' overlap checks, the detail sheet) sees one live answer
+// instead of choosing between a default copy and a live lookup. A Transit
+// the timeline didn't touch (out of scope, nothing to patch) keeps its object.
+function liveTransits(
+  transits: ReadonlyMap<string, EnrichedTransit>,
+  timeline: Timeline,
+): Map<string, EnrichedTransit> {
+  const live = new Map<string, EnrichedTransit>();
+  for (const [id, t] of transits) {
+    const routeInfo = timeline.routeInfoOf.get(id);
+    const arrivesAt = timeline.arrivalOf.get(id);
+    live.set(
+      id,
+      routeInfo || (arrivesAt && arrivesAt !== t.arrivesAt)
+        ? { ...t, routeInfo: routeInfo ?? t.routeInfo, arrivesAt: arrivesAt ?? t.arrivesAt }
+        : t,
+    );
+  }
+  return live;
 }
 
 export function buildLiveDays(
@@ -62,6 +90,7 @@ export function buildLiveDays(
     mealOptionIndex: selections.mealOptionIndex,
   });
 
+  const transitsById = liveTransits(view.transitsById, timeline);
   const index = indexTimeline(timeline);
   const cache = new Map<string, LiveDayCache>();
 
@@ -71,14 +100,21 @@ export function buildLiveDays(
     const tones = events
       .filter((e) => e.source.kind === 'transit')
       .map((e) => `${e.source.id}=${selections.routeTones.get(e.source.id) ?? ''}`);
+    // The dining format each of the day's still-open meals resolved to — a
+    // candidate switch can change it without moving any event's place.
+    const formats = events
+      .filter((e) => e.source.kind === 'activity')
+      .map((e) => `${e.source.id}=${timeline.formatOverrides.get(e.source.id) ?? ''}`);
     // Everything a day's rows and visits are built from: its events (with the
     // place each resolved to — a meal's chosen candidate, a route variant's
     // stage), the route variant picked per Transit, and each scenario group's
-    // active branch, anchor and members. The stays are fixed by the frame.
+    // active branch, anchor and members, and each open meal's dining format.
+    // The stays are fixed by the frame.
     const signature = [
       events.map((e) => `${e.id}@${e.at}@${e.place?.id ?? e.place?.label ?? ''}`).join(','),
       tones.join(','),
       groupsSignature(groups, day.date),
+      formats.join(','),
     ].join('|');
 
     const hit = previous?.get(day.date);
@@ -97,7 +133,7 @@ export function buildLiveDays(
       groups,
       stays: day.stays,
       activities: view.activitiesById,
-      transits: view.transitsById,
+      transits: transitsById,
       notesForScenario: (s) => view.scenarioNotes.get(s._id) ?? [],
       membersOfScenario,
     });
@@ -106,15 +142,20 @@ export function buildLiveDays(
       rows: layout.rows,
       scenarioTracks: layout.scenarioTracks,
       activeScenarioIds: resolved.activeIds,
-      transits: view.transitsById.values(),
+      transits: transitsById.values(),
       arrivalOf: timeline.arrivalOf,
     });
     const base: Day = {
       ...day,
+      // The live Transits, so everything reading day.transits — the rows'
+      // live "during transit" check (liveOverlapWarnings) above all —
+      // rechecks when the route tab or a meal along the drive changes.
+      transits: day.transits.map((t) => transitsById.get(t._id) ?? t),
       ...header,
       rows: layout.rows,
       scenarioTracks: layout.scenarioTracks,
       visits: buildDayVisits({ date: day.date, rows: layout.rows, index }),
+      mealFormats: timeline.formatOverrides,
       title: '', // filled in by pass 2
     };
     return { day, base, signature };
@@ -134,5 +175,5 @@ export function buildLiveDays(
     cache.set(day.date, { staticDay: day, signature, base, live });
     return live;
   });
-  return { days, cache };
+  return { days, transitsById, cache };
 }

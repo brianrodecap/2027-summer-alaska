@@ -84,7 +84,7 @@ export function MealRow({
   inView: boolean;
   buttonRef: (node: HTMLButtonElement | null) => void;
 }) {
-  const { mealOptionIndex, selectMealOption } = useMealOptionSelection();
+  const { selectMealOption } = useMealOptionSelection();
   const { options, index, selected } = useMealSelection(activity, day);
   const {
     above: optionAbove,
@@ -125,7 +125,7 @@ export function MealRow({
               <BookingChip booking={selected.booking} />
             </Box>
           )}
-          <OverlapWarnings activity={liveOverlapWarnings(activity, day, mealOptionIndex)} />
+          <OverlapWarnings activity={liveOverlapWarnings(activity, day)} />
         </Box>
       </ButtonBase>
       {options.length > 1 && (

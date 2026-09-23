@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildTimeline, type TimelineSelections } from './timeline';
-import { activeArrivesAt, buildTripView } from './tripModel';
+import { buildTripView } from './tripModel';
 import type { Activity, Stay, Transit, TripData } from './types';
 
 // Synthetic fixtures only — never the real trip JSON.
@@ -158,8 +158,8 @@ describe('buildTimeline', () => {
 });
 
 describe('buildTimeline — route variants', () => {
-  // Direct arrives 23:40 the same night; Scenic passes a stop, then arrives
-  // 02:00 the next day.
+  // Direct arrives 23:40 the same night; Scenic reaches a waypoint at 00:00,
+  // stops there the default 15 minutes, then arrives 02:15 the next day.
   function routed(): TripData {
     const data = tripData();
     data.routes.push({
@@ -167,14 +167,14 @@ describe('buildTimeline — route variants', () => {
       from: { id: 'p_from', label: 'From' },
       to: { id: 'p_to', label: 'To' },
       variants: [
-        { tone: 'direct', label: 'Direct', places: [], finalLegMinutes: 100 },
+        { tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 100 } },
         {
           tone: 'scenic',
           label: 'Scenic',
           places: [
-            { kind: 'waypoint', place: { id: 'p_mid', label: 'Midway' }, durationMinutes: 120 },
+            { kind: 'waypoint', place: { id: 'p_mid', label: 'Midway' }, travel: { minutes: 120 } },
           ],
-          finalLegMinutes: 120,
+          finalTravel: { minutes: 120 },
         },
       ],
       images: [],
@@ -192,7 +192,7 @@ describe('buildTimeline — route variants', () => {
 
     const scenic = buildTimeline(data, tone('scenic'));
     expect(ids(scenic.events)).toEqual(['depart:t1', 'route-stage:t1:0', 'arrive:t1']);
-    expect(scenic.arrivalOf.get('t1')).toBe('2027-06-03T02:00');
+    expect(scenic.arrivalOf.get('t1')).toBe('2027-06-03T02:15');
     // The Arrive row lands on the NEXT day — decided by its timestamp alone.
     expect(scenic.events.map((e) => e.date)).toEqual(['2027-06-02', '2027-06-03', '2027-06-03']);
     expect(scenic.events[1].place).toEqual(expect.objectContaining({ id: 'p_mid' }));
@@ -205,15 +205,56 @@ describe('buildTimeline — route variants', () => {
     const departDay = view.days.find((d) => d.date === '2027-06-02')!;
     expect(timeline.arrivalOf.get('t1')).toBe(departDay.transits[0].arrivesAt);
   });
+});
 
-  it("reports each route tone's own arrival for the selected variant (activeArrivesAt)", () => {
-    const data = routed();
-    const view = buildTripView(data);
-    const t1 = view.transitsById.get('t1')!;
-    expect(activeArrivesAt(t1, new Map([['t1', 'direct']]))).toBe('2027-06-02T23:40');
-    expect(activeArrivesAt(t1, new Map([['t1', 'scenic']]))).toBe('2027-06-03T02:00');
-    // No pick: the model's own default variant.
-    expect(activeArrivesAt(t1)).toBe(t1.arrivesAt);
+describe('buildTimeline — Activities around a routed drive', () => {
+  // 09:00 depart, 120 min straight to the destination (no stops).
+  function drive(): TripData {
+    const data = tripData();
+    data.routes.push({
+      _id: 'r1',
+      from: { id: 'p_from', label: 'From' },
+      to: { id: 'p_to', label: 'To' },
+      variants: [{ tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 120 } }],
+      images: [],
+    });
+    data.transits.push(transit({ arrivesAt: null, routeId: 'r1' }));
+    return data;
+  }
+
+  it('sorts an Activity tied with the departure ahead of the Depart', () => {
+    const data = drive();
+    data.activities.push(activity('pickup', '2027-06-01T09:00'));
+    expect(ids(buildTimeline(data, none).events)).toEqual([
+      'activity:pickup',
+      'depart:t1',
+      'arrive:t1',
+    ]);
+  });
+
+  it("times a mid-drive meal by the candidate the reader picked, not the first one's", () => {
+    const data = drive();
+    data.activities.push(
+      activity('lunch', '2027-06-01T10:00', {
+        mealType: 'lunch',
+        options: [
+          {
+            _id: 'o_quick',
+            diningFormat: 'grab-and-go',
+            place: null,
+            includedIn: null,
+            booking: null,
+          },
+          { _id: 'o_sit', diningFormat: 'sit-down', place: null, includedIn: null, booking: null },
+        ],
+      }),
+    );
+    const arrival = (index: number) =>
+      buildTimeline(data, { ...none, mealOptionIndex: new Map([['lunch', index]]) }).arrivalOf.get(
+        't1',
+      );
+    expect(arrival(0)).toBe('2027-06-01T11:15'); // + 15 min grab-and-go
+    expect(arrival(1)).toBe('2027-06-01T12:00'); // + 60 min sit-down
   });
 });
 
@@ -268,5 +309,14 @@ describe('buildTimeline — meal places', () => {
     // Index 0 among the ACTIVE candidates is now the cafe, not the lodge.
     const timeline = buildTimeline(data, { ...none, mealOptionIndex: new Map([['m1', 0]]) });
     expect(timeline.events.find((e) => e.kind === 'activity')?.place?.id).toBe('p_cafe');
+  });
+
+  it("keeps an 'included' candidate for a meal after check-in on the check-in day", () => {
+    const data = tripData();
+    data.stays.push(stay({ checkInAt: '2027-06-02T15:00' }));
+    data.activities.push({ ...meal(), startAt: '2027-06-02T20:30', mealType: 'dinner' });
+    expect(buildTimeline(data, none).events.find((e) => e.kind === 'activity')?.place?.id).toBe(
+      'p_lodge',
+    );
   });
 });

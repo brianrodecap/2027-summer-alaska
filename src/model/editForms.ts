@@ -15,6 +15,10 @@ import {
   activityHeadline,
   addDaysStr,
   dateOnly,
+  DEFAULT_ROUTE_TONE,
+  directVariantProblem,
+  hasDirectVariant,
+  isNonNegativeNumber,
   todayDateStr,
   transitRouteLabel,
 } from './tripModel';
@@ -716,6 +720,7 @@ export interface TransitFormState {
   arrivesTime: string | null;
   routeId: string | null;
   routeVariant: string | null;
+  showEndpointsOnMap: boolean;
   booking: BookingFormValue;
 }
 
@@ -729,6 +734,7 @@ export function transitFormFrom(transit: Transit): TransitFormState {
     arrivesTime: transit.arrivesAt ? transit.arrivesAt.slice(11, 16) : null,
     routeId: transit.routeId,
     routeVariant: transit.routeVariant,
+    showEndpointsOnMap: Boolean(transit.showEndpointsOnMap),
     booking: bookingFormValueFrom(transit.booking),
   };
 }
@@ -753,6 +759,10 @@ export function applyTransitForm(transit: Transit, form: TransitFormState): stri
   transit.to = form.to.label.trim() ? form.to : transit.to;
   transit.routeId = form.routeId;
   transit.routeVariant = form.routeId ? form.routeVariant : null;
+  // Only meaningful for a routed drive (transitPhaseOnMap) — dropped
+  // rather than stored false, so the data only ever carries the opt-in.
+  if (form.routeId && form.showEndpointsOnMap) transit.showEndpointsOnMap = true;
+  else delete transit.showEndpointsOnMap;
   transit.booking = readBookingFormValue(form.booking, transit.booking);
   return null;
 }
@@ -856,16 +866,20 @@ export function routeFormFrom(route: Route): Route {
 }
 
 export function blankRoutePlaceEntry(): RoutePlaceEntry {
-  return { kind: 'waypoint', place: { id: null, label: '' }, durationMinutes: 0 };
+  return { kind: 'waypoint', place: { id: null, label: '' }, travel: { minutes: 0 } };
 }
 
-export function blankRouteVariant(): RouteVariant {
-  return { tone: 'direct', label: '', places: [], finalLegMinutes: 0 };
+// A new route's first variant is its direct one; any variant added after
+// that can't be (directVariantProblem allows exactly one), so it starts scenic.
+export function blankRouteVariant(existing: RouteVariant[] = []): RouteVariant {
+  const tone = hasDirectVariant(existing) ? 'scenic' : DEFAULT_ROUTE_TONE;
+  return { tone, label: '', places: [], finalTravel: { minutes: 0 } };
 }
 
 // Mirrors docs/js/edit.js's own applyRouteEdit validation: every place entry
-// needs a real place and a non-negative duration, every variant needs a
-// label and a non-negative final leg, and a route needs at least one
+// needs a real place, a non-negative calculated travel time and (when set) a
+// non-negative stop duration; every variant needs a label and a non-negative
+// final travel time; and a route needs at least one
 // variant — a Transit pointing at this route always needs a real one to
 // select.
 export function applyRouteForm(route: Route, form: Route): string | null {
@@ -873,17 +887,22 @@ export function applyRouteForm(route: Route, form: Route): string | null {
   const toLabel = form.to.label.trim();
   if (!fromLabel || !toLabel) return 'Needs both a From and To label.';
   if (!form.variants.length) return 'Needs at least one variant.';
+  const directProblem = directVariantProblem(form);
+  if (directProblem) return directProblem;
   for (const variant of form.variants) {
     if (!variant.label.trim()) return 'Every variant needs a label.';
     for (const place of variant.places) {
       if (!place.place?.label) return 'Every place entry needs a place name.';
       if (!place.place?.id) return 'Every place entry needs a Google Place ID.';
-      if (!Number.isFinite(place.durationMinutes) || place.durationMinutes < 0) {
-        return 'Every place entry needs a duration of zero or more minutes.';
+      if (!isNonNegativeNumber(place.travel?.minutes)) {
+        return 'Every place entry needs a travel time of zero or more minutes.';
+      }
+      if (place.durationMinutes !== undefined && !isNonNegativeNumber(place.durationMinutes)) {
+        return 'A stop duration must be zero or more minutes.';
       }
     }
-    if (!Number.isFinite(variant.finalLegMinutes) || variant.finalLegMinutes < 0) {
-      return 'Every variant needs a final-leg duration of zero or more minutes.';
+    if (!isNonNegativeNumber(variant.finalTravel?.minutes)) {
+      return 'Every variant needs a final travel time of zero or more minutes.';
     }
   }
   route.from = { ...form.from, label: fromLabel };

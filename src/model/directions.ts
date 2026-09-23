@@ -1,6 +1,6 @@
 // Live drive-time/distance lookups via the Routes API (New) computeRoutes
 // endpoint — used by the route editor's place-entry lookup (to fill
-// durationMinutes/distanceMiles in automatically from two Place IDs instead
+// travel.minutes/travel.miles in automatically from two Place IDs instead
 // of requiring a hand-typed guess) and by the day timeline's own
 // place-to-place travel info (TravelSegmentRow). A separate Google Cloud API
 // from Places (see config/places.ts's own key note): the Routes API has to

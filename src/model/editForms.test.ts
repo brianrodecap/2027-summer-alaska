@@ -1,7 +1,15 @@
 import { describe, expect, it } from 'vitest';
 
-import { applyRouteForm, applyScenarioSave, routeFormFrom } from './editForms';
-import type { Route, Scenario } from './types';
+import {
+  applyRouteForm,
+  applyScenarioSave,
+  applyTransitForm,
+  blankRouteVariant,
+  blankTransit,
+  routeFormFrom,
+  transitFormFrom,
+} from './editForms';
+import type { Route, Scenario, Transit } from './types';
 
 // Synthetic fixture only — never the real public/data/routes.json, which is the
 // site's live, actively-edited reference data rather than a fixed test fixture.
@@ -15,16 +23,19 @@ function syntheticRoute(): Route {
         tone: 'direct',
         label: 'Highway',
         places: [
-          { kind: 'waypoint', place: { id: 'place_w', label: 'Viewpoint' }, durationMinutes: 40 },
-          { kind: 'via', place: { id: 'place_v', label: 'Pass' }, durationMinutes: 15 },
+          {
+            kind: 'waypoint',
+            place: { id: 'place_w', label: 'Viewpoint' },
+            travel: { minutes: 40 },
+          },
         ],
-        finalLegMinutes: 25,
+        finalTravel: { minutes: 25 },
       },
       {
         tone: 'scenic',
         label: 'Back road',
-        places: [],
-        finalLegMinutes: 90,
+        places: [{ kind: 'via', place: { id: 'place_v', label: 'Pass' }, travel: { minutes: 15 } }],
+        finalTravel: { minutes: 90 },
       },
     ],
     images: [],
@@ -64,9 +75,9 @@ describe('Route edit form apply logic', () => {
           tone: 'direct',
           label: 'Direct',
           places: [
-            { kind: 'waypoint', place: { id: null, label: 'Somewhere' }, durationMinutes: 10 },
+            { kind: 'waypoint', place: { id: null, label: 'Somewhere' }, travel: { minutes: 10 } },
           ],
-          finalLegMinutes: 5,
+          finalTravel: { minutes: 5 },
         },
       ],
       images: [],
@@ -75,16 +86,74 @@ describe('Route edit form apply logic', () => {
     expect(message).toMatch(/Google Place ID/);
   });
 
-  it('rejects a negative final-leg duration', () => {
+  it('rejects a negative final travel time', () => {
     const form: Route = {
       _id: 'x',
       from: { id: null, label: 'A' },
       to: { id: null, label: 'B' },
-      variants: [{ tone: 'direct', label: 'Direct', places: [], finalLegMinutes: -1 }],
+      variants: [{ tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: -1 } }],
       images: [],
     };
     const message = applyRouteForm(structuredClone(form), form);
-    expect(message).toMatch(/final-leg duration/);
+    expect(message).toMatch(/final travel time/);
+  });
+
+  it("rejects a negative waypoint stop duration, but accepts one that's left unset", () => {
+    const form = syntheticRoute();
+    expect(applyRouteForm(structuredClone(form), form)).toBeNull();
+    form.variants[0].places[0].durationMinutes = -5;
+    expect(applyRouteForm(structuredClone(form), form)).toMatch(/stop duration/);
+  });
+});
+
+describe('the direct-variant rule in the route form', () => {
+  it('rejects a via on the direct variant, and a second direct variant', () => {
+    const viaOnDirect = syntheticRoute();
+    viaOnDirect.variants[0].places.push({
+      kind: 'via',
+      place: { id: 'place_x', label: 'Cutoff' },
+      travel: { minutes: 5 },
+    });
+    expect(applyRouteForm(structuredClone(viaOnDirect), viaOnDirect)).toMatch(/can't have vias/);
+
+    const twoDirect = syntheticRoute();
+    twoDirect.variants[1].tone = 'direct';
+    expect(applyRouteForm(structuredClone(twoDirect), twoDirect)).toMatch(/exactly one 'direct'/);
+  });
+
+  it('starts a new route on direct and any later variant on scenic', () => {
+    expect(blankRouteVariant().tone).toBe('direct');
+    expect(blankRouteVariant(syntheticRoute().variants).tone).toBe('scenic');
+  });
+});
+
+describe('Transit show-endpoints-on-maps opt-in', () => {
+  const routed = (): Transit => ({
+    ...blankTransit('leg_test', '2027-06-01'),
+    routeId: 'route_test',
+    routeVariant: 'direct',
+  });
+
+  it('stores the opt-in only when set on a routed Transit', () => {
+    const transit = routed();
+    const form = transitFormFrom(transit);
+    expect(form.showEndpointsOnMap).toBe(false);
+    expect(applyTransitForm(transit, { ...form, showEndpointsOnMap: true })).toBeNull();
+    expect(transit.showEndpointsOnMap).toBe(true);
+    expect(applyTransitForm(transit, { ...form, showEndpointsOnMap: false })).toBeNull();
+    expect('showEndpointsOnMap' in transit).toBe(false);
+  });
+
+  it('drops the opt-in once the route is cleared', () => {
+    const transit = { ...routed(), showEndpointsOnMap: true };
+    const form = {
+      ...transitFormFrom(transit),
+      routeId: null,
+      arrivesDate: '2027-06-01',
+      arrivesTime: '12:00',
+    };
+    expect(applyTransitForm(transit, form)).toBeNull();
+    expect('showEndpointsOnMap' in transit).toBe(false);
   });
 });
 
