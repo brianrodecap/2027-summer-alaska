@@ -10,7 +10,8 @@
 // for the cheapest possible daily variable purely to get that field back,
 // through the same request queue/cooldown weather.ts's own Open-Meteo calls
 // share (openMeteoClient.ts).
-import { memoizeAsync, persisted } from './asyncCache';
+import { memoizeAsync } from './asyncCache';
+import { persisted } from './idbCache';
 import { fetchOpenMeteoJson } from './openMeteoClient';
 import { getCoordinates } from './placeCoordinates';
 

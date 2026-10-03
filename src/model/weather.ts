@@ -9,7 +9,8 @@
 // refetched from scratch on every visit, so it's only ever as of whenever
 // the site happens to be opened, never baked in as of whenever this code
 // shipped.
-import { memoizeAsync, persisted } from './asyncCache';
+import { memoizeAsync } from './asyncCache';
+import { persisted } from './idbCache';
 import { parseIsoDateUTC, parseMonthDayUTC } from './isoDate';
 import { fetchOpenMeteoJson } from './openMeteoClient';
 import { type Coordinates, coordKey, getCoordinates } from './placeCoordinates';
@@ -65,7 +66,7 @@ interface PlaceForecast {
 const FORECAST_WINDOW_DAYS = 10;
 // Kept short on purpose: this is an average, not a record, so 5 years is
 // plenty to smooth out a single unusual year while keeping the archive
-// requests (and the localStorage entry they're persisted into) a fraction
+// requests (and the cache entry they're persisted into) a fraction
 // of the size a multi-decade pull would be.
 const CLIMATE_YEARS = 5;
 // How far (in days) either side of the target calendar date each year's
@@ -117,7 +118,7 @@ function fetchOpenMeteoDaily<T extends { time: string[] }>(url: string): Promise
 
 // Keyed on place + date, not just place — unlike coordinates/climate, a
 // forecast is only ever right for the one date it was fetched for. Kept
-// in-memory only (no localStorage): the forecast for a given date changes
+// in-memory only (not persisted): the forecast for a given date changes
 // as the date approaches, so persisting it across visits would risk
 // serving a stale forecast instead of just re-fetching a cheap single day.
 // This still dedupes the repeat calls that happen within one page load —

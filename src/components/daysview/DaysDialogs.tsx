@@ -2,15 +2,15 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 import type { ScenarioGroupProblemView } from '../../model/scenarioGroups';
 import { useTripData } from '../../state/useTripData';
-import { AskAIDialog } from '../day/AskAIDialog';
 import { RoutesDialog } from '../edit/RoutesDialog';
 import { ScenariosDialog } from '../edit/ScenariosDialog';
 import { JumpToDayPicker } from '../pickers/JumpToDayPicker';
 import type { DaysDialogsState } from './useDaysDialogs';
 import { useTripEdits } from './useTripEdits';
 
-// The day list's four dialogs — jump to a day, manage routes, manage scenarios,
-// Ask AI — each rendered only once the data it needs is there.
+// The day list's three dialogs — jump to a day, manage routes, manage scenarios —
+// each rendered only once the data it needs is there. (Ask AI is a panel, not a
+// dialog: see components/assistant.)
 export function DaysDialogs({
   dialogs,
   groupProblems,
@@ -34,7 +34,6 @@ export function DaysDialogs({
           onSelectDay={(selectedDate) => navigate(`/${slug}/days/${selectedDate}`)}
         />
       )}
-      {data && <AskAIDialog open={dialogs.isOpen('askAI')} onClose={dialogs.close} data={data} />}
       {data && (
         <RoutesDialog
           routes={data.routes}

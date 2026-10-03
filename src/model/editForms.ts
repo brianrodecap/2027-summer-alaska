@@ -865,6 +865,12 @@ export function routeFormFrom(route: Route): Route {
   return structuredClone(route);
 }
 
+export function nextRouteId(routes: Route[]): string {
+  let n = routes.length + 1;
+  while (routes.some((r) => r._id === `route_new_${n}`)) n += 1;
+  return `route_new_${n}`;
+}
+
 export function blankRoutePlaceEntry(): RoutePlaceEntry {
   return { kind: 'waypoint', place: { id: null, label: '' }, travel: { minutes: 0 } };
 }

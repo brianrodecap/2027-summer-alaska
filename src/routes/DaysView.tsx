@@ -2,6 +2,9 @@ import Box from '@mui/material/Box';
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
+import { AssistantChatProvider } from '../components/assistant/AssistantChatProvider';
+import { AssistantSheet } from '../components/assistant/AssistantSheet';
+import { useAssistant } from '../components/assistant/useAssistant';
 import { DayMapPanel } from '../components/day/DayMapPanel';
 import { useActiveDayDate } from '../components/day/useActiveDayDate';
 import { AddToDayDialog } from '../components/daysview/AddToDayDialog';
@@ -9,7 +12,7 @@ import { DayList } from '../components/daysview/DayList';
 import { DaysAppBar } from '../components/daysview/DaysAppBar';
 import { DaysDialogs } from '../components/daysview/DaysDialogs';
 import { DetailPanels } from '../components/daysview/DetailPanels';
-import { MapSidebarSlot } from '../components/daysview/MapSidebarSlot';
+import { SidebarSlot } from '../components/daysview/SidebarSlot';
 import { useDayListNavigation } from '../components/daysview/useDayListNavigation';
 import { useDayMapDialog } from '../components/daysview/useDayMapDialog';
 import { useDaysDialogs } from '../components/daysview/useDaysDialogs';
@@ -22,8 +25,8 @@ import { useTripData } from '../state/useTripData';
 import { useFilterSelection } from '../state/useTripSelections';
 
 // The trip's day list: an app bar, one block per day (with drag-and-drop
-// reordering), a persistent map beside it on wide screens, and the sheets and
-// dialogs the rows open. Each of those lives in its own component or hook under
+// reordering), a sidebar beside it on wide screens (the day map or the trip
+// assistant), and the sheets and dialogs the rows open. Each of those lives in its own component or hook under
 // components/daysview; this only wires them to the live days.
 export function DaysView() {
   const { view, data } = useTripData();
@@ -35,6 +38,7 @@ export function DaysView() {
   // route tones, meal choices) — not the statically built view.days.
   const { days: liveDays, byDate: daysByDate } = useLiveDays();
   const mapDialog = useDayMapDialog();
+  const assistant = useAssistant();
   // The day the "Add to this day" wizard is open for.
   const [addWizardDay, setAddWizardDay] = useState<Day | null>(null);
   // Groups of alternatives without exactly one Ideal — surfaced on the
@@ -63,39 +67,50 @@ export function DaysView() {
 
   if (!view) return null;
 
+  // The chat lives in a provider so a streaming reply re-renders only the assistant
+  // panel, not this whole view.
   return (
-    <Box>
-      <Box sx={{ display: 'flex' }}>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <DaysAppBar
-            canJumpToDay={Boolean(view.dateRange)}
-            legSummaries={view.legSummaries}
-            scenarioProblemCount={groupProblems.length}
-            onJumpToDay={() => dialogs.open('datePicker')}
-            onManageRoutes={() => dialogs.open('routes')}
-            onManageScenarios={() => dialogs.open('scenarios')}
-            onAskAI={() => dialogs.open('askAI')}
-          />
-          <DayList
-            days={visibleDays}
+    <AssistantChatProvider>
+      <Box>
+        <Box sx={{ display: 'flex' }}>
+          <Box sx={{ flex: 1, minWidth: 0 }}>
+            <DaysAppBar
+              canJumpToDay={Boolean(view.dateRange)}
+              legSummaries={view.legSummaries}
+              scenarioProblemCount={groupProblems.length}
+              onJumpToDay={() => dialogs.open('datePicker')}
+              onManageRoutes={() => dialogs.open('routes')}
+              onManageScenarios={() => dialogs.open('scenarios')}
+              onAskAI={assistant.open}
+            />
+            <DayList
+              days={visibleDays}
+              onOpenActivity={panels.handleOpenActivity}
+              onOpenStay={panels.stayPanel.onOpen}
+              onOpenTransit={panels.transitPanel.onOpen}
+              onOpenMap={mapDialog.openMap}
+              onAddEvent={setAddWizardDay}
+            />
+          </Box>
+          <SidebarSlot
+            activeDay={activeDay}
+            view={assistant.sidebarView}
+            onViewChange={assistant.setSidebarView}
             onOpenActivity={panels.handleOpenActivity}
             onOpenStay={panels.stayPanel.onOpen}
             onOpenTransit={panels.transitPanel.onOpen}
-            onOpenMap={mapDialog.openMap}
-            onAddEvent={setAddWizardDay}
           />
         </Box>
-        <MapSidebarSlot
-          activeDay={activeDay}
-          onOpenActivity={panels.handleOpenActivity}
-          onOpenStay={panels.stayPanel.onOpen}
-          onOpenTransit={panels.transitPanel.onOpen}
+        <DayMapPanel {...mapDialog.panelProps} />
+        <DetailPanels panels={panels} />
+        <DaysDialogs dialogs={dialogs} groupProblems={groupProblems} />
+        <AddToDayDialog day={addWizardDay} onClose={() => setAddWizardDay(null)} />
+        <AssistantSheet
+          open={assistant.sheetOpen}
+          onClose={assistant.closeSheet}
+          focusDay={activeDay}
         />
       </Box>
-      <DayMapPanel {...mapDialog.panelProps} />
-      <DetailPanels panels={panels} />
-      <DaysDialogs dialogs={dialogs} groupProblems={groupProblems} />
-      <AddToDayDialog day={addWizardDay} onClose={() => setAddWizardDay(null)} />
-    </Box>
+    </AssistantChatProvider>
   );
 }

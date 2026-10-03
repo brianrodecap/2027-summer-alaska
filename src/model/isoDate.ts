@@ -1,5 +1,10 @@
 import { wallClockMs } from './tripModel';
 
+// True for a well-formed 'YYYY-MM-DD' string (shape only — not a calendar check).
+export function isIsoDate(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
 // Parses an ISO 'YYYY-MM-DD' date-only string into a UTC epoch-millisecond
 // timestamp — a thin midnight-time wrapper over tripModel's own
 // timezone-safe wallClockMs, so a viewer's own timezone can't shift which

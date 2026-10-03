@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react';
 
-export type DaysDialog = 'datePicker' | 'routes' | 'scenarios' | 'askAI';
+export type DaysDialog = 'datePicker' | 'routes' | 'scenarios';
 
 // Which of the day list's dialogs is open — one at a time, since each is modal.
 export function useDaysDialogs() {

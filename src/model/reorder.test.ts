@@ -1945,8 +1945,7 @@ describe('applySingleRowDragEnd', () => {
       '2027-07-13::bonus',
       '2027-07-13',
     )!;
-    expect(result.collections).toEqual(['activities']);
-    const byId = (id: string) => result.data.activities.find((a) => a._id === id);
+    const byId = (id: string) => result.activities.find((a) => a._id === id);
     expect(byId('explore')?.startAt).toBe('2027-07-13T10:45'); // unchanged
     expect(byId('explore')?.legId).toBe('legB'); // reassigned to drive's own leg
     expect(byId('explore')?.scenarioId).toBeNull(); // moved out of the scenario
@@ -2012,7 +2011,7 @@ describe('applySingleRowDragEnd', () => {
       '2027-06-27',
       '2027-06-27::scenario_jun27_alt',
     )!;
-    const updated = result.data.activities.find((a) => a._id === 'spinachbread');
+    const updated = result.activities.find((a) => a._id === 'spinachbread');
     expect(updated?.startAt).toBeNull();
     expect(updated?.timeLabel).toBe('Afternoon');
     expect(updated?.date).toBe('2027-06-27');
@@ -2049,7 +2048,7 @@ describe('applySingleRowDragEnd', () => {
   // A scenario-group drag routed through the real dispatcher lands on
   // applyBlockReorder, same as DaysView.tsx's own handleDragEnd used to
   // dispatch by hand on activeMeta.scenarioGroup.
-  it('routes a scenario-group source to applyBlockReorder, touching all three collections', () => {
+  it('routes a scenario-group source to applyBlockReorder, moving its Transit and Activity together', () => {
     const idealTransit = transit({
       _id: 'blockTransit',
       legId: 'legA',
@@ -2112,14 +2111,13 @@ describe('applySingleRowDragEnd', () => {
     };
 
     const result = applySingleRowDragEnd(data, scenarioEntry, anchorEntry, 'day1', 'day1')!;
-    expect(result.collections).toEqual(['activities', 'transits', 'stays']);
     // legId reassigns to the drop target's (anchorAct's own legId, 'legB'),
     // same as applyBlockReorder's own dedicated tests already cover — this
     // just confirms the dispatcher actually reaches it.
-    expect(result.data.transits.find((t) => t._id === 'blockTransit')?.legId).toBe('legB');
-    expect(result.data.activities.find((a) => a._id === 'idealAct')?.legId).toBe('legB');
+    expect(result.transits.find((t) => t._id === 'blockTransit')?.legId).toBe('legB');
+    expect(result.activities.find((a) => a._id === 'idealAct')?.legId).toBe('legB');
     // scenarioId is untouched by a block move — still 'ideal'.
-    expect(result.data.activities.find((a) => a._id === 'idealAct')?.scenarioId).toBe('ideal');
+    expect(result.activities.find((a) => a._id === 'idealAct')?.scenarioId).toBe('ideal');
   });
 });
 
@@ -2129,7 +2127,7 @@ describe('applyGroupDragEnd', () => {
   // like RowSelection.rows' own values) rather than applyGroupActivityReorder
   // directly, to confirm the dispatcher's own isPureActivitySelection check
   // routes a same-container, all-Activity, single-member-each selection to
-  // it and reports the right dirty collection.
+  // it.
   it('routes a pure-Activity multi-select to applyGroupActivityReorder', () => {
     const overMeta: DragMeta = {
       id: 'activity-anchor',
@@ -2189,12 +2187,11 @@ describe('applyGroupDragEnd', () => {
       'container1',
       selectedRows,
     );
-    expect(result.collections).toEqual(['activities']);
-    const byId = (id: string) => result.data.activities.find((a) => a._id === id);
+    const byId = (id: string) => result.activities.find((a) => a._id === id);
     expect(byId('g1')?.startAt).toBe('2027-06-01T09:00');
     expect(byId('g2')?.startAt).toBe('2027-06-01T09:30');
     expect(byId('bystander')?.startAt).toBe('2027-06-01T09:30');
-    const ids = result.data.activities.map((a) => a._id);
+    const ids = result.activities.map((a) => a._id);
     expect(ids.indexOf('g1')).toBe(ids.indexOf('anchor') + 1);
     expect(ids.indexOf('g2')).toBe(ids.indexOf('g1') + 1);
   });
@@ -2202,7 +2199,7 @@ describe('applyGroupDragEnd', () => {
   // A mixed selection (a Transit row alongside a plain Activity row) fails
   // the pure-Activity check — applyGroupActivityReorder has no concept of a
   // Transit member — and moves instead as one rigid formation via
-  // applyBlockReorder, reporting all three collections dirty. Both rows here
+  // applyBlockReorder. Both rows here
   // are plain (isScenarioGroup: false, hand-picked individually, neither
   // itself a scenario-tabs bundle), and the drop targets a real alternate
   // scenario — the reported bug: dragging a meal/transit multi-select into
@@ -2256,9 +2253,8 @@ describe('applyGroupDragEnd', () => {
     ];
 
     const result = applyGroupDragEnd(data, activeMeta, overMeta, 'c1', 'c1', selectedRows);
-    expect(result.collections).toEqual(['activities', 'transits', 'stays']);
-    const byId = (id: string) => result.data.activities.find((a) => a._id === id);
-    const transitById = result.data.transits.find((t) => t._id === 'transit1');
+    const byId = (id: string) => result.activities.find((a) => a._id === id);
+    const transitById = result.transits.find((t) => t._id === 'transit1');
     // delta = 10:00 - 08:00 = +120 minutes, applied to every member — same
     // shift applyBlockReorder's own dedicated test already covers.
     expect(transitById?.departsAt).toBe('2027-06-01T10:00');
@@ -2331,8 +2327,8 @@ describe('applyGroupDragEnd', () => {
     ];
 
     const result = applyGroupDragEnd(data, activeMeta, overMeta, 'c1', 'c1', selectedRows);
-    const byId = (id: string) => result.data.activities.find((a) => a._id === id);
-    const transitById = result.data.transits.find((t) => t._id === 'transit1');
+    const byId = (id: string) => result.activities.find((a) => a._id === id);
+    const transitById = result.transits.find((t) => t._id === 'transit1');
     expect(transitById?.scenarioId).toBe('ideal'); // scenario-group member — untouched
     expect(byId('groupAct')?.scenarioId).toBe('ideal'); // scenario-group member — untouched
     expect(byId('plainAct')?.scenarioId).toBe('alt'); // plain row — reassigned

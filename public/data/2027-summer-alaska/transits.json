@@ -1,31 +1,5 @@
 [
   {
-    "_id": "transit_talkeetna_denali",
-    "legId": "leg_parks",
-    "journeyId": "journey_jun28_to_fairbanks",
-    "scenarioId": "scenario_jun27_alt",
-    "status": "planning",
-    "mode": "drive",
-    "from": {
-      "label": "Talkeetna Alaskan Lodge"
-    },
-    "to": {
-      "label": "Denali National Park entrance"
-    },
-    "departsAt": "2027-06-28T06:30",
-    "arrivesAt": null,
-    "routeId": "route_new_8",
-    "routeVariant": "direct",
-    "booking": null,
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_Driving_along_George_Parks_Highway_-_NARA_-_7722405.jpg",
-        "credit": "Alaska DOT&PF / Federal Highway Administration, public domain",
-        "caption": "Driving the George Parks Highway toward Denali"
-      }
-    ]
-  },
-  {
     "_id": "transit_denali_fairbanks",
     "legId": "leg_parks",
     "journeyId": "journey_jun28_to_fairbanks",
@@ -38,7 +12,7 @@
     "to": {
       "label": "Fairbanks"
     },
-    "departsAt": "2027-06-28T15:30",
+    "departsAt": "2027-06-28T17:00",
     "arrivesAt": null,
     "routeId": "route_parks_highway",
     "routeVariant": "direct",
@@ -605,7 +579,7 @@
     "journeyId": null,
     "scenarioId": "scenario_jun27_ideal",
     "status": "planning",
-    "mode": "drive",
+    "mode": "bus",
     "from": {
       "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
       "label": "Denali Bus Depot",
@@ -628,7 +602,7 @@
         }
       ]
     },
-    "departsAt": "2027-06-27T09:00",
+    "departsAt": "2027-06-27T07:00",
     "arrivesAt": null,
     "routeId": "route_new_13",
     "routeVariant": "direct",
@@ -747,5 +721,42 @@
     "routeVariant": "direct",
     "booking": null,
     "images": []
+  },
+  {
+    "_id": "eb04b638-d598-4b88-abd8-50d494d1c88a",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": "scenario_jun27_alt",
+    "status": "planning",
+    "mode": "bus",
+    "from": {
+      "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
+      "label": "Denali Bus Depot",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJh0yE6LLYzFYRkQ2PsoJ3EBk/photos/Aa-ngMb5NmdG8hyj6AEfif2Is4b45REoPAw7Ot05hhoZfF1jB8mR7Z_LAtKXCh8WcIxqc-l7nb_4AyoBjWlEPa46jJf6hjpVgSc3Aask58Mvuy6-J-h0LAkerG_IvQbn1ABdK4eqepkgTEoqAlFPrxzXdESnr526KiP8Ax4eI7g9yXi9h2EFI6VJ5i8c3zBAraGWa6xpcOQIl8RRbzSQ_kjPN25Be1XMZOwAr0KSxHG6AuPzfOqvBP-KD5J4Va3LmetwZYJ0lWoWf03KcmQ2WNLspDNFuQlNFZdr_nYeIPzTgH61ECArY60Gd3FBledWJBdgV1wCJSDEXvPbRFIDs7fI-5jxqaGDO7bUMURmMriqQ9QL87q48lfY9-SJiI7Cb3ihi1BnCOdCoR7WRL3-1LOsf8GSBjEK5aB8xBWBq7A9vq_blA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Denali Bus Depot",
+          "caption": null
+        }
+      ]
+    },
+    "to": {
+      "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
+      "label": "Denali Bus Depot",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJh0yE6LLYzFYRkQ2PsoJ3EBk/photos/Aa-ngMb5NmdG8hyj6AEfif2Is4b45REoPAw7Ot05hhoZfF1jB8mR7Z_LAtKXCh8WcIxqc-l7nb_4AyoBjWlEPa46jJf6hjpVgSc3Aask58Mvuy6-J-h0LAkerG_IvQbn1ABdK4eqepkgTEoqAlFPrxzXdESnr526KiP8Ax4eI7g9yXi9h2EFI6VJ5i8c3zBAraGWa6xpcOQIl8RRbzSQ_kjPN25Be1XMZOwAr0KSxHG6AuPzfOqvBP-KD5J4Va3LmetwZYJ0lWoWf03KcmQ2WNLspDNFuQlNFZdr_nYeIPzTgH61ECArY60Gd3FBledWJBdgV1wCJSDEXvPbRFIDs7fI-5jxqaGDO7bUMURmMriqQ9QL87q48lfY9-SJiI7Cb3ihi1BnCOdCoR7WRL3-1LOsf8GSBjEK5aB8xBWBq7A9vq_blA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Denali Bus Depot",
+          "caption": null
+        }
+      ]
+    },
+    "departsAt": "2027-06-28T07:00",
+    "arrivesAt": null,
+    "routeId": "route_new_13",
+    "routeVariant": "direct",
+    "booking": null,
+    "images": [],
+    "showEndpointsOnMap": true
   }
 ]

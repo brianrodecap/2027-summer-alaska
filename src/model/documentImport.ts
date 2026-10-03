@@ -1,9 +1,8 @@
 // AI-assisted document import: reads an uploaded booking document (PDF or photo) via
 // the Anthropic API, called directly from the browser with a user-supplied key (see
 // src/config/aiKey.ts for why this key is never hardcoded like config/places.ts's Google
-// key). Modeled on src/model/places.ts's style — a bare fetch() against the REST API, no
-// SDK dependency.
-import { type AnthropicTool, callAnthropicMessages, findToolUse } from './anthropicClient';
+// key). Goes through anthropicClient.ts's shared SDK wrapper, with structured output.
+import { createMessage, responseText } from './anthropicClient';
 import {
   blankActivity,
   blankPackage,
@@ -12,7 +11,7 @@ import {
   DINING_FORMATS_WITH_INCLUDED_IN,
   type EditKind,
 } from './editForms';
-import { DINING_FORMAT_LABEL } from './formatting';
+import { DINING_FORMAT_LABEL, MEAL_TYPES, NOTE_KINDS } from './formatting';
 import { fetchFirstPlaceImage, isPlacesApiKeyConfigured, searchPlaces } from './places';
 import { dateOnly, wallClockMs } from './tripModel';
 import type {
@@ -72,7 +71,7 @@ export async function fileToBase64(file: File): Promise<string> {
   return comma === -1 ? dataUrl : dataUrl.slice(comma + 1);
 }
 
-// ---------- 2. Forced tool-call extraction ----------
+// ---------- 2. Structured-output extraction ----------
 
 // Flat across all three kinds rather than a nested union — the mapping layer below
 // (draftEntityFromExtraction) picks only the fields relevant to fields.kind. placeLabel
@@ -164,19 +163,21 @@ const NOTE_ARRAY_SCHEMA = (subject: string) => ({
     properties: {
       kind: {
         type: 'string',
-        enum: ['warning', 'info', 'footnote'],
+        enum: NOTE_KINDS,
         description:
           "'warning' for a real financial or logistical risk (nonrefundable, a steep cancellation fee, an access constraint); 'info' for a useful but lower-stakes heads-up (an extra fee due at the property, a reservation requirement, a choice the traveler needs to make); 'footnote' for minor color.",
       },
       text: { type: 'string' },
     },
     required: ['kind', 'text'],
+    additionalProperties: false,
   },
 });
 
-// Shared by both the single-entity tool (below) and the multi-entity one
+// Shared by both the single-entity extraction (below) and the multi-entity one
 // (see extractTripEntitiesFromDocument) — one document-derived entry's shape
-// either way, just extracted one-at-a-time vs. all-at-once.
+// either way, just extracted one-at-a-time vs. all-at-once. Every object sets
+// additionalProperties: false, which structured outputs require.
 export const ENTITY_SCHEMA = {
   type: 'object',
   properties: {
@@ -232,7 +233,7 @@ export const ENTITY_SCHEMA = {
     },
     mealType: {
       type: 'string',
-      enum: ['breakfast', 'lunch', 'dinner', 'snack'],
+      enum: MEAL_TYPES,
       description:
         'Only for an activity that is a meal/dining booking, e.g. a restaurant reservation.',
     },
@@ -254,6 +255,7 @@ export const ENTITY_SCHEMA = {
           currency: { type: 'string', description: "ISO 4217 currency code, e.g. 'USD'." },
         },
         required: ['name', 'amount'],
+        additionalProperties: false,
       },
     },
     noteworthy: NOTE_ARRAY_SCHEMA(
@@ -280,6 +282,7 @@ export const ENTITY_SCHEMA = {
           ),
         },
         required: ['transferPointLabel'],
+        additionalProperties: false,
       },
     },
     includedPerks: {
@@ -290,16 +293,11 @@ export const ENTITY_SCHEMA = {
     },
   },
   required: ['kind'],
-};
-
-const RECORD_ENTITY_TOOL = {
-  name: 'record_entity',
-  description: 'Record the booking/activity details extracted from the uploaded document.',
-  input_schema: ENTITY_SCHEMA,
+  additionalProperties: false,
 };
 
 const EXTRACTION_INSTRUCTIONS =
-  'Extract the booking/itinerary details from this document into the record_entity tool. ' +
+  'Extract the booking/activity details from this document. ' +
   'Use the field names exactly as given and omit any field you cannot determine from the document — do not guess. ' +
   'placeLabel and lodgingName must be plain text only; never invent an id. ' +
   'If this document is a meal/restaurant reservation or dining booking, also set mealType and, if the format is clear, diningFormat. ' +
@@ -308,45 +306,55 @@ const EXTRACTION_INSTRUCTIONS =
   'Also set noteworthy for any real cancellation/refund risk, occupancy limit, access constraint, or reservation requirement the document states. ' +
   'For a stay, also set includedTransfers if the rate includes round-trip shuttle/transfer transportation to a fixed meeting point (a remote lodge with no direct vehicle access is the classic case), and includedPerks for any other named benefit already covered by the rate.';
 
-async function callExtractionTool(
+// Structured outputs (output_config.format) constrain the reply itself to `schema`,
+// so the result is the response's JSON text — no tool call to force or look for.
+async function extractWithSchema(
   file: File,
   apiKey: string,
-  tool: AnthropicTool,
+  schema: Record<string, unknown>,
   instructions: string,
 ): Promise<unknown> {
   const data = await fileToBase64(file);
+  const mediaType = file.type as SupportedType;
   const mediaBlock =
-    file.type === 'application/pdf'
-      ? { type: 'document', source: { type: 'base64', media_type: file.type, data } }
-      : { type: 'image', source: { type: 'base64', media_type: file.type, data } };
+    mediaType === 'application/pdf'
+      ? {
+          type: 'document' as const,
+          source: { type: 'base64' as const, media_type: mediaType, data },
+        }
+      : {
+          type: 'image' as const,
+          source: { type: 'base64' as const, media_type: mediaType, data },
+        };
 
-  const body = await callAnthropicMessages(
+  const message = await createMessage(
     {
-      max_tokens: 4096,
-      thinking: { type: 'disabled' },
-      tools: [tool],
-      tool_choice: { type: 'tool', name: tool.name },
+      max_tokens: 16000,
+      output_config: { effort: 'medium', format: { type: 'json_schema', schema } },
       messages: [{ role: 'user', content: [mediaBlock, { type: 'text', text: instructions }] }],
     },
     apiKey,
-    (message) => new DocumentImportError(message),
+    (msg) => new DocumentImportError(msg),
     'Claude declined to process this document.',
   );
-  const toolUse = findToolUse(body.content, tool.name);
-  if (!toolUse) {
+  if (message.stop_reason === 'max_tokens') {
+    throw new DocumentImportError('That document produced more detail than fits in one reply.');
+  }
+  try {
+    return JSON.parse(responseText(message.content));
+  } catch {
     throw new DocumentImportError('Claude did not return a structured result for this document.');
   }
-  return toolUse.input;
 }
 
 export async function extractEntityFromDocument(
   file: File,
   apiKey: string,
 ): Promise<ExtractedFields> {
-  return (await callExtractionTool(
+  return (await extractWithSchema(
     file,
     apiKey,
-    RECORD_ENTITY_TOOL,
+    ENTITY_SCHEMA,
     EXTRACTION_INSTRUCTIONS,
   )) as ExtractedFields;
 }
@@ -367,35 +375,33 @@ export interface TripExtraction {
   entities: ExtractedFields[];
 }
 
-const RECORD_TRIP_TOOL = {
-  name: 'record_trip_entities',
-  description:
-    'Record every distinct booking/itinerary entry found in this document, plus a short suggested trip name and summary.',
-  input_schema: {
-    type: 'object',
-    properties: {
-      tripName: {
-        type: 'string',
-        description:
-          'A short suggested name for the whole trip, e.g. "Alaska Cruise" or "Tokyo Flights".',
-      },
-      tripSummary: {
-        type: 'string',
-        description:
-          'A one or two sentence suggested summary of the trip, e.g. what it is and its overall span — for display under the trip name.',
-      },
-      entities: {
-        type: 'array',
-        items: ENTITY_SCHEMA,
-        description: 'One entry per distinct booking segment.',
-      },
+// Every distinct booking/itinerary entry found in a document, plus a short
+// suggested trip name and summary.
+const TRIP_SCHEMA = {
+  type: 'object',
+  properties: {
+    tripName: {
+      type: 'string',
+      description:
+        'A short suggested name for the whole trip, e.g. "Alaska Cruise" or "Tokyo Flights".',
     },
-    required: ['entities'],
+    tripSummary: {
+      type: 'string',
+      description:
+        'A one or two sentence suggested summary of the trip, e.g. what it is and its overall span — for display under the trip name.',
+    },
+    entities: {
+      type: 'array',
+      items: ENTITY_SCHEMA,
+      description: 'One entry per distinct booking segment.',
+    },
   },
+  required: ['entities'],
+  additionalProperties: false,
 };
 
 const TRIP_EXTRACTION_INSTRUCTIONS =
-  'Extract every distinct booking/itinerary entry from this document into the record_trip_entities tool, plus a short suggested trip name and a ' +
+  'Extract every distinct booking/itinerary entry from this document, plus a short suggested trip name and a ' +
   'one or two sentence suggested trip summary. ' +
   'A round-trip flight confirmation is two transit entries, one for the outbound flight and one for the return. ' +
   'A cruise confirmation is usually one stay entry for the cabin. ' +
@@ -411,10 +417,10 @@ export async function extractTripEntitiesFromDocument(
   file: File,
   apiKey: string,
 ): Promise<TripExtraction> {
-  const result = (await callExtractionTool(
+  const result = (await extractWithSchema(
     file,
     apiKey,
-    RECORD_TRIP_TOOL,
+    TRIP_SCHEMA,
     TRIP_EXTRACTION_INSTRUCTIONS,
   )) as TripExtraction;
   if (!result.entities?.length) {

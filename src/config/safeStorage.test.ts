@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { safeGetItem, safeSetItem } from './safeStorage';
+import { readJson, safeGetItem, safeRemoveItem, safeSetItem } from './safeStorage';
 
 describe('safeStorage', () => {
   afterEach(() => {
@@ -12,19 +12,39 @@ describe('safeStorage', () => {
     expect(safeGetItem('missing')).toBeNull();
   });
 
-  it('round-trips a stored value', () => {
+  it('round-trips a stored value, and removes it', () => {
     safeSetItem('k', 'v');
     expect(safeGetItem('k')).toBe('v');
+    safeRemoveItem('k');
+    expect(safeGetItem('k')).toBeNull();
   });
 
   it('does not throw when localStorage is unavailable', () => {
-    vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
-      throw new Error('blocked');
-    });
-    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
-      throw new Error('blocked');
-    });
+    for (const method of ['getItem', 'setItem', 'removeItem'] as const) {
+      vi.spyOn(Storage.prototype, method).mockImplementation(() => {
+        throw new Error('blocked');
+      });
+    }
     expect(safeGetItem('k')).toBeNull();
     expect(() => safeSetItem('k', 'v')).not.toThrow();
+    expect(() => safeRemoveItem('k')).not.toThrow();
+  });
+});
+
+describe('readJson', () => {
+  afterEach(() => localStorage.clear());
+  const isNumbers = (v: unknown): v is number[] => Array.isArray(v);
+
+  it('returns the stored value when it passes the guard', () => {
+    localStorage.setItem('k', '[1,2]');
+    expect(readJson('k', isNumbers, null)).toEqual([1, 2]);
+  });
+
+  it('falls back when missing, corrupt, or the wrong shape', () => {
+    expect(readJson('missing', isNumbers, null)).toBeNull();
+    localStorage.setItem('corrupt', '{not json');
+    expect(readJson('corrupt', isNumbers, null)).toBeNull();
+    localStorage.setItem('shape', '{"a":1}');
+    expect(readJson('shape', isNumbers, null)).toBeNull();
   });
 });

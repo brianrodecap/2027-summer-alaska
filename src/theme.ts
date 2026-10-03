@@ -199,7 +199,17 @@ function buildTheme(mode: PaletteMode) {
       borderRadius: 12, // --md-sys-shape-corner-medium
     },
     typography: (palette) => ({
-      fontFamily: "'Roboto Serif', serif",
+      fontFamily: "'Lato', sans-serif",
+      // Small, light type for phone screens. MUI scales every variant by fontSize / 14
+      // (body1 is 16px at the default 14), so 12.25 puts body1 at 14px.
+      fontSize: 12.25,
+      // Lato ships 100/300/400/700 only (index.html loads 300/400/700), so every role is
+      // pinned to a loaded weight: h1/h2 don't drop to Hairline, and Medium (h6, buttons,
+      // overlines) goes straight to 700 rather than letting 500 fall back to 400.
+      fontWeightLight: 300,
+      fontWeightRegular: 400,
+      fontWeightMedium: 700,
+      fontWeightBold: 700,
       h4: { color: palette.gold.main },
     }),
     components: {
@@ -208,7 +218,7 @@ function buildTheme(mode: PaletteMode) {
       // resets html/body but never touches form controls, so every
       // ButtonBase-based component (Button, IconButton, a day-list row's own
       // clickable ButtonBase) silently falls back to the browser's default
-      // Arial instead of this theme's Roboto Serif. Invisible where a button
+      // Arial instead of this theme's Lato. Invisible where a button
       // only ever holds Typography children (which set their own explicit
       // font), but it skews the button's own layout metrics — e.g. it was
       // the real reason a day-list row's leading caption sat noticeably

@@ -1,4 +1,4 @@
-import type { CollectionName } from '../state/TripDataContextObject';
+import type { CollectionName } from './changeLog';
 import type { StagedTripEntities } from './documentImport';
 import { loadTripData } from './tripModel';
 import type {

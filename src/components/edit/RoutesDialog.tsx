@@ -11,16 +11,11 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useMemo, useState } from 'react';
 
+import { nextRouteId } from '../../model/editForms';
 import { transitRouteLabel as routeLabel } from '../../model/tripModel';
 import type { Route } from '../../model/types';
 import { WarningBadge } from '../shared/WarningBadge';
 import { RouteEditDialog } from './RouteEditDialog';
-
-function nextRouteId(routes: Route[]): string {
-  let n = routes.length + 1;
-  while (routes.some((r) => r._id === `route_new_${n}`)) n += 1;
-  return `route_new_${n}`;
-}
 
 // A route with variants but no places on any of them is just a bare
 // From->To leg — flagged as likely-unfinished data entry. A route with no

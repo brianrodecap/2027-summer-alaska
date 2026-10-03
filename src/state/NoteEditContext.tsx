@@ -124,32 +124,26 @@ export function NoteEditProvider({ children }: { children: ReactNode }) {
       if (!target) return;
       if (target.mode === 'edit') {
         const id = target.note._id;
-        setData(
-          (prev) => ({
-            ...prev,
-            notes: prev.notes.map((n) => (n._id === id ? { ...n, kind, text } : n)),
-          }),
-          ['notes'],
-        );
+        setData((prev) => ({
+          ...prev,
+          notes: prev.notes.map((n) => (n._id === id ? { ...n, kind, text } : n)),
+        }));
         closeNoteEdit();
         return;
       }
       // A draft reached again via Back that was already saved once updates
       // that same Note in place rather than appending a duplicate.
       const savedId = target.savedId ?? crypto.randomUUID();
-      setData(
-        (prev) => {
-          if (prev.notes.some((n) => n._id === savedId)) {
-            return {
-              ...prev,
-              notes: prev.notes.map((n) => (n._id === savedId ? { ...n, kind, text } : n)),
-            };
-          }
-          const note: Note = { _id: savedId, kind, text, concerns: [target.ref], images: [] };
-          return { ...prev, notes: [...prev.notes, note] };
-        },
-        ['notes'],
-      );
+      setData((prev) => {
+        if (prev.notes.some((n) => n._id === savedId)) {
+          return {
+            ...prev,
+            notes: prev.notes.map((n) => (n._id === savedId ? { ...n, kind, text } : n)),
+          };
+        }
+        const note: Note = { _id: savedId, kind, text, concerns: [target.ref], images: [] };
+        return { ...prev, notes: [...prev.notes, note] };
+      });
       advance({ ref: target.ref, kind, text }, savedId);
     },
     [target, setData, advance, closeNoteEdit],
@@ -189,7 +183,7 @@ export function NoteEditProvider({ children }: { children: ReactNode }) {
   const handleDelete = useCallback(() => {
     if (!target || target.mode !== 'edit') return;
     const id = target.note._id;
-    setData((prev) => ({ ...prev, notes: prev.notes.filter((n) => n._id !== id) }), ['notes']);
+    setData((prev) => ({ ...prev, notes: prev.notes.filter((n) => n._id !== id) }));
     closeNoteEdit();
   }, [target, setData, closeNoteEdit]);
 

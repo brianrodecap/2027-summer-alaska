@@ -197,69 +197,6 @@
     ]
   },
   {
-    "_id": "act_jun27_ideal_1",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_alt",
-    "status": "planning",
-    "startAt": "2027-06-27T08:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Breakfast — choosing where",
-    "place": null,
-    "booking": null,
-    "mealType": "breakfast",
-    "diningFormat": null,
-    "includedIn": null,
-    "options": [
-      {
-        "_id": "act_jun27_ideal_1_opt0",
-        "diningFormat": "included",
-        "place": null,
-        "includedIn": {
-          "entity": "stay",
-          "id": "stay_talkeetna"
-        },
-        "booking": null
-      },
-      {
-        "_id": "act_jun27_ideal_1_opt1",
-        "diningFormat": "sit-down",
-        "place": {
-          "id": "ChIJS63CqrW_zlYRNQYObIK7Szk",
-          "label": "Flying Squirrel Bakery Cafe",
-          "images": [
-            {
-              "uri": "https://le-cdn.website-editor.net/s/8702a098f6b94c62a426a67f31a19d32/dms3rep/multi/opt/175423ce-e09a-4c5a-8fb5-3e34c424807f-1920w.jpg?Expires=1789344480&Signature=cnK-82r-gY5LLL~g~AF6Fb30WFemF7rvgv4eABg-YpjjZ2iaw6qS7wTbTSdjN8Uq0sbFp~6e409-OnqiRLhpLF6lcDImZVojFQWrCmFSG9jgyyUib8fx7TWCaHpAqft8lHHL3aekbjJbzpvwnzi6xJ~puWQ1sneECEG0BperdmuubRixZNJsWuPDGQnMqBB4utpjTfEXSeyP84zkAyfXJ4s3BENeoMU4LMKKcqbO1~tuDmiv4U0djOI64PLsCikc6-E3tBwUAq2AWbW~~60bwMcHMYy40oBsTg2~XOYqADevWWXypoSBefce2z33bXO11y0fqe4-OtYF1iiP1uC4Nw__&Key-Pair-Id=K2NXBXLF010TJW"
-            }
-          ]
-        },
-        "includedIn": null,
-        "booking": null
-      },
-      {
-        "_id": "act_jun27_ideal_1_opt2",
-        "diningFormat": "grab-and-go",
-        "place": {
-          "id": "ChIJI6KxxIyVzlYRGhaQQYdhhss",
-          "label": "Conscious Coffee",
-          "images": [
-            {
-              "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Conscious_Coffee_%2841544107660%29.jpg",
-              "credit": "Photo by C Watts / CC BY 2.0",
-              "caption": "Conscious Coffee, Talkeetna, Alaska"
-            }
-          ]
-        },
-        "includedIn": null,
-        "booking": null
-      }
-    ],
-    "travelers": null,
-    "images": [],
-    "date": null
-  },
-  {
     "_id": "act_jun27_ideal_3",
     "legId": "leg_parks",
     "scenarioId": "scenario_jun27_alt",
@@ -272,7 +209,13 @@
     "place": {
       "id": "ChIJ3yZKTfOVzlYR66TXF7zl7dg",
       "label": "K2 Aviation",
-      "images": []
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJ3yZKTfOVzlYR66TXF7zl7dg/photos/Aa-ngMYBVzfS_CbJpCUThuMNgpCxlDzLCo267s7itxgT0IHY4rkNIpZC-F8enhfWvAAIBn1jmM042aIxl4e9RaL0aFXyDH_FpVBbYfOdxhGM6CUmhdu5sAmOH51A0h6Eo5kQnu5nj8UefbL1oXg9aJ7xgNMoK6tfGAT_uKAQgSP-JN-aoS3yAq1vXVNl7bDBKLLTIH1Kzy_kKwCDzu-3uuDOXVO0XuC9xDRmiz3_iUqVNRPGPr8GDBSku_EcLuhG_NbYfm_3n3Gw9ohIGi11Pwaacm6Iia2P6tbjgbLDKpHl3qO-J-QGjvLJBFDTh9qM0HLqHF-gZdwYrupzMKrv4hStciNyTjaPg-gF3FfGm7_VTMDMRYDbOamLI3BWJQgfEuJWKINqQRQ0D6PwbP3WZ22IzFcnt_ijs3IdJQ5LmaVcJtl_lCY/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "K2 Aviation",
+          "caption": null
+        }
+      ]
     },
     "booking": {
       "status": "planning",
@@ -687,7 +630,7 @@
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
-    "text": "Breakfast — choosing where",
+    "text": "Early breakfast at the cabin before the first bus",
     "place": null,
     "booking": null,
     "mealType": "breakfast",
@@ -695,65 +638,91 @@
     "includedIn": null,
     "options": [
       {
-        "_id": "act_jun28_breakfast_opt0",
-        "diningFormat": "included",
-        "place": null,
-        "includedIn": {
-          "entity": "stay",
-          "id": "stay_talkeetna"
-        },
-        "booking": null
-      },
-      {
-        "_id": "act_jun28_breakfast_opt1",
-        "diningFormat": "grab-and-go",
+        "_id": "fc19f4a4-ec8a-479a-be60-6f6785516800",
+        "diningFormat": "self-catered",
         "place": {
-          "id": "ChIJI6KxxIyVzlYRGhaQQYdhhss",
-          "label": "Conscious Coffee",
-          "images": []
+          "id": null,
+          "label": "Breakfast at the cabin"
         },
         "includedIn": null,
         "booking": null
       },
       {
-        "_id": "act_jun28_breakfast_opt2",
-        "diningFormat": "self-catered",
-        "place": null,
+        "_id": "e497ef94-5fb9-482e-8b64-a3574e385889",
+        "diningFormat": "grab-and-go",
+        "place": {
+          "id": "ChIJ_______vzVYRmrMHqUcWB60",
+          "label": "McKinley Creekside Café & Bakery",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJ_______vzVYRmrMHqUcWB60/photos/Aa-ngMY4r0VdD0Ev1Ib-wfXTJl4k452qiRiHhtm8e1SXsorSUZw2XXLNcGj9aa4RSTD7CowJ-sTIg4d4M2lYv6qXm-tdsYZyztgDVokM8ZgUriciO8Ng_9N0hmlCA0Wq--yukYDYBYvGz4-N8nppIkrMmTrURlKoNoqxwRnI0D-vNcC5Lli57ObzWGpTXZdxVyE4utBoE1LGPHLFj5DRtLdgaJgW5QhdQzJTD5Z1b0mxiTnqOK6R5zPy0kbpDOBYSd5TRwRAwcpTfVt-ThQpG_OrpWS3aNhXGclOfEP14iOhRnQSOuVdf13NVnvZkbAX9vJKoKl7KW6UiErIZPbweAY_PaVIG5x8iTSzEujKzBjszNeN0p2DQtztNamWIRNJrNqIxWZn2LDcyws7-_hrB_m7XPuuyQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "McKinley Creekside Café & Bakery",
+              "caption": null
+            }
+          ]
+        },
         "includedIn": null,
         "booking": null
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jun28_9",
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-06-28T18:30",
+    "startAt": "2027-06-28T20:00",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
-    "text": "Dinner at Lavelle’s Bistro",
-    "place": {
-      "id": "ChIJfZzvXUhFMlERAg8qhKjtnQY",
-      "label": "Lavelle’s Bistro",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Lavelle%27s_Bistro_(25660884382).jpg",
-          "credit": "Photo by neverbutterfly (Flickr) / CC BY 2.0",
-          "caption": "Lavelle's Bistro restaurant in downtown Fairbanks"
-        }
-      ]
-    },
+    "text": "Dinner in Fairbanks after the drive from Denali — choosing where",
+    "place": null,
     "booking": null,
     "mealType": "dinner",
-    "diningFormat": "sit-down",
+    "diningFormat": null,
     "includedIn": null,
-    "options": null,
+    "options": [
+      {
+        "_id": "e9b4eb43-4c00-4c2b-8ce6-dcc4f4cf1415",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJv3H6MxdbMlERx8t1TVLJCdY",
+          "label": "Pike's Landing",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJv3H6MxdbMlERx8t1TVLJCdY/photos/Aa-ngMa5fob60M0FSNKbcnq22wcelaMH1Qt2nAfQwP0vM0k262EILJD3Au4vaYOaYqwfjSChVtCuxKQhyMzPMWmqYjdQ202FB7I-06zoXMrPB0QzoieDdTfOOPXgS0Q95wJ5RvMU_OV59FKuVyEzzrasSuWc_ibttLlAfxRCQiO5LhHD0ovktc1rU7eES76IrqWCoZ-Xla_z6w9sEwV7bqkGXR5P3Ef2wAF35pHbhZrGIzeiQWQFaVZ9m1xZF7s5-Z9voxh5M3QK3C90QwRYapzu_cYDjQEUzbcXOM-XTWPIlSxhR7PstdI4Fo1fXeGA819ZvEjFrISPKicUYh1w_ei39zI2vkNXIFtK8taX1wu1zUJED_tHIj-urGhHyl_IbBfvmtzWng8GlIWBwPecsZ-5HvJsTTPU/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Charles Curley",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      },
+      {
+        "_id": "429fbae8-6a9a-41c3-a612-cde879df898c",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJ85b9MUhFMlERdUKO8oayZ2M",
+          "label": "Big Daddy's BBQ & Banquet Hall",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJ85b9MUhFMlERdUKO8oayZ2M/photos/Aa-ngMaTzlAgeVf5kEdfn-LOL__YbDL61P-nJBslliZmeffsKrBVHRgbKrd-yzfS7vkIYJQA8BKkIkHwTvq8ZL--uVnEpySeRluuoie4-fDVdzfkUv4dhDbMIPmcooednUmpVeIT7WVmtP0qNR3L4WA28s7RS4r_1_hrRBXJbN143xbmXbpqq6h_0oqDFiOdc1l2zWDFSWKRE_FngZheElJSkqRTVxldhL0eYh9JAaaxZZVC_cGP4DA4LYP-M3RziclyRvuNMCTqMFtolt2Ph8sgmJhbZX6ivhPHSeQ1YFQlYeA5kFIGYIUqVuc5JQqXL4JegsVF51sDkq6YIs-3p501OraW4H0QYg92_9uMz5PuGqk2lKUUPPBCdLu8JtJOxW0ibglNOVLJsVKkU47isFKqFGJ5OjxZk2c/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Tim Beaman",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      }
+    ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jun29_breakfast",
@@ -4586,36 +4555,6 @@
     "date": null
   },
   {
-    "_id": "act_lc_d3_redoubt_bears",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_lc_d3_redoubt_ideal",
-    "status": "planning",
-    "startAt": "2027-07-13T09:30",
-    "durationMinutes": 300,
-    "timeLabel": null,
-    "priority": "high",
-    "text": "Coastal brown bear viewing at Redoubt Bay",
-    "place": {
-      "id": "ChIJQxwv6rO2xVYRSJZLdkGOLn4",
-      "label": "Redoubt Bay Lodge",
-      "images": [
-        {
-          "uri": "https://places.googleapis.com/v1/places/ChIJQxwv6rO2xVYRSJZLdkGOLn4/photos/AVoNoXS8jJFEwnL7wVkKc-5BWs7gSlN46BpepBtu0-OOE8R-h8J9uFGYBqA5HzrDvpw9Jv_KepjqC3VayaMV3lu4CLNnNTBoYF4eLRLCxE0-JYSfn1TIy3IilVJkBuSHgwa4flXvm4sBq4fenagyfe5k8shfc4jKpwG_TARSd8ibBmKjfn1PqjA9RL_nO_wAxhK7AOiV0DuCF6rYhqNYbw1xmaWfLIlP1av99dcCI2T8lETYwMHSYRHpVyZZBruzcEDLhsen0a_CCsWv9Cv0HW82oJQZ0xtGCytd6lGWJTEQrduNg21WBDwhsRrM_qON-wsdaJ3Ud0KvzpDrO2HgWt-qa_RaFYMufB_z1QxqJfY3JqPK0DX-IZ7ToGR3GHK7s7MAOr7sTXh21_3rV6ydcCJhoOyyk3aBqca94C5z3RPfEpquw5Hl2XRyV-Qs2ZZ7kUzT/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Marilyn Oswald",
-          "caption": null
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [],
-    "date": null
-  },
-  {
     "_id": "act_lc_d3_redoubt_lunch",
     "legId": "leg_parks",
     "scenarioId": "scenario_lc_d3_redoubt_ideal",
@@ -4741,9 +4680,44 @@
     "place": null,
     "booking": null,
     "mealType": "dinner",
-    "diningFormat": "sit-down",
+    "diningFormat": null,
     "includedIn": null,
-    "options": null,
+    "options": [
+      {
+        "_id": "2f65dd59-36bd-48df-a8bc-7d66dfabf582",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJocFKwymWyFYRFUAUTcZY81s",
+          "label": "Club Paris",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJocFKwymWyFYRFUAUTcZY81s/photos/Aa-ngMZm0xRbwEpuKFtIlHVRWE7tsxudXyCp7pkDmJaBrztvee9MCyo47I_8XLG0n4f9RzkKtXgoqtxhybngug83kzbfiuLbyvhmIZiHiot5X0aBJODmrEU8CL-yjxiJsvpL7XQ3IxH608mztO4-n_iNTW2KtdfQ3xw35d3YBaDuPj3m0cwE9k3NDISxUbOSLs_7j_73KfOEN6cd49tFEh7-2SW-nsj9gEqltwNtUboyveKbbgUuHE-poI0hzi5IIxAH3ecUMKm8z8dp55tfyJMPnozer6g8remXtDs9_0XfGJ1xHgU8qIbI7gOAWXVoZQYLYnN9icMA3KDfQDP4f-QcXkTWnl8qj3i0mUDEkOvTqgRkg2PEVwcFb_lpswlZ4CChNRy5VX_OJRfU30--C1uHHniFhKaTspYuvPUBMJclVoxCHnJDQZc1xZDZ8i9taJzG/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Katy Bloomquist",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      },
+      {
+        "_id": "e713aa1f-4172-4576-8023-08b3628b9826",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJ9fW-Boe9yFYRrCJkSjmpmf0",
+          "label": "The Marx Bros Cafe",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJ9fW-Boe9yFYRrCJkSjmpmf0/photos/Aa-ngMZvDsndBh4DuEGuzPdBZavvblZUqCuQ7FWWUbRF6pD7kxJY7YI7pGTjFiVnq52ZB7_3XUo8f2WXrS4XImzTxB_784ILBOhqLdL-8cR2xugwhCD07CApID3muTbJG5taXvKGuemmzABLrk5DzF8b2UpCo708hwS-VtGDhm8DEEtERBWzeOo_hX8XcDZVBo7tv0J0N072iWxKG2lWsXuMrP3s_9mk47DGHkGoHo_mhXd6JRSF3H2q3qdd8Pl551f-0U-ibtJG6TB_JOIOXRn4bKOKEJg6VEyZeTsIyv0ZKj9tcUmGAr6JH-5ZZ3MOI95GzJTG-HRsKfzKq4yxMFqDxu2ChBYWyVFo_wb-xKEumsd17BlwEbZsA7l9gbKbMhdrJqtiEnskdJKPzr_9UvwKkdQgiJ4/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "The Marx Bros Cafe",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      }
+    ],
     "travelers": null,
     "images": [],
     "date": null
@@ -4761,9 +4735,61 @@
     "place": null,
     "booking": null,
     "mealType": "dinner",
-    "diningFormat": "sit-down",
+    "diningFormat": null,
     "includedIn": null,
-    "options": null,
+    "options": [
+      {
+        "_id": "4d8eec44-cc99-4b50-8415-0c87acfe657d",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJn5_VXoG9yFYR9CeiXUVguBc",
+          "label": "Simon & Seafort's Saloon & Grill",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJn5_VXoG9yFYR9CeiXUVguBc/photos/Aa-ngMba6iX4-u-VxWRpb3NYwSwluI4XXcB7YPFyUxTANSFzL7NlmkCitOsK9CqMwArROlxnh9-SV1SfpcH2yA67I0AP8VvrI1leYilv-EHgAMw1XY-T3bc9vC4e2IUQEUlURz7K9GN0Jjgj4QyeH-EPsWaE2Ey4ctge0WXsSrsPTmJvpNhmSmxkNW1CNL8nS9F1t4ilCcQFBuNdnuJ_HKqNfjamabreIEZ5FD9od1DokKB3ZEHVuaBJAYBYIMMgmZmded16cofuZTTxQWFCFp0zrqc9uMq2M0PTz8dDeI1luf55jxZI25XyHaq8bqF3nXniu-v2SSJhqwCq40S3F8c6o1RcaE6DYPCi99wiS-UEZpoBYsIU24S8k5sAcXJt0KVzWsfKmkc9JAQr1EKdgXHk8NtJCnovutM/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Simon & Seafort's Saloon & Grill",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      },
+      {
+        "_id": "84ba9272-3d97-4e53-ac6a-f3317395027f",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJ7bXHMYe9yFYR4rlzElC4dYY",
+          "label": "Orso",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJ7bXHMYe9yFYR4rlzElC4dYY/photos/Aa-ngMaW4zkyPG33CSr94bfvgwaEMlB2oC1av87Skvick7HkLCPiIJm7TvDRN9eELHfp_fijZG9unVCrEgqff2WXElDt5g-63MvcIEfH5k3miXQmwcHy2iR7zzDlPikkTZfUXz0jZQy5Rk83MCWz9DSSp5DbvydhdfQ24GmHpR7LrMMtylKVnjjwzuVgeCjzq1cgqncNPv8clBRXQgHRt_xHXiC7bZGy7imMkFXWQ-jD9vbjk7_HzYgT5q9Q10ZmMrjJUQ5SAMmDPxoG6dtV7VTZxjJq70YrH9DG-eefeAQcuNY9ZrQDvSm6ZXjf-bphscS-LAePyC1XEr5pcL0PMQMJhIDdRAQ2yHvlWjaZvc0nlSMuZgysavJqBZbBzlJFGd1FjeA4El5lBdIwvGXONVcN8vDiD6_s1akuhVJx9yyG1dmR/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Orso",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      },
+      {
+        "_id": "679aa6a8-2e88-4641-96bc-ca049c1f1eba",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJoUUNNIG9yFYRePdi9vDW4DI",
+          "label": "Crow's Nest",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJoUUNNIG9yFYRePdi9vDW4DI/photos/Aa-ngMZMYj5uk5etKyLnoiSvVDFk4ekh8pPXh2aHPSTSamoybO39eKJoZiUFwNT9xACkvdF7fEd0DhWnskodoqQVgqHAss1Qybw795n750S0iieNGoMSfK7lYoaDti7fhikx4Cuba8KYRdVkS2zzYM0q0duVbonU01dNlOtBKocceaWUKKf9-nc5wKSIC0FvjPFkgFP6TCkT4fpKMpuaAm6l8OzKlZK0Ejh5wXOS17AwWEU-d1j17Ra3gXsk0Bge19D_MmAQE3OmUYWRUS4WFLmYsXpADVSk6C2Cxhp3sf7YFq7jh73eECfccuaSK4CDXdpScYroRRckQH4h6Pukl7uBcS6DFNTSqOiqJS8xLfdrQ31YwBpjpvoFEBL7KxbCSQOp251dZL_w_OtF1PoZZs46KxgGYLgwNz9uVcEWoR4iePAVmg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Texas YD",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      }
+    ],
     "travelers": null,
     "images": [],
     "date": null
@@ -4781,9 +4807,44 @@
     "place": null,
     "booking": null,
     "mealType": "dinner",
-    "diningFormat": "sit-down",
+    "diningFormat": null,
     "includedIn": null,
-    "options": null,
+    "options": [
+      {
+        "_id": "75c3ce02-51bd-43e1-a15b-54ef3e483a8e",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJFRAGpNuXyFYRudEsUXaA4Ys",
+          "label": "Spenard Roadhouse",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJFRAGpNuXyFYRudEsUXaA4Ys/photos/Aa-ngMb5IYMjbwS84g_8ivz-vidNilpW_GtvPzn2Q4MrrwUuQHBxxCNI1zs6KQ6SGlavnqHgAr8vl2ls92p2Jz7IiS22s3HwgJ3DuE91gkOkQsZ-tqnw8wMCFXx-fV_VzRzj9D_4ajAVkt6gM7lvE5Kjsl-xkIvFYSoF1w6bIr6Qcw6B9bdqh_FbXM2cQus01PO_N5NJ9JhJnJhL8ckAn0oyURwW_-9YpO3GQLZQcxpI4be_NZpKZDaIdlOCOXabTe0Jln9NJKh1oFb2J--nQtJttJknIu2NHKowywXPVR2B8ZM6FWIjkpDan27yvzbYbtQeFNcBXZ22kOSihtU_omx02-jnv8Rfnha94w0HkELjAvlVNfatBQ50XMGH3jNZ2ewv8Eyf1hVQN9pMyFW04L-n2uTK5vucGYClxgpaGEslG_vGfUFv/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Spenard Roadhouse",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      },
+      {
+        "_id": "3d9e8d8c-8af8-4a7f-948f-5ae02e91706d",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJ3wBgzrmXyFYRbIyKWCfhB9c",
+          "label": "Moose's Tooth Pub & Pizzeria",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJ3wBgzrmXyFYRbIyKWCfhB9c/photos/Aa-ngMbnp0a84cG99M1jVXkCkwy3sxCwikXqEYF9CxGMxjNP8rrsj2rlqjCNQxH-wVQKIZaUj7bw9jz_IuXrPXElsFZyGCiMntefp1UBHgerkJHAk3VgbtNRZLY7m7Wk_Fwxl19UU288Qx05C-JpdJO4Li6Acjy5sNUyK4Hgnx9zzecVms-Jij30eN4mqBNukwXu8fe2SOukXZPsfrH8nirc9iypUYmm2HDyZSarmUiyKbx6QK2uIS566Tx-Ep9QXhWIPj1s__xuJ0Abq3JMsSm59oZFrTRycqCazOM1rfwiJU-5hAl_9o59IKOco6Zku5--as2nY7yiKZ4y75xm6Wq_JD9-GHu_eOUQW99ZTN1Il86A4AqgH0VYGdqlmSHDdiZtSuH6UB5xCojOyEHZuIt5jAe31MzlIq4/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Gayle V",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      }
+    ],
     "travelers": null,
     "images": [],
     "date": null
@@ -5088,8 +5149,8 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-06-26T22:15",
-    "durationMinutes": 60,
+    "startAt": "2027-06-26T22:30",
+    "durationMinutes": 30,
     "timeLabel": null,
     "date": null,
     "priority": null,
@@ -5124,7 +5185,7 @@
     "legId": "leg_parks",
     "scenarioId": "scenario_jun27_ideal",
     "status": "planning",
-    "startAt": null,
+    "startAt": "2027-06-28T11:00",
     "durationMinutes": null,
     "timeLabel": "Afternoon",
     "priority": "high",
@@ -5180,41 +5241,11 @@
     "date": null
   },
   {
-    "_id": "act_jun28_2",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_ideal",
-    "status": "planning",
-    "startAt": "2027-06-28T08:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": null,
-    "place": {
-      "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
-      "label": "Denali Bus Depot",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_Wilderness_Access_Center.jpg",
-          "credit": "Photo by Pat W. Sanders / CC BY 2.0",
-          "caption": "Denali Wilderness Access Center, Denali National Park"
-        }
-      ]
-    },
-    "booking": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [],
-    "date": null
-  },
-  {
     "_id": "act_jun28_5",
     "legId": "leg_parks",
     "scenarioId": "scenario_jun27_ideal",
     "status": "planning",
-    "startAt": "2027-06-28T13:30",
+    "startAt": "2027-06-28T12:15",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -5425,6 +5456,494 @@
     },
     "mealType": null,
     "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "08581027-5a25-4617-b6df-a015a88442f5",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_lc_d3_redoubt_alt",
+    "status": "planning",
+    "startAt": "2027-07-13T10:00",
+    "durationMinutes": 120,
+    "timeLabel": null,
+    "date": null,
+    "priority": null,
+    "text": "Alaska Aviation Museum on Lake Hood — bush planes, plus floatplane traffic right outside",
+    "place": {
+      "id": "ChIJExnfV029yFYRTYFt5lqdbNI",
+      "label": "Alaska Aviation Museum",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJExnfV029yFYRTYFt5lqdbNI/photos/Aa-ngMasoqkBLMk0ML2l24TQasePHTKrA-5j1ZuoyVpBPEbgTw0zmQ4W6BANwOSCFfhIwWAgnp-MmIArLegcfcKtXUZIOBfKGnqQR3GP-BqH1g9_QZUMoNxPrVqEEuHGSwbKDLZqxxG7mmrCpd-J-M_aJKKS-LdJAFfxXjKPwCF3LeXikrkQVUhQk20GmrZve0eCiQcVSk6KKCITlIxTVk_nXJfT9EnIPXTzKnb3PyjK4H1ZpSS5EjOED79KXJt6Ev8XSbsrvFyBCtkwje4RiIWMAYMeXYIT1xlI5LcF1TCGIf-W9aco0Ds0XCt__IBxlBsv0dBDVxoWH9VO7845Iq-jmCo5-Nu-yc3GRGXQbRl2OfeWyscjKWfykhEA4B0kTSiT1IHIIaHAUPz5KHmXUVgbWvwvipY2Sn4pVeWbet9dSnQ2KA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Alaska Aviation Museum",
+          "caption": null
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "e580522c-eedc-49e1-91f9-e77ccc58a056",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_lc_d3_redoubt_alt",
+    "status": "planning",
+    "startAt": "2027-07-13T12:30",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "date": null,
+    "priority": null,
+    "text": "Lunch at Snow City Cafe downtown",
+    "place": {
+      "id": "ChIJQcnnU4G9yFYRRfrr7uDX1Rs",
+      "label": "Snow City Cafe",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJQcnnU4G9yFYRRfrr7uDX1Rs/photos/Aa-ngMYIAQytBYn7sH_qqWxejEUnt3hq1sC0736YzBmR68jd-XZaxgX02yC7Mt2qR3zK_hEqdXoMKkGD6czjDx9hYTX1L6yhn6IvQJfTlUj0-GodeeElu28PjTYKlr_YdAVNfTKRVKSWnTvozd5-Ox2NQyvXN0rZx16kgAueoMAgYAVjqKmVdWHJo33TJYwI0dpy4ncRpCmFr_9h_nZ2O0R6C7oOaj6b0l6QF6C63bO8197aY0wpw1CuVawn6waTxg6HAjv8qnX1Mper8m7iE6hbfBDA0s9Fi262aE94EVUAQXRWwl6tuEmas6DSwrq1xH6ucen8FzG1erHuJHQeX3kb3BS5TrMAZzkDLtH46y5v_lv93GxABndYlXzcoDyPcTalzyTcAGAO2xYRYLNpRQCeRfdKHB3E/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Snow City Cafe",
+          "caption": null
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": "lunch",
+    "diningFormat": "sit-down",
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "696292e2-dfaf-4804-a7e2-bcca94e5dc9a",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_lc_d3_redoubt_alt",
+    "status": "planning",
+    "startAt": "2027-07-13T13:45",
+    "durationMinutes": 180,
+    "timeLabel": null,
+    "date": null,
+    "priority": null,
+    "text": "Anchorage Museum — Alaska Native art and history, Discovery Center for kids",
+    "place": {
+      "id": "ChIJjUPnbCmWyFYRr_lSUBrKRVc",
+      "label": "Anchorage Museum",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJjUPnbCmWyFYRr_lSUBrKRVc/photos/Aa-ngMb4BAhuVLy3rWtuQ0a0BUzLwCteU3jvaBZWt_hST8hd1MwXouvGDIF9zahtlu-EweKVq9LnCTcO5xG-qRr5xmzwGDqpTzywF6X_rT6MCjXPnu0WeKl6v0aQA5GTGXXiv3UVfAS6rMW9k3m9f20_I-J-tiD5AGItSkZuq7eM3GROTarGkOcgicaEQ3tJcnso5YdZNuoBeXnBnDytYI01lP9PsuUQ9ybTZvWTKZVGRQPoPV9xrVfF4lm_BBd7tzCFc_FI2Vosr2NRwAq1yp7Hr4HeUZMNX1hX_nxKgPSIJLTAWGrMC3np-k6yzUCuR44WnmwfzYTAaElXbcz8-3aQC--ez6tGEQ2cAxWjmapHDvJiOTeQrMUocLlc6gb9hMWIvfJ5xav0Qt68M_EaWSMBmQOVTVwb_zDmQunHDWMu_mwS1w-m/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Julius Choudhury",
+          "caption": null
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "132d7a1c-be05-4dda-8122-9ee68dbc3e85",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_lc_d3_redoubt_alt",
+    "status": "planning",
+    "startAt": "2027-07-13T17:00",
+    "durationMinutes": 60,
+    "timeLabel": null,
+    "date": "2027-07-13",
+    "priority": null,
+    "text": "Watch salmon running and anglers fishing at Ship Creek",
+    "place": {
+      "id": "ChIJrd5ZFSeWyFYRUt2nHaEYzm4",
+      "label": "Ship Creek Overlook Park",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJrd5ZFSeWyFYRUt2nHaEYzm4/photos/Aa-ngMYNLB27bk-D0-kHv_zPcC1_yWv9VkpijQeGqYZ3zttIZHR95uxBGZV5Pwg0fqrtx2jopSaxAm-LcR9phphZwmfO21fi1km9CDmpMrfgJ88vh1PRvliG2BYRmdCQQnbymBgrU4b7WkJg5nCMW0P-4pP23xvIOM1-3m5hEuaMDMZcNbmLT0X0LYoxYl3aJs0D1xtkYtodQeovp7nRDVbEFF7E8rI9Pclz5pkumH1NQZN47gxPzcZ-Oo0Aopw7btaFWWGK63vOwDR0Xv2BgtCaK3y3VLol2ajaaPgSbJpn61E06NFL6lCWDo7agt6nzj_VGeig2P699lzqJLxuKW9Kg_oBlpNMA5hugmST1r3PXSvz7arsLO_ZfnnSxOP8r0ujyHvqZr6w7FyB4h6XCmKqH0qgyTc/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Z H.",
+          "caption": null
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "8bd8ce03-9d23-4bf1-b378-7a0139a08057",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": "2027-07-13T07:00",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "date": null,
+    "priority": null,
+    "text": "Breakfast before heading to Lake Hood",
+    "place": null,
+    "booking": null,
+    "mealType": "breakfast",
+    "diningFormat": null,
+    "includedIn": null,
+    "options": [
+      {
+        "_id": "6cc6b89d-0716-41b9-93bd-8f0f0eabc4d0",
+        "diningFormat": "grab-and-go",
+        "place": {
+          "id": "ChIJfwCs6dSXyFYRS-bVg_88uxw",
+          "label": "Fire Island Rustic Bakeshop",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJfwCs6dSXyFYRS-bVg_88uxw/photos/Aa-ngMYSDJVFMf_FdKlUeYdqSJjmQ316HXRZ8-83K6I9Ppw9Z9-L8ArIOId5sfvOKU9G5LfSewyBVAfcVVGjBIlaKlM-FHLhBBh9JWSVHXFnfOvji_wQjGip6_6TIiOmPOn15xzhcINxtZls99bTAfrKbRTcP3Fi20LOP5vuoGj7JrnQI4kGqwltxPbLpHoKuucHBfExLAPAohCDmvRsS294I8qzAk2AKLIUKRG0sMmjLrYgQIryFv2BMPFJrWk5iHXur4ZT9spfyFxzaz8HuybbvOFwN8XNrRGJebGGiyeWKTbMs2KAzuligAeO34RXgeiTW45aGUu9sDO9VFYOr0quVchikLb4MGmzrS1cU0QQ3vlTLj4rnjSPfdEs9RtIBuMMxE-7qStY1N7lh_dh_j8WvCmwOOQSVyjHrEoFiOqF-aC8/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "John Tan",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      },
+      {
+        "_id": "2b01bafc-2a52-4a8f-b0ba-e23fd705f942",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJi7vxS86XyFYRDY_lYuVnTy4",
+          "label": "Kriner's Diner",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJi7vxS86XyFYRDY_lYuVnTy4/photos/Aa-ngMZhWi3R9u5ZpAS3cJBjTRDl9aDdkjbuuOcTrmGPItrXZ1En1cB9Wkjx4zek_7IMYbuFfoZF0DmtCf6ybtKu1JRWPQ-ruvtZBMmN3ei-4t6X4unUffK_8Kt5tTeIEE_06STV0v_Lps306pUKZWyjcaWNizFHpR-2qmBXoD8RST-mHLMnJvWGFUzz-BOS1WKI_3HETSqb2yhVK_OuV_9qSpwOqc0-xTIegl3Hhvrdzh1PchoFqOLhP9UyJMqtKcEdeNg8pedFqOlxQFozwg0OWiFag9n79cpPVAVlOEtD3_W46s8ytAz5EegzuOCoD8DNTIFSTEUJsaYEowEgYXGrf4x30sKaHd1MRx_Wr-oDP7gptTy59HZFkz7eryiVI-xIgVNHr7i5c0d_jVY8tPDkB2jy7HwBzHs/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Sam Wasson",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      }
+    ],
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "b3aa9f46-0671-4447-8425-d71da3ab57a7",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": "2027-07-11T06:30",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "date": null,
+    "priority": null,
+    "text": "Early breakfast on the way to Lake Hood",
+    "place": null,
+    "booking": null,
+    "mealType": "breakfast",
+    "diningFormat": null,
+    "includedIn": null,
+    "options": [
+      {
+        "_id": "39252111-b0bf-4e31-bea4-2f884a4554df",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJpXZvL-OXyFYR737JPrpzBNs",
+          "label": "Gwennie's Old Alaska Restaurant",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJpXZvL-OXyFYR737JPrpzBNs/photos/Aa-ngMaQFc-L1GuOzwxImyFp7rCoUc1-B48deH2B-G1vEo-QoJ0K9RTBqT-nD2wbE4O38jA-HvcphiLKkj6A2yeqrkSjWPU2NFScjNlW36Gq273Hy_-tpTXM38nVFpRAJbOTYx9Sh_Ve6lvowsuuUpAisa_0es2NZtc-ED53dVsPkmXFPOAyJBom_vQTsyKJHkkeRxMIOyS8-7CQpFcAbF2XPyizI_1ehp1vdz1wf5ZX3OiDWsvZgWhW_odbdbdN1VXOVHfKh7Pp5p_FQFY4VwMABfIqAbPRrIkHTzXrYoomeWGcq8kd5e6XpsMQqijg2v1yEqwCpdR8NT7V3w_jIYqL2gfKpSx87WpgnH689iAjiY_JxULfGdlteTe1wvgoHvMCVxBhSDD0nuhrYF_W4ylu6BVLM-2R1Fc7S0FYEVPPYc4_IklnrG0cDeUHQVC4nApu/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Molly Hukle",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      },
+      {
+        "_id": "b32849a2-2078-4cc8-818c-fb8bb71e58ad",
+        "diningFormat": "grab-and-go",
+        "place": {
+          "id": "ChIJscKQVtmXyFYRPGdminCpVMk",
+          "label": "Kaladi Brothers Coffee (Northern Lights)",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJscKQVtmXyFYRPGdminCpVMk/photos/Aa-ngMZJAipwUHcX2Wnxh2JvfpHMY6aBoudhFT8YD_rhXZ6P2ztCGl6wZTQwy3-_YlyJL75PVhYs8i1qj4zNw0vT4a0EUlOb77tQ3I4TMRJ0zWPpw_qnFcIpi1-nP2QCXo8Oxu_aRUZ5U1fbN37DZAY_xDYvaT-TQZqziFnX74P1fqmOoQNLBMfBISLLx7DDRLYccRHU1bayTLcgJkjMzt1-3yt4-ZcYNBTnscjqhfnb93Mw7buVfmj4xiFfKVSi9t0NdLoRBPsOGaNF9_z9k93Njy2lzOucd09yhZeb4XBqBrhEg3u-osudpu9N7MBdDIzHyHsRHM9Yjhxzs2BFh9GSkqpFR2RBsYiOtl7KyeZtyoSQoueGW0-RXGoYsZ5_dTO4yS5oe86AIOq2P6PkKuk8xzp3yGGfmaMsZGZDKpxlLSg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Kaladi Brothers Coffee",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      }
+    ],
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "5904062f-24a1-4571-ac8f-2c575cce2dc6",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "status": "planning",
+    "startAt": "2027-07-12T06:30",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "date": null,
+    "priority": null,
+    "text": "Early breakfast before the Lake Clark Air check-in",
+    "place": null,
+    "booking": null,
+    "mealType": "breakfast",
+    "diningFormat": null,
+    "includedIn": null,
+    "options": [
+      {
+        "_id": "bb3bb0be-89cd-483f-83d5-7b25f2078c21",
+        "diningFormat": "grab-and-go",
+        "place": {
+          "id": "ChIJscKQVtmXyFYRPGdminCpVMk",
+          "label": "Kaladi Brothers Coffee (Northern Lights)",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJscKQVtmXyFYRPGdminCpVMk/photos/Aa-ngMZJAipwUHcX2Wnxh2JvfpHMY6aBoudhFT8YD_rhXZ6P2ztCGl6wZTQwy3-_YlyJL75PVhYs8i1qj4zNw0vT4a0EUlOb77tQ3I4TMRJ0zWPpw_qnFcIpi1-nP2QCXo8Oxu_aRUZ5U1fbN37DZAY_xDYvaT-TQZqziFnX74P1fqmOoQNLBMfBISLLx7DDRLYccRHU1bayTLcgJkjMzt1-3yt4-ZcYNBTnscjqhfnb93Mw7buVfmj4xiFfKVSi9t0NdLoRBPsOGaNF9_z9k93Njy2lzOucd09yhZeb4XBqBrhEg3u-osudpu9N7MBdDIzHyHsRHM9Yjhxzs2BFh9GSkqpFR2RBsYiOtl7KyeZtyoSQoueGW0-RXGoYsZ5_dTO4yS5oe86AIOq2P6PkKuk8xzp3yGGfmaMsZGZDKpxlLSg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Kaladi Brothers Coffee",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      },
+      {
+        "_id": "cfdc4661-4740-4ae8-a2b0-b49170773236",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJpXZvL-OXyFYR737JPrpzBNs",
+          "label": "Gwennie's Old Alaska Restaurant",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJpXZvL-OXyFYR737JPrpzBNs/photos/Aa-ngMaQFc-L1GuOzwxImyFp7rCoUc1-B48deH2B-G1vEo-QoJ0K9RTBqT-nD2wbE4O38jA-HvcphiLKkj6A2yeqrkSjWPU2NFScjNlW36Gq273Hy_-tpTXM38nVFpRAJbOTYx9Sh_Ve6lvowsuuUpAisa_0es2NZtc-ED53dVsPkmXFPOAyJBom_vQTsyKJHkkeRxMIOyS8-7CQpFcAbF2XPyizI_1ehp1vdz1wf5ZX3OiDWsvZgWhW_odbdbdN1VXOVHfKh7Pp5p_FQFY4VwMABfIqAbPRrIkHTzXrYoomeWGcq8kd5e6XpsMQqijg2v1yEqwCpdR8NT7V3w_jIYqL2gfKpSx87WpgnH689iAjiY_JxULfGdlteTe1wvgoHvMCVxBhSDD0nuhrYF_W4ylu6BVLM-2R1Fc7S0FYEVPPYc4_IklnrG0cDeUHQVC4nApu/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Molly Hukle",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      }
+    ],
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "a3e8e4d0-f497-4cff-b8ec-2f204d9c2491",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_ideal",
+    "status": "planning",
+    "startAt": "2027-06-27T18:30",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "date": null,
+    "priority": null,
+    "text": "Dinner near the cabins",
+    "place": null,
+    "booking": null,
+    "mealType": "dinner",
+    "diningFormat": null,
+    "includedIn": null,
+    "options": [
+      {
+        "_id": "8e9e9d1d-814f-4955-a1da-8d73f4aa2885",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJ1UmKAKbYzFYRZc2DmiZ5MPk",
+          "label": "Prospector's Pizzeria & Alehouse",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJ1UmKAKbYzFYRZc2DmiZ5MPk/photos/Aa-ngMZLEJCv9xrTAB1UYJ4Cf5PBkQrKiX0wgVjgMzu_qeZjVvRkWu1m4wFor4spALDb_f0m5EUqhUE6vX7jeEj4kavnntDhXpsL_8oH2WFbSsIbiiD-Xz8njD19dVjVnsG1qRLWtbd7Y6Qa5MeVS5S-2P829_a2iyrg_QlIjt8HFwS4B1ezAHDzjLzIqW8QJer5KBhRLy2aqkwrnkkNpZneR0uAngNM7cxKA5rUavxk8PoLxs9PBvk4CQisTkeFCGSOGL9ANVsLL5TPUUmohOTqRyL0ClKk0CEFGa_-ZvfzS9hQ9NcVgQBM1HNHcpGzlr67zg_CrjdwuBgszIyfQklF8aPLTMLnYyo0nbnrpOmlZkm7PbhKPr0hiE5A7XuQf6Ifkz8kPvSmN7ZLdEGuUgMqSZxT2kHr/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Prospector's Pizzeria & Alehouse",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      },
+      {
+        "_id": "57df2489-70ad-486e-ba22-cc7137d0c12a",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJ_______vzVYRmrMHqUcWB60",
+          "label": "McKinley Creekside Café & Bakery",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJ_______vzVYRmrMHqUcWB60/photos/Aa-ngMY4r0VdD0Ev1Ib-wfXTJl4k452qiRiHhtm8e1SXsorSUZw2XXLNcGj9aa4RSTD7CowJ-sTIg4d4M2lYv6qXm-tdsYZyztgDVokM8ZgUriciO8Ng_9N0hmlCA0Wq--yukYDYBYvGz4-N8nppIkrMmTrURlKoNoqxwRnI0D-vNcC5Lli57ObzWGpTXZdxVyE4utBoE1LGPHLFj5DRtLdgaJgW5QhdQzJTD5Z1b0mxiTnqOK6R5zPy0kbpDOBYSd5TRwRAwcpTfVt-ThQpG_OrpWS3aNhXGclOfEP14iOhRnQSOuVdf13NVnvZkbAX9vJKoKl7KW6UiErIZPbweAY_PaVIG5x8iTSzEujKzBjszNeN0p2DQtztNamWIRNJrNqIxWZn2LDcyws7-_hrB_m7XPuuyQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "McKinley Creekside Café & Bakery",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      },
+      {
+        "_id": "570e2fcd-5e8d-42bb-8b95-852b2fc18311",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJl4laD3vfzFYRYfw7b8b0vjA",
+          "label": "The Shack at Denali Park Village",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJl4laD3vfzFYRYfw7b8b0vjA/photos/Aa-ngMYpkkWHqBsVMqgfHqApaeLdMTpxivKo8AR8Kx2-Ox9nBkghJ9vNw6x19brt5a3SWZDUyhGn_crE6kN4RU23LRBeqQT8I6NZwy265t_Vl3TmMccSFxxZ-ENAByxQEYm2pe2xd7mE_NK7FgGYU5WUYCXJQ2G94HbSc8EruFD-Cxrj0Q0T575D2OECGqRLX6k99T98PjJ53ppYB-E5OBs0dg9GVubDzneQND8BB44_f3q1NU4JVAmMq-pEN3jgQ-pIeHZYImx5SsO5KSCShtzi7zX97q-1GuIeJ0cmy_tEdFgljpDnxh9kStV661DIF_2nAgblobZ-1o_mlwCr61yp-GumgjJSASDsaTn8kGg4YO7b2galCw9P7FGplYaO4hGqnaJ0GXKzun1rqJ9eGW8ZPlXOQ7zmugI1Mi3BUrpSB8Osfw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "The Shack at Denali Park Village",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      }
+    ],
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "35e12168-690a-4c0e-ae8f-9ce0f9d5b9a5",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_ideal",
+    "status": "planning",
+    "startAt": "2027-06-28T07:45",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "date": null,
+    "priority": null,
+    "text": "Breakfast near the cabins, then check out and load the car",
+    "place": null,
+    "booking": null,
+    "mealType": "breakfast",
+    "diningFormat": null,
+    "includedIn": null,
+    "options": [
+      {
+        "_id": "0fd8cd89-303c-4d70-a527-6dd5174c4340",
+        "diningFormat": "sit-down",
+        "place": {
+          "id": "ChIJ_______vzVYRmrMHqUcWB60",
+          "label": "McKinley Creekside Café & Bakery",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJ_______vzVYRmrMHqUcWB60/photos/Aa-ngMY4r0VdD0Ev1Ib-wfXTJl4k452qiRiHhtm8e1SXsorSUZw2XXLNcGj9aa4RSTD7CowJ-sTIg4d4M2lYv6qXm-tdsYZyztgDVokM8ZgUriciO8Ng_9N0hmlCA0Wq--yukYDYBYvGz4-N8nppIkrMmTrURlKoNoqxwRnI0D-vNcC5Lli57ObzWGpTXZdxVyE4utBoE1LGPHLFj5DRtLdgaJgW5QhdQzJTD5Z1b0mxiTnqOK6R5zPy0kbpDOBYSd5TRwRAwcpTfVt-ThQpG_OrpWS3aNhXGclOfEP14iOhRnQSOuVdf13NVnvZkbAX9vJKoKl7KW6UiErIZPbweAY_PaVIG5x8iTSzEujKzBjszNeN0p2DQtztNamWIRNJrNqIxWZn2LDcyws7-_hrB_m7XPuuyQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "McKinley Creekside Café & Bakery",
+              "caption": null
+            }
+          ]
+        },
+        "includedIn": null,
+        "booking": null
+      },
+      {
+        "_id": "7eae62c2-3d80-4f07-be99-7a3cb4644c77",
+        "diningFormat": "self-catered",
+        "place": {
+          "id": null,
+          "label": "Breakfast at the cabin"
+        },
+        "includedIn": null,
+        "booking": null
+      }
+    ],
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "ed08c4a4-7f8a-4514-86d7-2fbf2182973e",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_ideal",
+    "status": "planning",
+    "startAt": "2027-06-28T09:20",
+    "durationMinutes": 40,
+    "timeLabel": null,
+    "date": null,
+    "priority": null,
+    "text": "Free kennel shuttle from the Denali Visitor Center (arrive ~9:00, park here for the day)",
+    "place": {
+      "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
+      "label": "Denali Visitor Center",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJlwIYyVPfzFYR5iw_rFsr6xc/photos/Aa-ngMaGyrtduHc-HHKtY6RLPE1ngnl6thEodPU6nnZMHzXtcVfbNGWtU5ktEpl9vGRm4_XeYpYkAevC1Z6QgvMcHH-WkvRwL1YOd51hx0CCszgUEjJEQ96G3h_V5VJ_zt7gbU99ns7WzDKNBBupNUPvatnrsWDO5f3DeFMzBe_csyZHemZ0_PjCfZvYYPXsk6N1i6oaaYxzRCfgeMiCalEPdGmuVDT977v9HYFpH06oYRvkanxRhNqUziyDYAFvXwwqVbVu0D7asX6ZJG0heUByClcRz8jrIGsyWfbnfN7oiFfeyI4RAdCDTBijas2DGaBvHuqvmBJPhhVguVMjwWgj-xEvYKIF3ORBNy-fr7UXPATjq39eUPWQhL-i1CDa70UpJEnbD9F73qTirXtq9630jlwhhDoSlOGKUWTVAJ02Y7tXvQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "sindhu k",
+          "caption": null
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "2684638d-ea1a-4fb6-a471-70480c4fa75c",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_ideal",
+    "status": "planning",
+    "startAt": "2027-06-28T13:15",
+    "durationMinutes": 120,
+    "timeLabel": null,
+    "date": null,
+    "priority": null,
+    "text": "Horseshoe Lake Trail — easy ~3-mile loop to an oxbow lake with beaver dams",
+    "place": {
+      "id": "ChIJr6tfl6zYzFYRE-XnuXy-Z58",
+      "label": "Horseshoe Lake Trail",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJr6tfl6zYzFYRE-XnuXy-Z58/photos/Aa-ngMYQ2z_yWDk8jnOel68YVjhN18dwKpGB25F_W_VscVeHbr7abhXT_9SJy2bCdmnUIM2aEzID4HKwmf8MMJXGEVRz7y2-Hd1NaD-bsF9J9t--j-DXCQMhgqHyzt2S579IxBOXW6G0l8Ne2OqBropgt8eb-XR_VKeFA3vAQc6zWRNr5L178JDf5FFjplXP_kY-MMTa7vCcPvValrIeV6-iyK-sQAbkDKaYKLllqhbPWwoPYikL7lzlD5QpXYC9xZDpcOseqIcYVEESRCmjf8I441-JrwfGRpk_RQ49LtqsfSqNAPIQtpJOMKvg5Es2cxOcnLKaGVNJI3JoE5InRgZk-TMLlOM-EB5R2v4pekQcdwMs1Szblpx4cL2ufsV-tKbbX_90WR50oGljUs8KPaD8A-cNNp8w_HYpjZtGdwG5_b8sXw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Jordan Marie",
+          "caption": null
+        }
+      ]
+    },
+    "booking": null,
+    "mealType": null,
+    "diningFormat": null,
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "a4c7ce6a-bf74-444c-b0e0-5b74a2843cd3",
+    "legId": "leg_parks",
+    "scenarioId": "scenario_jun27_alt",
+    "status": "planning",
+    "startAt": "2027-06-28T11:30",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "date": null,
+    "priority": null,
+    "text": "Packed lunch on the bus (no food sold past the entrance)",
+    "place": {
+      "id": null,
+      "label": "Packed lunch"
+    },
+    "booking": null,
+    "mealType": "lunch",
+    "diningFormat": "self-catered",
     "includedIn": null,
     "options": null,
     "travelers": null,

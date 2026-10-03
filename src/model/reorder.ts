@@ -691,7 +691,7 @@ function cascadeShift(
 // legId/scenarioId to match `dropMeta`'s position, and clears the
 // timeLabel/date fuzzy-timing fields now that a real startAt has taken
 // over — mirrors EditContext.handleSave's own "replace by _id" shape so
-// this plugs into the same setData(..., ['activities']) commit path. A
+// this plugs into the same setData commit path. A
 // `kind: 'day-start'` drop additionally shifts every Activity named in
 // `dropMeta.cascadeActivityIds` later by the dragged Activity's own
 // duration (a nominal one minute if it has none), so the Activity that
@@ -1162,15 +1162,6 @@ function resolveDragEndPlacement(
   return { dropMeta, preserveOwnTiming };
 }
 
-// Which raw collections a drag-end commit actually touched — the state
-// layer's setData(updater, dirty) wants this as its own `dirty` argument, but
-// reorder.ts stays agnostic of that context's own CollectionName type (a
-// state-layer concern), so the caller narrows/casts this array itself.
-export interface DragEndResult {
-  data: TripData;
-  collections: Array<'activities' | 'transits' | 'stays'>;
-}
-
 // The single-row (non-multi-select) half of DaysView.tsx's handleDragEnd —
 // dispatches on `activeMeta.source`'s own kind to the one applyXReorder
 // function that actually knows how to move that kind of row, after resolving
@@ -1188,7 +1179,7 @@ export function applySingleRowDragEnd(
   overMeta: DragMeta,
   activeContainerId: string | null,
   overContainerId: string | null,
-): DragEndResult | null {
+): TripData | null {
   if (!activeMeta.source) return null;
   const { dropMeta, preserveOwnTiming } = resolveDragEndPlacement(
     activeMeta,
@@ -1199,37 +1190,19 @@ export function applySingleRowDragEnd(
   const dayStart = dropMeta.containerDayStart;
   switch (activeMeta.source.kind) {
     case 'scenario-group':
-      return {
-        data: applyBlockReorder(data, dropMeta, activeMeta.source.members, dayStart),
-        collections: ['activities', 'transits', 'stays'],
-      };
+      return applyBlockReorder(data, dropMeta, activeMeta.source.members, dayStart);
     case 'transit':
-      return {
-        data: applyTransitReorder(
-          data,
-          dropMeta,
-          activeMeta.source.id,
-          dayStart,
-          preserveOwnTiming,
-        ),
-        collections: ['transits'],
-      };
+      return applyTransitReorder(data, dropMeta, activeMeta.source.id, dayStart, preserveOwnTiming);
     case 'stay':
-      return {
-        data: applyStayReorder(data, dropMeta, activeMeta.source.id),
-        collections: ['stays'],
-      };
+      return applyStayReorder(data, dropMeta, activeMeta.source.id);
     case 'activity':
-      return {
-        data: applyActivityReorder(
-          data,
-          dropMeta,
-          activeMeta.source.id,
-          dayStart,
-          preserveOwnTiming,
-        ),
-        collections: ['activities'],
-      };
+      return applyActivityReorder(
+        data,
+        dropMeta,
+        activeMeta.source.id,
+        dayStart,
+        preserveOwnTiming,
+      );
   }
 }
 
@@ -1238,8 +1211,7 @@ export function applySingleRowDragEnd(
 // together, regardless of container or day. `selectedRows` is
 // RowSelection.rows' own values (TripSelectionsContextObject.ts) — passed
 // structurally rather than importing that type here, since reorder.ts stays
-// agnostic of the selection state layer the same way it stays agnostic of
-// TripDataContext's own CollectionName.
+// agnostic of the selection state layer.
 //
 // A selection made up entirely of plain Activity rows keeps the original
 // insertion-chaining behavior (applyGroupActivityReorder, each member
@@ -1276,7 +1248,7 @@ export function applyGroupDragEnd(
   activeContainerId: string | null,
   overContainerId: string | null,
   selectedRows: Array<{ containerId: string; members: ReorderMembers; isScenarioGroup: boolean }>,
-): DragEndResult {
+): TripData {
   const { dropMeta } = resolveDragEndPlacement(
     activeMeta,
     overMeta,
@@ -1308,7 +1280,7 @@ export function applyGroupDragEnd(
         dayOfContainer(originContainerId) === dayOfContainer(overContainerId)
       );
     });
-    return { data: next, collections: ['activities'] };
+    return next;
   }
   const activityIds = new Set<string>();
   const transitIds = new Set<string>();
@@ -1331,5 +1303,5 @@ export function applyGroupDragEnd(
     dayStart,
     scenarioReassignIds,
   );
-  return { data: next, collections: ['activities', 'transits', 'stays'] };
+  return next;
 }

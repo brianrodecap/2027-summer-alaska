@@ -183,3 +183,18 @@ export async function fetchFirstPlaceImage(id: string): Promise<Image | null> {
   const photo = details?.photos?.[0];
   return photo ? placeImageFromPhoto(photo) : null;
 }
+
+// fetchFirstPlaceImage over several ids at once, deduped and in parallel — for a
+// batch of AI-drafted entries (see askAIDrafts.ts's withPlaceImages), which name
+// places by id only and never carry a photo of their own. Ids with no photo (or
+// a failed lookup) are simply absent from the result.
+export async function fetchPlaceImages(ids: Iterable<string>): Promise<Map<string, Image>> {
+  const unique = [...new Set(ids)];
+  const images = await Promise.all(unique.map((id) => fetchFirstPlaceImage(id)));
+  return new Map(
+    unique.flatMap((id, i) => {
+      const image = images[i];
+      return image ? [[id, image] as const] : [];
+    }),
+  );
+}

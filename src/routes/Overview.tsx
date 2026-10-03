@@ -30,7 +30,7 @@ export function Overview() {
   const openSummary = view.legSummaries.find((s) => s.leg._id === openLegId) ?? null;
 
   const handleCreateLeg = (leg: Leg) => {
-    setData((prev) => ({ ...prev, legs: [...prev.legs, leg] }), ['legs']);
+    setData((prev) => ({ ...prev, legs: [...prev.legs, leg] }));
     setAddingLeg(false);
   };
 

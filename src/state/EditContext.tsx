@@ -1,5 +1,6 @@
 import { lazy, type ReactNode, Suspense, useCallback, useMemo, useState } from 'react';
 
+import type { ChangeSource } from '../model/changeLog';
 import {
   COLLECTION_FOR_KIND,
   type EditKind,
@@ -7,7 +8,8 @@ import {
   findByKind,
   upsertByKind,
 } from '../model/editForms';
-import { EditContext } from './EditContextObject';
+import type { TripData } from '../model/types';
+import { type DraftReview, EditContext } from './EditContextObject';
 import { useTripData } from './useTripData';
 
 // Lazy: both pull in PlacePickerField's Autocomplete and the date/time
@@ -20,27 +22,6 @@ const EditDialog = lazy(() =>
 const EditEventWizard = lazy(() =>
   import('../components/wizard/EditEventWizard').then((m) => ({ default: m.EditEventWizard })),
 );
-
-// One draft still waiting in openDraftSequence's own queue — same shape
-// openFromDraft takes a single one of, but plural, so a document import
-// that produces several entities (a Stay plus the two Transits its own
-// bundled shuttle implies, say — see documentImport.ts's
-// draftIncludedTransfers) can walk a human through each one's own review in
-// turn rather than requiring one dialog to show them all at once. `onSaved`
-// takes the `advance` callback rather than being called with no arguments:
-// a caller that needs to run its own async follow-up first (opening a
-// NoteEditContext draft sequence for this same entity's own noteworthy
-// callouts, say) must call `advance` itself once that follow-up is fully
-// resolved, rather than this queue moving on right away — two independent
-// dialogs (this one's next entity, and NoteEditDialog) must never be open
-// at once, since neither would visibly win against the other's own focus
-// trap. A caller with nothing to wait for just calls `advance` immediately.
-interface QueuedDraft {
-  kind: EditKind;
-  entity: Entity;
-  overrideId?: string;
-  onSaved?: (advance: () => void) => void;
-}
 
 // `via` (on the 'edit' variant only — 'create' only ever happens via a
 // draft, so it's implicitly 'flat') picks which of the two components above
@@ -64,17 +45,19 @@ type EditState =
       seed?: Entity;
       via: 'flat';
       onSaved?: (advance: () => void) => void;
-      queue: QueuedDraft[];
+      source?: ChangeSource;
+      queue: DraftReview[];
     }
   | {
       mode: 'create';
       kind: EditKind;
       entity: Entity;
       onSaved?: (advance: () => void) => void;
-      queue: QueuedDraft[];
+      source?: ChangeSource;
+      queue: DraftReview[];
     };
 
-function stateFromDraft(draft: QueuedDraft, queue: QueuedDraft[]): EditState {
+function stateFromDraft(draft: DraftReview, queue: DraftReview[]): EditState {
   return draft.overrideId
     ? {
         mode: 'edit',
@@ -83,16 +66,24 @@ function stateFromDraft(draft: QueuedDraft, queue: QueuedDraft[]): EditState {
         seed: { ...draft.entity, _id: draft.overrideId },
         via: 'flat',
         onSaved: draft.onSaved,
+        source: draft.source,
         queue,
       }
-    : { mode: 'create', kind: draft.kind, entity: draft.entity, onSaved: draft.onSaved, queue };
+    : {
+        mode: 'create',
+        kind: draft.kind,
+        entity: draft.entity,
+        onSaved: draft.onSaved,
+        source: draft.source,
+        queue,
+      };
 }
 
 // Wraps the trip page in one place both the day-list's edit pencils and the
-// activity side sheet's own edit button can reach. There's no backend this
-// can write to — Save mutates a clone of the in-memory entity via
+// activity side sheet's own edit button can reach. There's no backend yet —
+// Save mutates a clone of the in-memory entity via
 // TripDataContext's setData, which is what triggers useMemo(buildTripView)
-// to re-run and marks the touched collection dirty for "export edits."
+// to re-run and saves the edit to the change log (see model/changeLog.ts).
 export function EditProvider({ children }: { children: ReactNode }) {
   const { data, setData } = useTripData();
   const [state, setState] = useState<EditState | null>(null);
@@ -101,14 +92,13 @@ export function EditProvider({ children }: { children: ReactNode }) {
     (kind: EditKind, id: string) => setState({ mode: 'edit', kind, id, via: 'wizard' }),
     [],
   );
-  const openDraftSequence = useCallback((drafts: QueuedDraft[]) => {
+  const openDraftSequence = useCallback((drafts: DraftReview[]) => {
     if (!drafts.length) return;
     const [first, ...rest] = drafts;
     setState(stateFromDraft(first, rest));
   }, []);
   const openFromDraft = useCallback(
-    (kind: EditKind, draft: Entity, overrideId?: string, onSaved?: (advance: () => void) => void) =>
-      openDraftSequence([{ kind, entity: draft, overrideId, onSaved }]),
+    (draft: DraftReview) => openDraftSequence([draft]),
     [openDraftSequence],
   );
   // Cancel/Delete always abandons the rest of a draft sequence rather than
@@ -120,12 +110,13 @@ export function EditProvider({ children }: { children: ReactNode }) {
   const handleSave = useCallback(
     (updated: Entity) => {
       if (!state) return;
-      const collection = COLLECTION_FOR_KIND[state.kind];
-      setData((prev) => upsertByKind(prev, state.kind, updated), [collection]);
+      const upsert = (prev: TripData) => upsertByKind(prev, state.kind, updated);
       if (state.mode === 'edit' && state.via === 'wizard') {
+        setData(upsert);
         closeEdit();
         return;
       }
+      setData(upsert, state.source);
       const { queue } = state;
       const advance = () => {
         if (queue.length) {
@@ -147,13 +138,10 @@ export function EditProvider({ children }: { children: ReactNode }) {
   const handleDelete = useCallback(
     (kind: EditKind, id: string) => {
       const collection = COLLECTION_FOR_KIND[kind];
-      setData(
-        (prev) => ({
-          ...prev,
-          [collection]: (prev[collection] as Entity[]).filter((e) => e._id !== id),
-        }),
-        [collection],
-      );
+      setData((prev) => ({
+        ...prev,
+        [collection]: (prev[collection] as Entity[]).filter((e) => e._id !== id),
+      }));
       closeEdit();
     },
     [setData, closeEdit],

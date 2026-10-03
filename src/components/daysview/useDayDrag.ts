@@ -9,7 +9,6 @@ import { useState } from 'react';
 
 import { applyGroupDragEnd, applySingleRowDragEnd, type DragMeta } from '../../model/reorder';
 import type { Activity, Transit, TripData } from '../../model/types';
-import type { CollectionName } from '../../state/TripDataContextObject';
 import type { RowSelection } from '../../state/TripSelectionsContextObject';
 import { useTripData } from '../../state/useTripData';
 import { useRowSelection } from '../../state/useTripSelections';
@@ -94,8 +93,7 @@ export function useDayDrag() {
     setDraggingMeta((event.active.data.current as DragMeta | undefined) ?? null);
   };
 
-  const commit = (result: { data: NonNullable<typeof data>; collections: string[] }) =>
-    setData(() => result.data, result.collections as CollectionName[]);
+  const commit = (next: TripData) => setData(() => next);
 
   // A thin dispatcher — the actual drag/direction/timing resolution
   // (movingUp, preserveOwnTiming, dropMeta) and the dispatch onto the right

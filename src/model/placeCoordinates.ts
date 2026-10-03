@@ -2,7 +2,8 @@
 // (a place's coordinates never change) — shared by weather.ts (per-place
 // forecast/climate lookups) and elevation.ts, both of which otherwise need
 // the exact same Places API round-trip for the same place id.
-import { memoizeAsync, persisted } from './asyncCache';
+import { memoizeAsync } from './asyncCache';
+import { persisted } from './idbCache';
 import { fetchPlaceFields } from './places';
 
 export interface Coordinates {
@@ -33,7 +34,7 @@ async function fetchCoordinates(placeId: string): Promise<Coordinates> {
 
 // Cached by place id — a Stay spanning several nights (or a Transit's
 // endpoint reused day to day) would otherwise re-resolve the same place's
-// coordinates on every one of those days. Also persisted to localStorage so
+// coordinates on every one of those days. Also persisted (IndexedDB) so
 // a repeat visit skips the Places API call entirely rather than just
 // deduping within one page load.
 export function getCoordinates(placeId: string): Promise<Coordinates> {

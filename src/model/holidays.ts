@@ -4,7 +4,8 @@
 // trip's own JSON" approach as weather.ts: this is refetched (or served from
 // a persisted cache) fresh as of whenever the site happens to be opened,
 // rather than baked in as of whenever this code shipped.
-import { memoizeAsync, persisted } from './asyncCache';
+import { memoizeAsync } from './asyncCache';
+import { persisted } from './idbCache';
 
 export interface Holiday {
   date: string; // ISO yyyy-mm-dd

@@ -36,7 +36,10 @@ function TestHarness({ children }: { children: ReactNode }) {
         loading: false,
         error: null,
         dirtyCollections: new Set(),
+        canUndo: false,
+        saveError: null,
         setData: (updater) => setDataState((prev) => updater(prev)),
+        undoLast: () => {},
       }}
     >
       <NoteEditProvider>{children}</NoteEditProvider>

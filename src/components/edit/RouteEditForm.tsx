@@ -10,7 +10,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-import { lookupDriveInfo } from '../../model/directions';
+import { recomputeRouteTravel, recomputeVariant } from '../../model/directions';
 import { blankRoutePlaceEntry, blankRouteVariant, swapItems as swap } from '../../model/editForms';
 import { formatTravel } from '../../model/formatting';
 import {
@@ -34,63 +34,6 @@ const PLACE_KIND_OPTIONS: { value: RoutePlaceEntry['kind']; label: string }[] = 
   { value: 'waypoint', label: 'Waypoint — a real stop worth calling out' },
   { value: 'via', label: 'Via — steers routing onto the right road, no stop' },
 ];
-
-// Place ID, each place's travel, and each variant's finalTravel
-// are never hand-typed in this form — they're re-derived here from Google's
-// live drive time and distance (via lookupDriveInfo) every time the stop
-// sequence or the route's own From/To changes, walking places[] in its own
-// authoritative order (see route-places-array-order-authoritative) rather
-// than anything sorted by the durations themselves. A lookup failure (no
-// drivable route, API not enabled) just leaves that entry's stored values as
-// they were — silently stale until the next successful recompute, same
-// fail-closed fallback every place picker already has.
-//
-// Every leg's origin/destination pair is known synchronously up front (each
-// place's own id, chained from the previous stop or From) — none of them
-// depend on another leg's lookup result — so the lookups themselves fire
-// concurrently rather than one at a time. `fromIndex` additionally skips
-// lookups for legs before it: an edit at one stop can only change the origin
-// chain from that position onward, so an earlier, already-correct leg is
-// left untouched rather than re-fetched.
-async function recomputeVariant(
-  variant: RouteVariant,
-  fromId: string | null,
-  toId: string | null,
-  fromIndex = 0,
-): Promise<RouteVariant> {
-  const legs: { originId: string | null; destId: string | null }[] = [];
-  let originId = fromId;
-  for (const p of variant.places) {
-    const destId = p.place?.id ?? null;
-    legs.push({ originId, destId });
-    if (destId) originId = destId;
-  }
-  const finalOriginId = originId;
-
-  const [placeResults, finalInfo] = await Promise.all([
-    Promise.all(
-      legs.map(({ originId, destId }, i) =>
-        i >= fromIndex && originId && destId
-          ? lookupDriveInfo(originId, destId).catch(() => null)
-          : Promise.resolve(null),
-      ),
-    ),
-    finalOriginId && toId ? lookupDriveInfo(finalOriginId, toId).catch(() => null) : null,
-  ]);
-
-  const places = variant.places.map((p, i) => {
-    const info = placeResults[i];
-    return info ? { ...p, travel: { minutes: info.minutes, miles: info.miles } } : p;
-  });
-
-  return {
-    ...variant,
-    places,
-    finalTravel: finalInfo
-      ? { minutes: finalInfo.minutes, miles: finalInfo.miles }
-      : variant.finalTravel,
-  };
-}
 
 export function RouteEditForm({
   form,
@@ -119,10 +62,7 @@ export function RouteEditForm({
   // From/To itself changes, since that shifts the origin every first place's
   // travel (and a places-less variant's finalTravel) is measured from.
   const recomputeAllVariants = async (route: Route) => {
-    const updated = await Promise.all(
-      route.variants.map((v) => recomputeVariant(v, route.from.id, route.to.id)),
-    );
-    onChange({ ...route, variants: updated });
+    onChange(await recomputeRouteTravel(route));
   };
 
   return (

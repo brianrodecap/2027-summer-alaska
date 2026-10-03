@@ -6,7 +6,6 @@ import {
   applyActivityForm,
   applyStayForm,
   applyTransitForm,
-  COLLECTION_FOR_KIND,
   type EditKind,
   stayFormFrom,
   type StayFormState,
@@ -14,7 +13,6 @@ import {
   type TransitFormState,
 } from '../../model/editForms';
 import type { Activity, Route, Stay, Transit, Traveler } from '../../model/types';
-import type { CollectionName } from '../../state/TripDataContextObject';
 import { EntityFormDialog } from '../shared/EntityFormDialog';
 import { ActivityEditForm } from './ActivityEditForm';
 import { StayEditForm } from './StayEditForm';
@@ -32,16 +30,14 @@ interface EditDialogProps {
   tripTravelers: Traveler[];
   routes: Route[];
   onClose: () => void;
-  onSave: (updated: Entity, dirty: CollectionName) => void;
+  onSave: (updated: Entity) => void;
   onDelete: (kind: EditKind, id: string) => void;
 }
 
 // One shared chrome hosts the form for all three editable line-item kinds —
 // opened from a Stay/Transit row's pencil button or the activity side
-// sheet's own edit button. There's no backend to write to: Save only ever
-// mutates a clone of the in-memory entity; TripDataContext's setData is what
-// actually commits it and marks the touched collection dirty for "export
-// edits" to pick up later.
+// sheet's own edit button. Save only ever mutates a clone of the in-memory
+// entity; TripDataContext's setData is what actually commits and persists it.
 export function EditDialog(props: EditDialogProps) {
   const { entity } = props;
   if (!entity) return null;
@@ -81,7 +77,7 @@ function EditDialogBody({
     else if (kind === 'stay' && stayForm) message = applyStayForm(clone as Stay, stayForm);
     else if (kind === 'transit' && transitForm)
       message = applyTransitForm(clone as Transit, transitForm);
-    if (!message) onSave(clone, COLLECTION_FOR_KIND[kind]);
+    if (!message) onSave(clone);
     return message;
   };
 

@@ -59,8 +59,8 @@ interface ImportDocumentPanelProps {
 
 type Status = 'idle' | 'loading' | 'error' | 'success';
 
-// The document-import half of AskAIDialog (src/components/day/AskAIDialog.tsx —
-// the two sit in one dialog, not behind tabs). Uploads a booking document (PDF
+// The trip assistant's document import (src/components/assistant/AssistantPanel.tsx,
+// behind its paperclip button). Uploads a booking document (PDF
 // or photo), sends it to the Anthropic API for extraction
 // (src/model/documentImport.ts), and hands the result to EditContext's
 // openFromDraft — which opens the same EditDialog a manual "Add" uses,
@@ -141,11 +141,13 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
         entity: draft,
         overrideId: conflictId ?? undefined,
         onSaved: withNoteFollowUp(stayNotes, openNoteDraftSequence),
+        source: 'ai-import' as const,
       },
       ...transferDrafts.map(({ transit, notes }) => ({
         kind: 'transit' as const,
         entity: transit,
         onSaved: withNoteFollowUp(notes, openNoteDraftSequence),
+        source: 'ai-import' as const,
       })),
     ]);
     onClose();

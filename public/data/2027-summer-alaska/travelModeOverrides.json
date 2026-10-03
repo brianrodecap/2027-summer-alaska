@@ -30,5 +30,25 @@
   {
     "segmentKey": "segment:activity-act_jun28_6->activity-act_jun28_7",
     "mode": "TRANSIT"
+  },
+  {
+    "segmentKey": "segment:activity-act_lc_d2_portalsworth_hike->transit-transit_portalsworth_return-depart",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:activity-a570c483-3e78-47d0-ba9e-c688d8759d11->activity-act_lc_d2_portalsworth_hike",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:transit-transit_portalsworth_out-arrive->activity-a570c483-3e78-47d0-ba9e-c688d8759d11",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:transit-transit_katmai_out-arrive->activity-act_lc_d1_katmai_bears",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:activity-act_lc_d1_katmai_bears->transit-transit_katmai_return-depart",
+    "mode": "WALK"
   }
 ]

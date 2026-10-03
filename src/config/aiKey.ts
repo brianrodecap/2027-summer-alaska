@@ -16,6 +16,7 @@ export function getStoredApiKey(): string | null {
   return safeGetItem(STORAGE_KEY);
 }
 
+// Throws if the key can't be saved (blocked storage, or a full quota).
 export function setStoredApiKey(key: string): void {
   localStorage.setItem(STORAGE_KEY, key);
 }

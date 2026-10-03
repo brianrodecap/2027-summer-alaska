@@ -1789,18 +1789,6 @@
     "images": []
   },
   {
-    "_id": "note_redoubt_bay_place_id",
-    "kind": "footnote",
-    "text": "Redoubt Bay Lodge doesn't have a confirmed Google Place ID yet — add one once it's looked up.",
-    "concerns": [
-      {
-        "entity": "activity",
-        "id": "act_lc_d3_redoubt_bears"
-      }
-    ],
-    "images": []
-  },
-  {
     "_id": "b0c05335-18bf-4385-878f-6c4d67517faa",
     "kind": "info",
     "text": "Closes at 11:00 PM.  There are no fully 24-hour traditional grocery stores currently operating in Anchorage, Alaska.",

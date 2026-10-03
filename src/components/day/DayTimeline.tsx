@@ -32,6 +32,7 @@ import {
   placeFromLodging,
   STAGE_KIND_LABEL,
   stayDetailBits,
+  TRAVEL_MODES,
 } from '../../model/formatting';
 import { activeMealOptions, isMealActivity, selectedMealOption } from '../../model/mealOptions';
 import {
@@ -563,13 +564,8 @@ const ScenarioTabsNode = memo(function ScenarioTabsNode({
   );
 });
 
-// Fixed, most-to-least-likely-for-this-trip order (see
-// wizard-tooltips-and-frequency-order's own convention elsewhere in this
-// app) — almost everything here is a drive, port-town stops are the main
-// place walking applies, biking is rarer still, and rural Alaska has the
-// least transit service of all. No text label — the icon alone says which
-// mode an option is, matching Google's own mode-picker convention.
-const TRAVEL_MODES: TravelMode[] = ['DRIVE', 'WALK', 'BICYCLE', 'TRANSIT'];
+// The picker lists TRAVEL_MODES in its own fixed order. No text label — the icon
+// alone says which mode an option is, matching Google's own mode-picker convention.
 
 // All four modes' info is fetched together, not just the currently-selected
 // one — the dropdown itself shows each mode's own duration/distance (so a
@@ -627,10 +623,9 @@ function TravelModeSummary({
 // Unlike the scenario/route-tone/meal-option selections (deliberately
 // session-only, a fresh decision every visit), a non-default pick here is
 // real trip content: it's stored in TripData.travelModeOverrides (see
-// types.ts) and flows through the same setData/dirty-collection/download
-// path every other edit in this app uses, so it round-trips through
-// public/data/<slug>/travelModeOverrides.json and is shared by every viewer
-// rather than sitting in one browser's own storage. Picking DRIVE back
+// types.ts) and flows through the same setData/change-log/export path
+// every other edit in this app uses, so once exported it round-trips through
+// public/data/<slug>/travelModeOverrides.json and is shared by every viewer. Picking DRIVE back
 // removes the segment's entry instead of storing it explicitly — see the
 // onChange handler below.
 const TravelInfoControl = memo(function TravelInfoControl({
@@ -666,17 +661,14 @@ const TravelInfoControl = memo(function TravelInfoControl({
         value={mode}
         onChange={(e: SelectChangeEvent<TravelMode>) => {
           const nextMode = e.target.value as TravelMode;
-          setData(
-            (prev) => ({
-              ...prev,
-              travelModeOverrides: applyTravelModeSelection(
-                prev.travelModeOverrides,
-                segKey,
-                nextMode,
-              ),
-            }),
-            ['travelModeOverrides'],
-          );
+          setData((prev) => ({
+            ...prev,
+            travelModeOverrides: applyTravelModeSelection(
+              prev.travelModeOverrides,
+              segKey,
+              nextMode,
+            ),
+          }));
         }}
         renderValue={(value) => (
           <TravelModeSummary mode={value} info={allInfo?.[value]} loading={showLoading} />

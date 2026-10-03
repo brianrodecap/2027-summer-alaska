@@ -7,9 +7,10 @@
 // be enabled for PLACES_API_KEY too, or every lookup here fails closed (the
 // route editor just leaves the fields as they were when that happens, same
 // as a failed place search).
-import { memoizeAsync, persisted } from './asyncCache';
+import { memoizeAsync } from './asyncCache';
 import { googleApiFetch } from './googleApiFetch';
-import type { TravelMode } from './types';
+import { persisted } from './idbCache';
+import type { Route, RouteVariant, TravelMode } from './types';
 
 const METERS_PER_MILE = 1609.344;
 
@@ -72,7 +73,7 @@ async function fetchRoute(
 // service at all in rural Alaska). Throws on a request/auth failure, same as
 // places.ts's own fetchPlace/searchPlaces, so the caller's existing
 // try/catch handles both alike. Cached per (origin, destination, mode)
-// triple, in memory and across visits (see fetchRoute's own note).
+// triple, in memory and across visits (idbCache.ts).
 function lookupRoute(
   originPlaceId: string,
   destinationPlaceId: string,
@@ -101,6 +102,74 @@ export function lookupDriveInfo(
   destinationPlaceId: string,
 ): Promise<DriveInfo | null> {
   return lookupTravelInfo(originPlaceId, destinationPlaceId, 'DRIVE');
+}
+
+// ---------- a Route's stored travel times ----------
+//
+// Place ID, each place's travel, and each variant's finalTravel
+// are never hand-typed in RouteEditForm — they're re-derived here from Google's
+// live drive time and distance (via lookupDriveInfo) every time the stop
+// sequence or the route's own From/To changes, walking places[] in its own
+// authoritative order (see route-places-array-order-authoritative) rather
+// than anything sorted by the durations themselves. A lookup failure (no
+// drivable route, API not enabled) just leaves that entry's stored values as
+// they were — silently stale until the next successful recompute, same
+// fail-closed fallback every place picker already has.
+//
+// Every leg's origin/destination pair is known synchronously up front (each
+// place's own id, chained from the previous stop or From) — none of them
+// depend on another leg's lookup result — so the lookups themselves fire
+// concurrently rather than one at a time. `fromIndex` additionally skips
+// lookups for legs before it: an edit at one stop can only change the origin
+// chain from that position onward, so an earlier, already-correct leg is
+// left untouched rather than re-fetched.
+export async function recomputeVariant(
+  variant: RouteVariant,
+  fromId: string | null,
+  toId: string | null,
+  fromIndex = 0,
+): Promise<RouteVariant> {
+  const legs: { originId: string | null; destId: string | null }[] = [];
+  let originId = fromId;
+  for (const p of variant.places) {
+    const destId = p.place?.id ?? null;
+    legs.push({ originId, destId });
+    if (destId) originId = destId;
+  }
+  const finalOriginId = originId;
+
+  const [placeResults, finalInfo] = await Promise.all([
+    Promise.all(
+      legs.map(({ originId, destId }, i) =>
+        i >= fromIndex && originId && destId
+          ? lookupDriveInfo(originId, destId).catch(() => null)
+          : Promise.resolve(null),
+      ),
+    ),
+    finalOriginId && toId ? lookupDriveInfo(finalOriginId, toId).catch(() => null) : null,
+  ]);
+
+  const places = variant.places.map((p, i) => {
+    const info = placeResults[i];
+    return info ? { ...p, travel: { minutes: info.minutes, miles: info.miles } } : p;
+  });
+
+  return {
+    ...variant,
+    places,
+    finalTravel: finalInfo
+      ? { minutes: finalInfo.minutes, miles: finalInfo.miles }
+      : variant.finalTravel,
+  };
+}
+
+// Every variant recomputed from scratch — after a Route's From/To changes, or for a
+// route drafted elsewhere (the trip assistant) before it's reviewed.
+export async function recomputeRouteTravel(route: Route): Promise<Route> {
+  const variants = await Promise.all(
+    route.variants.map((v) => recomputeVariant(v, route.from.id, route.to.id)),
+  );
+  return { ...route, variants };
 }
 
 // ---------- route-snapped path lookup — DayMapSidebar's own "draw the real

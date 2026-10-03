@@ -1,20 +1,9 @@
 import { createContext } from 'react';
 
+import type { ChangeSource, CollectionName } from '../model/changeLog';
 import type { TripData, TripView } from '../model/types';
 
-// Which raw JSON collection(s) an edit touched — surfaced back to the user so
-// "export edits" (still just a client-side download, no backend to write to;
-// see EditContext) knows which file(s) actually need re-copying into
-// public/data/<slug>/.
-export type CollectionName =
-  | 'legs'
-  | 'stays'
-  | 'transits'
-  | 'activities'
-  | 'scenarios'
-  | 'notes'
-  | 'travelModeOverrides'
-  | 'routes';
+export type { CollectionName };
 
 export interface TripDataContextValue {
   slug: string;
@@ -22,8 +11,18 @@ export interface TripDataContextValue {
   view: TripView | null;
   loading: boolean;
   error: Error | null;
+  // Collections with at least one locally saved change (see src/model/changeLog.ts) —
+  // persisted across reloads, so this is "not yet copied back into public/data/", not
+  // just "edited this session".
   dirtyCollections: Set<CollectionName>;
-  setData: (updater: (prev: TripData) => TripData, dirty?: CollectionName[]) => void;
+  canUndo: boolean;
+  // Set when the last attempt to persist an edit failed (e.g. storage quota), cleared
+  // by the next successful save.
+  saveError: Error | null;
+  // `source` records who produced the edit, so AI-made changes stay distinguishable
+  // in the change log.
+  setData: (updater: (prev: TripData) => TripData, source?: ChangeSource) => void;
+  undoLast: () => void;
 }
 
 export const TripDataContext = createContext<TripDataContextValue | null>(null);

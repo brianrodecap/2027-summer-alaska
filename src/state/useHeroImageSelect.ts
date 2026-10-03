@@ -1,11 +1,6 @@
 import { useCallback } from 'react';
 
-import {
-  COLLECTION_FOR_KIND,
-  type EditKind,
-  type KindToEntity,
-  patchByKind,
-} from '../model/editForms';
+import { type EditKind, type KindToEntity, patchByKind } from '../model/editForms';
 import { withHeroImage } from '../model/formatting';
 import type { Image } from '../model/types';
 import { useTripData } from './useTripData';
@@ -21,7 +16,7 @@ export function usePatchEntity<K extends EditKind>(kind: K, entityId: string | u
   return useCallback(
     (patch: (entity: KindToEntity[K]) => KindToEntity[K]) => {
       if (!entityId) return;
-      setData((prev) => patchByKind(prev, kind, entityId, patch), [COLLECTION_FOR_KIND[kind]]);
+      setData((prev) => patchByKind(prev, kind, entityId, patch));
     },
     [kind, entityId, setData],
   );

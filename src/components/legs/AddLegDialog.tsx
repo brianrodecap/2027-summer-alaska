@@ -7,7 +7,7 @@ import { LegFormFields } from './LegFormFields';
 
 // Overview's own "Add leg" — mirrors AddTripDialog's Save/Cancel shape, but
 // (unlike Add trip) it saves through the already-open trip's own EditContext
-// data flow: Save appends to data.legs via setData and marks 'legs' dirty,
+// data flow: Save appends to data.legs via setData (saved to the change log),
 // the same as every other create in this app, rather than downloading a new
 // file set. No date fields here — a Leg's span is computed from whatever
 // Stay/Transit/Activity ends up pointing at it (tripModel.ts's

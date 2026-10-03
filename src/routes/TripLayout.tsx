@@ -1,4 +1,5 @@
 import DownloadIcon from '@mui/icons-material/Download';
+import UndoIcon from '@mui/icons-material/Undo';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Breadcrumbs from '@mui/material/Breadcrumbs';
@@ -9,7 +10,7 @@ import MuiLink from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
 import { ThemeProvider } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
-import { Suspense, useEffect } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, Outlet, useMatch, useParams } from 'react-router-dom';
 
 import { Wordmark } from '../components/shared/Wordmark';
@@ -25,10 +26,73 @@ import { THEMES } from '../theme';
 
 const SECTION_LABELS: Record<string, string> = { days: 'Days', budget: 'Budget' };
 
+type Crumb = { label: string; to?: string };
+
+function renderCrumbs(crumbs: Crumb[]) {
+  return crumbs.map(({ label, to }) =>
+    to ? (
+      <MuiLink key={label} component={Link} to={to} color="inherit" underline="hover">
+        {label}
+      </MuiLink>
+    ) : (
+      <Typography key={label} color="inherit" aria-current="page">
+        {label}
+      </Typography>
+    ),
+  );
+}
+
+// Collapses the middle crumbs into MUI's "…" only when the full trail doesn't fit on
+// one line. Fit is measured against an invisible, never-collapsed copy of the trail,
+// so the check doesn't depend on (and can't oscillate with) the collapsed rendering.
+function TripBreadcrumbs({ crumbs }: { crumbs: Crumb[] }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const measureRef = useRef<HTMLDivElement>(null);
+  const [collapsed, setCollapsed] = useState(false);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const measure = measureRef.current;
+    if (!container || !measure) return;
+    const update = () => setCollapsed(measure.offsetWidth > container.clientWidth);
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(container);
+    observer.observe(measure);
+    return () => observer.disconnect();
+  }, []);
+
+  const sx = { color: 'inherit', '& .MuiBreadcrumbs-separator': { color: 'inherit' } };
+  return (
+    <Box ref={containerRef} sx={{ position: 'relative', flexGrow: 1, minWidth: 0 }}>
+      <Breadcrumbs aria-label="Breadcrumb" maxItems={collapsed ? 2 : crumbs.length} sx={sx}>
+        {renderCrumbs(crumbs)}
+      </Breadcrumbs>
+      <Box
+        ref={measureRef}
+        aria-hidden
+        sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: 'max-content',
+          visibility: 'hidden',
+          pointerEvents: 'none',
+        }}
+      >
+        <Breadcrumbs sx={{ ...sx, '& .MuiBreadcrumbs-ol': { flexWrap: 'nowrap' } }}>
+          {renderCrumbs(crumbs)}
+        </Breadcrumbs>
+      </Box>
+    </Box>
+  );
+}
+
 function TripHero() {
   const { slug } = useParams();
   const section = useMatch('/:slug/:section/*')?.params.section;
-  const { view, data, loading, error, dirtyCollections } = useTripData();
+  const { view, data, loading, error, dirtyCollections, canUndo, undoLast, saveError } =
+    useTripData();
   const tripName = view?.trip.name;
 
   useEffect(() => {
@@ -57,7 +121,7 @@ function TripHero() {
 
   const { trip } = view;
   const sectionLabel = section ? SECTION_LABELS[section] : undefined;
-  const crumbs: { label: string; to?: string }[] = [
+  const crumbs: Crumb[] = [
     { label: 'Trips', to: '/' },
     sectionLabel ? { label: trip.name, to: `/${slug}` } : { label: trip.name },
     ...(sectionLabel ? [{ label: sectionLabel }] : []),
@@ -92,28 +156,12 @@ function TripHero() {
       }}
     >
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
-        <Breadcrumbs
-          aria-label="Breadcrumb"
-          maxItems={2}
-          sx={{
-            flexGrow: 1,
-            minWidth: 0,
-            color: 'inherit',
-            '& .MuiBreadcrumbs-separator': { color: 'inherit' },
-          }}
-        >
-          {crumbs.map(({ label, to }) =>
-            to ? (
-              <MuiLink key={label} component={Link} to={to} color="inherit" underline="hover">
-                {label}
-              </MuiLink>
-            ) : (
-              <Typography key={label} color="inherit" aria-current="page">
-                {label}
-              </Typography>
-            ),
-          )}
-        </Breadcrumbs>
+        <TripBreadcrumbs crumbs={crumbs} />
+        {canUndo && (
+          <IconButton aria-label="Undo last change" onClick={undoLast}>
+            <UndoIcon />
+          </IconButton>
+        )}
         {dirtyCollections.size > 0 && (
           <IconButton aria-label="Export edits" onClick={() => exportEdits(data, dirtyCollections)}>
             <DownloadIcon />
@@ -121,6 +169,12 @@ function TripHero() {
         )}
         <Wordmark />
       </Stack>
+      {saveError && (
+        <Alert severity="warning" sx={{ mb: 1.5 }}>
+          Your last change couldn't be saved in this browser, so it will be lost on reload. Export
+          edits to keep it. ({saveError.message})
+        </Alert>
+      )}
       <Typography variant="h4" sx={{ mb: 1.5 }}>
         {trip.name}
       </Typography>

@@ -10,10 +10,23 @@ import type {
   Lodging,
   MealOption,
   MealType,
+  NoteKind,
   Place,
   RoutePlaceKind,
+  TravelMode,
 } from './types';
 import type { PlaceSunriseSunset } from './weather';
+
+// ---------- enum vocabularies ----------
+// Every value of each union, for pickers, AI tool/extraction schemas, and input
+// validation — one list per union so those can't drift apart.
+
+export const MEAL_TYPES: readonly MealType[] = ['breakfast', 'lunch', 'dinner', 'snack'];
+export const NOTE_KINDS: readonly NoteKind[] = ['warning', 'info', 'footnote'];
+// Most-to-least-likely-for-this-trip order (pickers show it as-is): almost everything
+// is a drive, port-town stops are where walking applies, biking is rarer still, and
+// rural Alaska has the least transit service of all.
+export const TRAVEL_MODES: readonly TravelMode[] = ['DRIVE', 'WALK', 'BICYCLE', 'TRANSIT'];
 
 // ---------- leg skeleton-authority vocabulary ----------
 

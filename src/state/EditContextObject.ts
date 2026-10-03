@@ -1,9 +1,19 @@
 import { createContext } from 'react';
 
+import type { ChangeSource } from '../model/changeLog';
 import type { EditKind } from '../model/editForms';
 import type { Activity, Stay, Transit } from '../model/types';
 
 type Entity = Activity | Stay | Transit;
+
+// One already-drafted entity to review — see openFromDraft for what each field does.
+export interface DraftReview {
+  kind: EditKind;
+  entity: Entity;
+  overrideId?: string;
+  onSaved?: (advance: () => void) => void;
+  source?: ChangeSource;
+}
 
 export interface EditContextValue {
   // Opens the guided edit wizard (see components/wizard/EditEventWizard) on
@@ -29,13 +39,9 @@ export interface EditContextValue {
   // NoteEditContextObject.ts's openNoteDraftSequence) has to hold off
   // calling `advance` until that follow-up is fully resolved, or two
   // dialogs from two different contexts end up open at once. A caller with
-  // nothing to wait for just calls `advance` immediately.
-  openFromDraft: (
-    kind: EditKind,
-    draft: Entity,
-    overrideId?: string,
-    onSaved?: (advance: () => void) => void,
-  ) => void;
+  // nothing to wait for just calls `advance` immediately. `source` (who drafted it)
+  // is recorded on the saved change — see model/changeLog.ts.
+  openFromDraft: (draft: DraftReview) => void;
   // Reviews a batch of already-drafted entities one at a time, each through
   // the same flat EditDialog openFromDraft uses — the document-import
   // flow's own way of following up a primary Stay with sibling entities its
@@ -46,14 +52,7 @@ export interface EditContextValue {
   // Cancelling any step abandons the rest of the queue rather than skipping
   // ahead, so a viewer who bails partway through never has an unreviewed
   // sibling silently saved.
-  openDraftSequence: (
-    drafts: {
-      kind: EditKind;
-      entity: Entity;
-      overrideId?: string;
-      onSaved?: (advance: () => void) => void;
-    }[],
-  ) => void;
+  openDraftSequence: (drafts: DraftReview[]) => void;
   deleteEntity: (kind: EditKind, id: string) => void;
 }
 

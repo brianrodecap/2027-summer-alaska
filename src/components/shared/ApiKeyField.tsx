@@ -5,8 +5,8 @@ interface ApiKeyFieldProps {
   onChange: (value: string) => void;
 }
 
-// Shared by every dialog that calls the Anthropic API directly from the browser
-// (ImportDocumentDialog, AskAIDialog) — same field, same copy, same
+// Shared by everything that calls the Anthropic API directly from the browser
+// (the trip assistant panel, Add trip's document import) — same field, same copy, same
 // localStorage-only promise, wherever a key is collected.
 export function ApiKeyField({ value, onChange }: ApiKeyFieldProps) {
   return (

@@ -1,10 +1,7 @@
-// Shared "cache by key, store the promise" helpers, used everywhere a live
-// lookup is worth deduping within a page load (memoizeAsync) and/or across
-// visits via localStorage (persisted) — weather.ts's place/climate lookups,
-// placeCoordinates.ts's own coordinate lookup, and elevation.ts all share
-// this rather than each hand-rolling the same pattern.
-
-import { safeGetItem, safeSetItem } from '../config/safeStorage';
+// The shared "cache by key, store the promise" helper, used everywhere a live
+// lookup is worth deduping within a page load — weather.ts, placeCoordinates.ts,
+// elevation.ts, holidays.ts and directions.ts all share it rather than each
+// hand-rolling the same pattern. Caching across visits is idbCache.ts's `persisted`.
 
 // Get-or-compute-and-cache the in-flight/resolved promise for `key` — a
 // repeat lookup within one page load never re-fires the underlying fetch.
@@ -15,41 +12,4 @@ export function memoizeAsync<K, V>(
 ): Promise<V> {
   if (!cache.has(key)) cache.set(key, compute());
   return cache.get(key) as Promise<V>;
-}
-
-// Wraps localStorage so a lookup already resolved on a previous visit
-// doesn't cost a network round-trip at all, not even a cached-but-still-async
-// one. Storage errors are swallowed by safeStorage (Safari private browsing
-// throws on write) since this is purely an optimization: losing it just means
-// falling back to the in-memory-only behavior for that session.
-function loadPersisted<T>(key: string, maxAgeMs: number): T | null {
-  const raw = safeGetItem(key);
-  if (!raw) return null;
-  try {
-    const { value, savedAt } = JSON.parse(raw) as { value: T; savedAt: number };
-    if (Date.now() - savedAt > maxAgeMs) return null;
-    return value;
-  } catch {
-    return null;
-  }
-}
-
-function savePersisted<T>(key: string, value: T): void {
-  safeSetItem(key, JSON.stringify({ value, savedAt: Date.now() }));
-}
-
-// Layers loadPersisted/savePersisted around a compute function — for a
-// lookup that's also worth surviving a page reload, not just deduping
-// within one.
-export function persisted<T>(
-  storageKey: string,
-  ttlMs: number,
-  compute: () => Promise<T>,
-): Promise<T> {
-  const cached = loadPersisted<T>(storageKey, ttlMs);
-  if (cached !== null) return Promise.resolve(cached);
-  return compute().then((value) => {
-    savePersisted(storageKey, value);
-    return value;
-  });
 }
