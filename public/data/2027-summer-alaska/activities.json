@@ -748,9 +748,9 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": null,
+    "startAt": "2027-06-29T14:00",
     "durationMinutes": null,
-    "timeLabel": "Afternoon",
+    "timeLabel": null,
     "priority": "high",
     "text": "Arctic Interagency Visitor Center",
     "place": {
@@ -771,7 +771,7 @@
     "options": null,
     "travelers": null,
     "images": [],
-    "date": "2027-06-29"
+    "date": null
   },
   {
     "_id": "act_jun29_9",
@@ -1196,7 +1196,13 @@
         "place": {
           "id": "ChIJCSqfQ1VLKVER9FZigu88Qtg",
           "label": "Yukon River Camp",
-          "images": []
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJCSqfQ1VLKVER9FZigu88Qtg/photos/Aa-ngMZmCB-6bCdqZ9U-9BvXfApKHLT0e8FAFtY70kdVYBkMEBr7bgrmi8zdtR9r0RFV--qWiOl_MUX4HdCLRgiRR6bLmI6RRFYiRnAOCTDdF74ew3QjQDJJpivG6wc9CYNEGXBcc4b8sDbnjXlEJrpwI8EnxOlJCiiZD7EoprkNLKIPueKhrtmPTa1m3P_F5J8m7y4lLN14BLNinCpSf-6JxPOaNuegZD25A8KaGcJdxXcSJ41AJvLxTi8Z0agveh7eaXiT9N96OIXo3nf_K0hobkKiF5WVVHSio7goByyz6koi8Bm-N0r0gglAcGtACU6oBkyS-p5eQ6MR_fPNfJfTHGAz6VqD1M4d_eKU6lzW5tbDc3WiHPulHb4u51cKoAW2bjY3amG-O8tEXyVyYI08m9X0ZDIbr5yB7CrBGpDIzH2rhBefbI0_TQOZjgBVxqZn/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Ella Lin",
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "bookingId": null
@@ -4160,7 +4166,7 @@
     "legId": "leg_parks",
     "scenarioId": null,
     "status": "planning",
-    "startAt": "2027-06-29T12:45",
+    "startAt": "2027-06-29T14:00",
     "durationMinutes": 15,
     "timeLabel": null,
     "priority": null,

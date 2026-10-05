@@ -61,7 +61,7 @@
   {
     "_id": "note_jun28_bus_details",
     "kind": "footnote",
-    "text": "Exact departure time is assigned when you book, not fixed at 9am. Hop-off privileges anywhere beyond Savage River for wildlife viewing and photos; reboard any later green bus. Round trip is about 4.5 hours to the current Mile 43 turnaround.",
+    "text": "Exact departure time is assigned when you book. Hop-off privileges anywhere beyond Savage River for wildlife viewing and photos; reboard any later green bus. Round trip is about 4.5 hours to the current Mile 43 turnaround.",
     "concerns": [
       {
         "entity": "transit",
@@ -102,18 +102,6 @@
       {
         "entity": "activity",
         "id": "act_jun29_3"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_jun29_early_checkin",
-    "kind": "footnote",
-    "text": "Early check-in isn’t guaranteed, but bags can usually be left.",
-    "concerns": [
-      {
-        "entity": "stay",
-        "id": "stay_coldfoot"
       }
     ],
     "images": []
@@ -297,24 +285,6 @@
     ]
   },
   {
-    "_id": "note_denali_flight_operators",
-    "kind": "footnote",
-    "text": "Operators: K2 Aviation, Talkeetna Air Taxi, or Sheldon Air Service, all out of Talkeetna Airport (TKA).",
-    "concerns": [
-      {
-        "entity": "scenario",
-        "id": "scenario_jun27_ideal"
-      }
-    ],
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_and_Range_from_Air_with_Plane_Wing_%287065283015%29.jpg",
-        "credit": "Photo by Jacob W. Frank / NPS, CC BY 2.0",
-        "caption": "Flightseeing plane wing over Denali and the Alaska Range"
-      }
-    ]
-  },
-  {
     "_id": "note_jun27_flight_timing",
     "kind": "footnote",
     "text": "About 1.5–2 hrs; exact slot depends on the operator’s schedule that day.",
@@ -440,36 +410,6 @@
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Ted_Stevens_Anchorage_International_Airport,_main_lobby_of_South_Terminal.jpg",
         "credit": "Photo by Wonderlane / CC BY 2.0",
         "caption": "Main lobby of the South Terminal, Ted Stevens Airport"
-      }
-    ]
-  },
-  {
-    "_id": "note_no_dedicated_buffer",
-    "kind": "footnote",
-    "text": "No dedicated weather buffer day for this flight — per the note that missing one flightseeing tour among many isn't a big loss.",
-    "concerns": [
-      {
-        "entity": "scenario",
-        "id": "scenario_jun27_ideal"
-      },
-      {
-        "entity": "activity",
-        "id": "act_jul7_1"
-      },
-      {
-        "entity": "activity",
-        "id": "act_jul8_1"
-      },
-      {
-        "entity": "activity",
-        "id": "act_jul11_1"
-      }
-    ],
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_and_Range_from_Air_with_Plane_Wing_%287065283015%29.jpg",
-        "credit": "Photo by Jacob W. Frank / NPS, CC BY 2.0",
-        "caption": "Flightseeing plane wing over Denali and the Alaska Range"
       }
     ]
   },
@@ -1054,18 +994,6 @@
     "images": []
   },
   {
-    "_id": "note_act_jun29_lunch_opt0",
-    "kind": "footnote",
-    "text": "Restrooms, coffee and snacks, and photo views of the Yukon River and Trans-Alaska Pipeline.",
-    "concerns": [
-      {
-        "entity": "activity",
-        "id": "act_jun29_3"
-      }
-    ],
-    "images": []
-  },
-  {
     "_id": "note_act_jun29_lunch_opt1",
     "kind": "footnote",
     "text": "Packed food eaten in the car, to keep moving toward the 1pm Coldfoot arrival.",
@@ -1073,18 +1001,6 @@
       {
         "entity": "mealOption",
         "id": "act_jun29_lunch_opt1"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_act_jul1_ideal_lunch_opt0",
-    "kind": "footnote",
-    "text": "Between Coldfoot and the Yukon River.",
-    "concerns": [
-      {
-        "entity": "mealOption",
-        "id": "act_jul1_ideal_lunch_opt0"
       }
     ],
     "images": []
@@ -1582,42 +1498,6 @@
     "images": []
   },
   {
-    "_id": "note_lc_ladder_operators",
-    "kind": "info",
-    "text": "Rust's Flying Service handles the Katmai (Brooks Falls) and Redoubt Bay day trips; Lake Clark Air handles Port Alsworth. All three are Lake Hood-based charter operators — exact departure times are set by each operator and confirmed at booking, not fixed here.",
-    "concerns": [
-      {
-        "entity": "leg",
-        "id": "leg_parks"
-      },
-      {
-        "dateRange": [
-          "2027-07-10",
-          "2027-07-13"
-        ]
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_lc_ladder_buffer_risk",
-    "kind": "warning",
-    "text": "The buffer day (Jul 13) can only formally rescue one grounded flight. If more than one of Katmai, Port Alsworth, or Redoubt Bay gets weathered out across Jul 10-12, at least one of them won't happen on this trip — there's no day left to chase a second miss.",
-    "concerns": [
-      {
-        "entity": "leg",
-        "id": "leg_parks"
-      },
-      {
-        "dateRange": [
-          "2027-07-10",
-          "2027-07-13"
-        ]
-      }
-    ],
-    "images": []
-  },
-  {
     "_id": "b0c05335-18bf-4385-878f-6c4d67517faa",
     "kind": "info",
     "text": "Closes at 11:00 PM.  There are no fully 24-hour traditional grocery stores currently operating in Anchorage, Alaska.",
@@ -1632,7 +1512,7 @@
   {
     "_id": "c7cd6ed0-9b9e-423d-91bb-e540b4c72b42",
     "kind": "footnote",
-    "text": "Exact departure time is assigned when you book, not fixed at 9am. Hop-off privileges anywhere beyond Savage River for wildlife viewing and photos; reboard any later green bus. Round trip is about 4.5 hours to the current Mile 43 turnaround.",
+    "text": "Exact departure time is assigned when you book. Hop-off privileges anywhere beyond Savage River for wildlife viewing and photos; reboard any later green bus. Round trip is about 4.5 hours to the current Mile 43 turnaround.",
     "concerns": [
       {
         "entity": "transit",
@@ -1739,7 +1619,7 @@
   },
   {
     "_id": "45982a1f-1e04-4920-be05-33e9591f36c1",
-    "kind": "warning",
+    "kind": "info",
     "text": "Nonrefundable fare ($1,520.76 total).",
     "concerns": [
       {
@@ -1757,6 +1637,18 @@
       {
         "entity": "transit",
         "id": "transit_flight_otz_anc"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "e9b1ca36-ab78-4787-a1a5-b826b4f943a8",
+    "kind": "footnote",
+    "text": "Operators: K2 Aviation, Talkeetna Air Taxi, or Sheldon Air Service, all out of Talkeetna Airport (TKA).",
+    "concerns": [
+      {
+        "entity": "activity",
+        "id": "act_jun27_ideal_3"
       }
     ],
     "images": []
