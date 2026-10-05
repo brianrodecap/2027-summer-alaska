@@ -2,7 +2,7 @@ import { createContext } from 'react';
 
 import type { ChangeSource } from '../model/changeLog';
 import type { EditKind } from '../model/editForms';
-import type { Activity, Stay, Transit } from '../model/types';
+import type { Activity, Booking, Stay, Transit, Traveler } from '../model/types';
 
 type Entity = Activity | Stay | Transit;
 
@@ -10,6 +10,14 @@ type Entity = Activity | Stay | Transit;
 export interface DraftReview {
   kind: EditKind;
   entity: Entity;
+  // Booking documents the draft points at that aren't saved yet (a document
+  // import's new booking, an AI-proposed one) — the review form opens on
+  // these, layered over the trip's saved bookings, and Save commits them.
+  bookings?: Booking[];
+  // People the draft names whom the trip doesn't have yet (see
+  // documentImport.ts's withDocumentTravelers) — offered in the review form's
+  // traveler lists, and added to the trip when this draft is saved.
+  travelers?: Traveler[];
   overrideId?: string;
   onSaved?: (advance: () => void) => void;
   source?: ChangeSource;

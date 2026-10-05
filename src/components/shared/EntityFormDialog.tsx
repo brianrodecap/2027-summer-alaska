@@ -18,10 +18,15 @@ import { ConfirmableDeleteButton } from './ConfirmableDeleteButton';
 // null. A returned string is a validation message, shown in the banner
 // instead of closing. Omit `deletion` for a dialog with nothing to delete
 // (a brand-new entity, or a kind that can't be removed from here).
+//
+// `onSkip` is for a dialog that's one step of a review queue (a document
+// import's several drafted entries): Skip declines just this entry and moves
+// on, while Cancel — relabeled "Cancel all" — abandons the rest of the queue.
 export function EntityFormDialog({
   title,
   saveLabel = 'Save',
   onClose,
+  onSkip,
   onSubmit,
   deletion,
   children,
@@ -29,6 +34,7 @@ export function EntityFormDialog({
   title: string;
   saveLabel?: string;
   onClose: () => void;
+  onSkip?: () => void;
   onSubmit: () => string | null;
   deletion?: {
     title: string;
@@ -55,8 +61,13 @@ export function EntityFormDialog({
         {deletion ? <ConfirmableDeleteButton {...deletion} /> : <span />}
         <div>
           <Button onClick={onClose} data-testid="edit-dialog-cancel">
-            Cancel
+            {onSkip ? 'Cancel all' : 'Cancel'}
           </Button>
+          {onSkip && (
+            <Button onClick={onSkip} data-testid="edit-dialog-skip">
+              Skip
+            </Button>
+          )}
           <Button
             variant="contained"
             onClick={() => setError(onSubmit())}

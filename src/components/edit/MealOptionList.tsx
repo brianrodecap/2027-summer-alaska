@@ -14,12 +14,12 @@ import {
   blankMealOption,
   DINING_FORMAT_OPTIONS,
   DINING_FORMATS_WITH_INCLUDED_IN,
+  type MealOptionForm,
   swapItems,
 } from '../../model/editForms';
 import { DINING_FORMAT_LABEL } from '../../model/formatting';
-import type { Activity, DiningFormat, MealOption, Stay, Transit } from '../../model/types';
+import type { Activity, DiningFormat, Stay, Transit } from '../../model/types';
 import { BookingFields } from './BookingFields';
-import { bookingFormValueFrom, readBookingFormValue } from './bookingFormValue';
 import { IncludedInField } from './IncludedInField';
 import { PlacePickerField } from './PlacePickerField';
 
@@ -44,12 +44,12 @@ function MealOptionRow({
   onMoveUp,
   onMoveDown,
 }: {
-  option: MealOption;
+  option: MealOptionForm;
   stays: Stay[];
   activities: Activity[];
   transits: Transit[];
   jumpToDate: string | null;
-  onChange: (option: MealOption) => void;
+  onChange: (option: MealOptionForm) => void;
   onRemove: () => void;
   onMoveUp: () => void;
   onMoveDown: () => void;
@@ -113,10 +113,8 @@ function MealOptionRow({
         )}
         <BookingFields
           isMeal
-          value={bookingFormValueFrom(option.booking)}
-          onChange={(v) =>
-            onChange({ ...option, booking: readBookingFormValue(v, option.booking) })
-          }
+          value={option.booking}
+          onChange={(booking) => onChange({ ...option, booking })}
         />
       </Stack>
     </Box>
@@ -134,14 +132,14 @@ export function MealOptionList({
   jumpToDate,
   onChange,
 }: {
-  options: MealOption[];
+  options: MealOptionForm[];
   stays: Stay[];
   activities: Activity[];
   transits: Transit[];
   jumpToDate: string | null;
-  onChange: (options: MealOption[]) => void;
+  onChange: (options: MealOptionForm[]) => void;
 }) {
-  const update = (i: number, option: MealOption) =>
+  const update = (i: number, option: MealOptionForm) =>
     onChange(options.map((o, idx) => (idx === i ? option : o)));
   const remove = (i: number) => onChange(options.filter((_, idx) => idx !== i));
   const moveUp = (i: number) => {

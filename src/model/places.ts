@@ -153,12 +153,29 @@ export function getPlace(id: string): Promise<PlaceDetails> {
 // that per-visitor cost.
 const SEARCH_FIELD_MASK = ['places.id', 'places.displayName', 'places.formattedAddress'].join(',');
 
-export async function searchPlaces(query: string): Promise<PlaceSearchResult[]> {
+// `includedType` restricts results to one Places type (e.g. 'airport'), strictly
+// — without it a query like "Kotzebue (OTZ)" can rank any business whose name
+// happens to contain the code above the airport itself.
+// Memoized per page load on query + type: a document import resolves every
+// entry's places at once, and a round trip names each airport twice — each
+// repeat would otherwise be another billed Text Search. A failed search is
+// dropped from the cache so a retry can succeed.
+const searchCache = new Map<string, Promise<PlaceSearchResult[]>>();
+
+export function searchPlaces(query: string, includedType?: string): Promise<PlaceSearchResult[]> {
+  const key = `${includedType ?? ''}\0${query}`;
+  const result = memoizeAsync(searchCache, key, () => fetchSearch(query, includedType));
+  result.catch(() => searchCache.delete(key));
+  return result;
+}
+
+async function fetchSearch(query: string, includedType?: string): Promise<PlaceSearchResult[]> {
   const { places } = await googleApiFetch<{
     places?: { id: string; displayName?: { text?: string }; formattedAddress?: string }[];
   }>('Places API', 'https://places.googleapis.com/v1/places:searchText', SEARCH_FIELD_MASK, {
     textQuery: query,
     maxResultCount: 5,
+    ...(includedType ? { includedType, strictTypeFiltering: true } : {}),
   });
   return (places ?? []).map((p): PlaceSearchResult => ({
     id: p.id,

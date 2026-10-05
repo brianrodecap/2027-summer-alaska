@@ -128,12 +128,13 @@ function tripData(activityText = 'Kayak tour'): TripData {
         priority: null,
         text: activityText,
         place: null,
-        booking: null,
+        bookingId: null,
         mealType: null,
       },
     ],
     scenarios: [],
     notes: [],
+    bookings: [],
     travelModeOverrides: [],
     routes: [],
   } as unknown as TripData;
@@ -391,6 +392,7 @@ describe('propose_edit with a route', () => {
     _id: 'tr_1',
     legId: 'leg_a',
     journeyId: null,
+    travelers: null,
     scenarioId: null,
     status: 'planning',
     mode: 'drive',
@@ -400,7 +402,7 @@ describe('propose_edit with a route', () => {
     arrivesAt: '2027-07-14T11:00',
     routeId: null,
     routeVariant: null,
-    booking: null,
+    bookingId: null,
     images: [],
   };
   const data = { ...tripData(), transits: [drive], routes: [route] };
@@ -443,6 +445,33 @@ describe('propose_edit with a route', () => {
     });
   });
 
+  it('never stores an arrival on a drive that stays on its route', () => {
+    const routed = { ...drive, routeId: 'route_a', routeVariant: 'scenic', arrivesAt: null };
+    const resolved = resolveProposalDraft(
+      edit({ fields: { kind: 'transit', endAt: '2027-07-14T12:00' } }),
+      { ...data, transits: [routed] },
+    );
+    expect(resolved).toMatchObject({ draft: { routeId: 'route_a', arrivesAt: null } });
+  });
+
+  it('drops a renamed endpoint’s old place id, and keeps an unrenamed one', () => {
+    const resolvedEnds = {
+      ...drive,
+      from: { id: 'place_anc', label: 'Anchorage' },
+      to: { id: 'place_sew', label: 'Seward' },
+    };
+    const resolved = resolveProposalDraft(
+      edit({ fields: { kind: 'transit', fromLabel: 'Anchorage', toLabel: 'Whittier' } }),
+      { ...data, transits: [resolvedEnds] },
+    );
+    expect(resolved).toMatchObject({
+      draft: {
+        from: { id: 'place_anc', label: 'Anchorage' },
+        to: { id: null, label: 'Whittier' },
+      },
+    });
+  });
+
   it('rejects an unknown route or variant', () => {
     expect(resolveProposalDraft(edit({ routeId: 'nope' }), data)).toHaveProperty('error');
     expect(
@@ -473,5 +502,69 @@ describe('propose_edit with a route', () => {
     const context = buildTripContext({ ...data, transits: [routed] });
     expect(context).toContain('[route: route_a, variant scenic]');
     expect(context).toContain('Route route_a: Anchorage → Seward');
+  });
+});
+
+describe('propose_edit naming travelers', () => {
+  const flight: Transit = {
+    _id: 'tr_fl',
+    legId: 'leg_a',
+    journeyId: null,
+    travelers: ['t_a', 't_b'],
+    scenarioId: null,
+    status: 'planning',
+    mode: 'flight',
+    from: { id: null, label: 'Hometown' },
+    to: { id: null, label: 'Faraway' },
+    departsAt: '2027-07-14T08:00',
+    arrivesAt: '2027-07-14T11:00',
+    routeId: null,
+    routeVariant: null,
+    bookingId: null,
+    images: [],
+  };
+  const data: TripData = {
+    ...tripData(),
+    trip: {
+      _id: 'trip_x',
+      name: 'X',
+      images: [],
+      travelers: [
+        { id: 't_a', name: 'Alex Tester' },
+        { id: 't_b', name: 'Sam Tester' },
+        { id: 't_c', name: 'Kim Tester' },
+      ],
+    },
+    transits: [flight],
+  };
+
+  it('adds an unrecognized passenger as a new traveler instead of resetting to the whole party', () => {
+    const resolved = resolveProposalDraft(
+      {
+        kind: 'transit',
+        entityId: 'tr_fl',
+        summary: 's',
+        fields: { kind: 'transit', travelerNames: ['STRANGER/PAT MS'] },
+      },
+      data,
+    );
+    if ('error' in resolved) throw new Error(resolved.error);
+    expect(resolved.travelers).toEqual([{ id: expect.any(String), name: 'Pat Stranger' }]);
+    expect((resolved.draft as Transit).travelers).toEqual([resolved.travelers[0].id]);
+  });
+
+  it('matches a manifest-style name to the traveler it already is', () => {
+    const resolved = resolveProposalDraft(
+      {
+        kind: 'transit',
+        entityId: 'tr_fl',
+        summary: 's',
+        fields: { kind: 'transit', travelerNames: ['TESTER/KIM MRS'] },
+      },
+      data,
+    );
+    if ('error' in resolved) throw new Error(resolved.error);
+    expect(resolved.travelers).toEqual([]);
+    expect((resolved.draft as Transit).travelers).toEqual(['t_c']);
   });
 });

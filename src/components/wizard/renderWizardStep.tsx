@@ -1,3 +1,5 @@
+import Divider from '@mui/material/Divider';
+import Stack from '@mui/material/Stack';
 import type { ReactNode } from 'react';
 
 import type {
@@ -13,6 +15,7 @@ import type { ScenarioDateInfo } from '../../model/tripModel';
 import type { Activity, Leg, Route, Scenario, Stay, Transit, Traveler } from '../../model/types';
 import { ScenarioEditForm } from '../edit/ScenarioEditForm';
 import { LodgingField, StayWhenFields, TransitEndpointFields } from '../edit/StayTransitFields';
+import { TransitTravelFields } from '../edit/TransitTravelFields';
 import {
   ActivityReview,
   ActivityWhereWhenStep,
@@ -84,10 +87,18 @@ function renderBookingStep(ctx: WizardStepContext): ReactNode {
   }
   if (ctx.category === 'transit') {
     return (
-      <BookingStep
-        value={ctx.transitForm.booking}
-        onChange={(booking) => ctx.onTransitFormChange({ ...ctx.transitForm, booking })}
-      />
+      <Stack spacing={2}>
+        <TransitTravelFields
+          form={ctx.transitForm}
+          onChange={ctx.onTransitFormChange}
+          tripTravelers={ctx.tripTravelers}
+        />
+        <Divider />
+        <BookingStep
+          value={ctx.transitForm.booking}
+          onChange={(booking) => ctx.onTransitFormChange({ ...ctx.transitForm, booking })}
+        />
+      </Stack>
     );
   }
   return (

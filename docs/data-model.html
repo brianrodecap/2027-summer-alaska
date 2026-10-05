@@ -523,6 +523,9 @@
         <li>
           <a href="#travel-mode-override"><span class="n">10</span> TravelModeOverride</a>
         </li>
+        <li>
+          <a href="#booking"><span class="n">11</span> Booking</a>
+        </li>
       </ul>
       <h3>Reference data</h3>
       <ul>
@@ -584,12 +587,12 @@
             <p>
               Stay, Transit, and Activity each track whether they're happening at all
               (planning/active/completed/cancelled) regardless of money. A separate, optional
-              <code>booking</code> tracks only the reservation itself — present solely when a
-              purchase applies. Trip and Leg carry neither field of their own: a Trip/Leg's booking
-              progress is instead computed by rolling up whatever leaf entities underneath it
-              actually have a booking (tripModel.ts's
-              <code>legBookingProgress</code>/<code>tripBookingProgress</code>) — see Status
-              ladders, below.
+              <code>bookingId</code> points at the <a href="#booking">Booking</a> that tracks only
+              the reservation itself — present solely when a purchase applies. Trip and Leg carry
+              neither field of their own: a Trip/Leg's booking progress is instead computed by
+              rolling up whatever leaf entities underneath it actually have a booking
+              (tripModel.ts's <code>legBookingProgress</code>/<code>tripBookingProgress</code>) —
+              see Status ladders, below.
             </p>
           </div>
           <div class="principle">
@@ -645,12 +648,13 @@
           </div>
           <div class="ladder-row">
             <div class="ladder-label">
-              <strong>Booking status</strong> — inside an optional <code>booking</code> on Leg,
-              Stay, Transit, and Activity, present only when a reservation actually applies.
-              Independent of plan status: a cancelled <em>booking</em> doesn't mean the stay itself
-              is cancelled — you might rebook it elsewhere. A <code>Package</code> (see Stay) reuses
-              this exact ladder for the same reason — whether the add-on itself has been purchased
-              is independent of whether the Stay it belongs to is booked.
+              <strong>Booking status</strong> — on the <a href="#booking">Booking</a> that an
+              optional <code>bookingId</code> on Leg, Stay, Transit, or Activity points at, present
+              only when a reservation actually applies. Independent of plan status: a cancelled
+              <em>booking</em> doesn't mean the stay itself is cancelled — you might rebook it
+              elsewhere. A <code>Package</code> (see Stay) reuses this exact ladder for the same
+              reason — whether the add-on itself has been purchased is independent of whether the
+              Stay it belongs to is booked.
             </div>
             <div class="pills">
               <span class="pill active">planning</span><span class="arrow">→</span>
@@ -664,7 +668,7 @@
               <code>tripBookingProgress</code>/<code>legBookingProgress</code>), never stored. Rolls
               up the booking status of whatever leaf entities sit underneath: every
               Stay/Transit/Activity/Package booking (or, for a Leg bought as one bundle like the
-              cruise fare, that Leg's own <code>booking</code> alone, judged without being diluted
+              cruise fare, that Leg's own <code>bookingId</code> alone, judged without being diluted
               by the unbooked odds and ends inside it).
             </div>
             <div class="pills">
@@ -675,10 +679,11 @@
           </div>
           <p style="margin: 1rem 0 0; font-size: 0.88rem; color: var(--ink-muted)">
             Example: a free, unreserved campsite you decide to skip is
-            <code>status: 'cancelled'</code> with no <code>booking</code> at all. A hotel room the
-            hotel cancels on you — while you're still figuring out where else to stay — is
-            <code>booking.status: 'cancelled'</code> while the <code>Stay</code> itself stays
-            <code>status: 'planning'</code>. Collapsing these into one field loses that distinction.
+            <code>status: 'cancelled'</code> with no <code>bookingId</code> at all. A hotel room the
+            hotel cancels on you — while you're still figuring out where else to stay — is a
+            <a href="#booking">Booking</a> with <code>status: 'cancelled'</code> while the
+            <code>Stay</code> itself stays <code>status: 'planning'</code>. Collapsing these into
+            one field loses that distinction.
           </p>
         </div>
       </section>
@@ -717,7 +722,7 @@
           <li>
             <strong>No status, and no booking.</strong> A trip isn't itself a purchase — it's booked
             through what's inside it, so it has no reservation of its own to carry a
-            <code>status</code>/<code>booking</code> pair for. Its own booking progress is a
+            <code>status</code>/<code>bookingId</code> pair for. Its own booking progress is a
             computed rollup instead (<code>tripBookingProgress</code>) — see Status ladders, above.
             (This schema originally authored <code>status: PlanStatus</code> directly on Trip,
             alongside Leg; both were removed once the trips list needed a "how booked is this trip"
@@ -770,16 +775,7 @@
   tripId: 'trip_alaska_2027',
   name: '7-night cruise',
   skeletonAuthority: 'operator',   // self | operator
-  booking: {                       // optional — only when the whole leg is one bundle
-    status: 'booked',
-    cost: { amount: 9336.00, currency: 'USD' },
-    confirmationNumber: 'MWVV6Q',
-    depositPaidAt: '2026-08-06',    // added: the operator's own confirmation gave a
-    finalPaymentDueAt: '2027-04-18', // deposit/final-payment split cost alone couldn't show
-    passengers: [                   // added: per-passenger fare breakdown, only
-      { name: 'Brian Rodecap', fare: { amount: 3319.00, currency: 'USD' } },
-    ],
-  },
+  bookingId: 'booking_leg_cruise',   // → bookings.json (see Booking)
   images: [],
 }</code></pre>
         <ul class="rationale">
@@ -805,22 +801,19 @@
           <li>
             <strong>No status.</strong> A Leg's booking progress is a computed rollup
             (<code>legBookingProgress</code>), not an authored field — see Status ladders, above.
-            <code>booking</code> stays a real, optional field (unlike Trip, which has none at all):
-            it exists only because the cruise happens to be bought as one bundled fare, and when
-            present it's judged alone rather than averaged with the Stays/Transits/Activities
+            <code>bookingId</code> stays a real, optional field (unlike Trip, which has none at
+            all): it exists only because the cruise happens to be bought as one bundled fare, and
+            when present it's judged alone rather than averaged with the Stays/Transits/Activities
             underneath it. The parks leg has no single purchase, so its own progress is rolled up
             from those instead.
           </li>
           <li>
-            <strong
-              >depositPaidAt/finalPaymentDueAt/passengers extend the shared booking shape</strong
-            >
-            — added once the cruise line's actual booking confirmation supplied dates and a
-            per-passenger fare split that a single <code>cost</code> number couldn't hold. Populated
-            only where the source data has them (here, and mirrored on
-            <code>stay_cruise.booking</code> for cost/confirmationNumber); every other booking on
-            this page still uses the plain three-field shape. Ties into the "Booking as a formal
-            type" open thread below.
+            <strong>bookingId, not an embedded booking.</strong> The cruise fare is one
+            <a href="#booking">Booking</a> document (<code>booking_leg_cruise</code>), and
+            <code>stay_cruise</code> points at that same document rather than mirroring its cost and
+            confirmation number — so the budget counts the fare once without having to guess which
+            copy is the real one. Its deposit/final-payment dates and per-traveler fares live on the
+            Booking.
           </li>
         </ul>
       </article>
@@ -851,7 +844,7 @@
     place: { id: 'ChIJ...', label: 'Talkeetna Alaskan Lodge' },
     roomType: null, roomNumber: null, campsite: null,
   },
-  booking: { status: 'booked', cost: null, confirmationNumber: null },
+  bookingId: 'booking_stay_talkeetna',
   images: [],
 }</code></pre>
         <p class="schema-label">
@@ -870,7 +863,7 @@
     bedConfiguration: 'Convertible twins',   // added: cruise-specific,
     deckGroup: 'Upper', shipZone: 'Mid-Forward', // no hotel Stay needs these
   },
-  booking: { status: 'booked', cost: { amount: 9336.00, currency: 'USD' }, confirmationNumber: 'MWVV6Q' },
+  bookingId: 'booking_leg_cruise',   // the same document leg_cruise points at — one fare, stored once
   packages: [                    // Package[] | null — optional paid add-ons this
     {                             // Stay offers, on top of whatever's already
       _id: 'pkg_princess_premier', // bundled into the base rate
@@ -924,7 +917,7 @@
   checkInAt: '2027-07-12T00:00', checkOutAt: '2027-07-17T00:00',
   status: 'planning',
   lodging: null,
-  booking: { status: 'planning', cost: null, confirmationNumber: null },
+  bookingId: 'booking_stay_lc_katmai',
   images: [],
 }</code></pre>
         <p class="schema-label">Free, unreserved campsite</p>
@@ -935,7 +928,7 @@
   checkInAt: '2027-07-06T21:00', checkOutAt: '2027-07-07T07:00',
   status: 'planning',
   lodging: { place: { id: null, label: 'Roadside pullout, Denali Highway' } },
-  booking: null,               // first-come, first-served — nothing to reserve
+  bookingId: null,               // first-come, first-served — nothing to reserve
   images: [],
 }</code></pre>
         <p class="schema-label">
@@ -954,7 +947,7 @@
     roomType: null, roomNumber: null, campsite: '022, Lower Loop',
     partySize: 4, equipment: 'Tent', vehicleCount: 0,  // added: booking-time
   },                                                     // constraints a paid
-  booking: { status: 'booked', cost: { amount: 15.00, currency: 'USD' }, confirmationNumber: '0878703196-1' },
+  bookingId: 'booking_stay_example_scorpion',
   images: [],
 }</code></pre>
         <p class="schema-label">
@@ -976,17 +969,7 @@
   // "No check-in after 1:00am without advance notice; 18+ to check in." is a
   // Note (kind: 'info') concerning { entity: 'stay', id: 'stay_example_pacific' }
   // now, not an inline field — see the Note entity, below.
-  booking: {
-    status: 'booked',
-    cost: { amount: 531.70, currency: 'USD' },  // amount actually charged —
-                                                   // not the room/tax/credit line items
-    confirmationNumber: null,                    // no separate hotel-native code
-                                                   // was ever given for this booking
-    bookedThrough: {                              // added: booked via a third-party
-      name: 'Capital One Travel',                 // agent — this booking only ever
-      confirmationNumber: 'H-MR3H7GQVN49P',        // had the agent's own code
-    },
-  },
+  bookingId: 'booking_stay_example_pacific',   // → bookings.json (see Booking)
   images: [],
 }</code></pre>
         <ul class="rationale">
@@ -1019,7 +1002,7 @@
           <li>
             <strong>status and booking are independent</strong>, not one field. Most stays have both
             moving together, but not always — a free roadside camp never gets a
-            <code>booking</code> at all, and a hotel that cancels your reservation doesn't
+            <code>bookingId</code> at all, and a hotel that cancels your reservation doesn't
             retroactively cancel the <em>stay</em> if you plan to rebook elsewhere.
           </li>
           <li>
@@ -1046,7 +1029,7 @@
             <code>leg_cruise</code>/<code>stay_cruise</code> already use, one level down.
           </li>
           <li>
-            <strong>bookedThrough extends <code>booking</code></strong
+            <strong>bookedThrough extends <a href="#booking">Booking</a></strong
             >, surfaced by testing against a real Capital One Travel hotel reservation whose only
             confirmation number belongs to the booking agent, not the hotel itself. Originally added
             as a flat name string with <code>confirmationNumber</code> left ambiguous ("whichever
@@ -1070,7 +1053,7 @@
           </li>
           <li>
             <strong>packages holds optional paid add-ons</strong> — a purchase distinct from both
-            the base <code>booking</code> (which pays for the Stay itself) and an Activity's
+            the base <code>bookingId</code> (which pays for the Stay itself) and an Activity's
             <code>diningFormat: 'included'</code> (bundled into the base rate at no extra decision).
             Princess Plus/Premier and a hotel's optional meal plan are the same shape: a single
             purchase, made once at the Stay level, that then covers many individual Activities.
@@ -1154,7 +1137,7 @@
   routeVariant: 'scenic',
   showEndpointsOnMap: true,  // optional, routed drives only — omitted = false:
                              // from/to are left off maps, links and drive totals
-  booking: null,           // own car, no reservation — status still tracks the plan
+  bookingId: null,           // own car, no reservation — status still tracks the plan
   images: [],
 }</code></pre>
         <p class="schema-label">
@@ -1174,19 +1157,7 @@
   departsAt: '2026-06-24T08:15',
   arrivesAt: '2026-06-24T09:15',
   routeId: null, routeVariant: null,
-  booking: {
-    status: 'booked',
-    cost: { amount: 198.00, currency: 'USD' },  // this sailing's own total
-                                                   // (4 fares + its share of tax)
-    confirmationNumber: '345607334',             // this sailing's own code — the
-                                                   // order-level code (FPLZAS) is
-    passengers: [                                 // never stored, same as the
-      { name: 'Brian Rodecap',   fare: { amount: 44.50, currency: 'USD' } },  // campsite's
-      { name: 'Stacy Rodecap',   fare: { amount: 44.50, currency: 'USD' } },  // order-vs-item
-      { name: 'Redding Rodecap', fare: { amount: 44.50, currency: 'USD' } },  // split
-      { name: 'Lorelei Rodecap', fare: { amount: 44.50, currency: 'USD' } },
-    ],
-  },
+  bookingId: 'booking_transit_example_catalina_out',   // → bookings.json (see Booking)
   images: [],
 }</code></pre>
         <p class="schema-label">
@@ -1203,30 +1174,21 @@
   mode: 'flight',
   carrier: 'Delta',              // added: mode-specific, present only when
   flightNumber: 'DL479',          // mode is 'flight' — a route/date has many flights
+  operatedBy: undefined,          // added: only for a codeshare another airline flies
+  aircraft: 'Airbus A321',        // added: optional, as printed on the itinerary
+  travelers: null,                // added: Trip.travelers[].id, null = whole party
+  seats: [                        // added: per flight, never per booking — a round
+    { travelerId: 'trav_brian',   seat: '32F', cabin: 'Main', fareClass: 'X' },  // trip's
+    { travelerId: 'trav_stacy',   seat: '32C' },                                  // return
+    { travelerId: 'trav_redding', seat: '32B' },                                  // gets its
+    { travelerId: 'trav_lorelei', seat: '32A' },                                  // own list
+  ],
   from: { placeId: 'ChIJ...', label: 'Boston Logan Intl (BOS)' },
   to:   { placeId: 'ChIJ...', label: 'Los Angeles Intl (LAX)' },
   departsAt: '2026-06-06T07:00',
   arrivesAt: '2026-06-06T10:20',
   routeId: null, routeVariant: null,
-  booking: {
-    status: 'booked',
-    cost: { amount: 693.60, currency: 'USD' },  // total for all 4 passengers
-    confirmationNumber: 'F7AJLC',                // Delta's own PNR
-    bookedThrough: {
-      name: 'Capital One Travel',
-      confirmationNumber: 'H-IPMCIF',             // the agent's own, separate code
-    },
-    passengers: [                                  // added: ticketNumber/seat —
-      { name: 'Brian Rodecap',   fare: { amount: 173.40, currency: 'USD' },
-        ticketNumber: '0067434904187', seat: '32F' },  // per-passenger facts fare
-      { name: 'Stacy Rodecap',   fare: { amount: 173.40, currency: 'USD' },     // alone couldn't
-        ticketNumber: '0067434904188', seat: '32C' },  // carry
-      { name: 'Redding Rodecap', fare: { amount: 173.40, currency: 'USD' },
-        ticketNumber: '0067434904189', seat: '32B' },
-      { name: 'Lorelei Rodecap', fare: { amount: 173.40, currency: 'USD' },
-        ticketNumber: '0067434904190', seat: '32A' },
-    ],
-  },
+  bookingId: 'booking_transit_example_bos_lax',   // → bookings.json (see Booking)
   images: [],
 }</code></pre>
         <ul class="rationale">
@@ -1304,10 +1266,9 @@
             built for.
           </li>
           <li>
-            <strong>passengers[] needed no new field at all</strong> to cover the ferry. Transit
-            shares Leg's <code>booking</code> shape by convention, and the per-passenger fare split
-            already added there for the cruise covers a multi-traveler sailing exactly as designed —
-            the first confirmation that extension isn't cruise-specific.
+            <strong>Per-traveler fares needed no new field</strong> to cover the ferry: its
+            <a href="#booking">Booking</a> is priced <code>perTraveler</code> exactly like the
+            cruise fare, the first confirmation that pricing shape isn't cruise-specific.
           </li>
           <li>
             <strong>mode: 'ferry'/'flight' are just values</strong>, not a schema change —
@@ -1331,17 +1292,22 @@
           </li>
           <li>
             <strong>carrier/flightNumber are new, mode-specific fields on Transit itself</strong> —
-            not <code>booking</code>, since which specific flight actually moved you is a fact about
-            the movement, independent of whether or how it was booked (you could know a flight
+            not <code>bookingId</code>, since which specific flight actually moved you is a fact
+            about the movement, independent of whether or how it was booked (you could know a flight
             number without ever reserving through this record). Same "detail the shared shape can't
             carry" reasoning that already justifies Stay's
             <code>bedConfiguration</code>/<code>campsite</code>, just on Transit and gated by
             <code>mode</code> instead of a lodging type.
           </li>
           <li>
-            <strong>passengers[].ticketNumber/seat extend the per-passenger entry</strong> — a
-            flight, unlike the ferry, hands each passenger their own e-ticket number and (when
-            selected) a seat assignment. Both optional, populated only when actually known.
+            <strong>Ticket numbers go on the Booking, seats on the Transit.</strong> A ticket (and
+            its fare) covers every flight it was issued for, while a seat belongs to one flight — a
+            round trip seats the same traveler differently each way. So
+            <code>ticketNumber</code> sits on the Booking's per-traveler fare, and
+            <code>seats[]</code> (with optional <code>cabin</code>/<code>fareClass</code>) sits on
+            each Transit. <code>travelers</code> names who's on this movement when it isn't the
+            whole party; <code>operatedBy</code> records a codeshare's operating airline (AS 2000
+            sold by Alaska, flown by Horizon), and <code>aircraft</code> the equipment.
           </li>
           <li>
             <strong
@@ -1350,6 +1316,80 @@
             >: Delta's own PNR lands in <code>confirmationNumber</code>, Capital One's separate
             order code lands in <code>bookedThrough.confirmationNumber</code> — exactly the
             two-live-codes case that forced the shape change in the first place.
+          </li>
+        </ul>
+      </article>
+
+      <!-- 11 BOOKING -->
+      <article class="entity" id="booking" data-kind="owned">
+        <div class="entity-head">
+          <span class="entity-num">11</span>
+          <div>
+            <span class="badge badge-owned">Trip-owned</span>
+            <h2>Booking</h2>
+            <p class="entity-purpose">
+              One reservation or purchase — a ticket, a fare, a room rate — stored once in
+              <code>bookings.json</code> and pointed at by <code>bookingId</code> from every
+              Leg/Stay/Transit/Activity/MealOption it pays for.
+            </p>
+          </div>
+        </div>
+        <pre class="schema"><code>{
+  _id: 'booking_scycup',
+  status: 'booked',                  // planning | booked | cancelled
+  confirmationNumber: 'SCYCUP',
+  pricing: {                         // exactly one way, or null when unpriced:
+    kind: 'perTraveler',             //   { kind: 'total', cost: Money }
+    fares: [                         //   { kind: 'perTraveler', fares: [...] }
+      { travelerId: 'trav_brian',   fare: { amount: 380.19, currency: 'USD' },
+        ticketNumber: '0272161492448' },
+      { travelerId: 'trav_stacy',   fare: { amount: 380.19, currency: 'USD' },
+        ticketNumber: '0272161492449' },
+      // … one per ticketed traveler; the total ($1,520.76) is their sum, never stored
+    ],
+  },
+  bookedThrough: undefined,          // optional: string | { name, confirmationNumber }
+  depositPaidAt: undefined,          // optional: a payment schedule, when the
+  finalPaymentDueAt: undefined,      // booking has one (the cruise fare does)
+}
+// Both flights of that round trip point at it:
+// transit_flight_anc_otz.bookingId === transit_flight_otz_anc.bookingId === 'booking_scycup'</code></pre>
+        <ul class="rationale">
+          <li>
+            <strong>Its own collection, not embedded.</strong> Bookings were first an embedded
+            <code>bookingId</code> object on each entity. That broke as soon as one purchase paid
+            for more than one entry: a round-trip ticket covers two Transits, and the cruise fare
+            covered both its Leg and the cabin Stay, so the same facts were copied onto each and the
+            budget had to guess (by confirmation number) which copy to count. As one document with
+            ids pointing at it, the fare is stored once, edited once, and counted once.
+          </li>
+          <li>
+            <strong>Price is stored one way only.</strong> A booking that itemizes per traveler (an
+            airline's per-ticket fares, a cruise fare per guest) stores the fares, and its total is
+            computed as their sum (<code>bookingCost</code> in bookings.ts). One that only quotes an
+            overall price stores that total. Never both, so they can't disagree; the type makes
+            "both" unrepresentable. The budget's By Traveler view credits per-traveler fares exactly
+            and splits a total evenly (marked as inferred).
+          </li>
+          <li>
+            <strong>Fares are keyed by traveler id, not name.</strong> <code>travelerId</code> is a
+            <code>Trip.travelers[].id</code>, the same reference <code>Package.travelers</code> and
+            <code>Transit.seats</code> use, so a renamed traveler can't orphan a fare.
+          </li>
+          <li>
+            <strong>Seats are not here.</strong> A fare covers every flight on its ticket, but a
+            seat belongs to one flight, so seats live on each Transit's own <code>seats[]</code>.
+          </li>
+          <li>
+            <strong>Orphans are pruned on save.</strong> Every write, whether it clears an entity's
+            booking, deletes the entity or comes from an AI edit, drops any Booking nothing points
+            at any more, so <code>bookings.json</code> never collects unreferenced documents. A
+            booking still referenced by another entity (the other flight) is kept.
+          </li>
+          <li>
+            <strong>Stay.packages are not Bookings.</strong> A Package (a resort fee, a meal plan)
+            is a line item inside one Stay with its own status and cost, not a reservation other
+            entities could share, so it keeps its own fields.
           </li>
         </ul>
       </article>
@@ -1677,7 +1717,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
                        // today" view
   text: 'Denali flightseeing with glacier landing',
   place: null,
-  booking: { status: 'booked', cost: null, confirmationNumber: null },
+  bookingId: 'booking_act_flightseeing',
   mealType: null,          // 'breakfast' | 'lunch' | 'dinner' | 'snack' | null — null
                             // for the vast majority of activities that aren't food at all
   diningFormat: null,      // 'included' | 'package' | 'sit-down' | 'grab-and-go' |
@@ -1706,7 +1746,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   priority: null,
   text: 'ZipRider at Icy Strait Point',
   place: { id: 'ChIJ...', label: 'Icy Strait Point', images: [] },
-  booking: { status: 'planning', cost: null, confirmationNumber: null },
+  bookingId: 'booking_act_example_zipline',
   mealType: null,
   diningFormat: null,
   includedIn: null,
@@ -1728,7 +1768,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   priority: null,
   text: 'Breakfast, included with the room',
   place: null,
-  booking: null,
+  bookingId: null,
   mealType: 'breakfast',
   diningFormat: 'included',
   includedIn: { entity: 'stay', id: 'stay_talkeetna' },
@@ -1750,7 +1790,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   priority: null,
   text: 'Crown Grill',
   place: null,
-  booking: null,
+  bookingId: null,
   mealType: 'dinner',
   diningFormat: 'package',
   includedIn: { entity: 'package', id: 'pkg_princess_premier' },
@@ -1770,7 +1810,7 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   priority: null,
   text: 'Breakfast — choosing where',
   place: null,          // stays null — nothing chosen yet, same as Stay.lodging: null
-  booking: null,
+  bookingId: null,
   mealType: 'breakfast',
   diningFormat: null,   // stays null while options is set — nothing committed
   includedIn: null,
@@ -2110,24 +2150,6 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
                 something to link against, but is otherwise still just a lightweight embedded list.
                 Undesigned: whether travelers need a fuller identity (for a multi-user "real app"),
                 or an <code>id</code> is as far as this ever needs to go.</span
-              >
-            </p>
-          </div>
-          <div class="thread">
-            <span class="mark">→</span>
-            <p>
-              <strong>Booking as a formal type</strong
-              ><span
-                >Treated here as a shape repeated by convention across Leg, Stay, Transit, and
-                Activity. In a real schema language this would likely become one named, shared type
-                rather than four copies of the same core fields — increasingly true now that
-                per-entity tests keep adding their own optional extensions to it
-                (<code>depositPaidAt</code>/<code>passengers</code> on Leg,
-                <code>bookedThrough</code> on Stay), the ferry test showed
-                <code>passengers</code> itself is already reusable as-is on Transit, and the flight
-                test forced <code>bookedThrough</code> from a flat string into its own
-                <code>{ name, confirmationNumber }</code> shape once a real booking needed two live
-                confirmation codes at once.</span
               >
             </p>
           </div>

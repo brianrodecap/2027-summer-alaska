@@ -94,4 +94,32 @@ describe('runReadTool', () => {
     await expect(runReadTool('get_entity', {}, ctx)).rejects.toBeInstanceOf(ToolInputError);
     await expect(runReadTool('get_weather', { date: '7/14' }, ctx)).rejects.toThrow('YYYY-MM-DD');
   });
+
+  it('returns the bookings an entity and its options reference', async () => {
+    const booking = (id: string) => ({
+      _id: id,
+      status: 'booked',
+      pricing: null,
+      confirmationNumber: `CONF-${id}`,
+    });
+    const withBookings = {
+      ...ctx,
+      data: {
+        ...ctx.data,
+        activities: [
+          {
+            _id: 'act_dinner',
+            bookingId: 'bk_a',
+            options: [{ bookingId: 'bk_b' }, { bookingId: 'bk_a' }, { bookingId: null }],
+          },
+        ],
+        bookings: [booking('bk_a'), booking('bk_b'), booking('bk_unused')],
+      } as unknown as TripData,
+    };
+    const result = JSON.parse(
+      (await runReadTool('get_entity', { id: 'act_dinner' }, withBookings)) as string,
+    );
+    expect(result.bookings.map((b: { _id: string }) => b._id)).toEqual(['bk_a', 'bk_b']);
+    expect(result.bookings[0].confirmationNumber).toBe('CONF-bk_a');
+  });
 });

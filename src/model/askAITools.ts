@@ -7,12 +7,13 @@
 // draft for human review.
 import type { BetaTool } from '@anthropic-ai/sdk/resources/beta/messages/messages';
 
+import { bookingById, bookingIdsOf, uniqueBookings } from './bookings';
 import { lookupTravelInfo } from './directions';
 import { TRAVEL_MODES } from './formatting';
 import { isIsoDate } from './isoDate';
 import { searchPlaces } from './places';
 import { activityHeadline, formatMoney, formatTime } from './tripModel';
-import type { Day, DayRow, Note, Place, TravelMode, TripData, TripView } from './types';
+import type { Booking, Day, DayRow, Note, Place, TravelMode, TripData, TripView } from './types';
 import { getDayWeather } from './weather';
 
 // Everything the tools read, captured when a question is sent. `byDate` is the live
@@ -148,6 +149,14 @@ export function findEntity(data: TripData, id: string): { kind: string; entity: 
   return null;
 }
 
+// Entities store only a bookingId (one Booking can cover several entities),
+// so the bookings an entity and its meal options point at are looked up here
+// for get_entity — the model can't see cost or confirmation otherwise.
+function bookingsOf(data: TripData, entity: unknown): Booking[] {
+  const ids = bookingIdsOf(entity as Parameters<typeof bookingIdsOf>[0]);
+  return uniqueBookings(ids.map((id) => bookingById(data.bookings, id)));
+}
+
 function notesConcerning(data: TripData, id: string): Note[] {
   return data.notes.filter((n) => n.concerns.some((ref) => 'entity' in ref && ref.id === id));
 }
@@ -170,7 +179,7 @@ const READ_TOOL_DEFINITIONS: BetaTool[] = [
   {
     name: 'get_entity',
     description:
-      'The full stored record for one activity, stay, transit, scenario, note, leg or route by its id — booking details, cost, confirmation, meal options, packages — plus every note attached to it.',
+      'The full stored record for one activity, stay, transit, scenario, note, leg or route by its id — meal options, packages — plus the bookings it and its options reference by bookingId (status, pricing, confirmation, payment dates) and every note attached to it.',
     input_schema: {
       type: 'object',
       properties: { id: { type: 'string', description: 'The entity _id.' } },
@@ -259,7 +268,8 @@ export async function runReadTool(
       const found = findEntity(ctx.data, id);
       if (!found) throw new ToolInputError(`No entity with id ${id}.`);
       const notes = found.kind === 'note' ? [] : notesConcerning(ctx.data, id);
-      return JSON.stringify({ kind: found.kind, entity: found.entity, notes });
+      const bookings = bookingsOf(ctx.data, found.entity);
+      return JSON.stringify({ kind: found.kind, entity: found.entity, bookings, notes });
     }
 
     case 'search_notes': {

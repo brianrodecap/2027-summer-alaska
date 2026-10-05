@@ -6,6 +6,7 @@ import {
   applyTransitForm,
   blankRouteVariant,
   blankTransit,
+  NO_BOOKINGS,
   routeFormFrom,
   transitFormFrom,
 } from './editForms';
@@ -136,7 +137,7 @@ describe('Transit show-endpoints-on-maps opt-in', () => {
 
   it('stores the opt-in only when set on a routed Transit', () => {
     const transit = routed();
-    const form = transitFormFrom(transit);
+    const form = transitFormFrom(transit, NO_BOOKINGS);
     expect(form.showEndpointsOnMap).toBe(false);
     expect(applyTransitForm(transit, { ...form, showEndpointsOnMap: true })).toBeNull();
     expect(transit.showEndpointsOnMap).toBe(true);
@@ -147,13 +148,33 @@ describe('Transit show-endpoints-on-maps opt-in', () => {
   it('drops the opt-in once the route is cleared', () => {
     const transit = { ...routed(), showEndpointsOnMap: true };
     const form = {
-      ...transitFormFrom(transit),
+      ...transitFormFrom(transit, NO_BOOKINGS),
       routeId: null,
       arrivesDate: '2027-06-01',
       arrivesTime: '12:00',
     };
     expect(applyTransitForm(transit, form)).toBeNull();
     expect('showEndpointsOnMap' in transit).toBe(false);
+  });
+});
+
+describe('Transit seats', () => {
+  it('drops the seat of a traveler no longer on board', () => {
+    const transit = blankTransit('leg_test', '2027-06-01');
+    const form = {
+      ...transitFormFrom(transit, NO_BOOKINGS),
+      arrivesDate: '2027-06-01',
+      arrivesTime: '12:00',
+      travelerIds: ['t_a'],
+      seats: [
+        { travelerId: 't_a', seat: '1A' },
+        { travelerId: 't_b', seat: '1B' },
+      ],
+    };
+    expect(applyTransitForm(transit, form)).toBeNull();
+    expect(transit.seats).toEqual([{ travelerId: 't_a', seat: '1A' }]);
+    expect(applyTransitForm(transit, { ...form, travelerIds: [] })).toBeNull();
+    expect(transit.seats).toHaveLength(2);
   });
 });
 

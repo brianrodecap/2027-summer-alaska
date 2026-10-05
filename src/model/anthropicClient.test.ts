@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createMessage } from './anthropicClient';
-import { extractEntityFromDocument, extractTripEntitiesFromDocument } from './documentImport';
+import { extractDocumentEntries, extractTripEntitiesFromDocument } from './documentImport';
 
 // Every test here stubs the global fetch the SDK calls, so nothing reaches the real
 // API — the assertions are on the exact request each feature builds and on how each
@@ -133,9 +133,12 @@ describe('document import request', () => {
   it('asks for structured output instead of a forced tool call, and parses the JSON reply', async () => {
     const calls = stubApi(
       200,
-      reply([THINKING, { type: 'text', text: '{"kind":"stay","lodgingName":"Test Lodge"}' }]),
+      reply([
+        THINKING,
+        { type: 'text', text: '{"entities":[{"kind":"stay","lodgingName":"Test Lodge"}]}' },
+      ]),
     );
-    const fields = await extractEntityFromDocument(pdf(), 'sk-test');
+    const result = await extractDocumentEntries(pdf(), 'sk-test');
 
     const { body } = calls[0];
     expect(body.tool_choice).toBeUndefined();
@@ -144,7 +147,43 @@ describe('document import request', () => {
     const format = (body.output_config as { format: { type: string; schema: unknown } }).format;
     expect(format.type).toBe('json_schema');
     expect(objectsMissingClosedFlag(format.schema)).toEqual([]);
-    expect(fields).toEqual({ kind: 'stay', lodgingName: 'Test Lodge' });
+    expect(result).toEqual({ entities: [{ kind: 'stay', lodgingName: 'Test Lodge' }] });
+  });
+
+  // The API rejects a structured-output schema with more than 24 optional
+  // properties or more than 16 union-typed (nullable / anyOf) ones, each counted
+  // across every nested object.
+  const countProps = (
+    schema: unknown,
+    test: (prop: Record<string, unknown>, required: boolean) => boolean,
+  ): number => {
+    if (!schema || typeof schema !== 'object') return 0;
+    const s = schema as Record<string, unknown>;
+    const props = (s.properties ?? {}) as Record<string, Record<string, unknown>>;
+    const required = new Set((s.required as string[] | undefined) ?? []);
+    const own = Object.entries(props).filter(([k, p]) => test(p, required.has(k))).length;
+    const nested = [...Object.values(props), s.items, ...((s.anyOf as unknown[]) ?? [])];
+    return own + nested.reduce<number>((n, child) => n + countProps(child, test), 0);
+  };
+
+  it('stays within the optional/union caps, and drops the empty placeholders from the reply', async () => {
+    const calls = stubApi(
+      200,
+      reply([
+        {
+          type: 'text',
+          text: '{"tripName":"","entities":[{"kind":"transit","carrier":"","mealType":"","extraFees":[],"noteworthy":[{"kind":"info","text":"x"}]}]}',
+        },
+      ]),
+    );
+    const result = await extractTripEntitiesFromDocument(pdf(), 'sk-test');
+
+    const format = (calls[0].body.output_config as { format: { schema: unknown } }).format;
+    expect(countProps(format.schema, (_, required) => !required)).toBeLessThanOrEqual(2);
+    expect(countProps(format.schema, (p) => Array.isArray(p.type) || 'anyOf' in p)).toBe(0);
+    expect(result).toEqual({
+      entities: [{ kind: 'transit', noteworthy: [{ kind: 'info', text: 'x' }] }],
+    });
   });
 
   it('closes every object in the whole-trip schema too', async () => {
@@ -160,9 +199,7 @@ describe('document import request', () => {
   });
 
   it('reports a reply cut off at max_tokens instead of parsing partial JSON', async () => {
-    stubApi(200, reply([{ type: 'text', text: '{"kind":"st' }], 'max_tokens'));
-    await expect(extractEntityFromDocument(pdf(), 'sk-test')).rejects.toThrow(
-      'more detail than fits',
-    );
+    stubApi(200, reply([{ type: 'text', text: '{"entities":[{"kind":"st' }], 'max_tokens'));
+    await expect(extractDocumentEntries(pdf(), 'sk-test')).rejects.toThrow('more detail than fits');
   });
 });

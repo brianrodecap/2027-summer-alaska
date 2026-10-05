@@ -21,7 +21,7 @@ const activity = (id: string, legId: string, startAt: string, extra: Partial<Act
     priority: null,
     text: id,
     place: null,
-    booking: null,
+    bookingId: null,
     mealType: null,
     diningFormat: null,
     includedIn: null,
@@ -60,6 +60,7 @@ function twoLegTrip(): TripData {
     ],
     scenarios: [],
     notes: [],
+    bookings: [],
     travelModeOverrides: [],
     routes: [],
   };

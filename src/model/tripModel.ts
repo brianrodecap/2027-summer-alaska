@@ -11,6 +11,8 @@
 // `Date`/`dayjs` object and hand it to a caller, or accept one as an input —
 // picker components convert to/from plain strings at their own edge instead.
 
+import { bookingById, bookingCost, bookingFares, bookingIdsInLeg, bookingOf } from './bookings';
+import type { EditKind, Entity } from './editForms';
 import { firstImage } from './formatting';
 import type {
   Activity,
@@ -37,6 +39,7 @@ import type {
   Leg,
   LegSummary,
   LiveRouteOverrides,
+  MealOption,
   Money,
   Note,
   Package,
@@ -70,23 +73,37 @@ export async function loadTripData(slug: string): Promise<TripData> {
     'stays',
     'transits',
     'activities',
+    'bookings',
     'scenarios',
     'notes',
     'travelModeOverrides',
   ] as const;
-  const [[trip, legs, stays, transits, activities, scenarios, notes, travelModeOverrides], routes] =
-    await Promise.all([
-      Promise.all(files.map((f) => fetch(`${base}${f}.json`).then((r) => r.json()))),
-      fetch(`${import.meta.env.BASE_URL}data/routes.json`).then((r) => r.json()),
-    ]);
-  return { trip, legs, stays, transits, activities, scenarios, notes, travelModeOverrides, routes };
+  const [
+    [trip, legs, stays, transits, activities, bookings, scenarios, notes, travelModeOverrides],
+    routes,
+  ] = await Promise.all([
+    Promise.all(files.map((f) => fetch(`${base}${f}.json`).then((r) => r.json()))),
+    fetch(`${import.meta.env.BASE_URL}data/routes.json`).then((r) => r.json()),
+  ]);
+  return {
+    trip,
+    legs,
+    stays,
+    transits,
+    activities,
+    bookings,
+    scenarios,
+    notes,
+    travelModeOverrides,
+    routes,
+  };
 }
 
 // public/data/trips.json lists only trip slugs (the folder names under
 // public/data/); everything displayed about a trip — name, dates — is read
 // from that trip's own trip.json (plus legs.json, for its computed date
-// range), never duplicated into the index. stays/transits/activities are
-// fetched too, purely so the trips list can show each trip's computed
+// range), never duplicated into the index. stays/transits/activities/bookings
+// are fetched too, purely so the trips list can show each trip's computed
 // booking status (tripBookingProgress) without a full loadTripData.
 export async function loadTripsIndex(): Promise<TripsIndexEntry[]> {
   const manifest: { slug: string }[] = await fetch(
@@ -95,14 +112,15 @@ export async function loadTripsIndex(): Promise<TripsIndexEntry[]> {
   return Promise.all(
     manifest.map(async ({ slug }) => {
       const base = `${import.meta.env.BASE_URL}data/${slug}/`;
-      const [trip, legs, stays, transits, activities] = await Promise.all([
+      const [trip, legs, stays, transits, activities, bookings] = await Promise.all([
         fetch(`${base}trip.json`).then((r) => r.json()),
         fetch(`${base}legs.json`).then((r) => r.json()),
         fetch(`${base}stays.json`).then((r) => r.json()),
         fetch(`${base}transits.json`).then((r) => r.json()),
         fetch(`${base}activities.json`).then((r) => r.json()),
+        fetch(`${base}bookings.json`).then((r) => r.json()),
       ]);
-      return { slug, trip, legs, stays, transits, activities };
+      return { slug, trip, legs, stays, transits, activities, bookings };
     }),
   );
 }
@@ -392,25 +410,27 @@ export function tripDayCount(range: DateRange): number {
 // on its own booking alone, rather than diluted by the unbooked odds and
 // ends (shore excursions, included meals) underneath it.
 
+// What booking progress is computed over — the entity collections plus the
+// bookings they point at.
+export type BookingSources = Pick<TripData, 'stays' | 'transits' | 'activities' | 'bookings'>;
+
 // A single Leg's own "counted units": just its own booking when it has one
 // (an operator-bundled leg is one unit, booked or not), otherwise every
-// booking.status underneath it — one per Stay/Transit/Activity that has a
-// booking at all, plus one per Stay Package. Entities with no booking
-// (nothing to reserve — a free morning, an included meal) aren't counted:
-// they're neither "needs booking" nor "booked".
-function legBookingStatuses(
-  leg: Leg,
-  stays: Stay[],
-  transits: Transit[],
-  activities: Activity[],
-): BookingStatus[] {
-  if (leg.booking) return [leg.booking.status];
-  const legStays = stays.filter((s) => s.legId === leg._id);
+// booking underneath it — one per distinct booking document a Stay/Transit/
+// Activity/meal candidate points at (a round-trip ticket covering two flights
+// counts once),
+// plus one per Stay Package. Entities with no booking (nothing to reserve — a
+// free morning, an included meal) aren't counted: they're neither "needs
+// booking" nor "booked".
+function legBookingStatuses(leg: Leg, sources: BookingSources): BookingStatus[] {
+  const own = bookingById(sources.bookings, leg.bookingId);
+  if (own) return [own.status];
+  const legStays = sources.stays.filter((s) => s.legId === leg._id);
   return [
-    ...legStays.map((s) => s.booking?.status),
+    ...[...bookingIdsInLeg(sources, leg._id)].map(
+      (id) => bookingById(sources.bookings, id)?.status,
+    ),
     ...legStays.flatMap((s) => s.packages?.map((p) => p.status) ?? []),
-    ...transits.filter((t) => t.legId === leg._id).map((t) => t.booking?.status),
-    ...activities.filter((a) => a.legId === leg._id).map((a) => a.booking?.status),
   ].filter((s): s is BookingStatus => s != null);
 }
 
@@ -435,24 +455,14 @@ export interface BookingSummary {
   percent: number;
 }
 
-export function legBookingSummary(
-  leg: Leg,
-  stays: Stay[],
-  transits: Transit[],
-  activities: Activity[],
-): BookingSummary {
-  const statuses = legBookingStatuses(leg, stays, transits, activities);
+export function legBookingSummary(leg: Leg, sources: BookingSources): BookingSummary {
+  const statuses = legBookingStatuses(leg, sources);
   return { progress: summarizeBookingStatuses(statuses), percent: percentBooked(statuses) };
 }
 
-export function tripBookingSummary(
-  legs: Leg[],
-  stays: Stay[],
-  transits: Transit[],
-  activities: Activity[],
-): BookingSummary {
+export function tripBookingSummary(legs: Leg[], sources: BookingSources): BookingSummary {
   if (!legs.length) return { progress: 'unplanned', percent: 0 };
-  const statuses = legs.flatMap((leg) => legBookingStatuses(leg, stays, transits, activities));
+  const statuses = legs.flatMap((leg) => legBookingStatuses(leg, sources));
   return { progress: summarizeBookingStatuses(statuses), percent: percentBooked(statuses) };
 }
 
@@ -504,6 +514,20 @@ export function activityTimeLabel(
 // second, possibly-stale copy of it.
 export function activityHeadline(activity: Pick<Activity, 'text' | 'place'>): string {
   return activity.text ?? activity.place?.label ?? '';
+}
+
+// The one name for an entry wherever a booking or import lists it — the
+// budget's line items and a booking's "Covers …" text read the same.
+export function entityLabel(kind: EditKind, entity: Entity): string {
+  if (kind === 'stay') return (entity as Stay).lodging?.place.label || 'Untitled stay';
+  if (kind === 'transit') return transitRouteLabel(entity as Transit);
+  return activityHeadline(entity as Activity) || 'Untitled activity';
+}
+
+// One candidate of a still-open meal: "Dinner — Salmon Bake".
+export function mealOptionLabel(meal: Activity, option: MealOption): string {
+  const headline = entityLabel('activity', meal);
+  return option.place ? `${headline} — ${option.place.label}` : headline;
 }
 
 // Which place's coordinates a sun-anchored ('Sunrise'/'Sunset' timeLabel, no
@@ -645,7 +669,7 @@ function entityHasWarning(index: NoteIndex, entity: RefEntityKind, id: string): 
 // one matches *both* "Booked" and "Needs booking" — each true of some part of
 // this row, and the filter nav already ORs multiple tokens within a group.
 function resolveBookingTags(entity: {
-  booking?: Booking | null;
+  booking: Booking | null;
   options?: { booking: Booking | null }[] | null;
 }): string[] {
   const statuses = new Set(
@@ -662,7 +686,7 @@ function resolveBookingTags(entity: {
 // from more than one leg, and each still needs to filter under its own.
 export function filterTagsFor(entity: {
   legId: string;
-  booking?: Booking | null;
+  booking: Booking | null;
   options?: { booking: Booking | null }[] | null;
   priority?: string | null;
   hasWarningNote?: boolean;
@@ -1867,7 +1891,7 @@ export function resolveTransitRoute(
 // ---------- Budget — a computed view over every booking already in the
 // model (Leg/Stay/Transit/Activity), sliced by Leg, Day, and Traveler.
 // Nothing new is stored: every number below is derived from booking.status/
-// cost plus, for the spent/pending split, the same depositPaidAt/
+// pricing plus, for the spent/pending split, the same depositPaidAt/
 // finalPaymentDueAt pair leg_cruise's own booking already carries (see
 // data-model.html) — the only booking on this trip with a real payment
 // schedule today, but the rule holds for any future one that gets it too.
@@ -1897,7 +1921,7 @@ export function bookingBucket(
   if (booking.status === 'booked') {
     return booking.finalPaymentDueAt && booking.finalPaymentDueAt > today ? 'pending' : 'spent';
   }
-  return booking.cost ? 'estimated' : 'unplanned';
+  return bookingCost(booking) ? 'estimated' : 'unplanned';
 }
 
 function emptyBudgetTotals(): BudgetTotals {
@@ -1905,11 +1929,9 @@ function emptyBudgetTotals(): BudgetTotals {
 }
 
 // A 'spent'/'pending' bucket normally carries a cost — but data-model.html
-// itself documents booking: { status: 'booked', cost: null, ... } as valid
-// (stay_talkeetna): a confirmed reservation whose price isn't tracked, either
-// because it's genuinely free/uncosted or because dedupeMirroredBookings
-// (above) couldn't resolve which sibling booking it belongs to. Either way
-// there's no dollar figure to add — the reservation still shows up as its
+// itself documents booking: { status: 'booked', pricing: null, ... } as valid
+// (stay_talkeetna): a confirmed reservation whose price isn't tracked. There's
+// no dollar figure to add — the reservation still shows up as its
 // own row, just contributing nothing to the money totals.
 function addToBudgetTotals(
   totals: BudgetTotals,
@@ -1932,35 +1954,35 @@ function addToBudgetTotals(
 // `null` for a Leg's own bundled booking (the cruise fare), since a
 // week-long bundle has no single day it belongs to; the by-day grouping
 // below simply skips those, and the Leg grouping is where they show up.
+// Reads the `booking` buildTripView already resolved onto each entity rather
+// than resolving bookingIds again.
 function bookingLineItems(
-  legs: Leg[],
+  legs: LegSummary[],
   stays: EnrichedStay[],
   transits: EnrichedTransit[],
   activities: EnrichedActivity[],
 ): BudgetLineItem[] {
   const items: BudgetLineItem[] = [];
-  for (const leg of legs) {
-    if (leg.booking)
-      items.push({
-        entity: 'leg',
-        id: leg._id,
-        legId: leg._id,
-        label: leg.name,
-        date: null,
-        booking: leg.booking,
-      });
-  }
+  const push = (
+    entity: BudgetLineItem['entity'],
+    id: string,
+    legId: string,
+    label: string,
+    date: string | null,
+    booking: Booking | null,
+  ) => {
+    if (booking) items.push({ entity, id, legId, label, date, booking });
+  };
+  for (const { leg, booking } of legs) push('leg', leg._id, leg._id, leg.name, null, booking);
   for (const stay of stays) {
-    if (stay.booking) {
-      items.push({
-        entity: 'stay',
-        id: stay._id,
-        legId: stay.legId,
-        label: stay.lodging?.place.label ?? 'Lodging',
-        date: dateOnly(stay.checkInAt),
-        booking: stay.booking,
-      });
-    }
+    push(
+      'stay',
+      stay._id,
+      stay.legId,
+      entityLabel('stay', stay),
+      dateOnly(stay.checkInAt),
+      stay.booking,
+    );
     // A Package (a resort fee, a meal plan, ...) is its own cost on top of
     // the room rate above — every one gets its own row here so it's counted
     // in the Budget view's totals, not just visible on the Stay itself.
@@ -1971,94 +1993,73 @@ function bookingLineItems(
         legId: stay.legId,
         label: pkg.name,
         date: dateOnly(stay.checkInAt),
-        booking: { status: pkg.status, cost: pkg.cost, confirmationNumber: pkg.confirmationNumber },
+        booking: {
+          _id: pkg._id,
+          status: pkg.status,
+          pricing: pkg.cost ? { kind: 'total', cost: pkg.cost } : null,
+          confirmationNumber: pkg.confirmationNumber,
+        },
       });
     }
   }
   for (const transit of transits) {
-    if (transit.booking) {
-      items.push({
-        entity: 'transit',
-        id: transit._id,
-        legId: transit.legId,
-        label: transitRouteLabel(transit),
-        date: dateOnly(transit.departsAt),
-        booking: transit.booking,
-      });
-    }
+    push(
+      'transit',
+      transit._id,
+      transit.legId,
+      entityLabel('transit', transit),
+      dateOnly(transit.departsAt),
+      transit.booking,
+    );
   }
   for (const activity of activities) {
-    if (activity.booking) {
-      items.push({
-        entity: 'activity',
-        id: activity._id,
-        legId: activity.legId,
-        label: activityHeadline(activity),
-        date: activity.date,
-        booking: activity.booking,
-      });
-    }
+    push(
+      'activity',
+      activity._id,
+      activity.legId,
+      entityLabel('activity', activity),
+      activity.date,
+      activity.booking,
+    );
     // A still-open meal's own candidates can each carry their own
     // reservation (see resolveBookingTags above) — every priced/booked one
     // gets its own row here too, rather than being silently dropped once
-    // options is set and activity.booking itself stays null.
+    // options is set and the activity's own bookingId stays null.
     for (const option of activity.options ?? []) {
-      if (option.booking) {
-        items.push({
-          entity: 'mealOption',
-          id: option._id,
-          legId: activity.legId,
-          label: option.place
-            ? `${activityHeadline(activity)} — ${option.place.label}`
-            : activityHeadline(activity),
-          date: activity.date,
-          booking: option.booking,
-        });
-      }
+      push(
+        'mealOption',
+        option._id,
+        activity.legId,
+        mealOptionLabel(activity, option),
+        activity.date,
+        option.booking,
+      );
     }
   }
-  return dedupeMirroredBookings(items);
+  return onePerBooking(items);
 }
 
-// A Leg bought as one bundle (the cruise) has its cost mirrored onto a child
-// Stay/Transit/Activity's own booking too — data-model.html calls this out
-// explicitly for stay_cruise, which repeats leg_cruise's cost and
-// confirmationNumber so the cabin's own detail view has something to show —
-// but summing both would double-count the same fare. Same confirmationNumber
-// within the same Leg is the signal a mirror actually happened; the Leg's
-// own entry wins (it alone carries the deposit/final-payment schedule),
-// and the mirrored child is dropped from the budget entirely.
-// Two sibling bookings (e.g. a round-trip's outbound and return Transit) can
-// also share one confirmationNumber and one combined cost the same way a Leg
-// and its mirrored child do above — the round trip's total lands on one
-// flight's booking.cost, and the other's is left null rather than repeating
-// (and so double-counting) the same fare. The null-cost sibling is dropped
-// here too, rather than showing as a confusing $0 row alongside the priced
-// one — but only when a priced sibling actually exists to attribute the fare
-// to; a group where every booking.cost is null (a still-unpriced pair) is
-// left alone for addToBudgetTotals's own null-cost handling.
-function dedupeMirroredBookings(items: BudgetLineItem[]): BudgetLineItem[] {
-  const legConfirmations = new Set(
-    items
-      .filter((i) => i.entity === 'leg' && i.booking.confirmationNumber)
-      .map((i) => `${i.legId}::${i.booking.confirmationNumber}`),
-  );
-  const afterLegDedupe = items.filter(
-    (i) =>
-      i.entity === 'leg' || !legConfirmations.has(`${i.legId}::${i.booking.confirmationNumber}`),
-  );
-
-  const pricedConfirmations = new Set(
-    afterLegDedupe
-      .filter((i) => i.booking.confirmationNumber && i.booking.cost)
-      .map((i) => `${i.legId}::${i.booking.confirmationNumber}`),
-  );
-  return afterLegDedupe.filter(
-    (i) =>
-      i.booking.cost ||
-      !i.booking.confirmationNumber ||
-      !pricedConfirmations.has(`${i.legId}::${i.booking.confirmationNumber}`),
-  );
+// One booking can pay for several entities — a round-trip ticket covers two
+// Transits, a cruise fare covers both its Leg and the cabin Stay — so the
+// budget gets one row per booking document, never one per referrer, or the
+// same fare would be summed twice. A Leg referrer wins outright (it's the
+// bundle the booking was bought as, and keeps the row's date null); otherwise
+// the row takes the earliest-dated referrer's date and lists every referrer's
+// label, so a round trip reads "ANC → OTZ + OTZ → ANC" on its first day.
+function onePerBooking(items: BudgetLineItem[]): BudgetLineItem[] {
+  const groups = new Map<string, BudgetLineItem[]>();
+  for (const item of items) {
+    const group = groups.get(item.booking._id);
+    if (group) group.push(item);
+    else groups.set(item.booking._id, [item]);
+  }
+  return [...groups.values()].map((group) => {
+    if (group.length === 1) return group[0];
+    const leg = group.find((i) => i.entity === 'leg');
+    if (leg) return leg;
+    const sorted = [...group].sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
+    return { ...sorted[0], label: sorted.map((i) => i.label).join(' + ') };
+  });
 }
 
 function bucketedRows(items: BudgetLineItem[], today: string): BudgetRow[] {
@@ -2072,7 +2073,7 @@ function bucketedRows(items: BudgetLineItem[], today: string): BudgetRow[] {
 
 function totalsFor(rows: BudgetRow[]): BudgetTotals {
   const totals = emptyBudgetTotals();
-  for (const row of rows) addToBudgetTotals(totals, row.bucket, row.booking.cost);
+  for (const row of rows) addToBudgetTotals(totals, row.bucket, bookingCost(row.booking));
   return totals;
 }
 
@@ -2110,32 +2111,39 @@ function groupBudgetByDay(days: DayFrame[], rows: BudgetRow[]): BudgetDayGroup[]
     .filter((g) => g.rows.length);
 }
 
-// A row with real passengers[] (a per-traveler fare split, e.g. the cruise
-// or the flight/ferry examples in data-model.html) attributes its cost
-// exactly as booked. Everything else has no per-traveler breakdown at all —
-// an even split across every trip traveler is the least-wrong default
-// (marked in the UI as inferred, not authored), rather than leaving those
-// costs out of the by-traveler view entirely.
+// A row priced per traveler (the cruise fares, an airline ticket per
+// passenger) attributes its cost exactly as booked. Everything else has no
+// per-traveler breakdown at all — an even split across every trip traveler is
+// the least-wrong default (marked in the UI as inferred, not authored), rather
+// than leaving those costs out of the by-traveler view entirely.
 function groupBudgetByTraveler(travelers: Traveler[], rows: BudgetRow[]): BudgetTravelerGroup[] {
+  const nameById = travelersById(travelers);
   const totalsByName = new Map<string, BudgetTotals>(
     travelers.map((t) => [t.name, emptyBudgetTotals()]),
   );
+  const totalsFor = (name: string) => {
+    let totals = totalsByName.get(name);
+    if (!totals) totalsByName.set(name, (totals = emptyBudgetTotals()));
+    return totals;
+  };
   for (const row of rows) {
     if (row.bucket === 'unplanned') continue;
-    if (row.booking.passengers?.length) {
-      for (const p of row.booking.passengers) {
-        if (!totalsByName.has(p.name)) totalsByName.set(p.name, emptyBudgetTotals());
-        addToBudgetTotals(totalsByName.get(p.name) as BudgetTotals, row.bucket, p.fare);
-      }
-    } else if (row.booking.cost) {
+    const fares = bookingFares(row.booking);
+    const cost = bookingCost(row.booking);
+    if (fares?.length) {
+      for (const f of fares)
+        addToBudgetTotals(
+          totalsFor(nameById.get(f.travelerId) ?? f.travelerId),
+          row.bucket,
+          f.fare,
+        );
+    } else if (cost) {
       // A 'booked' row's bucket doesn't guarantee a cost (see bookingBucket)
       // — a booked package/perk with no separately-broken-out price, say —
       // so there's simply nothing to divide across travelers here, same as
       // addToBudgetTotals's own null-cost handling above.
-      const share = travelers.length || 1;
-      const cost = { amount: row.booking.cost.amount / share, currency: row.booking.cost.currency };
-      for (const t of travelers)
-        addToBudgetTotals(totalsByName.get(t.name) as BudgetTotals, row.bucket, cost);
+      const share = { amount: cost.amount / (travelers.length || 1), currency: cost.currency };
+      for (const t of travelers) addToBudgetTotals(totalsFor(t.name), row.bucket, share);
     }
   }
   return [...totalsByName.entries()].map(([name, totals]) => ({ name, totals }));
@@ -2143,7 +2151,7 @@ function groupBudgetByTraveler(travelers: Traveler[], rows: BudgetRow[]): Budget
 
 export function buildBudgetView(
   trip: Trip,
-  legs: Leg[],
+  legs: LegSummary[],
   days: DayFrame[],
   stays: EnrichedStay[],
   transits: EnrichedTransit[],
@@ -2154,7 +2162,10 @@ export function buildBudgetView(
   return {
     today,
     totals: totalsFor(rows),
-    byLeg: groupBudgetByLeg(legs, rows),
+    byLeg: groupBudgetByLeg(
+      legs.map((s) => s.leg),
+      rows,
+    ),
     byDay: groupBudgetByDay(days, rows),
     byTraveler: groupBudgetByTraveler(trip.travelers, rows),
   };
@@ -2189,7 +2200,7 @@ export function buildBudgetView(
 // holds ids, not names (every other cross-entity pointer on this page links
 // by id), so a restricted package's ids are turned back into display names
 // here, the one place that translation needs to happen.
-function travelersById(tripTravelers: Traveler[]): Map<string, string> {
+export function travelersById(tripTravelers: Traveler[]): Map<string, string> {
   return new Map(tripTravelers.map((t) => [t.id, t.name]));
 }
 
@@ -2239,6 +2250,7 @@ export function buildTripView(data: TripData): TripView {
     const routeInfo = resolveTransitRoute(t, routesById, activities);
     return {
       ...t,
+      booking: bookingOf(data, t),
       routeInfo,
       arrivesAt: routeInfo ? routeInfo.resolvedArrivesAt : t.arrivesAt,
       notes: notesForEntity(noteIndex, 'transit', t._id),
@@ -2259,6 +2271,7 @@ export function buildTripView(data: TripData): TripView {
     );
     return {
       ...a,
+      booking: bookingOf(data, a),
       date: resolveActivityDate(a),
       notes: notesForEntity(noteIndex, 'activity', a._id),
       hasWarningNote: entityHasWarning(noteIndex, 'activity', a._id),
@@ -2270,6 +2283,7 @@ export function buildTripView(data: TripData): TripView {
       options: a.options
         ? a.options.map((o): EnrichedMealOption => ({
             ...o,
+            booking: bookingOf(data, o),
             travelers: resolveMealTravelers(
               trip.travelers,
               travelerNameById,
@@ -2284,6 +2298,7 @@ export function buildTripView(data: TripData): TripView {
 
   const enrichedStays: EnrichedStay[] = stays.map((s) => ({
     ...s,
+    booking: bookingOf(data, s),
     notes: notesForEntity(noteIndex, 'stay', s._id),
     hasWarningNote: entityHasWarning(noteIndex, 'stay', s._id),
   }));
@@ -2332,12 +2347,13 @@ export function buildTripView(data: TripData): TripView {
   }
 
   const legSummaries: LegSummary[] = sortedLegs.map((leg) => {
-    const { progress, percent } = legBookingSummary(leg, stays, transits, activities);
+    const { progress, percent } = legBookingSummary(leg, data);
     return {
       leg,
       dateRange: legDateRanges.get(leg._id) ?? null,
       days: daysByLegId.get(leg._id) ?? [],
       notes: notesForEntity(noteIndex, 'leg', leg._id),
+      booking: bookingOf(data, leg),
       bookingProgress: progress,
       bookingPercent: percent,
     };
@@ -2345,7 +2361,7 @@ export function buildTripView(data: TripData): TripView {
 
   const budget = buildBudgetView(
     trip,
-    sortedLegs,
+    legSummaries,
     days,
     enrichedStays,
     routedTransits,
@@ -2359,12 +2375,7 @@ export function buildTripView(data: TripData): TripView {
   const staysById = new Map(enrichedStays.map((s) => [s._id, s]));
   const transitsById = new Map(routedTransits.map((t) => [t._id, t]));
 
-  const { progress: bookingProgress, percent: bookingPercent } = tripBookingSummary(
-    legs,
-    stays,
-    transits,
-    activities,
-  );
+  const { progress: bookingProgress, percent: bookingPercent } = tripBookingSummary(legs, data);
 
   // routesById is exposed alongside the rest of the computed view so a live
   // recompute (TripSelectionsContext-driven) can call resolveTransitRoute

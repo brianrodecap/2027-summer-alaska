@@ -31,8 +31,8 @@ export function AddToDayDialog({ day, onClose }: { day: Day | null; onClose: () 
       tripTravelers={data.trip.travelers}
       routes={data.routes}
       onClose={onClose}
-      onSaveEntity={(kind, entity) => {
-        edits.addEntity(kind, entity);
+      onSaveEntity={(kind, entity, bookings) => {
+        edits.addEntity(kind, entity, bookings);
         onClose();
       }}
       onSaveScenario={(scenario) => {

@@ -18,7 +18,7 @@ export function LegCard({
   summary: LegSummary;
   onOpen: (legId: string) => void;
 }) {
-  const { leg, dateRange, bookingProgress, bookingPercent } = summary;
+  const { leg, dateRange, booking, bookingProgress, bookingPercent } = summary;
   const range = dateRange ? formatDateRangeLabel(dateRange) : '';
   const dayCount = dateRange ? tripDayCount(dateRange) : 0;
   const image = firstImage(leg);
@@ -61,8 +61,8 @@ export function LegCard({
           <Typography variant="h6" sx={{ mb: 1 }}>
             {leg.name}
           </Typography>
-          {leg.booking ? (
-            <BookingChip booking={leg.booking} />
+          {booking ? (
+            <BookingChip booking={booking} />
           ) : (
             <Typography variant="body2" color="text.secondary">
               Booked piece by piece — no single reservation.

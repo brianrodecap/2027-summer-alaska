@@ -3,16 +3,15 @@ import { useState } from 'react';
 import {
   activityFormFrom,
   type ActivityFormState,
-  applyActivityForm,
-  applyStayForm,
-  applyTransitForm,
+  applyEntityForm,
+  type BookingSource,
   type EditKind,
   stayFormFrom,
   type StayFormState,
   transitFormFrom,
   type TransitFormState,
 } from '../../model/editForms';
-import type { Activity, Route, Stay, Transit, Traveler } from '../../model/types';
+import type { Activity, Booking, Route, Stay, Transit, Traveler } from '../../model/types';
 import { EntityFormDialog } from '../shared/EntityFormDialog';
 import { ActivityEditForm } from './ActivityEditForm';
 import { StayEditForm } from './StayEditForm';
@@ -29,8 +28,13 @@ interface EditDialogProps {
   transits: Transit[];
   tripTravelers: Traveler[];
   routes: Route[];
+  bookingSource: BookingSource;
   onClose: () => void;
-  onSave: (updated: Entity) => void;
+  // Set only while more drafts are queued after this one — see EntityFormDialog.
+  onSkip?: () => void;
+  // The applied entity plus every Booking document its form wrote — see
+  // editForms.ts's applyEntityForm/commitEntityEdit.
+  onSave: (updated: Entity, bookings: Booking[]) => void;
   onDelete: (kind: EditKind, id: string) => void;
 }
 
@@ -55,30 +59,32 @@ function EditDialogBody({
   transits,
   tripTravelers,
   routes,
+  bookingSource,
   onClose,
+  onSkip,
   onSave,
   onDelete,
 }: EditDialogProps & { entity: Entity }) {
-  const [activityForm, setActivityForm] = useState<ActivityFormState | null>(
-    kind === 'activity' ? activityFormFrom(entity as Activity) : null,
+  const [activityForm, setActivityForm] = useState<ActivityFormState | null>(() =>
+    kind === 'activity' ? activityFormFrom(entity as Activity, bookingSource) : null,
   );
-  const [stayForm, setStayForm] = useState<StayFormState | null>(
-    kind === 'stay' ? stayFormFrom(entity as Stay) : null,
+  const [stayForm, setStayForm] = useState<StayFormState | null>(() =>
+    kind === 'stay' ? stayFormFrom(entity as Stay, bookingSource) : null,
   );
-  const [transitForm, setTransitForm] = useState<TransitFormState | null>(
-    kind === 'transit' ? transitFormFrom(entity as Transit) : null,
+  const [transitForm, setTransitForm] = useState<TransitFormState | null>(() =>
+    kind === 'transit' ? transitFormFrom(entity as Transit, bookingSource) : null,
   );
 
   const handleSave = (): string | null => {
     const clone = structuredClone(entity) as Entity;
-    let message: string | null = null;
-    if (kind === 'activity' && activityForm)
-      message = applyActivityForm(clone as Activity, activityForm);
-    else if (kind === 'stay' && stayForm) message = applyStayForm(clone as Stay, stayForm);
-    else if (kind === 'transit' && transitForm)
-      message = applyTransitForm(clone as Transit, transitForm);
-    if (!message) onSave(clone);
-    return message;
+    const result = applyEntityForm(kind, clone, {
+      activity: activityForm,
+      stay: stayForm,
+      transit: transitForm,
+    });
+    if ('error' in result) return result.error;
+    onSave(clone, result.bookings);
+    return null;
   };
 
   return (
@@ -86,6 +92,7 @@ function EditDialogBody({
       title={`${isNew ? 'Add' : 'Edit'} ${kind}`}
       saveLabel={isNew ? 'Add' : 'Save'}
       onClose={onClose}
+      onSkip={onSkip}
       onSubmit={handleSave}
       deletion={
         isNew
@@ -109,7 +116,12 @@ function EditDialogBody({
       )}
       {kind === 'stay' && stayForm && <StayEditForm form={stayForm} onChange={setStayForm} />}
       {kind === 'transit' && transitForm && (
-        <TransitEditForm form={transitForm} onChange={setTransitForm} routes={routes} />
+        <TransitEditForm
+          form={transitForm}
+          onChange={setTransitForm}
+          routes={routes}
+          tripTravelers={tripTravelers}
+        />
       )}
     </EntityFormDialog>
   );

@@ -50,5 +50,45 @@
   {
     "segmentKey": "segment:activity-act_lc_d1_katmai_bears->transit-transit_katmai_return-depart",
     "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:activity-act_jul9_breakfast->box-scenario_jul8_bonusday-2027-07-10",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:box-scenario_jul8_bonusday-2027-07-10->activity-act_jul9_lunch",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:activity-act_jul9_lunch->transit-transit_flight_otz_anc-depart",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:activity-act_jul7_breakfast->box-scenario_jul7_bonus_alt+scenario_jul7_bonus_ideal-2027-07-09",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:box-scenario_jul7_bonus_alt+scenario_jul7_bonus_ideal-2027-07-09->activity-act_jul7_dinner",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:box-scenario_jul6_alt+scenario_jul6_ideal-2027-07-08->activity-act_jul6_6",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:activity-act_jul6_lunch->box-scenario_jul6_alt+scenario_jul6_ideal-2027-07-08",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:box-scenario_jul7_retry_alt+scenario_jul7_retry_ideal-2027-07-09->activity-act_jul7_dinner",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:activity-act_jul7_breakfast->box-scenario_jul7_retry_alt+scenario_jul7_retry_ideal-2027-07-09",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:transit-transit_flight_anc_otz-arrive->activity-act_jul6_2",
+    "mode": "WALK"
   }
 ]

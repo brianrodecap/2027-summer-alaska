@@ -9,10 +9,12 @@
 import type { TripData } from './types';
 
 export const COLLECTIONS = [
+  'trip',
   'legs',
   'stays',
   'transits',
   'activities',
+  'bookings',
   'scenarios',
   'notes',
   'travelModeOverrides',
@@ -83,8 +85,18 @@ export function hashDoc(doc: unknown): string {
   return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
+// trip.json is one document rather than an array, so it's tracked as a
+// one-entry collection keyed by its _id (a document import adding a traveler
+// edits it like any other entity).
+// collectionOf and withCollection are the only code that knows it.
 function collectionOf(data: TripData, collection: CollectionName): unknown[] {
-  return data[collection] as unknown[];
+  return collection === 'trip' ? [data.trip] : (data[collection] as unknown[]);
+}
+
+function withCollection(data: TripData, collection: CollectionName, items: unknown[]): TripData {
+  return collection === 'trip'
+    ? { ...data, trip: items[0] as TripData['trip'] }
+    : { ...data, [collection]: items };
 }
 
 function byKey(collection: CollectionName, items: unknown[]): Map<string, unknown> {
@@ -212,7 +224,8 @@ export function replayChanges(baseline: TripData, changes: Change[]): ReplayResu
     const items = touched.get(change.collection) ?? collectionOf(baseline, change.collection);
     touched.set(change.collection, applyChange(items, change));
   }
-  const data = { ...baseline, ...Object.fromEntries(touched) } as TripData;
+  let data = baseline;
+  for (const [collection, items] of touched) data = withCollection(data, collection, items);
   return { data, kept };
 }
 

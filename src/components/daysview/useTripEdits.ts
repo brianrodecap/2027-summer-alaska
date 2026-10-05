@@ -4,11 +4,11 @@ import type { ChangeSource } from '../../model/changeLog';
 import {
   applyScenarioDeletion,
   applyScenarioSave,
+  commitEntityEdit,
   type EditKind,
   upsertById,
-  upsertByKind,
 } from '../../model/editForms';
-import type { Activity, Route, Scenario, Stay, Transit } from '../../model/types';
+import type { Activity, Booking, Route, Scenario, Stay, Transit } from '../../model/types';
 import { useTripData } from '../../state/useTripData';
 
 // The trip edits the day list's dialogs make, as named actions over
@@ -34,8 +34,8 @@ export function useTripEdits() {
         return null;
       },
       deleteScenario: (id: string) => setData((prev) => applyScenarioDeletion(prev, id)),
-      addEntity: (kind: EditKind, entity: Activity | Stay | Transit) =>
-        setData((prev) => upsertByKind(prev, kind, entity)),
+      addEntity: (kind: EditKind, entity: Activity | Stay | Transit, bookings: Booking[]) =>
+        setData((prev) => commitEntityEdit(prev, kind, entity, bookings)),
     }),
     [data, setData],
   );

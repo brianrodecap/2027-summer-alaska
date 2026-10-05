@@ -1,0 +1,345 @@
+[
+  {
+    "_id": "booking_leg_cruise",
+    "status": "booked",
+    "pricing": {
+      "kind": "perTraveler",
+      "fares": [
+        {
+          "travelerId": "trav_brian",
+          "fare": {
+            "amount": 3319,
+            "currency": "USD"
+          }
+        },
+        {
+          "travelerId": "trav_stacy",
+          "fare": {
+            "amount": 3319,
+            "currency": "USD"
+          }
+        },
+        {
+          "travelerId": "trav_lorelei",
+          "fare": {
+            "amount": 1349,
+            "currency": "USD"
+          }
+        },
+        {
+          "travelerId": "trav_redding",
+          "fare": {
+            "amount": 1349,
+            "currency": "USD"
+          }
+        }
+      ]
+    },
+    "confirmationNumber": "MWVV6Q",
+    "depositPaidAt": "2026-08-06",
+    "finalPaymentDueAt": "2027-04-18"
+  },
+  {
+    "_id": "booking_stay_coldfoot",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_stay_westmark_fbx_2",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_stay_copper_river",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_stay_anchorage_1",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_stay_kotzebue",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_stay_anchorage_2",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_381e78d7-8a39-4fdf-ab3e-de892f16da7b",
+    "status": "booked",
+    "pricing": {
+      "kind": "total",
+      "cost": {
+        "amount": 403.35,
+        "currency": "USD"
+      }
+    },
+    "confirmationNumber": "H-7BDFMHC3VB99",
+    "bookedThrough": "Capital One Travel"
+  },
+  {
+    "_id": "booking_342c42bc-9068-4c64-9e2a-f1d11bfbc8ed",
+    "status": "booked",
+    "pricing": {
+      "kind": "total",
+      "cost": {
+        "amount": 238.5,
+        "currency": "USD"
+      }
+    },
+    "confirmationNumber": "H-7ZCTG7HWBLFB",
+    "bookedThrough": "Capital One Travel"
+  },
+  {
+    "_id": "booking_3aaee9b5-4d98-4c45-a29f-15aa732ee0dd",
+    "status": "booked",
+    "pricing": {
+      "kind": "total",
+      "cost": {
+        "amount": 990,
+        "currency": "USD"
+      }
+    },
+    "confirmationNumber": "DSRAF5KTDHVO7"
+  },
+  {
+    "_id": "booking_12cf84cc-6e52-48b2-a5aa-0f3a5d03616d",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_88f0ab9e-4e37-48fd-9507-a12986544fe5",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_transit_redoubt_out",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_transit_katmai_out",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_transit_portalsworth_out",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_073e15c0-5d67-442d-b89e-0011a5cab44b",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jun26_1",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jun26_2",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jun27_alt_2",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jun27_ideal_3",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jun30_ideal_3",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul1_alt_2",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul4_2",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul4_4",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul6_4",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul7_1",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul7_bonus",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul8_1",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul8_lastchance",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul10_3",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul20_1",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul20_3",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul21_1",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul21_2",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul21_3",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul22_2",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul11_1",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul11_3",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_act_jul5_5",
+    "status": "planning",
+    "pricing": {
+      "kind": "total",
+      "cost": {
+        "amount": 299,
+        "currency": "USD"
+      }
+    },
+    "confirmationNumber": null
+  },
+  {
+    "_id": "booking_b319f6df-52b0-496e-ab75-5142b9a83b3e",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
+  },
+  {
+    "_id": "dd6d2a66-d78c-4ecb-9365-3ef67d548735",
+    "status": "booked",
+    "pricing": {
+      "kind": "perTraveler",
+      "fares": [
+        {
+          "travelerId": "trav_brian",
+          "fare": {
+            "amount": 380.19,
+            "currency": "USD"
+          },
+          "ticketNumber": "0272161492448"
+        },
+        {
+          "travelerId": "trav_stacy",
+          "fare": {
+            "amount": 380.19,
+            "currency": "USD"
+          },
+          "ticketNumber": "0272161492449"
+        },
+        {
+          "travelerId": "trav_redding",
+          "fare": {
+            "amount": 380.19,
+            "currency": "USD"
+          },
+          "ticketNumber": "0272161492450"
+        },
+        {
+          "travelerId": "trav_lorelei",
+          "fare": {
+            "amount": 380.19,
+            "currency": "USD"
+          },
+          "ticketNumber": "0272161492451"
+        }
+      ]
+    },
+    "confirmationNumber": "SCYCUP",
+    "bookedThrough": "Capital One Travel"
+  }
+]

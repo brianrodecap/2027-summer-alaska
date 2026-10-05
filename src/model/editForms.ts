@@ -7,8 +7,10 @@
 import {
   type BookingFormValue,
   bookingFormValueFrom,
+  bookingIdFromForm,
   readBookingFormValue,
-} from '../components/edit/bookingFormValue';
+} from './bookingFormValue';
+import { bookingById, bookingReferrers } from './bookings';
 import { placeFromLodging } from './formatting';
 import { resolveScenarioToneChange } from './scenarioGroups';
 import {
@@ -17,13 +19,17 @@ import {
   dateOnly,
   DEFAULT_ROUTE_TONE,
   directVariantProblem,
+  entityLabel,
   hasDirectVariant,
   isNonNegativeNumber,
+  mealOptionLabel,
+  resolveActivityDate,
   todayDateStr,
   transitRouteLabel,
 } from './tripModel';
 import type {
   Activity,
+  Booking,
   DiningFormat,
   Image,
   Leg,
@@ -38,9 +44,11 @@ import type {
   RoutePlaceEntry,
   RouteVariant,
   Scenario,
+  SeatAssignment,
   Stay,
   TimeLabel,
   Transit,
+  Traveler,
   TravelMode,
   TravelModeOverride,
   Trip,
@@ -72,7 +80,7 @@ export function blankActivity(
     priority: null,
     text: '',
     place: null,
-    booking: null,
+    bookingId: null,
     mealType: null,
     diningFormat: null,
     includedIn: null,
@@ -91,7 +99,7 @@ export function blankStay(legId: string, date: string): Stay {
     checkOutAt: `${addDaysStr(date, 1)}T11:00`,
     status: 'planning',
     lodging: { place: { id: null, label: '' } },
-    booking: null,
+    bookingId: null,
     packages: null,
     images: [],
   };
@@ -105,13 +113,14 @@ export function blankTransit(legId: string, date: string): Transit {
     scenarioId: null,
     status: 'planning',
     mode: 'drive',
+    travelers: null,
     from: { id: null, label: '' },
     to: { id: null, label: '' },
     departsAt: `${date}T09:00`,
     arrivesAt: null,
     routeId: null,
     routeVariant: null,
-    booking: null,
+    bookingId: null,
     images: [],
   };
 }
@@ -174,9 +183,49 @@ export function patchByKind<
 // onSave (Route/Scenario dialogs, EditContext) so the two shapes can't
 // silently diverge.
 export function upsertById<T extends { _id: string }>(list: T[], item: T): T[] {
-  return list.some((existing) => existing._id === item._id)
-    ? list.map((existing) => (existing._id === item._id ? item : existing))
+  return upsertBy(list, item, '_id');
+}
+
+function upsertBy<T, K extends keyof T>(list: T[], item: T, key: K): T[] {
+  return list.some((existing) => existing[key] === item[key])
+    ? list.map((existing) => (existing[key] === item[key] ? item : existing))
     : [...list, item];
+}
+
+// The one commit for an edit-form Save: the entity itself plus every Booking
+// document its form wrote (its own, and each meal candidate's — see
+// bookingWritesFor). A booking shared with another entity (a round trip's
+// other flight) is written once here and both see the change. A booking the
+// edit left unreferenced is dropped by setData (withoutOrphanBookings).
+export function commitEntityEdit<
+  T extends Pick<TripData, 'legs' | 'activities' | 'stays' | 'transits' | 'bookings'>,
+>(data: T, kind: EditKind, entity: Entity, bookings: Booking[]): T {
+  const next = upsertByKind(data, kind, entity);
+  return { ...next, bookings: bookings.reduce(upsertById, next.bookings) };
+}
+
+// Adds a reviewed draft's new travelers (see DraftReview.travelers) to the
+// trip, replacing any with the same id — two drafts of one import can both
+// name the same new person. Unchanged data when there are none.
+export function withTripTravelers<T extends Pick<TripData, 'trip'>>(
+  data: T,
+  travelers: Traveler[],
+): T {
+  if (!travelers.length) return data;
+  return {
+    ...data,
+    trip: {
+      ...data.trip,
+      travelers: travelers.reduce((list, t) => upsertBy(list, t, 'id'), data.trip.travelers),
+    },
+  };
+}
+
+export function deleteEntityByKind<
+  T extends Pick<TripData, 'legs' | 'activities' | 'stays' | 'transits' | 'bookings'>,
+>(data: T, kind: EditKind, id: string): T {
+  const collection = COLLECTION_FOR_KIND[kind];
+  return { ...data, [collection]: (data[collection] as Entity[]).filter((e) => e._id !== id) };
 }
 
 // Replaces-or-appends `entity` in whichever collection its kind lives in —
@@ -209,10 +258,20 @@ export function applyScenarioSave<
   };
 }
 
-export function entityLabel(kind: EditKind, entity: Entity): string {
-  if (kind === 'stay') return (entity as Stay).lodging?.place.label || 'Untitled stay';
-  if (kind === 'transit') return transitRouteLabel(entity as Transit);
-  return activityHeadline(entity as Activity) || 'Untitled activity';
+// What one booking document pays for, in reader-facing labels — so a booking
+// shared by a round trip's two flights shows "Covers ANC → OTZ, OTZ → ANC"
+// wherever it's edited, since a change there reaches both.
+export function bookingCoverageLabels(
+  data: Pick<TripData, 'legs' | 'stays' | 'transits' | 'activities'>,
+  bookingId: string,
+  excludeId?: string,
+): string[] {
+  return bookingReferrers(data, bookingId).flatMap((ref) => {
+    if (ref.id === excludeId) return [];
+    if (ref.kind === 'leg') return ref.entity.name;
+    if (ref.kind === 'mealOption') return mealOptionLabel(ref.meal, ref.entity);
+    return entityLabel(ref.kind, ref.entity);
+  });
 }
 
 // Swaps two array entries by index — shared by RouteEditForm's variant
@@ -267,32 +326,65 @@ export interface IncludedInOption {
   sortKey: string; // ISO datetime, for chronological order within a group
 }
 
-export function blankMealOption(): MealOption {
+// A meal candidate as the edit form holds it: the stored MealOption, with its
+// bookingId swapped for an editable booking value (see BookingFormValue) —
+// converted back by applyActivityForm, whose bookingWritesFor collects the
+// Booking documents these values write.
+export interface MealOptionForm extends Omit<MealOption, 'bookingId'> {
+  booking: BookingFormValue;
+}
+
+// What a form needs to seed its booking fields: the bookings to resolve an id
+// against, and every entry that can point at one (for the "Covers …" line).
+export type BookingSource = Pick<
+  TripData,
+  'bookings' | 'legs' | 'stays' | 'transits' | 'activities'
+>;
+
+// For a blank entity, which has no booking to resolve.
+export const NO_BOOKINGS: BookingSource = {
+  bookings: [],
+  legs: [],
+  stays: [],
+  transits: [],
+  activities: [],
+};
+
+function bookingFormFor(source: BookingSource, bookingId: string | null): BookingFormValue {
+  const booking = bookingById(source.bookings, bookingId);
+  return bookingFormValueFrom(booking, booking ? bookingCoverageLabels(source, booking._id) : []);
+}
+
+export function mealOptionFormFrom(option: MealOption, source: BookingSource): MealOptionForm {
+  const { bookingId, ...rest } = option;
+  return { ...rest, booking: bookingFormFor(source, bookingId) };
+}
+
+function mealOptionFromOptionForm(form: MealOptionForm): MealOption {
+  const { booking, ...rest } = form;
+  return { ...rest, bookingId: bookingIdFromForm(booking) };
+}
+
+export function blankMealOption(): MealOptionForm {
   return {
     _id: crypto.randomUUID(),
     diningFormat: 'sit-down',
     place: null,
     includedIn: null,
-    booking: null,
+    booking: bookingFormValueFrom(null),
   };
 }
 
-// The date an Activity falls on, however it's timed — shared by
-// includedInOptions, activityFormFrom, and duplicate-meal matching so all
-// three agree on which day a fuzzy-timeLabel activity shows up under.
-function activityDateOnly(activity: Activity): string | null {
-  return activity.startAt ? dateOnly(activity.startAt) : activity.date;
-}
-
 // The one real date any Activity/Stay/Transit resolves to, whatever kind it
-// actually is — used only by EditEventWizard to seed the *other* two kinds'
-// otherwise-unused blank forms (every entity always carries a real date,
+// actually is — used by EditEventWizard to seed the *other* two kinds'
+// otherwise-unused blank forms, and by an AI edit to draft over an entity
+// (see askAI.ts's draftEntityFromProposal); every entity always carries a real date,
 // unlike '' — which addDaysStr's Date math can't parse and throws on; see
 // blankStay's checkOutAt).
 export function entityDateOnly(kind: EditKind, entity: Entity): string {
   if (kind === 'stay') return dateOnly((entity as Stay).checkInAt);
   if (kind === 'transit') return dateOnly((entity as Transit).departsAt);
-  return activityDateOnly(entity as Activity) ?? todayDateStr();
+  return resolveActivityDate(entity as Activity) ?? todayDateStr();
 }
 
 // Finds an existing Activity that the wizard's in-progress meal would
@@ -329,7 +421,7 @@ export function findDuplicateMealActivity(
     return candidates.find((a) => a.mealType === 'snack' && a.startAt === startAt) ?? null;
   }
   return (
-    candidates.find((a) => a.mealType === mealType && activityDateOnly(a) === startsDate) ?? null
+    candidates.find((a) => a.mealType === mealType && resolveActivityDate(a) === startsDate) ?? null
   );
 }
 
@@ -339,7 +431,7 @@ export function findDuplicateMealActivity(
 // place/diningFormat/includedIn/booking become candidate zero first — same
 // "promote to a candidate" shape applyActivityForm already uses in reverse
 // when a form's options list empties back out.
-function toMealOption(fields: Omit<MealOption, '_id'>): MealOption {
+function toMealOptionForm(fields: Omit<MealOptionForm, '_id'>): MealOptionForm {
   return { _id: crypto.randomUUID(), ...fields };
 }
 
@@ -350,12 +442,12 @@ function toMealOption(fields: Omit<MealOption, '_id'>): MealOption {
 // switching from decided to undecided mid-wizard).
 export function mealOptionFromForm(
   form: Pick<ActivityFormState, 'diningFormat' | 'place' | 'includedIn' | 'booking'>,
-): MealOption {
-  return toMealOption({
+): MealOptionForm {
+  return toMealOptionForm({
     diningFormat: form.diningFormat || 'sit-down',
     place: form.place,
     includedIn: form.includedIn,
-    booking: readBookingFormValue(form.booking, null),
+    booking: form.booking,
   });
 }
 
@@ -380,32 +472,27 @@ export function changeMealDecisionForm(
     place: first.place,
     diningFormat: first.diningFormat,
     includedIn: first.includedIn,
-    booking: bookingFormValueFrom(first.booking),
+    booking: first.booking,
     options: rest,
   };
 }
 
+// Returns the merged Activity plus the Booking the new candidate's own form
+// wrote (if any) — the duplicate's existing bookings are only re-pointed, never
+// rewritten, so that one is the only document the caller has to commit.
 export function mergeMealOptionIntoActivity(
   duplicate: Activity,
   form: ActivityFormState,
-): Activity {
+): { activity: Activity; bookings: Booking[] } {
   const merged = structuredClone(duplicate);
-  const newOption = mealOptionFromForm(form);
+  const newOption = mealOptionFromOptionForm(mealOptionFromForm(form));
   if (merged.options?.length) {
     merged.options = [...merged.options, newOption];
   } else {
-    const existingOption = toMealOption({
-      diningFormat: merged.diningFormat ?? 'sit-down',
-      place: merged.place,
-      includedIn: merged.includedIn,
-      booking: merged.booking,
-    });
-    merged.options = [existingOption, newOption];
-    merged.place = null;
-    merged.diningFormat = null;
-    merged.includedIn = null;
+    setMealOptions(merged, [optionFromDecided(merged), newOption]);
   }
-  return merged;
+  const booking = readBookingFormValue(form.booking);
+  return { activity: merged, bookings: booking ? [booking] : [] };
 }
 
 // The only diningFormat values whose meaning actually depends on an
@@ -456,7 +543,7 @@ export function includedInOptions(
   } else if (diningFormat === 'included-with-activity') {
     for (const activity of activities) {
       if (activity.mealType) continue;
-      const date = activityDateOnly(activity);
+      const date = resolveActivityDate(activity);
       if (date == null) continue;
       options.push({
         value: `activity:${activity._id}`,
@@ -505,15 +592,15 @@ export interface ActivityFormState {
   diningFormat: DiningFormat | '';
   place: Place | null;
   includedIn: Ref | null;
-  options: MealOption[];
+  options: MealOptionForm[];
   travelerIds: string[];
   booking: BookingFormValue;
 }
 
 // Starts' date field carries activity.date when there's no startAt — the
 // only way a fuzzy-timeLabel activity's date ever reaches the form at all.
-export function activityFormFrom(activity: Activity): ActivityFormState {
-  const startsDate = activityDateOnly(activity);
+export function activityFormFrom(activity: Activity, source: BookingSource): ActivityFormState {
+  const startsDate = resolveActivityDate(activity);
   const startsTime = activity.startAt ? activity.startAt.slice(11, 16) : null;
   return {
     startsDate,
@@ -527,9 +614,9 @@ export function activityFormFrom(activity: Activity): ActivityFormState {
     diningFormat: activity.diningFormat ?? '',
     place: activity.place,
     includedIn: activity.includedIn,
-    options: activity.options ?? [],
+    options: (activity.options ?? []).map((o) => mealOptionFormFrom(o, source)),
     travelerIds: activity.travelers ?? [],
-    booking: bookingFormValueFrom(activity.booking),
+    booking: bookingFormFor(source, activity.bookingId),
   };
 }
 
@@ -547,6 +634,36 @@ export function hasDescriptionOrPlace(form: Pick<ActivityFormState, 'text' | 'pl
 // Every Activity must resolve to both a real sort position and a real date
 // — startAt, or a Starts date paired with a fuzzy timeLabel. An exact Starts
 // always wins over the fuzzy time select when both are given.
+// A meal is either decided — its own place, diningFormat, includedIn and
+// bookingId — or still choosing between options, never both. These three
+// helpers are the only code that moves a meal between the two states, so a
+// new decided-only field is added here once.
+type DecidedMeal = Pick<Activity, 'place' | 'diningFormat' | 'includedIn' | 'bookingId'>;
+
+export function decideMeal(meal: Activity, decided: DecidedMeal): void {
+  meal.options = null;
+  meal.place = decided.place;
+  meal.diningFormat = decided.diningFormat;
+  meal.includedIn = decided.includedIn;
+  meal.bookingId = decided.bookingId;
+}
+
+export function setMealOptions(meal: Activity, options: MealOption[]): void {
+  decideMeal(meal, { place: null, diningFormat: null, includedIn: null, bookingId: null });
+  meal.options = options;
+}
+
+// A decided meal's own answer as a candidate, for when a second one joins it.
+export function optionFromDecided(meal: Activity): MealOption {
+  return {
+    _id: crypto.randomUUID(),
+    diningFormat: meal.diningFormat ?? 'sit-down',
+    place: meal.place,
+    includedIn: meal.includedIn,
+    bookingId: meal.bookingId,
+  };
+}
+
 export function applyActivityForm(activity: Activity, form: ActivityFormState): string | null {
   const text = form.text.trim();
   if (!hasDescriptionOrPlace(form)) return 'Needs a description.';
@@ -574,19 +691,53 @@ export function applyActivityForm(activity: Activity, form: ActivityFormState): 
   // present here mean this meal is still genuinely undecided, so the
   // decided single-answer fields get cleared back to null.
   if (form.options.length) {
-    activity.options = form.options;
-    activity.place = null;
-    activity.diningFormat = null;
-    activity.includedIn = null;
+    setMealOptions(activity, form.options.map(mealOptionFromOptionForm));
   } else {
-    activity.options = null;
-    activity.place = form.place;
-    activity.diningFormat = form.diningFormat || null;
-    activity.includedIn = form.includedIn;
+    decideMeal(activity, {
+      place: form.place,
+      diningFormat: form.diningFormat || null,
+      includedIn: form.includedIn,
+      bookingId: bookingIdFromForm(form.booking),
+    });
   }
   activity.travelers = form.travelerIds.length ? form.travelerIds : null;
-  activity.booking = readBookingFormValue(form.booking, activity.booking);
   return null;
+}
+
+// Every Booking document an applied form writes — paired with apply*Form's
+// own bookingId updates, and committed together by commitEntityEdit. An
+// undecided meal writes one per booked candidate, never its own (options and
+// the decided fields are mutually exclusive, see applyActivityForm).
+export function bookingWritesFor(
+  form: ActivityFormState | StayFormState | TransitFormState,
+): Booking[] {
+  const values =
+    'options' in form && form.options.length ? form.options.map((o) => o.booking) : [form.booking];
+  return values.map(readBookingFormValue).filter((b): b is Booking => b !== null);
+}
+
+// The one Save step every form host shares (EditDialog, both wizards):
+// applies the form matching `kind` onto `entity` in place and returns the
+// Booking documents to commit alongside it, so an entity is never saved
+// without its booking, or with one read from a different form.
+export function applyEntityForm(
+  kind: EditKind,
+  entity: Entity,
+  forms: {
+    activity?: ActivityFormState | null;
+    stay?: StayFormState | null;
+    transit?: TransitFormState | null;
+  },
+): { error: string } | { bookings: Booking[] } {
+  const form = forms[kind];
+  if (!form) return { bookings: [] };
+  const error =
+    kind === 'activity'
+      ? applyActivityForm(entity as Activity, form as ActivityFormState)
+      : kind === 'stay'
+        ? applyStayForm(entity as Stay, form as StayFormState)
+        : applyTransitForm(entity as Transit, form as TransitFormState);
+  return error ? { error } : { bookings: bookingWritesFor(form) };
 }
 
 // Backfills a live Google Places photo onto a specific Place value's own
@@ -664,14 +815,14 @@ export interface StayFormState {
   packages: Package[];
 }
 
-export function stayFormFrom(stay: Stay): StayFormState {
+export function stayFormFrom(stay: Stay, source: BookingSource): StayFormState {
   return {
     place: placeFromLodging(stay.lodging),
     checkInDate: dateOnly(stay.checkInAt),
     checkInTime: stay.checkInAt.slice(11, 16),
     checkOutDate: dateOnly(stay.checkOutAt),
     checkOutTime: stay.checkOutAt.slice(11, 16),
-    booking: bookingFormValueFrom(stay.booking),
+    booking: bookingFormFor(source, stay.bookingId),
     roomType: stay.lodging?.roomType ?? '',
     bedConfiguration: stay.lodging?.bedConfiguration ?? '',
     phone: stay.lodging?.place.phone ?? '',
@@ -703,7 +854,7 @@ export function applyStayForm(stay: Stay, form: StayFormState): string | null {
       website: form.website.trim() || undefined,
     };
   }
-  stay.booking = readBookingFormValue(form.booking, stay.booking);
+  stay.bookingId = bookingIdFromForm(form.booking);
   const packages = form.packages.filter((p) => p.name.trim());
   stay.packages = packages.length ? packages : null;
   return null;
@@ -721,10 +872,27 @@ export interface TransitFormState {
   routeId: string | null;
   routeVariant: string | null;
   showEndpointsOnMap: boolean;
+  carrier: string;
+  flightNumber: string;
+  operatedBy: string;
+  aircraft: string;
+  travelerIds: string[]; // empty = whole party
+  seats: SeatAssignment[];
   booking: BookingFormValue;
 }
 
-export function transitFormFrom(transit: Transit): TransitFormState {
+// A Transit's optional carrier/flight text fields — one list for the form's
+// Save, a document import's draft, and its merge into an existing Transit.
+export const TRANSIT_DETAIL_KEYS = ['carrier', 'flightNumber', 'operatedBy', 'aircraft'] as const;
+type TransitDetailKey = (typeof TRANSIT_DETAIL_KEYS)[number];
+
+// Whether a traveler is on a Transit whose picked travelers are `travelerIds`
+// — an empty pick means the whole party.
+export function isOnBoard(travelerIds: string[], travelerId: string): boolean {
+  return !travelerIds.length || travelerIds.includes(travelerId);
+}
+
+export function transitFormFrom(transit: Transit, source: BookingSource): TransitFormState {
   return {
     from: transit.from,
     to: transit.to,
@@ -735,7 +903,13 @@ export function transitFormFrom(transit: Transit): TransitFormState {
     routeId: transit.routeId,
     routeVariant: transit.routeVariant,
     showEndpointsOnMap: Boolean(transit.showEndpointsOnMap),
-    booking: bookingFormValueFrom(transit.booking),
+    carrier: transit.carrier ?? '',
+    flightNumber: transit.flightNumber ?? '',
+    operatedBy: transit.operatedBy ?? '',
+    aircraft: transit.aircraft ?? '',
+    travelerIds: transit.travelers ?? [],
+    seats: structuredClone(transit.seats ?? []),
+    booking: bookingFormFor(source, transit.bookingId),
   };
 }
 
@@ -763,8 +937,25 @@ export function applyTransitForm(transit: Transit, form: TransitFormState): stri
   // rather than stored false, so the data only ever carries the opt-in.
   if (form.routeId && form.showEndpointsOnMap) transit.showEndpointsOnMap = true;
   else delete transit.showEndpointsOnMap;
-  transit.booking = readBookingFormValue(form.booking, transit.booking);
+  for (const key of TRANSIT_DETAIL_KEYS) setOptionalText(transit, key, form[key]);
+  transit.travelers = form.travelerIds.length ? form.travelerIds : null;
+  // A seat for a traveler since unchecked stays in the form (re-checking them
+  // brings it back) but isn't saved — they're no longer on board.
+  const seats = form.seats.filter(
+    (s) => s.seat.trim() && isOnBoard(form.travelerIds, s.travelerId),
+  );
+  if (seats.length) transit.seats = seats.map((s) => ({ ...s, seat: s.seat.trim() }));
+  else delete transit.seats;
+  transit.bookingId = bookingIdFromForm(form.booking);
   return null;
+}
+
+// An optional text field is dropped rather than stored as '' — the data only
+// ever carries a value someone actually entered.
+function setOptionalText(transit: Transit, key: TransitDetailKey, value: string): void {
+  const trimmed = value.trim();
+  if (trimmed) transit[key] = trimmed;
+  else delete transit[key];
 }
 
 // Shared by TransitEditForm and the wizard's own TransitRouteStep — a
@@ -1096,7 +1287,7 @@ export function applyLegForm(form: LegFormState, tripId: string): { leg: Leg } |
     tripId,
     name,
     skeletonAuthority: form.skeletonAuthority,
-    booking: null,
+    bookingId: null,
     images: [],
   };
   return { leg };

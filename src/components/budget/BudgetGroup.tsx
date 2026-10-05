@@ -6,6 +6,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Typography from '@mui/material/Typography';
 import type { ReactNode } from 'react';
 
+import { bookingCost } from '../../model/bookings';
 import { formatMoney } from '../../model/tripModel';
 import type { BudgetRow, BudgetTotals } from '../../model/types';
 import { renderMaterialIcon } from '../shared/materialIcon';
@@ -13,7 +14,8 @@ import { BUDGET_BUCKET_ICON, BUDGET_BUCKET_LABEL } from './budgetLabels';
 import { BudgetStats } from './BudgetStats';
 
 function BudgetRowItem({ row }: { row: BudgetRow }) {
-  const amount = row.bucket === 'unplanned' ? 'Not yet costed' : formatMoney(row.booking.cost);
+  const amount =
+    row.bucket === 'unplanned' ? 'Not yet costed' : formatMoney(bookingCost(row.booking));
   return (
     <ListItem
       secondaryAction={

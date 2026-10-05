@@ -3,20 +3,23 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
 import type { TransitFormState } from '../../model/editForms';
-import type { Route } from '../../model/types';
+import type { Route, Traveler } from '../../model/types';
 import { BookingFields } from './BookingFields';
 import { DateTimeFieldPair } from './DateTimeFieldPair';
 import { TransitEndpointFields } from './StayTransitFields';
 import { TransitRouteFields } from './TransitRouteFields';
+import { TransitTravelFields } from './TransitTravelFields';
 
 export function TransitEditForm({
   form,
   onChange,
   routes,
+  tripTravelers,
 }: {
   form: TransitFormState;
   onChange: (form: TransitFormState) => void;
   routes: Route[];
+  tripTravelers: Traveler[];
 }) {
   const hasRoute = Boolean(form.routeId);
 
@@ -48,6 +51,8 @@ export function TransitEditForm({
         </Typography>
       )}
       <TransitRouteFields form={form} onChange={onChange} routes={routes} />
+      <Divider />
+      <TransitTravelFields form={form} onChange={onChange} tripTravelers={tripTravelers} />
       <Divider />
       <BookingFields value={form.booking} onChange={(booking) => onChange({ ...form, booking })} />
     </Stack>

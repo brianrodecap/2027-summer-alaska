@@ -39,7 +39,7 @@ function activity(id: string, scenarioId: string | null, startAt: string | null,
     priority: null,
     text: id,
     place: null,
-    booking: null,
+    bookingId: null,
     mealType: null,
     diningFormat: null,
     includedIn: null,
@@ -59,7 +59,7 @@ function stay(id: string, scenarioId: string | null, checkInAt: string, checkOut
     checkOutAt,
     status: 'planning',
     lodging: null,
-    booking: null,
+    bookingId: null,
     images: [],
   } satisfies Stay;
 }
@@ -356,6 +356,7 @@ describe('scenarioGroups (display)', () => {
       _id: 't_alt',
       legId: 'leg_test',
       journeyId: null,
+      travelers: null,
       scenarioId: 'a',
       status: 'planning',
       mode: 'flight',
@@ -365,7 +366,7 @@ describe('scenarioGroups (display)', () => {
       arrivesAt: '2027-06-02T01:15',
       routeId: null,
       routeVariant: null,
-      booking: null,
+      bookingId: null,
       images: [],
     };
     const d = data(

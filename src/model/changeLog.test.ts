@@ -118,6 +118,19 @@ describe('diffTripData', () => {
     expect(changes.map((ch) => ch.op)).toEqual(['upsert', 'order']);
   });
 
+  it('records a change to the trip document (a new traveler) and replays it', () => {
+    const before = trip([a]);
+    const after = {
+      ...before,
+      trip: { ...before.trip, travelers: [{ id: 'trav_new', name: 'Pat Guest' }] },
+    };
+    const changes = diffTripData(before, after, before, META);
+    expect(changes).toEqual([
+      expect.objectContaining({ collection: 'trip', op: 'upsert', key: 'trip_test' }),
+    ]);
+    expect(roundTrip(before, after).trip).toEqual(after.trip);
+  });
+
   it('keys travelModeOverrides by segmentKey', () => {
     const base = trip([], [{ segmentKey: 's1', mode: 'DRIVE' }]);
     const next = trip([], [{ segmentKey: 's1', mode: 'WALK' }]);

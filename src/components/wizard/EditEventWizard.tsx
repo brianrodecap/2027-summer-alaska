@@ -3,12 +3,11 @@ import { useState } from 'react';
 import {
   activityFormFrom,
   type ActivityFormState,
-  applyActivityForm,
-  applyStayForm,
-  applyTransitForm,
+  applyEntityForm,
   blankActivity,
   blankStay,
   blankTransit,
+  type BookingSource,
   categoryForActivity,
   type EditKind,
   type Entity,
@@ -24,7 +23,7 @@ import {
   wizardStepCanProceed,
   wizardStepsForCategory,
 } from '../../model/editForms';
-import type { Activity, Route, Stay, Transit, Traveler } from '../../model/types';
+import type { Activity, Booking, Route, Stay, Transit, Traveler } from '../../model/types';
 import { ConfirmableDeleteButton } from '../shared/ConfirmableDeleteButton';
 import { renderWizardStep, type WizardStepContext } from './renderWizardStep';
 import { useMealDecision, useMealDuplicateMerge } from './useMealDecision';
@@ -38,8 +37,9 @@ interface EditEventWizardProps {
   transits: Transit[];
   tripTravelers: Traveler[];
   routes: Route[];
+  bookingSource: BookingSource;
   onClose: () => void;
-  onSave: (updated: Entity) => void;
+  onSave: (updated: Entity, bookings: Booking[]) => void;
   onDelete: (kind: EditKind, id: string) => void;
 }
 
@@ -58,6 +58,7 @@ function EditEventWizardBody({
   transits,
   tripTravelers,
   routes,
+  bookingSource,
   onClose,
   onSave,
   onDelete,
@@ -79,14 +80,18 @@ function EditEventWizardBody({
   // further down share the same cast instead of each re-checking `kind`.
   const activityEntity = kind === 'activity' ? (entity as Activity) : null;
   const [activityForm, setActivityForm] = useState<ActivityFormState>(() =>
-    activityFormFrom(activityEntity ?? blankActivity(entity.legId, blankDate)),
+    activityFormFrom(activityEntity ?? blankActivity(entity.legId, blankDate), bookingSource),
   );
   const [stayForm, setStayForm] = useState<StayFormState>(() =>
-    stayFormFrom(kind === 'stay' ? (entity as Stay) : blankStay(entity.legId, blankDate)),
+    stayFormFrom(
+      kind === 'stay' ? (entity as Stay) : blankStay(entity.legId, blankDate),
+      bookingSource,
+    ),
   );
   const [transitForm, setTransitForm] = useState<TransitFormState>(() =>
     transitFormFrom(
       kind === 'transit' ? (entity as Transit) : blankTransit(entity.legId, blankDate),
+      bookingSource,
     ),
   );
 
@@ -147,14 +152,13 @@ function EditEventWizardBody({
 
   const handleSave = () => {
     const clone = structuredClone(entity) as Entity;
-    const message =
-      kind === 'activity'
-        ? applyActivityForm(clone as Activity, activityForm)
-        : kind === 'stay'
-          ? applyStayForm(clone as Stay, stayForm)
-          : applyTransitForm(clone as Transit, transitForm);
-    if (message) {
-      setError(message);
+    const result = applyEntityForm(kind, clone, {
+      activity: activityForm,
+      stay: stayForm,
+      transit: transitForm,
+    });
+    if ('error' in result) {
+      setError(result.error);
       return;
     }
     // Merging folds this Activity's decided fields into the duplicate as one
@@ -164,11 +168,12 @@ function EditEventWizardBody({
     // whole flow exists to avoid.
     const mergeTarget = mealMergeTarget(category, duplicateMealActivity, mergeIntoDuplicate);
     if (mergeTarget) {
-      onSave(mergeMealOptionIntoActivity(mergeTarget, activityForm));
+      const merged = mergeMealOptionIntoActivity(mergeTarget, activityForm);
+      onSave(merged.activity, merged.bookings);
       onDelete(kind, entity._id);
       return;
     }
-    onSave(clone);
+    onSave(clone, result.bookings);
   };
 
   return (

@@ -1,14 +1,18 @@
 import { lazy, type ReactNode, Suspense, useCallback, useMemo, useState } from 'react';
 
+import { uniqueBookings } from '../model/bookings';
 import type { ChangeSource } from '../model/changeLog';
 import {
-  COLLECTION_FOR_KIND,
+  commitEntityEdit,
+  deleteEntityByKind,
   type EditKind,
   type Entity,
   findByKind,
-  upsertByKind,
+  NO_BOOKINGS,
+  upsertById,
+  withTripTravelers,
 } from '../model/editForms';
-import type { TripData } from '../model/types';
+import type { Booking, Traveler, TripData } from '../model/types';
 import { type DraftReview, EditContext } from './EditContextObject';
 import { useTripData } from './useTripData';
 
@@ -35,7 +39,12 @@ const EditEventWizard = lazy(() =>
 // actually commits, letting a caller chain a follow-up step (see
 // EditContextObject.ts's own note on openFromDraft) — undefined for the
 // wizard path, which nothing chains off. `queue` (flat only) holds whatever
-// drafts still follow this one in the same openDraftSequence call.
+// drafts still follow this one in the same openDraftSequence call, and
+// `pendingBookings` the sequence's not-yet-saved Booking documents — held
+// once for the whole sequence, not per draft, so a round trip's two flights
+// share one copy and the second opens on whatever the first saved.
+// `travelers` (flat only) are this draft's own new travelers — offered in its
+// form and added to the trip when it's saved, never before.
 type EditState =
   | { mode: 'edit'; kind: EditKind; id: string; seed?: Entity; via: 'wizard' }
   | {
@@ -44,6 +53,8 @@ type EditState =
       id: string;
       seed?: Entity;
       via: 'flat';
+      pendingBookings: Booking[];
+      travelers: Traveler[];
       onSaved?: (advance: () => void) => void;
       source?: ChangeSource;
       queue: DraftReview[];
@@ -52,31 +63,35 @@ type EditState =
       mode: 'create';
       kind: EditKind;
       entity: Entity;
+      pendingBookings: Booking[];
+      travelers: Traveler[];
       onSaved?: (advance: () => void) => void;
       source?: ChangeSource;
       queue: DraftReview[];
     };
 
-function stateFromDraft(draft: DraftReview, queue: DraftReview[]): EditState {
+function stateFromDraft(
+  draft: DraftReview,
+  queue: DraftReview[],
+  pendingBookings: Booking[],
+): EditState {
+  const session = {
+    kind: draft.kind,
+    pendingBookings,
+    travelers: draft.travelers ?? [],
+    onSaved: draft.onSaved,
+    source: draft.source,
+    queue,
+  };
   return draft.overrideId
     ? {
+        ...session,
         mode: 'edit',
-        kind: draft.kind,
         id: draft.overrideId,
         seed: { ...draft.entity, _id: draft.overrideId },
         via: 'flat',
-        onSaved: draft.onSaved,
-        source: draft.source,
-        queue,
       }
-    : {
-        mode: 'create',
-        kind: draft.kind,
-        entity: draft.entity,
-        onSaved: draft.onSaved,
-        source: draft.source,
-        queue,
-      };
+    : { ...session, mode: 'create', entity: draft.entity };
 }
 
 // Wraps the trip page in one place both the day-list's edit pencils and the
@@ -95,7 +110,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
   const openDraftSequence = useCallback((drafts: DraftReview[]) => {
     if (!drafts.length) return;
     const [first, ...rest] = drafts;
-    setState(stateFromDraft(first, rest));
+    setState(stateFromDraft(first, rest, uniqueBookings(drafts.flatMap((d) => d.bookings ?? []))));
   }, []);
   const openFromDraft = useCallback(
     (draft: DraftReview) => openDraftSequence([draft]),
@@ -107,41 +122,54 @@ export function EditProvider({ children }: { children: ReactNode }) {
   // saved without ever being shown.
   const closeEdit = useCallback(() => setState(null), []);
 
+  // Moves a draft sequence on to its next queued draft, or closes once none
+  // are left.
+  const advanceQueue = useCallback(
+    (queue: DraftReview[], pendingBookings: Booking[]) => {
+      if (!queue.length) {
+        closeEdit();
+        return;
+      }
+      const [next, ...rest] = queue;
+      setState(stateFromDraft(next, rest, pendingBookings));
+    },
+    [closeEdit],
+  );
+
   const handleSave = useCallback(
-    (updated: Entity) => {
+    (updated: Entity, bookings: Booking[]) => {
       if (!state) return;
-      const upsert = (prev: TripData) => upsertByKind(prev, state.kind, updated);
+      const upsert = (prev: TripData) => commitEntityEdit(prev, state.kind, updated, bookings);
       if (state.mode === 'edit' && state.via === 'wizard') {
         setData(upsert);
         closeEdit();
         return;
       }
-      setData(upsert, state.source);
+      setData((prev) => withTripTravelers(upsert(prev), state.travelers), state.source);
+      // A booking this step saved is no longer pending — later drafts read
+      // it as saved, including any edits made here.
+      const saved = new Set(bookings.map((b) => b._id));
+      const pending = state.pendingBookings.filter((b) => !saved.has(b._id));
       const { queue } = state;
-      const advance = () => {
-        if (queue.length) {
-          const [next, ...rest] = queue;
-          setState(stateFromDraft(next, rest));
-        } else {
-          closeEdit();
-        }
-      };
+      const advance = () => advanceQueue(queue, pending);
       if (state.onSaved) {
         state.onSaved(advance);
       } else {
         advance();
       }
     },
-    [state, setData, closeEdit],
+    [state, setData, closeEdit, advanceQueue],
   );
+
+  // Offered only while more drafts are queued — declines this one draft.
+  const handleSkip =
+    state && !(state.mode === 'edit' && state.via === 'wizard') && state.queue.length
+      ? () => advanceQueue(state.queue, state.pendingBookings)
+      : undefined;
 
   const handleDelete = useCallback(
     (kind: EditKind, id: string) => {
-      const collection = COLLECTION_FOR_KIND[kind];
-      setData((prev) => ({
-        ...prev,
-        [collection]: (prev[collection] as Entity[]).filter((e) => e._id !== id),
-      }));
+      setData((prev) => deleteEntityByKind(prev, kind, id));
       closeEdit();
     },
     [setData, closeEdit],
@@ -152,6 +180,28 @@ export function EditProvider({ children }: { children: ReactNode }) {
       ? state.entity
       : (state.seed ?? (data ? findByKind(state.kind, state.id, data) : undefined))
     : undefined;
+
+  // A sequence's not-yet-saved bookings win over a saved one with the same
+  // id (an AI edit to an existing booking).
+  const pendingBookings = state && 'pendingBookings' in state ? state.pendingBookings : undefined;
+  const draftTravelers = state && 'travelers' in state ? state.travelers : undefined;
+  const trip = data?.trip;
+  const tripTravelers = useMemo(
+    () => (trip ? withTripTravelers({ trip }, draftTravelers ?? []).trip.travelers : []),
+    [trip, draftTravelers],
+  );
+  const bookingSource = useMemo(
+    () =>
+      data
+        ? {
+            ...data,
+            bookings: pendingBookings?.length
+              ? pendingBookings.reduce(upsertById, data.bookings)
+              : data.bookings,
+          }
+        : NO_BOOKINGS,
+    [pendingBookings, data],
+  );
 
   const contextValue = useMemo(
     () => ({ openEdit, openFromDraft, openDraftSequence, deleteEntity: handleDelete }),
@@ -170,8 +220,9 @@ export function EditProvider({ children }: { children: ReactNode }) {
               stays: data.stays,
               activities: data.activities,
               transits: data.transits,
-              tripTravelers: data.trip.travelers,
+              tripTravelers,
               routes: data.routes,
+              bookingSource,
               onClose: closeEdit,
               onSave: handleSave,
               onDelete: handleDelete,
@@ -179,7 +230,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
             return state.mode === 'edit' && state.via === 'wizard' ? (
               <EditEventWizard {...sharedProps} />
             ) : (
-              <EditDialog {...sharedProps} isNew={state.mode === 'create'} />
+              <EditDialog {...sharedProps} isNew={state.mode === 'create'} onSkip={handleSkip} />
             );
           })()}
         </Suspense>

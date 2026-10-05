@@ -102,6 +102,7 @@ export function TripsHome() {
           stays: staged.stays,
           transits: staged.transits,
           activities: staged.activities,
+          bookings: staged.bookings,
         },
       ];
       setTrips(updated);
@@ -126,9 +127,14 @@ export function TripsHome() {
         </Stack>
       </Stack>
       <Grid container spacing={2}>
-        {sortedTrips.map(({ slug, trip, legs, stays, transits, activities, range }) => {
+        {sortedTrips.map(({ slug, trip, legs, stays, transits, activities, bookings, range }) => {
           const image = firstImage(trip);
-          const { progress, percent } = tripBookingSummary(legs, stays, transits, activities);
+          const { progress, percent } = tripBookingSummary(legs, {
+            stays,
+            transits,
+            activities,
+            bookings,
+          });
           return (
             <Grid key={slug} size={{ xs: 12, sm: 6 }} sx={{ display: 'flex' }}>
               <Card

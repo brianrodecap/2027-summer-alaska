@@ -3,6 +3,7 @@ import type { StagedTripEntities } from './documentImport';
 import { loadTripData } from './tripModel';
 import type {
   Activity,
+  Booking,
   Leg,
   Note,
   Scenario,
@@ -24,7 +25,7 @@ function downloadJson(filename: string, data: unknown): void {
 }
 
 // The complete per-trip file set, shared by exportNewTrip and
-// exportTripRename (both produce the whole seven-file bundle a trip's own
+// exportTripRename (both produce the whole nine-file bundle a trip's own
 // public/data/<slug>/ directory holds).
 function downloadTripBundle(bundle: {
   trip: Trip;
@@ -32,6 +33,7 @@ function downloadTripBundle(bundle: {
   stays: Stay[];
   transits: Transit[];
   activities: Activity[];
+  bookings: Booking[];
   scenarios: Scenario[];
   notes: Note[];
   travelModeOverrides: TripData['travelModeOverrides'];
@@ -41,6 +43,7 @@ function downloadTripBundle(bundle: {
   downloadJson('stays.json', bundle.stays);
   downloadJson('transits.json', bundle.transits);
   downloadJson('activities.json', bundle.activities);
+  downloadJson('bookings.json', bundle.bookings);
   downloadJson('scenarios.json', bundle.scenarios);
   downloadJson('notes.json', bundle.notes);
   downloadJson('travelModeOverrides.json', bundle.travelModeOverrides);
@@ -85,6 +88,7 @@ export function exportNewTrip(
     stays: staged.stays,
     transits: staged.transits,
     activities: staged.activities,
+    bookings: staged.bookings,
     scenarios: [],
     notes: [],
     // A brand-new trip has no viewer-chosen travel-mode overrides yet.
@@ -109,7 +113,7 @@ export function exportTripEdit(trip: Trip, legs?: Leg[]): void {
 // of that trip's own files from its *old* slug's directory (the in-memory
 // TripsIndexEntry only carries the subset loadTripsIndex needs for the trips
 // list, not scenarios/notes/travelModeOverrides) and re-downloads the
-// complete eight-file set — the same full bundle exportNewTrip produces —
+// complete nine-file set — the same full bundle exportNewTrip produces —
 // so the whole directory can be copied over to public/data/<newSlug>/ and
 // the old one deleted, same as a manual `git mv` would do. legs comes from
 // the caller rather than that fetch, since it's the one collection
@@ -122,7 +126,7 @@ export async function exportTripRename(
   legs: Leg[],
   manifest: TripsIndexEntry[],
 ): Promise<void> {
-  const { stays, transits, activities, scenarios, notes, travelModeOverrides } =
+  const { stays, transits, activities, bookings, scenarios, notes, travelModeOverrides } =
     await loadTripData(oldSlug);
   downloadTripBundle({
     trip,
@@ -130,6 +134,7 @@ export async function exportTripRename(
     stays,
     transits,
     activities,
+    bookings,
     scenarios,
     notes,
     travelModeOverrides,

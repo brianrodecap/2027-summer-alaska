@@ -41,16 +41,19 @@ import {
   runReadTool,
   ToolInputError,
 } from './askAITools';
+import { bookingOf } from './bookings';
 import { hashDoc } from './changeLog';
 import {
   draftEntityFromExtraction,
   ENTITY_SCHEMA,
+  entryRoster,
   type ExtractedFields,
   mergeBooking,
+  mergeDraftIntoExisting,
 } from './documentImport';
-import { type EditKind, findByKind } from './editForms';
+import { type EditKind, entityDateOnly, findByKind } from './editForms';
 import { activityHeadline, formatTime, transitRouteLabel } from './tripModel';
-import type { Activity, Route, Stay, Transit, TripData } from './types';
+import type { Activity, Booking, Place, Route, Stay, Transit, Traveler, TripData } from './types';
 
 export class AskAIError extends Error {}
 
@@ -741,52 +744,87 @@ export function describeDayPlanOp(op: DayPlanOp, data: TripData): string {
 // ---------- turning a proposal into a real draft entity ----------
 
 // The create case (no entityId) reuses draftEntityFromExtraction verbatim —
-// same "start from blank" shape as a document import. The edit case instead
-// overlays only the fields the AI actually supplied onto a clone of the real
-// entity, so a field it left out (an existing booking, images, etc.) survives
-// untouched rather than being reset to blank.
+// same "start from blank" shape as a document import. The edit case drafts
+// the same way and lays that over the real entity with the import's own
+// mergeDraftIntoExisting, so a field the AI left out (an existing booking,
+// images, a routed drive's walked arrival) survives untouched. Returns the
+// Booking documents the draft writes alongside it — the entity's own, merged
+// over whatever it already pointed at (keeping that id, so a shared booking
+// stays shared) — and any travelers it names whom the trip doesn't have yet,
+// added when the draft is saved (see withDocumentTravelers).
 export function draftEntityFromProposal(
   kind: EditKind,
   fields: ExtractedFields,
   base: Activity | Stay | Transit,
-): Activity | Stay | Transit {
-  const entity = structuredClone(base);
-  const booking = mergeBooking(fields, entity.booking);
-
-  if (kind === 'stay') {
-    const stay = entity as Stay;
-    if (fields.checkInAt) stay.checkInAt = fields.checkInAt;
-    if (fields.checkOutAt) stay.checkOutAt = fields.checkOutAt;
-    if (fields.lodgingName && stay.lodging) stay.lodging.place.label = fields.lodgingName;
-    stay.booking = booking;
-    return stay;
-  }
-
-  if (kind === 'transit') {
-    const transit = entity as Transit;
-    if (fields.startAt) transit.departsAt = fields.startAt;
-    if (fields.endAt) transit.arrivesAt = fields.endAt;
-    if (fields.fromLabel) transit.from = { ...transit.from, label: fields.fromLabel };
-    if (fields.toLabel) transit.to = { ...transit.to, label: fields.toLabel };
-    if (fields.mode) transit.mode = fields.mode;
-    if (fields.carrier) transit.carrier = fields.carrier;
-    if (fields.flightNumber) transit.flightNumber = fields.flightNumber;
-    transit.booking = booking;
-    return transit;
-  }
-
-  const activity = entity as Activity;
-  if (fields.startAt) activity.startAt = fields.startAt;
-  if (fields.text) activity.text = fields.text;
-  if (fields.placeLabel) activity.place = { id: null, label: fields.placeLabel };
-  if (fields.mealType) activity.mealType = fields.mealType;
-  if (fields.diningFormat) activity.diningFormat = fields.diningFormat;
-  activity.booking = booking;
-  return activity;
+  data: Pick<TripData, 'bookings' | 'trip'>,
+): DraftedProposal {
+  const roster = entryRoster(fields, data.trip.travelers);
+  const current = bookingOf(data, base);
+  const booking = mergeBooking(fields, current);
+  const bookings = booking && booking !== current ? [booking] : [];
+  const draft = draftEntityFromExtraction(
+    { ...fields, kind },
+    base.legId,
+    entityDateOnly(kind, base),
+    {},
+    roster.travelers,
+    booking,
+  );
+  const entity = mergeDraftIntoExisting({ ...fields, kind }, base, draft);
+  entity.bookingId = booking?._id ?? null;
+  applyStatedChanges(kind, fields, entity);
+  return { entity, bookings, travelers: kind === 'transit' ? roster.added : [] };
 }
 
+// A document restates what's already known, so the import's merge keeps a
+// resolved place and an existing description. An AI edit is an instruction:
+// a place label or description it states replaces the old one. A renamed place
+// drops its id rather than pairing the old place's id with the new name (a
+// proposal's placeId, applied after this by withPlaceId, resolves it again).
+function applyStatedChanges(
+  kind: EditKind,
+  fields: ExtractedFields,
+  entity: Activity | Stay | Transit,
+): void {
+  const renamed = (place: Place, label: string | null | undefined): Place =>
+    label && label !== place.label ? { id: null, label } : place;
+  if (kind === 'stay') {
+    const stay = entity as Stay;
+    if (stay.lodging) stay.lodging.place = renamed(stay.lodging.place, fields.lodgingName);
+  } else if (kind === 'transit') {
+    const transit = entity as Transit;
+    transit.from = renamed(transit.from, fields.fromLabel);
+    transit.to = renamed(transit.to, fields.toLabel);
+    if (fields.mode) transit.mode = fields.mode;
+  } else {
+    const activity = entity as Activity;
+    if (fields.text) activity.text = fields.text;
+    if (fields.placeLabel) {
+      activity.place = activity.place
+        ? renamed(activity.place, fields.placeLabel)
+        : { id: null, label: fields.placeLabel };
+    }
+  }
+}
+
+interface DraftedProposal {
+  entity: Activity | Stay | Transit;
+  bookings: Booking[];
+  travelers: Traveler[];
+}
+
+// `bookings` are the Booking documents the draft writes and `travelers` the
+// new travelers it names (see draftEntityFromProposal) — handed to
+// openFromDraft with it, so the review form opens on them and Save commits them.
 export type ResolvedProposal =
-  { kind: EditKind; draft: Activity | Stay | Transit; overrideId?: string } | { error: string };
+  | {
+      kind: EditKind;
+      draft: Activity | Stay | Transit;
+      bookings: Booking[];
+      travelers: Traveler[];
+      overrideId?: string;
+    }
+  | { error: string };
 
 // Turns a ProposedEdit into what EditContext's openFromDraft needs — the edit-vs-create
 // branch a proposal always carries (an existing entityId to overlay onto, or a
@@ -818,6 +856,9 @@ function withRoute(transit: Transit, proposal: ProposedEdit, data: TripData): st
     transit.routeId = null;
     transit.routeVariant = null;
     delete transit.showEndpointsOnMap;
+    // Off its route it needs a stored arrival again — the merge skipped endAt
+    // while the drive was still routed.
+    if (proposal.fields.endAt) transit.arrivesAt = proposal.fields.endAt;
     return null;
   }
   const id = routeId ?? transit.routeId;
@@ -845,7 +886,7 @@ function withRoute(transit: Transit, proposal: ProposedEdit, data: TripData): st
 }
 
 function finishDraft(
-  draft: Activity | Stay | Transit,
+  { entity: draft, bookings, travelers }: DraftedProposal,
   proposal: ProposedEdit,
   data: TripData,
   overrideId?: string,
@@ -854,7 +895,13 @@ function finishDraft(
     const error = withRoute(draft as Transit, proposal, data);
     if (error) return { error };
   }
-  return { kind: proposal.kind, draft: withPlaceId(draft, proposal), overrideId };
+  return {
+    kind: proposal.kind,
+    draft: withPlaceId(draft, proposal),
+    bookings,
+    travelers,
+    overrideId,
+  };
 }
 
 export function resolveProposalDraft(proposal: ProposedEdit, data: TripData): ResolvedProposal {
@@ -864,19 +911,36 @@ export function resolveProposalDraft(proposal: ProposedEdit, data: TripData): Re
       return { error: "Couldn't find the entry the AI was referring to — try asking again." };
     }
     return finishDraft(
-      draftEntityFromProposal(proposal.kind, proposal.fields, existing),
+      draftEntityFromProposal(proposal.kind, proposal.fields, existing, data),
       proposal,
       data,
       proposal.entityId,
     );
   }
   if (proposal.legId && proposal.date) {
-    const draft = draftEntityFromExtraction(proposal.fields, proposal.legId, proposal.date);
+    const booking = mergeBooking(proposal.fields);
+    const roster = entryRoster(proposal.fields, data.trip.travelers);
+    const draft = draftEntityFromExtraction(
+      proposal.fields,
+      proposal.legId,
+      proposal.date,
+      {},
+      roster.travelers,
+      booking,
+    );
     // Stay has no scenarioId field at all (see types.ts) — only Activity/Transit branch.
     if (proposal.scenarioId && proposal.kind !== 'stay') {
       (draft as Activity | Transit).scenarioId = proposal.scenarioId;
     }
-    return finishDraft(draft, proposal, data);
+    return finishDraft(
+      {
+        entity: draft,
+        bookings: booking ? [booking] : [],
+        travelers: proposal.kind === 'transit' ? roster.added : [],
+      },
+      proposal,
+      data,
+    );
   }
   return { error: "The AI's suggestion was missing where to place it — try asking again." };
 }

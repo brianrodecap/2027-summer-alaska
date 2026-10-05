@@ -15,7 +15,15 @@
 // in the assistant panel first.
 import { findEntity, ToolInputError } from './askAITools';
 import { EXTRACTABLE_DINING_FORMATS } from './documentImport';
-import { applyScenarioSave, blankActivity, blankScenario, nextRouteId } from './editForms';
+import {
+  applyScenarioSave,
+  blankActivity,
+  blankScenario,
+  decideMeal,
+  nextRouteId,
+  optionFromDecided,
+  setMealOptions,
+} from './editForms';
 import { MEAL_TYPES, NOTE_KINDS } from './formatting';
 import { isIsoDate } from './isoDate';
 import { fetchPlaceImages } from './places';
@@ -67,6 +75,9 @@ export const MEAL_OPTIONS_SCHEMA = {
   },
 } as const;
 
+// Deliberately stricter than documentImport.ts's placesShare (any shared
+// distinctive word): the AI can look up a real place id, so a name-only match
+// must be exact — "Salmon Bake" and "Salmon Smokehouse" are two candidates.
 function sameCandidate(option: MealOption, proposed: ProposedMealOption): boolean {
   if (proposed.placeId && option.place?.id) return proposed.placeId === option.place.id;
   return option.place?.label.trim().toLowerCase() === proposed.placeLabel.trim().toLowerCase();
@@ -77,18 +88,7 @@ function sameCandidate(option: MealOption, proposed: ProposedMealOption): boolea
 // list never drops a reservation already made. Mutates `activity` (a fresh clone).
 export function applyMealOptions(activity: Activity, proposed: ProposedMealOption[]): void {
   const existing: MealOption[] =
-    activity.options ??
-    (activity.place
-      ? [
-          {
-            _id: crypto.randomUUID(),
-            diningFormat: activity.diningFormat ?? 'sit-down',
-            place: activity.place,
-            includedIn: activity.includedIn,
-            booking: activity.booking,
-          },
-        ]
-      : []);
+    activity.options ?? (activity.place ? [optionFromDecided(activity)] : []);
   const options = proposed.map((p): MealOption => {
     const match = existing.find((o) => sameCandidate(o, p));
     return {
@@ -96,24 +96,12 @@ export function applyMealOptions(activity: Activity, proposed: ProposedMealOptio
       diningFormat: p.diningFormat ?? match?.diningFormat ?? 'sit-down',
       place: { ...match?.place, id: p.placeId ?? match?.place?.id ?? null, label: p.placeLabel },
       includedIn: match?.includedIn ?? null,
-      booking: match?.booking ?? null,
+      bookingId: match?.bookingId ?? null,
     };
   });
-  if (options.length === 1) {
-    // One candidate is a decision: the meal takes that place directly.
-    const [decided] = options;
-    activity.place = decided.place;
-    activity.diningFormat = decided.diningFormat;
-    activity.includedIn = decided.includedIn;
-    activity.booking = decided.booking;
-    activity.options = null;
-    return;
-  }
-  activity.options = options;
-  activity.place = null;
-  activity.diningFormat = null;
-  activity.includedIn = null;
-  activity.booking = null;
+  // One candidate is a decision: the meal takes that place directly.
+  if (options.length === 1) decideMeal(activity, options[0]);
+  else setMealOptions(activity, options);
 }
 
 export function parseMealOptions(value: unknown): ProposedMealOption[] | undefined {

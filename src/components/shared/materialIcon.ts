@@ -3,6 +3,7 @@ import AttractionsIcon from '@mui/icons-material/Attractions';
 import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
 import CabinIcon from '@mui/icons-material/Cabin';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
+import CallMergeIcon from '@mui/icons-material/CallMerge';
 import CelebrationIcon from '@mui/icons-material/Celebration';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloudIcon from '@mui/icons-material/Cloud';
@@ -104,6 +105,7 @@ const ICONS: Record<string, IconComponent> = {
   paid: PaidIcon,
   request_quote: RequestQuoteIcon,
   group: GroupIcon,
+  call_merge: CallMergeIcon,
   calendar_month: CalendarMonthIcon,
   help_outline: HelpOutlineIcon,
   check_circle: CheckCircleIcon,

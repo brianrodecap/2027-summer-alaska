@@ -40,7 +40,8 @@ import {
   withPlaceImagesInData,
 } from '../../model/askAIDrafts';
 import { recomputeRouteTravel } from '../../model/directions';
-import { entityLabel, findByKind } from '../../model/editForms';
+import { findByKind } from '../../model/editForms';
+import { entityLabel } from '../../model/tripModel';
 import type { Activity, Day, Route, TripData } from '../../model/types';
 import { useEdit } from '../../state/useEdit';
 import { useNoteEdit } from '../../state/useNoteEdit';
@@ -336,6 +337,8 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
       openFromDraft({
         kind: resolved.kind,
         entity: draft,
+        bookings: resolved.bookings,
+        travelers: resolved.travelers,
         overrideId: resolved.overrideId,
         source: 'ai-chat',
       });

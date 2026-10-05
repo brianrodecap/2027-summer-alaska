@@ -14,6 +14,7 @@ import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, Outlet, useMatch, useParams } from 'react-router-dom';
 
 import { Wordmark } from '../components/shared/Wordmark';
+import { TravelersDialog } from '../components/trips/TravelersDialog';
 import { exportEdits } from '../model/exportEdits';
 import { formatTripDateChip, tripDayCount } from '../model/tripModel';
 import { EditProvider } from '../state/EditContext';
@@ -93,6 +94,7 @@ function TripHero() {
   const section = useMatch('/:slug/:section/*')?.params.section;
   const { view, data, loading, error, dirtyCollections, canUndo, undoLast, saveError } =
     useTripData();
+  const [travelersOpen, setTravelersOpen] = useState(false);
   const tripName = view?.trip.name;
 
   useEffect(() => {
@@ -189,11 +191,23 @@ function TripHero() {
           />
         )}
         <Chip label="Budget" component={Link} to={`/${slug}/budget`} clickable {...heroChip} />
+        <Chip
+          label={`${trip.travelers.length} traveler${trip.travelers.length === 1 ? '' : 's'}`}
+          onClick={() => setTravelersOpen(true)}
+          {...heroChip}
+        />
       </Stack>
     </Box>
   );
 
-  return heroImage ? <ThemeProvider theme={THEMES.dark}>{header}</ThemeProvider> : header;
+  // The dialog sits outside the hero's dark ThemeProvider so it follows the
+  // page's own color mode.
+  return (
+    <>
+      {heroImage ? <ThemeProvider theme={THEMES.dark}>{header}</ThemeProvider> : header}
+      {travelersOpen && <TravelersDialog onClose={() => setTravelersOpen(false)} />}
+    </>
+  );
 }
 
 export function TripLayout() {

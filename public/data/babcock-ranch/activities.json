@@ -14,7 +14,7 @@
       "id": "ChIJZ8Dny-A_24gRHJf4v8WlPBA",
       "label": "Valvoline Instant Oil Change"
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -37,7 +37,7 @@
       "id": "ChIJix0_xL1l24gRZ8tSCiHyd8g",
       "label": "Publix Pharmacy at Crescent B Commons"
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,

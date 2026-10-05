@@ -155,6 +155,7 @@ function activity(overrides: Partial<EnrichedActivity>): EnrichedActivity {
     priority: null,
     text: 'Test activity',
     place: null,
+    bookingId: null,
     booking: null,
     mealType: null,
     diningFormat: null,
@@ -179,6 +180,7 @@ function transit(overrides: Partial<EnrichedTransit>): EnrichedTransit {
     _id: 'transit1',
     legId: 'legA',
     journeyId: null,
+    travelers: null,
     scenarioId: null,
     status: 'planning',
     mode: 'drive',
@@ -187,6 +189,7 @@ function transit(overrides: Partial<EnrichedTransit>): EnrichedTransit {
     departsAt: '2027-06-01T08:00',
     routeId: null,
     routeVariant: null,
+    bookingId: null,
     booking: null,
     images: [],
     routeInfo: null,
@@ -509,6 +512,7 @@ function enrichedStay(overrides: Partial<EnrichedStay>): EnrichedStay {
     checkOutAt: '2027-06-01T11:00',
     status: 'planning',
     lodging: null,
+    bookingId: null,
     booking: null,
     images: [],
     notes: [],
@@ -555,6 +559,7 @@ describe('Stay Check-out/Check-in drop targets', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -585,6 +590,7 @@ describe('Stay Check-out/Check-in drop targets', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -656,6 +662,7 @@ describe('Stay Check-out/Check-in drop targets', () => {
       activities: [activity({ _id: 'act1', startAt: '2027-06-01T08:00', scenarioId: 'scenario1' })],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -721,6 +728,7 @@ describe('Stay Check-out/Check-in drop targets', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -743,6 +751,7 @@ describe('applyActivityReorder', () => {
       _id: 'transit1',
       legId: 'legB',
       journeyId: null,
+      travelers: null,
       scenarioId: null,
       status: 'planning',
       mode: 'drive',
@@ -751,6 +760,7 @@ describe('applyActivityReorder', () => {
       departsAt: '2027-06-01T08:00',
       routeId: null,
       routeVariant: null,
+      bookingId: null,
       booking: null,
       images: [],
       routeInfo: null,
@@ -770,6 +780,7 @@ describe('applyActivityReorder', () => {
       activities: [activity({ legId: 'legA', scenarioId: 'sc1' })],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -791,6 +802,7 @@ describe('applyActivityReorder', () => {
       _id: 'transit1',
       legId: 'legA',
       journeyId: null,
+      travelers: null,
       scenarioId: null,
       status: 'planning',
       mode: 'flight',
@@ -799,6 +811,7 @@ describe('applyActivityReorder', () => {
       departsAt: '2027-06-27T08:00',
       routeId: null,
       routeVariant: null,
+      bookingId: null,
       booking: null,
       images: [],
       routeInfo: null,
@@ -827,6 +840,7 @@ describe('applyActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -881,6 +895,7 @@ describe('applyActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -926,6 +941,7 @@ describe('applyActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -968,6 +984,7 @@ describe('applyActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1007,6 +1024,7 @@ describe('applyActivityReorder', () => {
       activities: [activity({ _id: 'act1', legId: 'legA', startAt: '2027-06-01T08:00' })],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1051,6 +1069,7 @@ describe('applyActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1091,6 +1110,7 @@ describe('applyActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1132,6 +1152,7 @@ describe('applyActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1169,6 +1190,7 @@ describe('applyTransitReorder', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1201,6 +1223,7 @@ describe('applyTransitReorder', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1231,6 +1254,7 @@ describe('applyTransitReorder', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1261,6 +1285,7 @@ describe('applyTransitReorder', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1291,6 +1316,7 @@ describe('applyTransitReorder', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1325,6 +1351,7 @@ describe('applyTransitReorder', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1357,6 +1384,7 @@ describe('applyStayReorder', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1426,6 +1454,7 @@ describe('applyBlockReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1473,6 +1502,7 @@ describe('applyBlockReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1524,6 +1554,7 @@ describe('applyBlockReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1574,6 +1605,7 @@ describe('applyBlockReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1640,6 +1672,7 @@ describe('applyBlockReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1687,6 +1720,7 @@ describe('applyBlockReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1739,6 +1773,7 @@ describe('applyBlockReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1792,6 +1827,7 @@ describe('applyGroupActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1857,6 +1893,7 @@ describe('applyGroupActivityReorder', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -1934,6 +1971,7 @@ describe('applySingleRowDragEnd', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -2000,6 +2038,7 @@ describe('applySingleRowDragEnd', () => {
       activities: [snack],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -2039,6 +2078,7 @@ describe('applySingleRowDragEnd', () => {
       activities: [],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -2106,6 +2146,7 @@ describe('applySingleRowDragEnd', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -2162,6 +2203,7 @@ describe('applyGroupDragEnd', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -2235,6 +2277,7 @@ describe('applyGroupDragEnd', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };
@@ -2305,6 +2348,7 @@ describe('applyGroupDragEnd', () => {
       ],
       scenarios: [],
       notes: [],
+      bookings: [],
       travelModeOverrides: [],
       routes: [],
     };

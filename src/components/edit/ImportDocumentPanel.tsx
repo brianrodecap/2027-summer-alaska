@@ -2,30 +2,28 @@ import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import FormControlLabel from '@mui/material/FormControlLabel';
+import Stack from '@mui/material/Stack';
+import Switch from '@mui/material/Switch';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { setStoredApiKey } from '../../config/aiKey';
 import {
-  draftEntityFromExtraction,
-  draftIncludedTransfers,
-  type ExtractedFields,
-  extractEntityFromDocument,
-  findConflictCandidate,
+  type DocumentExtraction,
+  entityStartAt,
+  extractDocumentEntries,
   importErrorMessage,
   notesFromExtraction,
+  planDocumentImport,
+  type PlannedImportEntry,
   type ResolvedPlaces,
   resolveLegAndDateForFields,
   resolvePlacesForFields,
 } from '../../model/documentImport';
-import {
-  COLLECTION_FOR_KIND,
-  EDIT_KIND_LABEL,
-  type EditKind,
-  entityLabel,
-} from '../../model/editForms';
-import { formatDateLabel } from '../../model/tripModel';
-import type { Activity, Stay, Transit } from '../../model/types';
+import { EDIT_KIND_LABEL } from '../../model/editForms';
+import { dateOnly, entityLabel, formatDateLabel, formatTime } from '../../model/tripModel';
+import type { DraftReview } from '../../state/EditContextObject';
 import type { NoteDraft } from '../../state/NoteEditContextObject';
 import { useEdit } from '../../state/useEdit';
 import { useNoteEdit } from '../../state/useNoteEdit';
@@ -45,11 +43,92 @@ function withNoteFollowUp(
   return (advance) => openNoteDraftSequence(notes, advance);
 }
 
-function collectionFor(
-  kind: EditKind,
-  data: ReturnType<typeof useTripData>['data'],
-): (Activity | Stay | Transit)[] {
-  return data ? (data[COLLECTION_FOR_KIND[kind]] as (Activity | Stay | Transit)[]) : [];
+// What reviewing a matched entry will change, in the reader's terms — the
+// times are what a delayed or rescheduled booking most often moves.
+function updateSummary(entry: PlannedImportEntry): string | null {
+  if (!entry.existing) return null;
+  const { entity: match, merged } = entry.existing;
+  const { kind } = entry.fields;
+  const before = entityStartAt(kind, match);
+  const after = entityStartAt(kind, merged);
+  if (!before || !after || before === after) return null;
+  const verb = kind === 'transit' ? 'departs' : 'starts';
+  return dateOnly(before) === dateOnly(after)
+    ? `${verb} ${formatTime(before)} → ${formatTime(after)}`
+    : `${verb} ${formatDateLabel(dateOnly(before))} ${formatTime(before)} → ${formatDateLabel(dateOnly(after))} ${formatTime(after)}`;
+}
+
+function ImportEntryRow({
+  entry,
+  sharedCount,
+  onToggleUpdate,
+}: {
+  entry: PlannedImportEntry;
+  sharedCount: number;
+  onToggleUpdate: (update: boolean) => void;
+}) {
+  const { fields, placement, draft, updating: update } = entry;
+  const match = entry.existing?.entity;
+  const kindLabel = EDIT_KIND_LABEL[fields.kind];
+  const changes = updateSummary(entry);
+  return (
+    <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: 'action.hover' }}>
+      <Typography variant="subtitle2">
+        {kindLabel}: {entityLabel(fields.kind, draft)}
+      </Typography>
+      {!placement ? (
+        <Typography variant="body2" color="text.secondary">
+          Its date isn't within this trip, so it will be skipped.
+        </Typography>
+      ) : (
+        <>
+          <Typography variant="body2" color="text.secondary">
+            {formatDateLabel(placement.date)}
+            {sharedCount > 1 && fields.confirmationNumber
+              ? ` · booking ${fields.confirmationNumber} covers ${sharedCount} entries`
+              : ''}
+            {entry.notes.length
+              ? ` · ${entry.notes.length} note${entry.notes.length > 1 ? 's' : ''} to review`
+              : ''}
+          </Typography>
+          {match && (
+            <>
+              <FormControlLabel
+                control={
+                  <Switch
+                    size="small"
+                    checked={update}
+                    onChange={(e) => onToggleUpdate(e.target.checked)}
+                  />
+                }
+                label={
+                  <Typography variant="body2">
+                    Update <strong>{entityLabel(fields.kind, match)}</strong>
+                    {update && changes ? ` · ${changes}` : ''}
+                  </Typography>
+                }
+              />
+              {!update && (
+                <Typography variant="body2" color="text.secondary">
+                  Adds it as a new {kindLabel.toLowerCase()} instead.
+                </Typography>
+              )}
+            </>
+          )}
+          {!match && (
+            <Typography variant="body2" color="text.secondary">
+              Nothing on the itinerary matches, so it will be added as new.
+            </Typography>
+          )}
+          {entry.travelers.length > 0 && (
+            <Typography variant="body2" color="text.secondary">
+              Adds {entry.travelers.map((t) => t.name).join(', ')} to the trip's travelers.
+            </Typography>
+          )}
+        </>
+      )}
+    </Box>
+  );
 }
 
 interface ImportDocumentPanelProps {
@@ -60,17 +139,14 @@ interface ImportDocumentPanelProps {
 type Status = 'idle' | 'loading' | 'error' | 'success';
 
 // The trip assistant's document import (src/components/assistant/AssistantPanel.tsx,
-// behind its paperclip button). Uploads a booking document (PDF
-// or photo), sends it to the Anthropic API for extraction
-// (src/model/documentImport.ts), and hands the result to EditContext's
-// openFromDraft — which opens the same EditDialog a manual "Add" uses,
-// pre-filled, for human review before Save. This panel never commits
-// anything itself.
-//
-// Launched trip-wide rather than from a specific day's "Add to this day" menu, so
-// there's no legId/date already in hand the way there used to be —
-// resolveLegAndDateForFields figures out which day (and Leg) the extracted document's
-// own date falls on instead, once extraction has actually returned one.
+// behind its paperclip button). Uploads a booking document (PDF or photo),
+// sends it to the Anthropic API for extraction (src/model/documentImport.ts),
+// and queues every entry it describes — a round trip's two flights, a stay
+// and its transfers — for review one at a time through EditContext's
+// openDraftSequence. An entry matching something already on the itinerary
+// (a placeholder flight, a planned stay) updates that entry rather than
+// adding a second one, unless its switch here is turned off. This panel
+// never commits anything itself.
 export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProps) {
   const { openDraftSequence } = useEdit();
   const { openNoteDraftSequence } = useNoteEdit();
@@ -78,38 +154,50 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
   const [file, setFile] = useState<File | null>(null);
   const [status, setStatus] = useState<Status>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [extracted, setExtracted] = useState<ExtractedFields | null>(null);
-  const [draft, setDraft] = useState<Activity | Stay | Transit | null>(null);
-  const [placement, setPlacement] = useState<{ legId: string; date: string } | null>(null);
-  const [conflictId, setConflictId] = useState<string | null>(null);
-  const [resolvedPlaces, setResolvedPlaces] = useState<ResolvedPlaces>({});
+  const [extracted, setExtracted] = useState<{
+    extraction: DocumentExtraction;
+    places: ResolvedPlaces[];
+  } | null>(null);
+  // Indexes of matched entries the reader chose to add as new instead.
+  const [addAsNew, setAddAsNew] = useState<ReadonlySet<number>>(new Set());
+  // Re-planned on every switch: an entry added as new drafts its own booking
+  // rather than building on (and overwriting) its match's.
+  const plan = useMemo(
+    () =>
+      extracted && data
+        ? planDocumentImport(
+            extracted.extraction,
+            data,
+            view?.days ?? [],
+            extracted.places,
+            addAsNew,
+          )
+        : null,
+    [extracted, data, view?.days, addAsNew],
+  );
 
   const handleExtract = async () => {
-    if (!file || !apiKey.trim()) return;
+    if (!file || !apiKey.trim() || !data) return;
     setStatus('loading');
     setErrorMessage(null);
     try {
       setStoredApiKey(apiKey.trim());
-      const fields = await extractEntityFromDocument(file, apiKey.trim());
-      const resolved = resolveLegAndDateForFields(fields, view?.days ?? []);
-      if (!resolved) {
+      const extraction = await extractDocumentEntries(file, apiKey.trim());
+      // A real Places lookup per entry (never the model itself — see
+      // documentImport.ts's own note on this), so a new entry's place
+      // picker opens already pointed at the right business.
+      const places = await Promise.all(extraction.entities.map(resolvePlacesForFields));
+      // The full plan follows from `extracted` (see `plan` above); this only
+      // needs to know whether any entry lands within the trip.
+      if (!extraction.entities.some((f) => resolveLegAndDateForFields(f, view?.days ?? []))) {
         setErrorMessage(
           "Couldn't tell which day this belongs to — the document didn't include a date within the trip.",
         );
         setStatus('error');
         return;
       }
-      // A real Places lookup (never the model itself — see documentImport.ts's
-      // own note on this), so the review form's place picker opens already
-      // pointed at the right business instead of a plain-text guess.
-      const places = await resolvePlacesForFields(fields);
-      const entityDraft = draftEntityFromExtraction(fields, resolved.legId, resolved.date, places);
-      const existing = collectionFor(fields.kind, data);
-      setConflictId(findConflictCandidate(fields.kind, entityDraft, existing));
-      setResolvedPlaces(places);
-      setExtracted(fields);
-      setDraft(entityDraft);
-      setPlacement(resolved);
+      setExtracted({ extraction, places });
+      setAddAsNew(new Set());
       setStatus('success');
     } catch (err) {
       setErrorMessage(importErrorMessage(err));
@@ -118,38 +206,36 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
   };
 
   const handleContinue = () => {
-    if (!extracted || !placement || !draft) return;
-    // openDraftSequence overrides the saved entity's _id to conflictId when
-    // one's set (replacing an existing entry) — the note refs need to point
-    // at whichever id the entity actually ends up saved under, not draft._id's
-    // own throwaway random uuid.
-    const stayNotes = notesFromExtraction(extracted, conflictId ?? draft._id);
-    // A stay whose rate bundles round-trip shuttle/transfer transportation
-    // (see documentImport.ts's includedTransfers/draftIncludedTransfers)
-    // gets two sibling Transit drafts queued right after it, so a human
-    // reviews and confirms each leg individually rather than the shuttle
-    // only ever showing up as a Package line and a Note. Each transfer
-    // carries its own notes (a pickup schedule, an arrival-mode choice to
-    // confirm) alongside its Transit already.
-    const transferDrafts =
-      extracted.kind === 'stay'
-        ? draftIncludedTransfers(extracted, draft as Stay, placement.legId, resolvedPlaces)
-        : [];
-    openDraftSequence([
-      {
-        kind: extracted.kind,
-        entity: draft,
-        overrideId: conflictId ?? undefined,
-        onSaved: withNoteFollowUp(stayNotes, openNoteDraftSequence),
-        source: 'ai-import' as const,
-      },
-      ...transferDrafts.map(({ transit, notes }) => ({
-        kind: 'transit' as const,
-        entity: transit,
-        onSaved: withNoteFollowUp(notes, openNoteDraftSequence),
-        source: 'ai-import' as const,
-      })),
-    ]);
+    if (!plan) return;
+    const drafts: DraftReview[] = plan.flatMap((entry): DraftReview[] => {
+      const { fields, placement, booking, updating } = entry;
+      if (!placement) return [];
+      const entity = updating && entry.existing ? entry.existing.merged : entry.draft;
+      const notes = notesFromExtraction(fields, entity._id, entry.notes);
+      // A stay whose rate bundles round-trip shuttle/transfer transportation
+      // (see documentImport.ts's planIncludedTransfers) gets its sibling
+      // Transit drafts queued right after it, so a human confirms each leg
+      // rather than the shuttle only ever showing up as a Package and a Note.
+      return [
+        {
+          kind: fields.kind,
+          entity,
+          bookings: booking ? [booking] : [],
+          travelers: entry.travelers,
+          overrideId: updating ? entity._id : undefined,
+          onSaved: withNoteFollowUp(notes, openNoteDraftSequence),
+          source: 'ai-import',
+        },
+        ...entry.transfers.map(({ transit, notes: transferNotes, overrideId }): DraftReview => ({
+          kind: 'transit',
+          entity: transit,
+          overrideId,
+          onSaved: withNoteFollowUp(transferNotes, openNoteDraftSequence),
+          source: 'ai-import',
+        })),
+      ];
+    });
+    openDraftSequence(drafts);
     onClose();
   };
 
@@ -157,7 +243,6 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
     setFile(e.target.files?.[0] ?? null);
     setStatus('idle');
     setExtracted(null);
-    setDraft(null);
   };
 
   const handleDownloadOriginal = () => {
@@ -170,10 +255,9 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
     URL.revokeObjectURL(url);
   };
 
-  const conflictEntity = conflictId
-    ? collectionFor(extracted?.kind ?? 'activity', data).find((e) => e._id === conflictId)
-    : undefined;
-  const matchedPlace = resolvedPlaces.lodging ?? resolvedPlaces.place;
+  const sharedCount = (entry: PlannedImportEntry) =>
+    entry.booking ? (plan ?? []).filter((e) => e.booking?._id === entry.booking?._id).length : 0;
+  const reviewCount = plan?.filter((e) => e.placement).length ?? 0;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -209,49 +293,40 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
           </Button>
         )}
       </Box>
-      {status === 'success' && extracted && placement && (
-        <Box sx={{ p: 2, borderRadius: 1, bgcolor: 'action.hover' }}>
-          <Typography variant="subtitle2">Detected: {EDIT_KIND_LABEL[extracted.kind]}</Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            Placing on {formatDateLabel(placement.date)}.
+      {status === 'success' && plan && (
+        <Stack spacing={1}>
+          <Typography variant="subtitle2">
+            Found {plan.length} entr{plan.length === 1 ? 'y' : 'ies'}
           </Typography>
-          {matchedPlace && (
-            <Typography variant="body2" color="text.secondary">
-              Matched place: {matchedPlace.label} — double-check this in the review form's picker
-              before saving.
-            </Typography>
-          )}
-          {extracted.includedTransfers?.length ? (
-            <Typography variant="body2" color="text.secondary">
-              Also queues {extracted.includedTransfers.length * 2} shuttle transit
-              {extracted.includedTransfers.length > 1 ? 's' : ''} (arrival + departure) for review
-              right after this.
-            </Typography>
-          ) : null}
-          {extracted.noteworthy?.length ? (
-            <Typography variant="body2" color="text.secondary">
-              {extracted.noteworthy.length === 1
-                ? 'Also flags 1 note'
-                : `Also flags ${extracted.noteworthy.length} notes`}{' '}
-              for review right after this.
-            </Typography>
-          ) : null}
-          {conflictEntity && (
-            <Typography variant="body2" sx={{ mt: 1 }}>
-              This looks like it may replace an existing{' '}
-              {EDIT_KIND_LABEL[extracted.kind].toLowerCase()}:{' '}
-              <strong>{entityLabel(extracted.kind, conflictEntity)}</strong>.
-            </Typography>
-          )}
-          <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
+          {plan.map((entry, i) => (
+            <ImportEntryRow
+              key={i}
+              entry={entry}
+              sharedCount={sharedCount(entry)}
+              onToggleUpdate={(update) =>
+                setAddAsNew((prev) => {
+                  const next = new Set(prev);
+                  if (update) next.delete(i);
+                  else next.add(i);
+                  return next;
+                })
+              }
+            />
+          ))}
+          <Box sx={{ display: 'flex', gap: 1 }}>
             <Button size="small" onClick={handleDownloadOriginal}>
               Download original file
             </Button>
-            <Button size="small" variant="contained" onClick={handleContinue}>
-              Continue to review
+            <Button
+              size="small"
+              variant="contained"
+              onClick={handleContinue}
+              disabled={!reviewCount}
+            >
+              Review {reviewCount === 1 ? 'it' : `all ${reviewCount}`}
             </Button>
           </Box>
-        </Box>
+        </Stack>
       )}
     </Box>
   );

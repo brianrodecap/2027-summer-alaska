@@ -15,11 +15,7 @@
       "roomNumber": null,
       "campsite": null
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_stay_coldfoot",
     "packages": null,
     "images": [
       {
@@ -45,11 +41,7 @@
       "roomNumber": null,
       "campsite": null
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_stay_westmark_fbx_2",
     "packages": null,
     "images": [
       {
@@ -75,11 +67,7 @@
       "roomNumber": null,
       "campsite": null
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_stay_copper_river",
     "packages": null,
     "images": [
       {
@@ -112,11 +100,7 @@
       "roomNumber": null,
       "campsite": null
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_stay_anchorage_1",
     "packages": null,
     "images": []
   },
@@ -143,11 +127,7 @@
       "roomNumber": null,
       "campsite": null
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_stay_kotzebue",
     "packages": null,
     "images": []
   },
@@ -174,11 +154,7 @@
       "roomNumber": null,
       "campsite": null
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_stay_anchorage_2",
     "packages": null,
     "images": []
   },
@@ -201,14 +177,7 @@
       "deckGroup": "Upper",
       "shipZone": "Mid-Forward"
     },
-    "booking": {
-      "status": "booked",
-      "cost": {
-        "amount": 9336,
-        "currency": "USD"
-      },
-      "confirmationNumber": "MWVV6Q"
-    },
+    "bookingId": "booking_leg_cruise",
     "packages": [
       {
         "_id": "pkg_princess_premier",
@@ -261,15 +230,7 @@
       "roomType": "Standard Cabin",
       "bedConfiguration": "2 Double"
     },
-    "booking": {
-      "status": "booked",
-      "confirmationNumber": "H-7BDFMHC3VB99",
-      "cost": {
-        "amount": 403.35,
-        "currency": "USD"
-      },
-      "bookedThrough": "Capital One Travel"
-    },
+    "bookingId": "booking_381e78d7-8a39-4fdf-ab3e-de892f16da7b",
     "packages": [
       {
         "_id": "c42e5748-ab69-40c6-af60-3009d56168fc",
@@ -308,15 +269,7 @@
       "roomType": "Room",
       "bedConfiguration": "2 Queen"
     },
-    "booking": {
-      "status": "booked",
-      "confirmationNumber": "H-7ZCTG7HWBLFB",
-      "cost": {
-        "amount": 238.5,
-        "currency": "USD"
-      },
-      "bookedThrough": "Capital One Travel"
-    },
+    "bookingId": "booking_342c42bc-9068-4c64-9e2a-f1d11bfbc8ed",
     "packages": [
       {
         "_id": "f7eff624-092f-45d3-bc24-23dd605f2a17",
@@ -355,14 +308,7 @@
       "roomType": "South Wing Glacier View Room with Private Bathroom",
       "bedConfiguration": "2 Queen + 1 Rollaway"
     },
-    "booking": {
-      "status": "booked",
-      "confirmationNumber": "DSRAF5KTDHVO7",
-      "cost": {
-        "amount": 990,
-        "currency": "USD"
-      }
-    },
+    "bookingId": "booking_3aaee9b5-4d98-4c45-a29f-15aa732ee0dd",
     "packages": null,
     "images": []
   },
@@ -387,11 +333,7 @@
       },
       "roomType": null
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_12cf84cc-6e52-48b2-a5aa-0f3a5d03616d",
     "packages": null,
     "images": []
   },
@@ -416,11 +358,7 @@
       },
       "roomType": null
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_88f0ab9e-4e37-48fd-9507-a12986544fe5",
     "packages": null,
     "images": []
   }

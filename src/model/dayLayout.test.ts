@@ -20,6 +20,7 @@ function tripData(): TripData {
     activities: [],
     scenarios: [],
     notes: [],
+    bookings: [],
     travelModeOverrides: [],
     routes: [],
   };
@@ -48,7 +49,7 @@ const activity = (id: string, startAt: string | null, extra: Partial<Activity> =
   priority: null,
   text: id,
   place: null,
-  booking: null,
+  bookingId: null,
   mealType: null,
   diningFormat: null,
   includedIn: null,
@@ -62,6 +63,7 @@ const transit = (extra: Partial<Transit> = {}): Transit => ({
   _id: 't1',
   legId: 'leg_test',
   journeyId: null,
+  travelers: null,
   scenarioId: null,
   status: 'planning',
   mode: 'drive',
@@ -71,7 +73,7 @@ const transit = (extra: Partial<Transit> = {}): Transit => ({
   arrivesAt: '2027-06-01T10:00',
   routeId: null,
   routeVariant: null,
-  booking: null,
+  bookingId: null,
   images: [],
   ...extra,
 });
@@ -84,7 +86,7 @@ const stay = (extra: Partial<Stay> = {}): Stay => ({
   checkOutAt: '2027-06-03T11:00',
   status: 'planning',
   lodging: { place: { id: 'p_lodge', label: 'Lodge' } },
-  booking: null,
+  bookingId: null,
   images: [],
   ...extra,
 });

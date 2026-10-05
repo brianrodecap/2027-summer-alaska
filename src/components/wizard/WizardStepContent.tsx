@@ -6,6 +6,7 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { type ReactNode, useState } from 'react';
 
+import type { BookingFormValue } from '../../model/bookingFormValue';
 import type {
   ActivityFormState,
   MealDecision,
@@ -43,7 +44,6 @@ import type {
 } from '../../model/types';
 import { ActivityWhenFields } from '../edit/ActivityWhenFields';
 import { BookingFields } from '../edit/BookingFields';
-import type { BookingFormValue } from '../edit/bookingFormValue';
 import { DateTimeFieldPair } from '../edit/DateTimeFieldPair';
 import { IncludedInField } from '../edit/IncludedInField';
 import { MealOptionList } from '../edit/MealOptionList';

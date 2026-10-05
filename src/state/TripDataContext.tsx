@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { withoutOrphanBookings } from '../model/bookings';
 import {
   type Change,
   changedCollections,
@@ -13,6 +14,8 @@ import type { TripData } from '../model/types';
 import { createLocalStorageTripStore } from './store/localStorageTripStore';
 import { SHARED_SCOPE, type TripStore } from './store/TripStore';
 import { TripDataContext, type TripDataContextValue } from './TripDataContextObject';
+
+const BOOKING_COLLECTIONS = ['bookings', 'legs', 'stays', 'transits', 'activities'] as const;
 
 interface LoadResult {
   slug: string;
@@ -139,8 +142,13 @@ export function TripDataProvider({
     (updater: (prev: TripData) => TripData, source: ChangeSource = 'manual') => {
       const current = latest.current;
       if (current.slug !== slug || !current.data || !current.baseline) return;
-      const next = updater(current.data);
-      if (next === current.data) return;
+      const updated = updater(current.data);
+      if (updated === current.data) return;
+      // Pruned here, at the one place every write meets, so bookings.json
+      // never collects a booking nothing points at — skipped when the write
+      // left bookings and every collection that can hold one untouched.
+      const holdersChanged = BOOKING_COLLECTIONS.some((c) => updated[c] !== current.data?.[c]);
+      const next = holdersChanged ? withoutOrphanBookings(updated) : updated;
       const added = diffTripData(current.data, next, current.baseline, {
         batch: crypto.randomUUID(),
         at: new Date().toISOString(),

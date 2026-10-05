@@ -15,16 +15,20 @@ import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { getStoredApiKey, setStoredApiKey } from '../../config/aiKey';
 import {
+  bookingWarnings,
   dateRangeFromExtractedEntities,
+  type DocumentExtraction,
   draftTripEntities,
   type ExtractedFields,
   extractTripEntitiesFromDocument,
   importErrorMessage,
   type StagedTripEntities,
+  travelerNamesIn,
+  withDocumentTravelers,
 } from '../../model/documentImport';
 import {
   applyLegForm,
@@ -51,6 +55,8 @@ function summarizeExtraction(entities: ExtractedFields[]): string {
 }
 
 type ImportStatus = 'idle' | 'loading' | 'error' | 'success';
+
+const EMPTY_STAGED: StagedTripEntities = { activities: [], stays: [], transits: [], bookings: [] };
 
 // The trips list's own Add/Edit trip — mirrors EditDialog/RouteEditDialog's
 // Save/Cancel shape, but (like RouteEditDialog) stands apart from
@@ -120,7 +126,20 @@ export function TripEditDialog({
   const [apiKey, setApiKey] = useState(() => getStoredApiKey() ?? '');
   const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
   const [importError, setImportError] = useState<string | null>(null);
-  const [importedEntities, setImportedEntities] = useState<ExtractedFields[] | null>(null);
+  const [imported, setImported] = useState<DocumentExtraction | null>(null);
+  // Pricing problems draftTripEntities can't fix on its own (fares that don't
+  // add up), shown before Save rather than dropped. Names the trip doesn't
+  // have yet aren't a problem: they become its travelers (see handleSave).
+  const importWarnings = useMemo(
+    () =>
+      imported
+        ? bookingWarnings(
+            imported,
+            withDocumentTravelers(travelerNamesIn(imported), trip?.travelers ?? []).travelers,
+          )
+        : [],
+    [imported, trip],
+  );
 
   // The slug is never hand-typed — it's derived from the name (public/data/
   // directory name and #/<slug> route both follow from it), same as
@@ -142,7 +161,7 @@ export function TripEditDialog({
       setForm((prev) =>
         prev.summary.trim() ? prev : { ...prev, summary: result.tripSummary ?? prev.summary },
       );
-      setImportedEntities(result.entities);
+      setImported(result);
       setImportStatus('success');
     } catch (err) {
       setImportError(importErrorMessage(err));
@@ -157,7 +176,7 @@ export function TripEditDialog({
       return;
     }
     if (!isNew) {
-      onSave(result.slug, result.trip, addedLegs, { activities: [], stays: [], transits: [] });
+      onSave(result.slug, result.trip, addedLegs, EMPTY_STAGED);
       return;
     }
     const legResult = applyLegForm({ ...legForm, name: form.name }, result.trip._id);
@@ -165,14 +184,24 @@ export function TripEditDialog({
       setError(legResult);
       return;
     }
-    const staged = importedEntities
+    // Everyone the document names joins the new trip's travelers, so their
+    // seats, fares and flights carry over (see withDocumentTravelers).
+    const newTrip = imported
+      ? {
+          ...result.trip,
+          travelers: withDocumentTravelers(travelerNamesIn(imported), result.trip.travelers)
+            .travelers,
+        }
+      : result.trip;
+    const staged = imported
       ? draftTripEntities(
-          importedEntities,
+          imported,
           legResult.leg._id,
-          dateRangeFromExtractedEntities(importedEntities)?.startDate ?? todayDateStr(),
+          dateRangeFromExtractedEntities(imported.entities)?.startDate ?? todayDateStr(),
+          newTrip.travelers,
         )
-      : { activities: [], stays: [], transits: [] };
-    onSave(result.slug, result.trip, [legResult.leg], staged);
+      : EMPTY_STAGED;
+    onSave(result.slug, newTrip, [legResult.leg], staged);
   };
 
   return (
@@ -213,7 +242,7 @@ export function TripEditDialog({
                   onChange={(e) => {
                     setFile(e.target.files?.[0] ?? null);
                     setImportStatus('idle');
-                    setImportedEntities(null);
+                    setImported(null);
                   }}
                 />
               </Button>
@@ -228,12 +257,18 @@ export function TripEditDialog({
                   {importStatus === 'loading' ? <CircularProgress size={20} /> : 'Extract'}
                 </Button>
               )}
-              {importStatus === 'success' && importedEntities && (
+              {importStatus === 'success' && imported && (
                 <Alert severity="success">
-                  Detected {summarizeExtraction(importedEntities)} — Name is filled in above, and
+                  Detected {summarizeExtraction(imported.entities)} — Name is filled in above, and
                   these entries ride along on Save. Review everything before saving.
                 </Alert>
               )}
+              {importStatus === 'success' &&
+                importWarnings.map((note, i) => (
+                  <Alert key={i} severity={note.kind === 'warning' ? 'warning' : 'info'}>
+                    {note.text}
+                  </Alert>
+                ))}
             </Stack>
             <Divider sx={{ mt: 3 }} />
           </Box>

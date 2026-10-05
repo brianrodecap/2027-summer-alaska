@@ -12,11 +12,7 @@
       "roomNumber": null,
       "campsite": null
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_stay_babcock_ranch",
     "packages": null,
     "images": []
   }

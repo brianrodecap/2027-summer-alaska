@@ -27,26 +27,38 @@ export interface Money {
   currency: string;
 }
 
-export interface Passenger {
-  name: string;
+// One traveler's share of a booking that the document itemizes per person
+// (an airline ticket, a cruise fare). Seats aren't here: a seat belongs to one
+// flight, not to the whole booking, so it lives on Transit.seats instead.
+export interface PassengerFare {
+  travelerId: string; // Trip.travelers[].id
   fare: Money;
   ticketNumber?: string;
-  seat?: string;
 }
+
+// A booking's price is stored exactly one way: a single total, or per
+// traveler, in which case the total is the sum of the fares (bookingCost in
+// bookings.ts) and is never stored alongside them, so the two can't drift.
+export type Pricing =
+  { kind: 'total'; cost: Money } | { kind: 'perTraveler'; fares: PassengerFare[] };
 
 export interface BookedThrough {
   name: string;
   confirmationNumber: string | null;
 }
 
+// Its own collection (bookings.json), referenced by bookingId from every
+// Leg/Stay/Transit/Activity/MealOption it pays for — one booking can cover
+// several entities (a round-trip ticket covers two Transits), so it's stored
+// once and never embedded. See bookings.ts for the readers' accessors.
 export interface Booking {
+  _id: string;
   status: BookingStatus;
-  cost: Money | null;
+  pricing: Pricing | null;
   confirmationNumber: string | null;
   bookedThrough?: string | BookedThrough;
   depositPaidAt?: string;
   finalPaymentDueAt?: string;
-  passengers?: Passenger[];
 }
 
 export interface Traveler {
@@ -83,7 +95,7 @@ export interface Leg {
   tripId: string;
   name: string;
   skeletonAuthority: 'self' | 'operator';
-  booking?: Booking | null;
+  bookingId?: string | null;
   images: Image[];
 }
 
@@ -164,7 +176,7 @@ export interface Stay {
   checkOutAt: string;
   status: PlanStatus;
   lodging: Lodging | null;
-  booking: Booking | null;
+  bookingId: string | null;
   packages?: Package[] | null;
   images: Image[];
 }
@@ -180,6 +192,10 @@ export interface Transit {
   mode: TransitMode;
   carrier?: string;
   flightNumber?: string;
+  operatedBy?: string; // codeshare operator, e.g. 'Horizon Air' for AS 2000 / QX 2000
+  aircraft?: string;
+  travelers: string[] | null; // Trip.travelers[].id; null = whole party
+  seats?: SeatAssignment[];
   from: Place;
   to: Place;
   departsAt: string;
@@ -190,8 +206,17 @@ export interface Transit {
   // park), so maps, directions links and drive totals leave them out unless
   // this is set — e.g. a loop that starts and ends at one specific depot.
   showEndpointsOnMap?: boolean;
-  booking: Booking | null;
+  bookingId: string | null;
   images: Image[];
+}
+
+// One traveler's seat on one specific Transit — per flight, not per booking,
+// since the same ticket can seat a traveler differently on each leg.
+export interface SeatAssignment {
+  travelerId: string; // Trip.travelers[].id
+  seat: string; // e.g. '22A'
+  cabin?: string; // e.g. 'Coach'
+  fareClass?: string; // booking class letter, e.g. 'N'
 }
 
 export type RoutePlaceKind = 'waypoint' | 'via';
@@ -312,7 +337,7 @@ export interface MealOption {
   // includedIn: a 'package' option can be fully covered by a paid-up package
   // (includedIn.entity === 'package') while its actual table/time slot is still
   // unreserved. null for options where a reservation isn't a thing (walk-in venues).
-  booking: Booking | null;
+  bookingId: string | null;
 }
 
 export type TimeLabel =
@@ -344,7 +369,7 @@ export interface Activity {
   // through instead of reading .text directly.
   text: string | null;
   place: Place | null;
-  booking: Booking | null;
+  bookingId: string | null;
   mealType: MealType | null;
   diningFormat: DiningFormat | null;
   includedIn: Ref | null;
@@ -382,6 +407,7 @@ export interface TripData {
   stays: Stay[];
   transits: Transit[];
   activities: Activity[];
+  bookings: Booking[];
   scenarios: Scenario[];
   notes: Note[];
   travelModeOverrides: TravelModeOverride[];
@@ -395,16 +421,23 @@ export interface TripsIndexEntry {
   stays: Stay[];
   transits: Transit[];
   activities: Activity[];
+  bookings: Booking[];
 }
 
 // ---------- enriched entities, as buildTripView produces them ----------
 
+// Every enriched entity carries its resolved `booking` (from bookingId, see
+// bookings.ts) alongside the raw id — a read-only convenience computed in
+// buildTripView, never written back. Edits go through bookingId and the
+// bookings collection.
 export interface EnrichedMealOption extends MealOption {
+  booking: Booking | null;
   travelers: string[] | null; // resolved display names, not ids
   notes: Note[]; // this candidate's own notes, not the Activity's — only shown while it's the selected option
 }
 
 export interface EnrichedActivity extends Omit<Activity, 'options' | 'travelers'> {
+  booking: Booking | null;
   notes: Note[];
   hasWarningNote: boolean;
   transitOverlapWarning: string | null;
@@ -414,6 +447,7 @@ export interface EnrichedActivity extends Omit<Activity, 'options' | 'travelers'
 }
 
 export interface EnrichedStay extends Stay {
+  booking: Booking | null;
   notes: Note[];
   hasWarningNote: boolean;
 }
@@ -439,6 +473,7 @@ export interface ResolvedRouteInfo {
 }
 
 export interface EnrichedTransit extends Omit<Transit, 'arrivesAt'> {
+  booking: Booking | null;
   routeInfo: ResolvedRouteInfo | null;
   arrivesAt: string | null; // overridden with the route walk's resolved arrival, when routed
   notes: Note[];
@@ -575,6 +610,7 @@ export interface LegSummary {
   dateRange: DateRange | null;
   days: DayFrame[];
   notes: Note[];
+  booking: Booking | null; // resolved from leg.bookingId — a whole-leg bundle, e.g. the cruise fare
   bookingProgress: BookingProgress;
   bookingPercent: number; // 0-100, see tripModel.ts's legBookingPercent — feeds BookingProgressBar
 }

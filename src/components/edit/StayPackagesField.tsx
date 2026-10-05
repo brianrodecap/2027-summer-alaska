@@ -5,9 +5,9 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
+import { moneyFromAmountInput } from '../../model/bookingFormValue';
 import { blankPackage } from '../../model/editForms';
 import type { Package } from '../../model/types';
-import { moneyFromAmountInput } from './bookingFormValue';
 
 // A minimal editor for a Stay's extra-cost line items (a resort fee, a
 // parking fee, ...) — only name and cost are ever touched here, so an

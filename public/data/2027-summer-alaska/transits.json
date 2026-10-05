@@ -6,6 +6,7 @@
     "scenarioId": null,
     "status": "planning",
     "mode": "drive",
+    "travelers": null,
     "from": {
       "label": "Denali National Park"
     },
@@ -16,7 +17,7 @@
     "arrivesAt": null,
     "routeId": "route_parks_highway",
     "routeVariant": "direct",
-    "booking": null,
+    "bookingId": null,
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_River_View_from_Nenana_River_Wayside_-_NARA_-_7722402.jpg",
@@ -32,6 +33,7 @@
     "scenarioId": null,
     "status": "planning",
     "mode": "drive",
+    "travelers": null,
     "from": {
       "label": "Fairbanks"
     },
@@ -42,7 +44,7 @@
     "arrivesAt": null,
     "routeId": "route_dalton_highway",
     "routeVariant": "direct",
-    "booking": null,
+    "bookingId": null,
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG",
@@ -58,6 +60,7 @@
     "scenarioId": null,
     "status": "planning",
     "mode": "drive",
+    "travelers": null,
     "from": {
       "label": "Fairbanks"
     },
@@ -68,7 +71,7 @@
     "arrivesAt": null,
     "routeId": "route_richardson_highway",
     "routeVariant": "direct",
-    "booking": null,
+    "bookingId": null,
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Richardson_Highway_ENBLA01.jpg",
@@ -84,26 +87,69 @@
     "scenarioId": null,
     "status": "planning",
     "mode": "flight",
+    "travelers": null,
     "from": {
-      "label": "Ted Stevens Anchorage International (ANC)"
+      "id": "ChIJERqXa7WiyFYRr2-9pzRat5Y",
+      "label": "Ted Stevens Anchorage International Airport",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJERqXa7WiyFYRr2-9pzRat5Y/photos/Aa-ngMY3XQXWRYJekGqrLzqYAguSlr6HgAa2lC0EokSSiJM9oZNurtiIegSFqKV0rncJf2h4hfsOJ-JkI8C8Bk4OscLRR4_T6uK3JuleifA91FR1AvQJRUKcPdBpvQ9T5s98VTCKMS-HE2HdHTGfB62ZDHuOBiNMrBrgjZqIwWcpztvI2sv3dLSYfBP1hftCySks7oDq-Yi2wJ_xDmgbDUHh7AQ7O2raJi9_e1Lyyn_jctz2RS3iBJ59bu3JnN3P03Slp3meug5eLjSxtMriHXXUHV5erhEgDSBUTjbzZbqctWFMyfWXwKDRcIHeSUuJFj-zWiY-y7KftopBPcnibg-T_yJnk33uIxkkHY8Svva_DI1_7BZkgfrZ50w8r_3nfbQcck1--DJiQ_4fIxssG7D3gIkuT0x3jcDl3rmVJG-mhtHuvw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Mandar Pathak",
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Kotzebue (OTZ)"
+      "id": "ChIJiR1_flkXzVARYviTiatM8yY",
+      "label": "Ralph Wien Memorial Airport (OTZ)",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJiR1_flkXzVARYviTiatM8yY/photos/Aa-ngMb1skjQ9RJhtmfyvHYgA7UXtLkyqs2u98dbxy8s8ilW_QTWSD5nYgPdKxVf77oP__oMGPH0thW9uviF6pQPMOB6c7SSYgODQNc0_gx_xXFTbOMGt5QT7a7pvl6qTLJXNj-dgxfK8AYFyyj2J4Xs5HrsCFgId5jWxP9xnyNhRJibVWbOxtOTa6XB06DHQevdbcDPch8ceHAs2x5wAHTroPN2OKEJTtsXce8wT0Ta2mfuULhYrWDFXN0gMyVL9L6-VGwV-f31fcJO35B7r2KkClHN4uQpQTH5jYgWU1G59HU9DpKXqjDIf45oi1wXVSIQ5CfUwwHavyS779WuknBNwilv3iAl95Jh1kBMOtkCLnX8AcaymCkLf_v0oGYnRalxO-9Hzc842aEw6CPoFdC0k6DDzGPHHclN6tmd1Ito-RJbig/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Swan Starling",
+          "caption": null
+        }
+      ],
+      "showWeather": true
     },
-    "departsAt": "2027-07-08T08:40",
-    "arrivesAt": "2027-07-08T10:30",
+    "departsAt": "2027-07-08T08:55",
+    "arrivesAt": "2027-07-08T10:33",
     "routeId": null,
     "routeVariant": null,
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "dd6d2a66-d78c-4ecb-9365-3ef67d548735",
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Floatplane_Kodiak_archipelago.JPG",
         "credit": "NancyHeise, public domain",
         "caption": "Floatplane on the water in the Kodiak Archipelago"
+      }
+    ],
+    "carrier": "Alaska Airlines",
+    "flightNumber": "AS 273",
+    "aircraft": "Boeing 737-800 (Winglets)",
+    "seats": [
+      {
+        "travelerId": "trav_brian",
+        "seat": "22A",
+        "cabin": "Coach",
+        "fareClass": "N"
+      },
+      {
+        "travelerId": "trav_stacy",
+        "seat": "22B",
+        "cabin": "Coach",
+        "fareClass": "N"
+      },
+      {
+        "travelerId": "trav_redding",
+        "seat": "22F",
+        "cabin": "Coach",
+        "fareClass": "N"
+      },
+      {
+        "travelerId": "trav_lorelei",
+        "seat": "22E",
+        "cabin": "Coach",
+        "fareClass": "N"
       }
     ]
   },
@@ -114,26 +160,70 @@
     "scenarioId": null,
     "status": "planning",
     "mode": "flight",
+    "travelers": null,
     "from": {
-      "label": "Kotzebue (OTZ)"
+      "id": "ChIJiR1_flkXzVARYviTiatM8yY",
+      "label": "Ralph Wien Memorial Airport (OTZ)",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJiR1_flkXzVARYviTiatM8yY/photos/Aa-ngMb1skjQ9RJhtmfyvHYgA7UXtLkyqs2u98dbxy8s8ilW_QTWSD5nYgPdKxVf77oP__oMGPH0thW9uviF6pQPMOB6c7SSYgODQNc0_gx_xXFTbOMGt5QT7a7pvl6qTLJXNj-dgxfK8AYFyyj2J4Xs5HrsCFgId5jWxP9xnyNhRJibVWbOxtOTa6XB06DHQevdbcDPch8ceHAs2x5wAHTroPN2OKEJTtsXce8wT0Ta2mfuULhYrWDFXN0gMyVL9L6-VGwV-f31fcJO35B7r2KkClHN4uQpQTH5jYgWU1G59HU9DpKXqjDIf45oi1wXVSIQ5CfUwwHavyS779WuknBNwilv3iAl95Jh1kBMOtkCLnX8AcaymCkLf_v0oGYnRalxO-9Hzc842aEw6CPoFdC0k6DDzGPHHclN6tmd1Ito-RJbig/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Swan Starling",
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Ted Stevens Anchorage International (ANC)"
+      "id": "ChIJERqXa7WiyFYRr2-9pzRat5Y",
+      "label": "Ted Stevens Anchorage International Airport",
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJERqXa7WiyFYRr2-9pzRat5Y/photos/Aa-ngMY3XQXWRYJekGqrLzqYAguSlr6HgAa2lC0EokSSiJM9oZNurtiIegSFqKV0rncJf2h4hfsOJ-JkI8C8Bk4OscLRR4_T6uK3JuleifA91FR1AvQJRUKcPdBpvQ9T5s98VTCKMS-HE2HdHTGfB62ZDHuOBiNMrBrgjZqIwWcpztvI2sv3dLSYfBP1hftCySks7oDq-Yi2wJ_xDmgbDUHh7AQ7O2raJi9_e1Lyyn_jctz2RS3iBJ59bu3JnN3P03Slp3meug5eLjSxtMriHXXUHV5erhEgDSBUTjbzZbqctWFMyfWXwKDRcIHeSUuJFj-zWiY-y7KftopBPcnibg-T_yJnk33uIxkkHY8Svva_DI1_7BZkgfrZ50w8r_3nfbQcck1--DJiQ_4fIxssG7D3gIkuT0x3jcDl3rmVJG-mhtHuvw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Mandar Pathak",
+          "caption": null
+        }
+      ],
+      "showWeather": true
     },
-    "departsAt": "2027-07-10T17:00",
-    "arrivesAt": "2027-07-10T18:40",
+    "departsAt": "2027-07-10T18:29",
+    "arrivesAt": "2027-07-10T20:07",
     "routeId": null,
     "routeVariant": null,
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "dd6d2a66-d78c-4ecb-9365-3ef67d548735",
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Floatplane_Kodiak_archipelago.JPG",
         "credit": "NancyHeise, public domain",
         "caption": "Floatplane on the water in the Kodiak Archipelago"
+      }
+    ],
+    "carrier": "Alaska Airlines",
+    "flightNumber": "AS 2000",
+    "operatedBy": "Horizon Air",
+    "aircraft": "Embraer 175",
+    "seats": [
+      {
+        "travelerId": "trav_brian",
+        "seat": "13A",
+        "cabin": "Coach",
+        "fareClass": "N"
+      },
+      {
+        "travelerId": "trav_stacy",
+        "seat": "13B",
+        "cabin": "Coach",
+        "fareClass": "N"
+      },
+      {
+        "travelerId": "trav_redding",
+        "seat": "13D",
+        "cabin": "Coach",
+        "fareClass": "N"
+      },
+      {
+        "travelerId": "trav_lorelei",
+        "seat": "13C",
+        "cabin": "Coach",
+        "fareClass": "N"
       }
     ]
   },
@@ -144,6 +234,7 @@
     "scenarioId": null,
     "status": "planning",
     "mode": "drive",
+    "travelers": null,
     "from": {
       "label": "Anchorage"
     },
@@ -154,7 +245,7 @@
     "arrivesAt": null,
     "routeId": "route_seward_highway",
     "routeVariant": "direct",
-    "booking": null,
+    "bookingId": null,
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Seward_Highway_ENBLA01.jpg",
@@ -170,6 +261,7 @@
     "scenarioId": "scenario_jul1_ideal",
     "status": "planning",
     "mode": "drive",
+    "travelers": null,
     "from": {
       "label": "Coldfoot"
     },
@@ -180,7 +272,7 @@
     "arrivesAt": null,
     "routeId": "route_new_10",
     "routeVariant": "direct",
-    "booking": null,
+    "bookingId": null,
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG",
@@ -196,6 +288,7 @@
     "scenarioId": "scenario_jul1_alt_flew",
     "status": "planning",
     "mode": "drive",
+    "travelers": null,
     "from": {
       "label": "Coldfoot"
     },
@@ -206,7 +299,7 @@
     "arrivesAt": null,
     "routeId": "route_new_10",
     "routeVariant": "direct",
-    "booking": null,
+    "bookingId": null,
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG",
@@ -222,6 +315,7 @@
     "scenarioId": "scenario_jul1_alt_grounded",
     "status": "planning",
     "mode": "drive",
+    "travelers": null,
     "from": {
       "label": "Coldfoot"
     },
@@ -232,7 +326,7 @@
     "arrivesAt": null,
     "routeId": "route_new_10",
     "routeVariant": "direct",
-    "booking": null,
+    "bookingId": null,
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Dalton_Highway_close_to_Finger_mountain.JPG",
@@ -248,6 +342,7 @@
     "scenarioId": null,
     "status": "planning",
     "mode": "drive",
+    "travelers": null,
     "from": {
       "label": "Anchorage",
       "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
@@ -274,7 +369,7 @@
     "arrivesAt": null,
     "routeId": "route_anchorage_whittier",
     "routeVariant": "direct",
-    "booking": null,
+    "bookingId": null,
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/AntonAndersonTunnel.jpg",
@@ -290,6 +385,7 @@
     "scenarioId": "scenario_lc_d3_redoubt_ideal",
     "status": "planning",
     "mode": "flight",
+    "travelers": null,
     "from": {
       "label": "Rust's Flying Service",
       "id": "ChIJnaVbp1K9yFYRyaefNvkHj8k",
@@ -316,11 +412,7 @@
     "arrivesAt": "2027-07-13T09:30",
     "routeId": null,
     "routeVariant": null,
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_transit_redoubt_out",
     "images": []
   },
   {
@@ -330,6 +422,7 @@
     "scenarioId": "scenario_lc_d3_redoubt_ideal",
     "status": "planning",
     "mode": "flight",
+    "travelers": null,
     "from": {
       "label": "Redoubt Bay Lodge",
       "id": "ChIJQxwv6rO2xVYRSJZLdkGOLn4",
@@ -356,7 +449,7 @@
     "arrivesAt": "2027-07-13T16:30",
     "routeId": null,
     "routeVariant": null,
-    "booking": null,
+    "bookingId": null,
     "images": []
   },
   {
@@ -366,6 +459,7 @@
     "scenarioId": "scenario_lc_d1_ideal",
     "status": "planning",
     "mode": "flight",
+    "travelers": null,
     "from": {
       "label": "Rust's Flying Service",
       "id": "ChIJnaVbp1K9yFYRyaefNvkHj8k",
@@ -392,11 +486,7 @@
     "arrivesAt": "2027-07-11T09:00",
     "routeId": null,
     "routeVariant": null,
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_transit_katmai_out",
     "images": []
   },
   {
@@ -406,6 +496,7 @@
     "scenarioId": "scenario_lc_d1_ideal",
     "status": "planning",
     "mode": "flight",
+    "travelers": null,
     "from": {
       "label": "Brooks Camp",
       "id": "ChIJ_1SvpuFF6FYRbWqogSLA7Ww",
@@ -432,7 +523,7 @@
     "arrivesAt": "2027-07-11T18:00",
     "routeId": null,
     "routeVariant": null,
-    "booking": null,
+    "bookingId": null,
     "images": []
   },
   {
@@ -442,6 +533,7 @@
     "scenarioId": "scenario_lc_d2_portalsworth_ideal",
     "status": "planning",
     "mode": "flight",
+    "travelers": null,
     "from": {
       "label": "Lake Clark Air Services",
       "id": "ChIJk1PG0UaWyFYRa7b0os7ZSgY",
@@ -468,11 +560,7 @@
     "arrivesAt": "2027-07-12T09:00",
     "routeId": null,
     "routeVariant": null,
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_transit_portalsworth_out",
     "images": []
   },
   {
@@ -482,6 +570,7 @@
     "scenarioId": "scenario_lc_d2_portalsworth_ideal",
     "status": "planning",
     "mode": "flight",
+    "travelers": null,
     "from": {
       "label": "Port Alsworth Airport",
       "id": "ChIJh3QwWRNnw1YR2yU3iW7E7uU",
@@ -508,7 +597,7 @@
     "arrivesAt": "2027-07-12T16:00",
     "routeId": null,
     "routeVariant": null,
-    "booking": null,
+    "bookingId": null,
     "images": []
   },
   {
@@ -518,6 +607,7 @@
     "scenarioId": "scenario_jun27_alt",
     "status": "planning",
     "mode": "drive",
+    "travelers": null,
     "from": {
       "label": "Anchorage"
     },
@@ -528,7 +618,7 @@
     "arrivesAt": null,
     "routeId": "route_anchorage_talkeetna",
     "routeVariant": "direct",
-    "booking": null,
+    "bookingId": null,
     "images": [
       {
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/The_George_Parks_Highway_Scenic_Byway_-_Driving_along_George_Parks_Highway_-_NARA_-_7722405.jpg",
@@ -544,6 +634,7 @@
     "scenarioId": "scenario_jun27_ideal",
     "status": "planning",
     "mode": "drive",
+    "travelers": null,
     "from": {
       "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
       "label": "Anchorage",
@@ -570,7 +661,7 @@
     "arrivesAt": null,
     "routeId": "route_new_12",
     "routeVariant": "direct",
-    "booking": null,
+    "bookingId": null,
     "images": []
   },
   {
@@ -580,6 +671,7 @@
     "scenarioId": "scenario_jun27_ideal",
     "status": "planning",
     "mode": "bus",
+    "travelers": null,
     "from": {
       "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
       "label": "Denali Bus Depot",
@@ -607,11 +699,7 @@
     "routeId": "route_new_13",
     "routeVariant": "direct",
     "showEndpointsOnMap": true,
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_073e15c0-5d67-442d-b89e-0011a5cab44b",
     "images": []
   },
   {
@@ -621,6 +709,7 @@
     "scenarioId": null,
     "status": "planning",
     "mode": "shuttle",
+    "travelers": null,
     "from": {
       "id": "ChIJFdOBjRuFs1YRYVu1TmFM1VY",
       "label": "McCarthy Bridge",
@@ -647,7 +736,7 @@
     "arrivesAt": "2027-07-03T14:30",
     "routeId": null,
     "routeVariant": null,
-    "booking": null,
+    "bookingId": null,
     "images": []
   },
   {
@@ -657,6 +746,7 @@
     "scenarioId": null,
     "status": "planning",
     "mode": "shuttle",
+    "travelers": null,
     "from": {
       "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
       "label": "Kennicott Glacier Lodge",
@@ -683,7 +773,7 @@
     "arrivesAt": "2027-07-05T11:30",
     "routeId": null,
     "routeVariant": null,
-    "booking": null,
+    "bookingId": null,
     "images": []
   },
   {
@@ -693,6 +783,7 @@
     "scenarioId": null,
     "status": "planning",
     "mode": "drive",
+    "travelers": null,
     "from": {
       "id": "ChIJ8X09aHSEs1YRhpKnyjO0wT4",
       "label": "McCarthy",
@@ -719,7 +810,7 @@
     "arrivesAt": null,
     "routeId": "route_new_11",
     "routeVariant": "direct",
-    "booking": null,
+    "bookingId": null,
     "images": []
   },
   {
@@ -729,6 +820,7 @@
     "scenarioId": "scenario_jun27_alt",
     "status": "planning",
     "mode": "bus",
+    "travelers": null,
     "from": {
       "id": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk",
       "label": "Denali Bus Depot",
@@ -755,7 +847,7 @@
     "arrivesAt": null,
     "routeId": "route_new_13",
     "routeVariant": "direct",
-    "booking": null,
+    "bookingId": null,
     "images": [],
     "showEndpointsOnMap": true
   }

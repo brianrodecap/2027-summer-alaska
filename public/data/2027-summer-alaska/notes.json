@@ -1943,5 +1943,29 @@
       }
     ],
     "images": []
+  },
+  {
+    "_id": "45982a1f-1e04-4920-be05-33e9591f36c1",
+    "kind": "warning",
+    "text": "Nonrefundable fare ($1,520.76 total).",
+    "concerns": [
+      {
+        "entity": "transit",
+        "id": "transit_flight_anc_otz"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "0de9c221-c86b-4da0-b2a1-ed148eff13f8",
+    "kind": "warning",
+    "text": "Nonrefundable fare ($1,520.76 total).",
+    "concerns": [
+      {
+        "entity": "transit",
+        "id": "transit_flight_otz_anc"
+      }
+    ],
+    "images": []
   }
 ]

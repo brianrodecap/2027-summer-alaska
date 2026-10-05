@@ -3,10 +3,8 @@ import { useMemo, useState } from 'react';
 import {
   activityFormFrom,
   type ActivityFormState,
-  applyActivityForm,
+  applyEntityForm,
   applyScenarioForm,
-  applyStayForm,
-  applyTransitForm,
   blankActivity,
   blankScenario,
   blankStay,
@@ -15,6 +13,7 @@ import {
   type Entity,
   mealMergeTarget,
   mergeMealOptionIntoActivity,
+  NO_BOOKINGS,
   stayFormFrom,
   type StayFormState,
   transitFormFrom,
@@ -24,7 +23,16 @@ import {
   wizardStepsForCategory,
 } from '../../model/editForms';
 import { resolveScenarioDates } from '../../model/tripModel';
-import type { Activity, Leg, Route, Scenario, Stay, Transit, Traveler } from '../../model/types';
+import type {
+  Activity,
+  Booking,
+  Leg,
+  Route,
+  Scenario,
+  Stay,
+  Transit,
+  Traveler,
+} from '../../model/types';
 import { renderWizardStep, type WizardStepContext } from './renderWizardStep';
 import { useMealDecision, useMealDuplicateMerge } from './useMealDecision';
 import { WizardShell, type WizardStep } from './WizardShell';
@@ -67,7 +75,7 @@ export function AddEventWizard({
   tripTravelers: Traveler[];
   routes: Route[];
   onClose: () => void;
-  onSaveEntity: (kind: EditKind, entity: Entity) => void;
+  onSaveEntity: (kind: EditKind, entity: Entity, bookings: Booking[]) => void;
   // Returns a message when the scenario-tone invariant refuses the new scenario.
   onSaveScenario: (scenario: Scenario) => string | null;
 }) {
@@ -75,17 +83,17 @@ export function AddEventWizard({
   const [category, setCategory] = useState<WizardCategory>('activity');
 
   const [activityForm, setActivityForm] = useState<ActivityFormState>(() =>
-    activityFormFrom(blankActivity(legId, date, activeScenarioId)),
+    activityFormFrom(blankActivity(legId, date, activeScenarioId), NO_BOOKINGS),
   );
   // Most meals get jotted down before a place is settled on — "still
   // deciding" is the far more common starting point than "I already know
   // exactly where."
   const [mealDecision, handleMealDecisionChange] = useMealDecision('undecided', setActivityForm);
   const [stayForm, setStayForm] = useState<StayFormState>(() =>
-    stayFormFrom(blankStay(legId, date)),
+    stayFormFrom(blankStay(legId, date), NO_BOOKINGS),
   );
   const [transitForm, setTransitForm] = useState<TransitFormState>(() =>
-    transitFormFrom(blankTransit(legId, date)),
+    transitFormFrom(blankTransit(legId, date), NO_BOOKINGS),
   );
   const [scenarioForm, setScenarioForm] = useState<Scenario>(() => blankScenario(legId, date));
   const dateInfoById = useMemo(
@@ -151,30 +159,20 @@ export function AddEventWizard({
       if (error) setError(error);
       return;
     }
-    if (category === 'stay') {
-      const entity = blankStay(legId, date);
-      const message = applyStayForm(entity, stayForm);
-      if (message) {
-        setError(message);
-        return;
-      }
-      onSaveEntity('stay', entity);
-      return;
-    }
-    if (category === 'transit') {
-      const entity = blankTransit(legId, date);
-      const message = applyTransitForm(entity, transitForm);
-      if (message) {
-        setError(message);
-        return;
-      }
-      onSaveEntity('transit', entity);
-      return;
-    }
-    const entity = blankActivity(legId, date, activeScenarioId);
-    const message = applyActivityForm(entity, activityForm);
-    if (message) {
-      setError(message);
+    const kind = category === 'stay' || category === 'transit' ? category : 'activity';
+    const entity =
+      kind === 'stay'
+        ? blankStay(legId, date)
+        : kind === 'transit'
+          ? blankTransit(legId, date)
+          : blankActivity(legId, date, activeScenarioId);
+    const result = applyEntityForm(kind, entity, {
+      activity: activityForm,
+      stay: stayForm,
+      transit: transitForm,
+    });
+    if ('error' in result) {
+      setError(result.error);
       return;
     }
     // Merging reuses the duplicate Activity's own id, so onSaveEntity's
@@ -182,10 +180,11 @@ export function AddEventWizard({
     // as a second, competing Activity.
     const mergeTarget = mealMergeTarget(category, duplicateMealActivity, mergeIntoDuplicate);
     if (mergeTarget) {
-      onSaveEntity('activity', mergeMealOptionIntoActivity(mergeTarget, activityForm));
+      const merged = mergeMealOptionIntoActivity(mergeTarget, activityForm);
+      onSaveEntity('activity', merged.activity, merged.bookings);
       return;
     }
-    onSaveEntity('activity', entity);
+    onSaveEntity(kind, entity, result.bookings);
   };
 
   return (

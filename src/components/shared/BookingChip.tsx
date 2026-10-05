@@ -2,6 +2,7 @@ import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 
+import { bookingCost } from '../../model/bookings';
 import { formatMoney } from '../../model/tripModel';
 import type { Booking, BookingStatus } from '../../model/types';
 
@@ -16,7 +17,7 @@ const STATUS_COLOR: Record<BookingStatus, 'success' | 'default' | 'error'> = {
 export function BookingChip({ booking }: { booking: Booking | null | undefined }) {
   if (!booking) return null;
   const bits: string[] = [];
-  const cost = formatMoney(booking.cost);
+  const cost = formatMoney(bookingCost(booking));
   if (cost) bits.push(cost);
   if (booking.confirmationNumber) bits.push(`Conf# ${booking.confirmationNumber}`);
   const label = `${booking.status[0].toUpperCase()}${booking.status.slice(1)}${bits.length ? ` · ${bits.join(' · ')}` : ''}`;

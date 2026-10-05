@@ -34,6 +34,7 @@ function minimalTripData(): TripData {
     activities: [],
     scenarios: [],
     notes: [],
+    bookings: [],
     travelModeOverrides: [],
     routes: [],
   };
@@ -52,7 +53,7 @@ function pushMinimalActivity(data: TripData, overrides: Partial<TripData['activi
     priority: null,
     text: 'Test activity',
     place: null,
-    booking: null,
+    bookingId: null,
     mealType: null,
     diningFormat: null,
     includedIn: null,
@@ -68,6 +69,7 @@ function pushMinimalTransit(data: TripData, overrides: Partial<TripData['transit
     _id: 'test_transit',
     legId: 'leg_test',
     journeyId: null,
+    travelers: null,
     scenarioId: null,
     status: 'planning',
     mode: 'drive',
@@ -77,7 +79,7 @@ function pushMinimalTransit(data: TripData, overrides: Partial<TripData['transit
     arrivesAt: '2027-06-01T09:30',
     routeId: null,
     routeVariant: null,
-    booking: null,
+    bookingId: null,
     images: [],
     ...overrides,
   });
@@ -195,14 +197,14 @@ describe('buildTripView', () => {
           diningFormat: 'sit-down',
           place: { id: null, label: 'Restaurant A' },
           includedIn: null,
-          booking: null,
+          bookingId: null,
         },
         {
           _id: 'opt_b',
           diningFormat: 'grab-and-go',
           place: { id: null, label: 'Restaurant B' },
           includedIn: null,
-          booking: null,
+          bookingId: null,
         },
       ],
     });
@@ -314,7 +316,7 @@ describe('buildTripView', () => {
       checkOutAt: '2027-06-01T11:00',
       status: 'planning',
       lodging: null,
-      booking: null,
+      bookingId: null,
       images: [],
     });
     // The alternate track's entire same-day content is the same checkout,
@@ -327,7 +329,7 @@ describe('buildTripView', () => {
       checkOutAt: '2027-06-01T11:00',
       status: 'planning',
       lodging: null,
-      booking: null,
+      bookingId: null,
       images: [],
     });
     pushMinimalActivity(data, {
@@ -962,7 +964,7 @@ describe('budget: Stay packages', () => {
       checkOutAt: '2027-06-02T11:00',
       status: 'planning',
       lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } },
-      booking: null,
+      bookingId: null,
       packages: null,
       images: [],
       ...overrides,
@@ -972,13 +974,15 @@ describe('budget: Stay packages', () => {
   it('counts a package cost in the trip totals, on top of the room rate', () => {
     const data = minimalTripData();
     data.trip.travelers = [{ id: 't1', name: 'Alex' }];
+    data.bookings.push({
+      _id: 'booking_room',
+      status: 'booked',
+      pricing: { kind: 'total', cost: { amount: 100, currency: 'USD' } },
+      confirmationNumber: null,
+    });
     data.stays.push(
       minimalStay({
-        booking: {
-          status: 'booked',
-          cost: { amount: 100, currency: 'USD' },
-          confirmationNumber: null,
-        },
+        bookingId: 'booking_room',
         packages: [
           {
             _id: 'pkg_1',

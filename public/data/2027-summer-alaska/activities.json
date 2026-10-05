@@ -20,11 +20,7 @@
         }
       ]
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_act_jun26_1",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -58,11 +54,7 @@
       "id": "ChIJ13s4RLKiyFYROmJ7yCd4CVU",
       "label": "Rental Car Center"
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_act_jun26_2",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -82,7 +74,7 @@
     "priority": null,
     "text": "Late dinner in Anchorage before the overnight drive — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -102,7 +94,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jun26_3_opt1",
@@ -119,14 +111,14 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jun26_3_opt2",
         "diningFormat": "drivethru",
         "place": null,
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -154,11 +146,7 @@
         }
       ]
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_act_jun27_alt_2",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -182,7 +170,7 @@
       "id": "ChIJ-9r9Su3GzlYRd2bK5bTAhq0",
       "label": "Alaska Birch Syrup & Wild Harvest: Shop"
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -217,11 +205,7 @@
         }
       ]
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_act_jun27_ideal_3",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -247,7 +231,7 @@
     "priority": null,
     "text": "West Rib Pub & Grill",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": null,
     "includedIn": null,
@@ -267,7 +251,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "56832641-a1fa-46f9-a2e6-4f9e266ffdfd",
@@ -284,7 +268,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -312,7 +296,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -342,7 +326,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -378,7 +362,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -402,7 +386,7 @@
       "label": "AK Sled Dog Tours",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -432,7 +416,7 @@
       "label": "Talkeetna Alaskan Lodge",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -462,7 +446,7 @@
       "label": "Talkeetna River Walk",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -492,7 +476,7 @@
       "label": "Talkeetna Lakes Trailhead",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -522,7 +506,7 @@
       "label": "K2 Aviation",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -548,7 +532,7 @@
     "priority": null,
     "text": "Dinner at Mountain High Pizza Pie",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -568,7 +552,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "43bec50c-87fc-4f0e-93b4-542f4778f6b1",
@@ -585,7 +569,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -607,7 +591,7 @@
       "id": "ChIJoQxNrpKVzlYRE3yIXLzxvcs",
       "label": "Talkeetna Spinach Bread"
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "snack",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -632,7 +616,7 @@
     "priority": null,
     "text": "Early breakfast at the cabin before the first bus",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -645,7 +629,7 @@
           "label": "Breakfast at the cabin"
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "e497ef94-5fb9-482e-8b64-a3574e385889",
@@ -662,7 +646,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -680,7 +664,7 @@
     "priority": null,
     "text": "Dinner in Fairbanks after the drive from Denali — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -700,7 +684,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "429fbae8-6a9a-41c3-a612-cde879df898c",
@@ -717,7 +701,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -735,7 +719,7 @@
     "priority": null,
     "text": "Breakfast — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -748,14 +732,14 @@
           "entity": "stay",
           "id": "stay_westmark_fbx_1"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jun29_breakfast_opt1",
         "diningFormat": "grab-and-go",
         "place": null,
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -782,7 +766,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "snack",
     "diningFormat": "grab-and-go",
     "includedIn": null,
@@ -802,7 +786,7 @@
     "priority": null,
     "text": "Lunch on the road",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": null,
     "includedIn": null,
@@ -812,7 +796,7 @@
         "diningFormat": "self-catered",
         "place": null,
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -840,7 +824,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -870,7 +854,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -893,7 +877,7 @@
       "label": "Arctic Interagency Visitor Center",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -923,11 +907,7 @@
       "label": "Coyote Air",
       "images": []
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_act_jun30_ideal_3",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -963,7 +943,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -987,7 +967,7 @@
       "label": "Arctic Interagency Visitor Center",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "self-catered",
     "includedIn": null,
@@ -1016,7 +996,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -1039,7 +1019,7 @@
       "label": "Arctic Interagency Visitor Center",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1069,7 +1049,7 @@
       "label": "Wiseman, Alaska",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1098,7 +1078,7 @@
       "label": "Sukakpak Mountain",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1123,7 +1103,7 @@
     "priority": null,
     "text": "Packed lunch on the drive back to Coldfoot",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "self-catered",
     "includedIn": null,
@@ -1158,7 +1138,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1187,7 +1167,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -1210,7 +1190,7 @@
       "label": "Coyote Air",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1246,7 +1226,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -1265,7 +1245,7 @@
     "priority": null,
     "text": "Lunch on the drive back — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": null,
     "includedIn": null,
@@ -1279,14 +1259,14 @@
           "images": []
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul1_ideal_lunch_opt1",
         "diningFormat": "self-catered",
         "place": null,
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -1314,7 +1294,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1337,7 +1317,7 @@
       "label": "Coldfoot Camp Cafe",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -1366,7 +1346,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1389,11 +1369,7 @@
       "label": "Coyote Air",
       "images": []
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_act_jul1_alt_2",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1418,7 +1394,7 @@
     "priority": null,
     "text": "Packed lunch on the drive back to Fairbanks",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "self-catered",
     "includedIn": null,
@@ -1437,7 +1413,7 @@
     "priority": null,
     "text": "Packed lunch on the drive back to Fairbanks",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "self-catered",
     "includedIn": null,
@@ -1460,7 +1436,7 @@
       "label": "Westmark Fairbanks Hotel & Conference Center",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1495,7 +1471,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1518,7 +1494,7 @@
       "label": "Westmark Fairbanks Hotel & Conference Center",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1537,7 +1513,7 @@
     "priority": null,
     "text": "Free afternoon to rest",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1556,7 +1532,7 @@
     "priority": null,
     "text": "Breakfast — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -1569,7 +1545,7 @@
           "entity": "stay",
           "id": "stay_westmark_fbx_2"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul2_breakfast_opt1",
@@ -1580,7 +1556,7 @@
           "images": []
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -1607,7 +1583,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -1637,7 +1613,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1667,7 +1643,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1687,7 +1663,7 @@
     "priority": null,
     "text": "Dinner — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -1707,14 +1683,14 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul2_6_opt1",
         "diningFormat": "sit-down",
         "place": null,
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -1741,7 +1717,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -1760,7 +1736,7 @@
     "priority": null,
     "text": "Quick lunch in McCarthy — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": null,
     "includedIn": null,
@@ -1774,14 +1750,14 @@
           "images": []
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul3_lunch_opt1",
         "diningFormat": "self-catered",
         "place": null,
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -1803,7 +1779,7 @@
       "label": "Kennecott Mines National Historic Landmark",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1829,7 +1805,7 @@
     "priority": null,
     "text": "Dinner — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -1852,7 +1828,7 @@
           "entity": "package",
           "id": "pkg_kennicott_meals"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul3_7_opt1",
@@ -1869,7 +1845,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -1887,7 +1863,7 @@
     "priority": null,
     "text": "Breakfast — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -1910,14 +1886,14 @@
           "entity": "package",
           "id": "pkg_kennicott_meals"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul4_1_opt1",
         "diningFormat": "self-catered",
         "place": null,
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -1944,11 +1920,7 @@
         }
       ]
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_act_jul4_2",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1967,7 +1939,7 @@
     "priority": null,
     "text": "Lunch (packed lunch or quick bite at the lodge)",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "self-catered",
     "includedIn": null,
@@ -2002,11 +1974,7 @@
         }
       ]
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_act_jul4_4",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2026,7 +1994,7 @@
     "priority": null,
     "text": "Dinner — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -2049,7 +2017,7 @@
           "entity": "package",
           "id": "pkg_kennicott_meals"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul4_5_opt1",
@@ -2060,7 +2028,7 @@
           "images": []
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -2077,7 +2045,7 @@
     "priority": null,
     "text": "Breakfast — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -2100,14 +2068,14 @@
           "entity": "package",
           "id": "pkg_kennicott_meals"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul5_1_opt1",
         "diningFormat": "self-catered",
         "place": null,
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -2124,7 +2092,7 @@
     "priority": null,
     "text": "Breakfast — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -2144,14 +2112,14 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul6_breakfast_opt1",
         "diningFormat": "grab-and-go",
         "place": null,
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -2173,7 +2141,7 @@
       "label": "Nullaġvik Hotel",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2202,7 +2170,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2221,7 +2189,7 @@
     "priority": null,
     "text": "Lunch in Kotzebue — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": null,
     "includedIn": null,
@@ -2231,11 +2199,17 @@
         "diningFormat": "sit-down",
         "place": {
           "id": "ChIJ5Zp8oFYXzVARlNVi2f7GvyQ",
-          "label": "Empress Chinese Restaurant",
-          "images": []
+          "label": "Empress",
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJ5Zp8oFYXzVARlNVi2f7GvyQ/photos/Aa-ngMaxIE8-Z8bBiCLvmT7M5P_hoDPoy22TBS6eMoEYCvAFaabo5xR3LmHzekwOKTOVPPvpGzCfw0anlhYMnSNzdU-d_YztsY4IkRCFcL_sJ4eKboNroD2gY3WRRjMx1tswyAAKsscWTG6j7IfdP0_apPm5-ppUxBYJ6HFywgAl_0tCM0TFGr6q3lk4kGh7eJ_V7IeKu6tXwck--l2Qe1VULOCFD6u3EZWSfaHRYN6s4HupD_I9A3RvPgm7cbajjT4HVk1R6-fT7N4A5KQL1SRJNr3n_WlwjSEYSitjFBi0mheJoG3abXD6pDHoIybbWFHsEsDAv99jA1QJCIYJyggPscSLaqdEOx0y7uD5ey91DPDYc2b5Mrgvgh3fwtnrIn5_ThDsvQoTLR-gACmpEifMoqTwO8hQjAe05bBcRW-o-e39kyFE/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Sergey Mishenev",
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul6_lunch_opt1",
@@ -2243,14 +2217,21 @@
         "place": {
           "id": "ChIJHxwWQVIXzVARXZHgjj-LZwU",
           "label": "Bison Store & Restaurant",
-          "images": []
+          "images": [
+            {
+              "uri": "https://places.googleapis.com/v1/places/ChIJHxwWQVIXzVARXZHgjj-LZwU/photos/Aa-ngMaLXuIpFimCQhoLdWbbJrMxv_KrmV1k8fl6RE1o2qqJtQyRlYygO4ydYn5P2ei_exSp64YqoufYo6OzGclODce2kiasGIHdzqMnZ8Z3KST4RSVa7--wtyUXNN3hyU6bIwsmKOmiOQNF-9tp_yxrB7ghU4de1uJM5bn6SoLmJ8UJ8KNuIjTsEEXMMj0PhN8ZsYZRQExCHucS_qOFcgIcT_KuKi0KMdnnUT3khyQd-SpmI_rLZLkC4A97JWK0XETsgC9qbKHQyZAeU2EOnXNSvKKNQcuqTsveZcXvAQ2YbneMJ9d4WRnkWtBl82U6804Y7yEgFfr85W2WCphW8HIuybj3mrp4Ejjy0CSj5kX-pS1AeKOQhOCbeTQEa703zyDCyWFHrqzxQW0hAcYUWpfw8hnj9VdDH9iO1ONXO14PjAJD9Q/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+              "credit": "Max Park",
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul6_4",
@@ -2267,11 +2248,7 @@
       "label": "Golden Eagle Outfitters",
       "images": []
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_act_jul6_4",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2307,7 +2284,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2331,7 +2308,7 @@
       "label": "Bison Store & Restaurant",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -2360,7 +2337,7 @@
       "label": "Nullaġvik Hotel",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -2389,11 +2366,7 @@
         }
       ]
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_act_jul7_1",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2413,7 +2386,7 @@
     "priority": null,
     "text": "Free day in Kotzebue",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2437,11 +2410,7 @@
       "label": "Golden Eagle Outfitters",
       "images": []
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_act_jul7_bonus",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2477,7 +2446,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2497,7 +2466,7 @@
     "priority": null,
     "text": "Flexible lunch, kept loose around today's flight window",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "self-catered",
     "includedIn": null,
@@ -2526,7 +2495,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -2550,11 +2519,7 @@
       "label": "Golden Eagle Outfitters",
       "images": []
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_act_jul8_1",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2584,7 +2549,7 @@
       "label": "Northwest Arctic Heritage Center",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2608,11 +2573,7 @@
       "label": "Golden Eagle Outfitters",
       "images": []
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_act_jul8_lastchance",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2642,7 +2603,7 @@
       "label": "Northwest Arctic Heritage Center",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2672,7 +2633,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2702,7 +2663,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -2724,9 +2685,15 @@
     "place": {
       "id": "ChIJHxwWQVIXzVARXZHgjj-LZwU",
       "label": "Bison Store & Restaurant",
-      "images": []
+      "images": [
+        {
+          "uri": "https://places.googleapis.com/v1/places/ChIJHxwWQVIXzVARXZHgjj-LZwU/photos/Aa-ngMbamsz5LKxxa3LeOhTXA3kx1XvXgXGpPBDI07osEHiRf-sZFCwjn_V26MfZRBFFkrhMI_dqq9frnWak6jxs0ZSQBBNqjeCPAQSf4iBCpYjRipdlEkaC8qefRMYZVtshPxKMUeO98SiwZ81XwcZX-wOhxYkaGrRwFXlcnVv8AI4XAJChaxqKBULNQewFn5IcUFYXNelDZqljWTZGwd4P8PwdkI3stF8dCsgmlXktOROgkEky9rnh39gvJRXIUfhj8IQ-LwdhGQE7zQ_xHClx3ZiQvMf0gMqHP8XGvxp0J3b8cX4TlZM-WXE0HLG12A2gMssdmHSwOUnXRSoYgj_fcO3pf-1sQbRdFlaf8KEpYCQH101qAP8d5WRmmtXQlG8d65b5X1WFacLCZNlIW4YTzmEQTpjV621zd1sTXJ42ZaTZhg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
+          "credit": "Max Park",
+          "caption": null
+        }
+      ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -2742,11 +2709,11 @@
     "status": "planning",
     "startAt": null,
     "durationMinutes": null,
-    "timeLabel": "Evening",
+    "timeLabel": "Night",
     "priority": null,
     "text": "Late dinner in Anchorage — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -2766,7 +2733,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul9_dinner_opt1",
@@ -2783,7 +2750,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -2801,7 +2768,7 @@
     "priority": null,
     "text": "Breakfast — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -2821,14 +2788,14 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul10_breakfast_opt1",
         "diningFormat": "grab-and-go",
         "place": null,
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -2850,7 +2817,7 @@
       "label": "Kenai Fjords National Park Exit Glacier Nature Center",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2879,7 +2846,7 @@
       "label": "Chinooks Restaurant",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -2908,11 +2875,7 @@
         }
       ]
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_act_jul10_3",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2932,7 +2895,7 @@
     "priority": null,
     "text": "Dinner — Seward or Anchorage?",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -2952,7 +2915,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -2970,7 +2933,7 @@
     "priority": null,
     "text": "Lunch in Whittier before boarding — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": null,
     "includedIn": null,
@@ -2990,7 +2953,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul17_lunch_opt2",
@@ -3007,7 +2970,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -3035,7 +2998,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -3055,7 +3018,7 @@
     "priority": null,
     "text": "First night's dinner onboard — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -3072,7 +3035,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul17_dinner_opt1",
@@ -3086,7 +3049,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul17_dinner_opt2",
@@ -3100,7 +3063,7 @@
           "entity": "package",
           "id": "pkg_princess_premier"
         },
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -3118,7 +3081,7 @@
     "priority": null,
     "text": "Breakfast onboard",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -3135,7 +3098,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul18_breakfast_opt1",
@@ -3149,7 +3112,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -3166,7 +3129,7 @@
     "priority": null,
     "text": "Lunch onboard",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": null,
     "includedIn": null,
@@ -3183,7 +3146,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul18_lunch_opt1",
@@ -3197,7 +3160,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -3218,7 +3181,7 @@
       "label": "Hubbard Glacier",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -3243,7 +3206,7 @@
     "priority": null,
     "text": "Dinner onboard while cruising past Hubbard Glacier — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -3260,7 +3223,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul18_dinner_opt1",
@@ -3274,7 +3237,7 @@
           "entity": "package",
           "id": "pkg_princess_premier"
         },
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -3291,7 +3254,7 @@
     "priority": null,
     "text": "Breakfast onboard",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -3308,7 +3271,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul19_breakfast_opt1",
@@ -3322,7 +3285,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -3343,7 +3306,7 @@
       "label": "Glacier Bay National Park and Preserve",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -3372,7 +3335,7 @@
       "label": "World Fresh Marketplace",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "included",
     "includedIn": {
@@ -3394,7 +3357,7 @@
     "priority": null,
     "text": "Dinner onboard",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -3411,7 +3374,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul19_dinner_opt1",
@@ -3425,7 +3388,7 @@
           "entity": "package",
           "id": "pkg_princess_premier"
         },
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -3446,7 +3409,7 @@
       "label": "World Fresh Marketplace",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": "included",
     "includedIn": {
@@ -3472,11 +3435,7 @@
       "label": "Icy Strait Point",
       "images": []
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_act_jul20_1",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -3505,7 +3464,7 @@
       "label": "Icy Strait Point",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -3528,11 +3487,7 @@
       "label": "Icy Strait Zipline",
       "images": []
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_act_jul20_3",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -3551,7 +3506,7 @@
     "priority": null,
     "text": "Lunch — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": null,
     "includedIn": null,
@@ -3565,7 +3520,7 @@
           "images": []
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul20_lunch_opt1",
@@ -3576,7 +3531,7 @@
           "images": []
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul20_lunch_opt2",
@@ -3590,7 +3545,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -3607,7 +3562,7 @@
     "priority": null,
     "text": "Dinner onboard",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -3624,7 +3579,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul20_dinner_opt1",
@@ -3638,7 +3593,7 @@
           "entity": "package",
           "id": "pkg_princess_premier"
         },
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -3659,7 +3614,7 @@
       "label": "World Fresh Marketplace",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": "included",
     "includedIn": {
@@ -3685,11 +3640,7 @@
       "label": "Mendenhall Glacier Visitor Center",
       "images": []
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_act_jul21_1",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -3723,11 +3674,7 @@
       "label": "Harv and Marv's Outback Alaska Whale Watching",
       "images": []
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_act_jul21_2",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -3746,7 +3693,7 @@
     "priority": null,
     "text": "Lunch in Juneau — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": null,
     "includedIn": null,
@@ -3760,7 +3707,7 @@
           "images": []
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul21_lunch_opt1",
@@ -3771,7 +3718,7 @@
           "images": []
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -3792,11 +3739,7 @@
       "label": "Mount Roberts Tramway",
       "images": []
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_act_jul21_3",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -3815,7 +3758,7 @@
     "priority": null,
     "text": "Dinner onboard",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -3832,7 +3775,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul21_dinner_opt1",
@@ -3846,7 +3789,7 @@
           "entity": "package",
           "id": "pkg_princess_premier"
         },
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -3867,7 +3810,7 @@
       "label": "World Fresh Marketplace",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": "included",
     "includedIn": {
@@ -3893,7 +3836,7 @@
       "label": "Saxman Totem Park",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -3912,7 +3855,7 @@
     "priority": null,
     "text": "Lunch in Ketchikan — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": null,
     "includedIn": null,
@@ -3932,7 +3875,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul22_lunch_opt1",
@@ -3949,7 +3892,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -3971,11 +3914,7 @@
       "label": "Family Air Tours & Hook Up Fly Shop",
       "images": []
     },
-    "booking": {
-      "status": "planning",
-      "cost": null,
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_act_jul22_2",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -4000,7 +3939,7 @@
     "priority": null,
     "text": "Dinner onboard",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -4017,7 +3956,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul22_dinner_opt1",
@@ -4031,7 +3970,7 @@
           "entity": "package",
           "id": "pkg_princess_premier"
         },
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -4048,7 +3987,7 @@
     "priority": null,
     "text": "Cruising the Inside Passage — full sea day",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -4074,7 +4013,7 @@
     "priority": null,
     "text": "Breakfast onboard",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -4091,7 +4030,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul23_breakfast_opt1",
@@ -4105,7 +4044,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -4122,7 +4061,7 @@
     "priority": null,
     "text": "Lunch onboard",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": null,
     "includedIn": null,
@@ -4139,7 +4078,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul23_lunch_opt1",
@@ -4153,7 +4092,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -4170,7 +4109,7 @@
     "priority": null,
     "text": "Last full dinner onboard — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -4187,7 +4126,7 @@
           "entity": "stay",
           "id": "stay_cruise"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul23_dinner_opt1",
@@ -4201,7 +4140,7 @@
           "entity": "package",
           "id": "pkg_princess_premier"
         },
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul23_dinner_opt2",
@@ -4215,7 +4154,7 @@
           "entity": "package",
           "id": "pkg_princess_premier"
         },
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -4236,7 +4175,7 @@
       "label": "World Fresh Marketplace",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": "included",
     "includedIn": {
@@ -4262,7 +4201,7 @@
       "label": "Canada Place Cruise Ship Terminal",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -4297,7 +4236,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -4327,7 +4266,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -4357,7 +4296,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -4387,7 +4326,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -4417,7 +4356,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -4437,7 +4376,7 @@
     "priority": null,
     "text": "Packed lunch at Brooks Camp",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "self-catered",
     "includedIn": null,
@@ -4466,7 +4405,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -4496,7 +4435,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -4516,7 +4455,7 @@
     "priority": null,
     "text": "Packed lunch on the trail",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "self-catered",
     "includedIn": null,
@@ -4545,7 +4484,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -4565,7 +4504,7 @@
     "priority": null,
     "text": "Packed lunch at Redoubt Bay Lodge",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "self-catered",
     "includedIn": null,
@@ -4594,7 +4533,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -4614,7 +4553,7 @@
     "priority": null,
     "text": "Breakfast — choosing where",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -4628,7 +4567,7 @@
           "images": []
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "act_jul17_breakfast_opt1",
@@ -4638,7 +4577,7 @@
           "entity": "stay",
           "id": "stay_anchorage_2"
         },
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -4659,7 +4598,7 @@
       "id": "ChIJNbpwJOYWzVARtRutEpMtQE4",
       "label": "Kotzebue"
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -4678,7 +4617,7 @@
     "priority": null,
     "text": "Dinner in Anchorage",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -4698,7 +4637,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "e713aa1f-4172-4576-8023-08b3628b9826",
@@ -4715,7 +4654,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -4733,7 +4672,7 @@
     "priority": null,
     "text": "Dinner in Anchorage",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -4753,7 +4692,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "84ba9272-3d97-4e53-ac6a-f3317395027f",
@@ -4770,7 +4709,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "679aa6a8-2e88-4641-96bc-ca049c1f1eba",
@@ -4787,7 +4726,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -4805,7 +4744,7 @@
     "priority": null,
     "text": "Dinner in Anchorage",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -4825,7 +4764,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "3d9e8d8c-8af8-4a7f-948f-5ae02e91706d",
@@ -4842,7 +4781,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -4870,7 +4809,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -4894,11 +4833,7 @@
       "label": "Alaska Native Heritage Center",
       "images": []
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_act_jul11_1",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -4918,7 +4853,7 @@
     "priority": null,
     "text": "Quick lunch between stops",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "grab-and-go",
     "includedIn": null,
@@ -4942,7 +4877,7 @@
       "label": "Westchester Lagoon",
       "images": []
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -4966,11 +4901,7 @@
       "label": "Alaska Wildlife Conservation Center",
       "images": []
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_act_jul11_3",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -4990,7 +4921,7 @@
     "priority": null,
     "text": "Breakfast at Middle Way Cafe",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -5014,7 +4945,7 @@
       "id": null,
       "label": "Homer, Alaska"
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5037,7 +4968,7 @@
       "id": null,
       "label": "Homer Spit"
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5060,7 +4991,7 @@
       "id": null,
       "label": "Homer, Alaska"
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5090,7 +5021,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5113,7 +5044,7 @@
       "id": null,
       "label": "Homer, Alaska"
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5136,7 +5067,7 @@
       "id": null,
       "label": "Anchorage"
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5166,7 +5097,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5201,7 +5132,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5231,7 +5162,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5261,7 +5192,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "grab-and-go",
     "includedIn": null,
@@ -5292,7 +5223,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5321,7 +5252,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -5351,14 +5282,7 @@
         }
       ]
     },
-    "booking": {
-      "status": "planning",
-      "cost": {
-        "amount": 299,
-        "currency": "USD"
-      },
-      "confirmationNumber": null
-    },
+    "bookingId": "booking_act_jul5_5",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5388,7 +5312,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -5419,7 +5343,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5449,11 +5373,7 @@
         }
       ]
     },
-    "booking": {
-      "status": "planning",
-      "confirmationNumber": null,
-      "cost": null
-    },
+    "bookingId": "booking_b319f6df-52b0-496e-ab75-5142b9a83b3e",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5483,7 +5403,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5513,7 +5433,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "sit-down",
     "includedIn": null,
@@ -5543,7 +5463,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5573,7 +5493,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5593,7 +5513,7 @@
     "priority": null,
     "text": "Breakfast before heading to Lake Hood",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -5613,7 +5533,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "2b01bafc-2a52-4a8f-b0ba-e23fd705f942",
@@ -5630,7 +5550,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -5648,7 +5568,7 @@
     "priority": null,
     "text": "Early breakfast on the way to Lake Hood",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -5668,7 +5588,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "b32849a2-2078-4cc8-818c-fb8bb71e58ad",
@@ -5685,7 +5605,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -5703,7 +5623,7 @@
     "priority": null,
     "text": "Early breakfast before the Lake Clark Air check-in",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -5723,7 +5643,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "cfdc4661-4740-4ae8-a2b0-b49170773236",
@@ -5740,7 +5660,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -5758,7 +5678,7 @@
     "priority": null,
     "text": "Dinner near the cabins",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "dinner",
     "diningFormat": null,
     "includedIn": null,
@@ -5778,7 +5698,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "57df2489-70ad-486e-ba22-cc7137d0c12a",
@@ -5795,7 +5715,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "570e2fcd-5e8d-42bb-8b95-852b2fc18311",
@@ -5812,7 +5732,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -5830,7 +5750,7 @@
     "priority": null,
     "text": "Breakfast near the cabins, then check out and load the car",
     "place": null,
-    "booking": null,
+    "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": null,
     "includedIn": null,
@@ -5850,7 +5770,7 @@
           ]
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       },
       {
         "_id": "7eae62c2-3d80-4f07-be99-7a3cb4644c77",
@@ -5860,7 +5780,7 @@
           "label": "Breakfast at the cabin"
         },
         "includedIn": null,
-        "booking": null
+        "bookingId": null
       }
     ],
     "travelers": null,
@@ -5888,7 +5808,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5918,7 +5838,7 @@
         }
       ]
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -5941,7 +5861,7 @@
       "id": null,
       "label": "Packed lunch"
     },
-    "booking": null,
+    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "self-catered",
     "includedIn": null,

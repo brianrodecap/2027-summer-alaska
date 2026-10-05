@@ -51,6 +51,7 @@ function trip(activities: Activity[], scenarios: Scenario[] = []): TripData {
     activities,
     scenarios,
     notes: [],
+    bookings: [],
     travelModeOverrides: [],
     routes: [],
   } as unknown as TripData;
@@ -58,22 +59,21 @@ function trip(activities: Activity[], scenarios: Scenario[] = []): TripData {
 
 describe('applyMealOptions', () => {
   it('turns a meal into undecided candidates, keeping a booked existing choice', () => {
-    const booking = { status: 'booked' as const, cost: null, confirmationNumber: 'ABC' };
     const dinner = activity('dinner', {
       mealType: 'dinner',
       place: { id: 'p_simon', label: "Simon & Seafort's" },
       diningFormat: 'sit-down',
-      booking,
+      bookingId: 'booking_simon',
     });
     applyMealOptions(dinner, [
       { placeLabel: "Simon & Seafort's", placeId: 'p_simon' },
       { placeLabel: 'Orso', placeId: 'p_orso' },
     ]);
     expect(dinner.place).toBeNull();
-    expect(dinner.booking).toBeNull();
+    expect(dinner.bookingId).toBeNull();
     expect(dinner.options?.map((o) => o.place?.label)).toEqual(["Simon & Seafort's", 'Orso']);
     // The reservation moved onto its candidate rather than being dropped.
-    expect(dinner.options?.[0].booking).toEqual(booking);
+    expect(dinner.options?.[0].bookingId).toBe('booking_simon');
     expect(dinner.options?.[1].place?.id).toBe('p_orso');
   });
 
