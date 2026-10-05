@@ -53,7 +53,7 @@
     "concerns": [
       {
         "entity": "activity",
-        "id": "act_jun28_2"
+        "id": "ed08c4a4-7f8a-4514-86d7-2fbf2182973e"
       }
     ],
     "images": []
@@ -65,7 +65,7 @@
     "concerns": [
       {
         "entity": "transit",
-        "id": "transit_denali_bus_tour"
+        "id": "eb04b638-d598-4b88-abd8-50d494d1c88a"
       }
     ],
     "images": []
@@ -112,8 +112,8 @@
     "text": "Early check-in isn’t guaranteed, but bags can usually be left.",
     "concerns": [
       {
-        "entity": "activity",
-        "id": "act_jun29_7"
+        "entity": "stay",
+        "id": "stay_coldfoot"
       }
     ],
     "images": []
@@ -174,18 +174,6 @@
       {
         "entity": "activity",
         "id": "act_jun30_ideal_4"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_jun30_alt_coyote_expectation",
-    "kind": "footnote",
-    "text": "Expect to be asked to check back later rather than a firm no — keep the day loose.",
-    "concerns": [
-      {
-        "entity": "activity",
-        "id": "act_jun30_alt_2"
       }
     ],
     "images": []
@@ -540,7 +528,7 @@
     "concerns": [
       {
         "entity": "stay",
-        "id": "stay_kennicott"
+        "id": "3aaee9b5-4d98-4c45-a29f-15aa732ee0dd"
       }
     ],
     "images": [
@@ -593,8 +581,7 @@
     "text": "The final ~60 miles to the footbridge are unpaved gravel (McCarthy Road) — plan for a slower pace than highway driving.",
     "concerns": [
       {
-        "entity": "transit",
-        "id": "transit_coppercenter_mccarthy"
+        "date": "2027-07-03"
       }
     ],
     "images": []
@@ -605,8 +592,8 @@
     "text": "Copper Town Shuttle and Blackburn Heritage Shuttle both run roughly hourly between the footbridge/McCarthy and Kennecott (~20 min ride) — either works.",
     "concerns": [
       {
-        "entity": "activity",
-        "id": "act_jul3_4"
+        "entity": "transit",
+        "id": "7031752b-5a0c-4660-ba30-030dad9afbe4"
       }
     ],
     "images": []
@@ -804,10 +791,6 @@
       {
         "entity": "activity",
         "id": "act_jul7_dinner"
-      },
-      {
-        "entity": "activity",
-        "id": "act_jul8_dinner"
       }
     ],
     "images": []
@@ -845,28 +828,6 @@
         "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/2023_04_29b_Discovery_Princess_16_(52935882014).jpg",
         "credit": "Photo by Blake Handley / CC BY 2.0",
         "caption": "Discovery Princess docked at Ogden Point, Victoria BC"
-      }
-    ]
-  },
-  {
-    "_id": "note_kennecott_compression_tradeoff",
-    "kind": "info",
-    "text": "Kennecott was compressed from 3 nights to 2 — the Root Glacier hike and Mill Tour fit into one full day, which also satisfies the lodge's 2-night minimum — which originally freed up July 5, now used for the Matanuska Glacier helicopter tour en route to Anchorage. The dedicated Wrangell–St. Elias flightseeing day is still the one dropped in this compression — worth reconsidering during the buffer re-evaluation pass, either as an early-morning add-on before the Root Glacier hike on July 4, or reinstated as a third Kennecott day if you'd rather not compress further.",
-    "concerns": [
-      {
-        "entity": "stay",
-        "id": "stay_kennicott"
-      },
-      {
-        "entity": "transit",
-        "id": "transit_kennecott_anchorage"
-      }
-    ],
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Kennecott_Copper_Mill.jpg",
-        "credit": "Photo by Michael F. Wacht / CC BY-SA 4.0",
-        "caption": "The historic Kennecott copper concentration mill"
       }
     ]
   },
@@ -1081,85 +1042,13 @@
     "images": []
   },
   {
-    "_id": "note_act_jun27_ideal_1_opt0",
-    "kind": "footnote",
-    "text": "If breakfast turns out to be included in the room rate — worth confirming at booking.",
-    "concerns": [
-      {
-        "entity": "mealOption",
-        "id": "act_jun27_ideal_1_opt0"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_act_jun27_ideal_1_opt2",
-    "kind": "footnote",
-    "text": "Coffee and a pastry to go, if we want to get moving faster.",
-    "concerns": [
-      {
-        "entity": "mealOption",
-        "id": "act_jun27_ideal_1_opt2"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_act_jun27_alt_1_opt0",
-    "kind": "footnote",
-    "text": "If breakfast turns out to be included in the room rate — worth confirming at booking.",
-    "concerns": [
-      {
-        "entity": "mealOption",
-        "id": "act_jun27_alt_1_opt0"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_act_jun27_alt_1_opt2",
-    "kind": "footnote",
-    "text": "Coffee and a pastry from Nagley’s General Store, if we want to get moving faster.",
-    "concerns": [
-      {
-        "entity": "mealOption",
-        "id": "act_jun27_alt_1_opt2"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_act_jun28_breakfast_opt0",
-    "kind": "footnote",
-    "text": "If the lodge's breakfast service opens early enough for a 6:30am departure — worth confirming at check-in.",
-    "concerns": [
-      {
-        "entity": "mealOption",
-        "id": "act_jun28_breakfast_opt0"
-      }
-    ],
-    "images": []
-  },
-  {
     "_id": "note_act_jun28_breakfast_opt1",
     "kind": "footnote",
     "text": "Coffee and a pastry to go, if the lodge isn't open yet.",
     "concerns": [
       {
         "entity": "mealOption",
-        "id": "act_jun28_breakfast_opt1"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_act_jun28_breakfast_opt2",
-    "kind": "footnote",
-    "text": "Snacks from the car, eaten on the drive to the Denali entrance.",
-    "concerns": [
-      {
-        "entity": "mealOption",
-        "id": "act_jun28_breakfast_opt2"
+        "id": "e497ef94-5fb9-482e-8b64-a3574e385889"
       }
     ],
     "images": []
@@ -1194,8 +1083,8 @@
     "text": "Restrooms, coffee and snacks, and photo views of the Yukon River and Trans-Alaska Pipeline.",
     "concerns": [
       {
-        "entity": "mealOption",
-        "id": "act_jun29_lunch_opt0"
+        "entity": "activity",
+        "id": "act_jun29_3"
       }
     ],
     "images": []
@@ -1513,18 +1402,6 @@
     "images": []
   },
   {
-    "_id": "note_act_jul10_dinner_opt1",
-    "kind": "footnote",
-    "text": "Back in Anchorage instead, once we're off the road around 8:30pm.",
-    "concerns": [
-      {
-        "entity": "mealOption",
-        "id": "act_jul10_dinner_opt1"
-      }
-    ],
-    "images": []
-  },
-  {
     "_id": "note_act_jul17_lunch_opt1",
     "kind": "footnote",
     "text": "Seafood by the harbor.",
@@ -1705,30 +1582,6 @@
     "images": []
   },
   {
-    "_id": "note_stay_kennicott_checkin",
-    "kind": "info",
-    "text": "2-night minimum; on-site dining is limited (dining room, Meatza Wagon food truck, or a trip into McCarthy) — a meal package is worth booking.",
-    "concerns": [
-      {
-        "entity": "stay",
-        "id": "stay_kennicott"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_pkg_kennicott_meals",
-    "kind": "footnote",
-    "text": "On-site dining is otherwise limited to the Meatza Wagon food truck or a trip into McCarthy — worth booking given the 2-night minimum stay.",
-    "concerns": [
-      {
-        "entity": "package",
-        "id": "pkg_kennicott_meals"
-      }
-    ],
-    "images": []
-  },
-  {
     "_id": "note_pkg_princess_premier",
     "kind": "footnote",
     "text": "A separately purchased add-on, already booked — its cost is folded into the total cruise fare above rather than broken out as its own line item.",
@@ -1825,49 +1678,13 @@
     "images": []
   },
   {
-    "_id": "93bc03ef-9ac2-4179-848b-6bd0b032da65",
-    "kind": "info",
-    "text": "Kennecott was compressed from 3 nights to 2 — the Root Glacier hike and Mill Tour fit into one full day, which also satisfies the lodge's 2-night minimum — which originally freed up July 5, now used for the Matanuska Glacier helicopter tour en route to Anchorage. The dedicated Wrangell–St. Elias flightseeing day is still the one dropped in this compression — worth reconsidering during the buffer re-evaluation pass, either as an early-morning add-on before the Root Glacier hike on July 4, or reinstated as a third Kennecott day if you'd rather not compress further.",
-    "concerns": [
-      {
-        "entity": "stay",
-        "id": "c9ac2610-98b7-4819-82a6-b79f8f7e27ed"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "5ae67396-75c2-4409-916c-e0ad0bb016a7",
-    "kind": "info",
-    "text": "2-night minimum; on-site dining is limited (dining room, Meatza Wagon food truck, or a trip into McCarthy) — a meal package is worth booking.",
-    "concerns": [
-      {
-        "entity": "stay",
-        "id": "c9ac2610-98b7-4819-82a6-b79f8f7e27ed"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "76eb3298-c467-40dc-9a8d-c8f6150c5432",
-    "kind": "info",
-    "text": "Nonrefundable: changing or cancelling this booking will not result in a refund.",
-    "concerns": [
-      {
-        "entity": "stay",
-        "id": "11dc2514-b889-4097-8cf1-51feb6c7be97"
-      }
-    ],
-    "images": []
-  },
-  {
     "_id": "845e6faa-b663-4ea4-9dd1-38b96ba7e5e8",
     "kind": "info",
     "text": "Resort fee (USD 20.43 per accommodation, per stay) and breakfast fees (approx. USD 20-25 for adults, USD 15-20 for children) are due at the property.",
     "concerns": [
       {
         "entity": "stay",
-        "id": "11dc2514-b889-4097-8cf1-51feb6c7be97"
+        "id": "381e78d7-8a39-4fdf-ab3e-de892f16da7b"
       }
     ],
     "images": []

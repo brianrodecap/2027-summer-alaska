@@ -9,6 +9,7 @@ import {
   replayChanges,
   SHARED_COLLECTIONS,
 } from '../model/changeLog';
+import { NOTE_TARGET_COLLECTIONS, withoutOrphanNotes } from '../model/notes';
 import { buildTripView, loadTripData } from '../model/tripModel';
 import type { TripData } from '../model/types';
 import { createLocalStorageTripStore } from './store/localStorageTripStore';
@@ -148,7 +149,10 @@ export function TripDataProvider({
       // never collects a booking nothing points at — skipped when the write
       // left bookings and every collection that can hold one untouched.
       const holdersChanged = BOOKING_COLLECTIONS.some((c) => updated[c] !== current.data?.[c]);
-      const next = holdersChanged ? withoutOrphanBookings(updated) : updated;
+      const pruned = holdersChanged ? withoutOrphanBookings(updated) : updated;
+      // Same for notes: a deleted entity takes the notes about it along.
+      const targetsChanged = NOTE_TARGET_COLLECTIONS.some((c) => pruned[c] !== current.data?.[c]);
+      const next = targetsChanged ? withoutOrphanNotes(current.data, pruned) : pruned;
       const added = diffTripData(current.data, next, current.baseline, {
         batch: crypto.randomUUID(),
         at: new Date().toISOString(),
