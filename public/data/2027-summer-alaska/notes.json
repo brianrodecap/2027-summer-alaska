@@ -327,18 +327,6 @@
     "images": []
   },
   {
-    "_id": "note_jun27_deck_views",
-    "kind": "footnote",
-    "text": "Afternoon often has the clearest Denali views.",
-    "concerns": [
-      {
-        "entity": "activity",
-        "id": "act_jun27_ideal_9"
-      }
-    ],
-    "images": []
-  },
-  {
     "_id": "note_jun27_solstice_stroll",
     "kind": "footnote",
     "text": "It barely gets dark this close to solstice.",
@@ -394,18 +382,6 @@
       {
         "entity": "activity",
         "id": "act_jun27_alt_6"
-      }
-    ],
-    "images": []
-  },
-  {
-    "_id": "note_jun27_standby_call",
-    "kind": "footnote",
-    "text": "Daylight lasts into the late evening this close to solstice, and conditions sometimes clear enough for a late flight — worth asking to be put on standby.",
-    "concerns": [
-      {
-        "entity": "activity",
-        "id": "act_jun27_alt_8"
       }
     ],
     "images": []

@@ -402,36 +402,6 @@
     "date": "2027-06-27"
   },
   {
-    "_id": "act_jun27_ideal_9",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_alt",
-    "status": "planning",
-    "startAt": null,
-    "durationMinutes": null,
-    "timeLabel": "Afternoon",
-    "priority": null,
-    "text": "Downtime at the mountain-view deck",
-    "place": {
-      "id": "ChIJCbGyYCa-zlYRmXTCunpFzAs",
-      "label": "Talkeetna Alaskan Lodge",
-      "images": []
-    },
-    "bookingId": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [
-      {
-        "uri": "https://places.googleapis.com/v1/places/ChIJCbGyYCa-zlYRmXTCunpFzAs/photos/AVoNoXRyYea_XqLk5egkRwZzyRGiCKgy1HDCLe0uGgnJrL_KgY_16TZSMpW6jJZ2nJwS2FiQOaqJfD_2lj-uGmnp3anMdlj-jLCSlVxhkL4FSx9b8J8DjG34pejXefWRR1TILztAFryCWTctcuklHNwquhApxniXBD4tu3vIZfdN7P4c9lJQXcIOBn05rHJTz_5EScWY5FvrFx7km4Kx1fanxRJLptxCL5Z5rw6vnQMaN84mbP-RMPcE0cYayi2c7r1QuTrYQkD_g6_sG1RE7ZbASw_RhGY_VVEo7E_Hgne1s3br4uSxa81JC5sDiq1uEgDpxLG3wmHy-zaKLPkqDJ-C2covd8jsG7eEmFf92d57UoBOMK_I-zpPDQTS6J1VNhtdLuqbRlkf9ljZSYLOKhSBoZWuhUUXIm9QlzfC6w0JfaRytwAey4777nVrmQJ-Pw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-        "credit": "Talkeetna Alaskan Lodge",
-        "caption": null
-      }
-    ],
-    "date": "2027-06-27"
-  },
-  {
     "_id": "act_jun27_ideal_11",
     "legId": "leg_parks",
     "scenarioId": "scenario_jun27_alt",
@@ -490,36 +460,6 @@
       }
     ],
     "date": "2027-06-27"
-  },
-  {
-    "_id": "act_jun27_alt_8",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jun27_alt",
-    "status": "planning",
-    "startAt": "2027-06-27T18:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Call flightseeing operator — check standby",
-    "place": {
-      "id": "ChIJ3yZKTfOVzlYR66TXF7zl7dg",
-      "label": "K2 Aviation",
-      "images": []
-    },
-    "bookingId": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Denali_in_the_clouds._NPS-Jason_Bennett_%2818062718644%29.jpg",
-        "credit": "Photo by Jason Bennett / NPS, CC BY 2.0",
-        "caption": "Denali's summit wrapped in thick cloud cover"
-      }
-    ],
-    "date": null
   },
   {
     "_id": "act_jun27_alt_7",
