@@ -320,9 +320,6 @@
     "tone": "ideal",
     "label": "Flight goes",
     "icon": "flight_takeoff",
-    "requiresScenarioId": [
-      "scenario_lc_d1_ideal"
-    ],
     "images": []
   },
   {
@@ -331,9 +328,6 @@
     "tone": "alternate",
     "label": "Grounded",
     "icon": "cloud",
-    "requiresScenarioId": [
-      "scenario_lc_d1_ideal"
-    ],
     "images": []
   },
   {
@@ -342,9 +336,6 @@
     "tone": "ideal",
     "label": "Flight goes",
     "icon": "flight_takeoff",
-    "requiresScenarioId": [
-      "scenario_lc_d2_portalsworth_ideal"
-    ],
     "images": []
   },
   {
@@ -353,9 +344,6 @@
     "tone": "alternate",
     "label": "Grounded",
     "icon": "cloud",
-    "requiresScenarioId": [
-      "scenario_lc_d2_portalsworth_ideal"
-    ],
     "images": []
   }
 ]

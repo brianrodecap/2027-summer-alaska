@@ -15,6 +15,7 @@ import {
   notesFromExtraction,
   planDocumentImport,
   planIncludedTransfers,
+  travelersFrom,
   withDocumentTravelers,
 } from './documentImport';
 import { blankActivity, blankStay, blankTransit } from './editForms';
@@ -274,6 +275,24 @@ function tripWithPlaceholders(): TripData {
   };
 }
 
+describe('travelersFrom', () => {
+  it('ignores a purchaser-only name list when the headcount covers more people', () => {
+    expect(
+      travelersFrom(flightFields({ travelerNames: ['Alex Tester'], travelerCount: 2 }), travelers),
+    ).toBeNull();
+  });
+
+  it('cannot say who a smaller unnamed headcount is', () => {
+    expect(travelersFrom(flightFields({ travelerCount: 1 }), travelers)).toBeUndefined();
+  });
+
+  it('keeps a name list that matches the headcount', () => {
+    expect(
+      travelersFrom(flightFields({ travelerNames: ['Sam Tester'], travelerCount: 1 }), travelers),
+    ).toEqual(['t_sam']);
+  });
+});
+
 describe('matchTraveler', () => {
   it('matches a full name ignoring case and spacing, then a unique first name', () => {
     expect(matchTraveler('  alex   TESTER ', travelers)).toBe('t_alex');
@@ -501,6 +520,30 @@ describe('mergeDraftIntoExisting', () => {
     const draft = draftEntityFromExtraction(fields, 'leg_test', '2027-07-08') as Transit;
     const merged = mergeDraftIntoExisting(fields, existing, draft) as Transit;
     expect(merged.departsAt).toBe(existing.departsAt);
+    expect(merged.arrivesAt).toBe('2027-07-08T11:00');
+  });
+
+  it('moves a placeholder departure that would fall after the document’s arrival', () => {
+    const existing: Transit = {
+      ...placeholder('ph_return', 'Remote Lodge', 'Float Base', '2027-07-08T15:00'),
+      arrivesAt: '2027-07-08T16:30',
+    };
+    const fields = flightFields({ endAt: '2027-07-08T14:00' });
+    const draft = draftEntityFromExtraction(fields, 'leg_test', '2027-07-08') as Transit;
+    const merged = mergeDraftIntoExisting(fields, existing, draft) as Transit;
+    expect(merged.departsAt).toBe('2027-07-08T12:30');
+    expect(merged.arrivesAt).toBe('2027-07-08T14:00');
+  });
+
+  it('moves a placeholder arrival that would fall before the document’s departure', () => {
+    const existing: Transit = {
+      ...placeholder('ph_out', 'Float Base', 'Remote Lodge', '2027-07-08T08:30'),
+      arrivesAt: '2027-07-08T09:30',
+    };
+    const fields = flightFields({ startAt: '2027-07-08T10:00' });
+    const draft = draftEntityFromExtraction(fields, 'leg_test', '2027-07-08') as Transit;
+    const merged = mergeDraftIntoExisting(fields, existing, draft) as Transit;
+    expect(merged.departsAt).toBe('2027-07-08T10:00');
     expect(merged.arrivesAt).toBe('2027-07-08T11:00');
   });
 
@@ -746,6 +789,13 @@ describe('endpointSearch', () => {
     expect(endpointSearch('Juneau International Airport', 'flight').query).toBe(
       'Juneau International Airport',
     );
+  });
+
+  it("searches a flight's named operator base as a plain place, not an airport", () => {
+    const search = endpointSearch("Rust's Flying Service", 'flight');
+    expect(search.query).toBe("Rust's Flying Service");
+    expect(search.includedType).toBeUndefined();
+    expect(search.pick([result("Rust's Flying Service")])?.label).toBe("Rust's Flying Service");
   });
 
   it('keeps the plain top result for other modes', () => {

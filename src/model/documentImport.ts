@@ -22,7 +22,14 @@ import {
   type PlaceSearchResult,
   searchPlaces,
 } from './places';
-import { addDaysStr, dateOnly, formatMoney, wallClockMs } from './tripModel';
+import {
+  addDaysStr,
+  addMinutesIso,
+  dateOnly,
+  diffMinutesIso,
+  formatMoney,
+  wallClockMs,
+} from './tripModel';
 import type {
   Activity,
   Booking,
@@ -175,6 +182,7 @@ export interface ExtractedFields {
   aircraft?: string; // transit
   seats?: ExtractedSeat[]; // transit: this entry's own seat per traveler
   travelerNames?: string[]; // who this entry is for, when the document names them
+  travelerCount?: number; // how many travelers it covers ("4 Adults"), named or not
   bookingStatus?: 'planning' | 'booked' | 'cancelled';
   confirmationNumber?: string;
   costAmount?: number;
@@ -223,7 +231,8 @@ export const ENTITY_SCHEMA = {
     kind: {
       type: 'string',
       enum: ['activity', 'stay', 'transit'],
-      description: 'Which kind of trip entry this describes.',
+      description:
+        "Which kind of trip entry this describes. A tour or excursion sold as a fly-out (floatplane, air taxi, bush plane — e.g. a bear-viewing or lodge day trip that flies from the operator's base to a remote destination and back) is transit, not activity: the flights are what's booked.",
     },
     text: { type: 'string', description: 'Short description, for an activity.' },
     lodgingName: { type: 'string', description: 'Hotel/lodging name, for a stay.' },
@@ -264,8 +273,13 @@ export const ENTITY_SCHEMA = {
     travelerNames: {
       type: 'array',
       description:
-        'Full names of the travelers this entry is for, exactly as printed, when the document lists them.',
+        'Full names of the travelers this entry is for, exactly as printed, when the document lists them as passengers/guests/participants. Never the purchaser, contact person or account holder just because their name appears on the confirmation — only list them if the document lists them as a traveler.',
       items: { type: 'string' },
+    },
+    travelerCount: {
+      type: 'integer',
+      description:
+        "How many travelers this entry covers when the document states it (e.g. '4 Adults' is 4), whether or not it names them.",
     },
     seats: {
       type: 'array',
@@ -544,8 +558,9 @@ const MULTI_ENTRY_INSTRUCTIONS =
   'Extract every distinct booking/itinerary entry from this document. ' +
   'A round-trip flight confirmation is two transit entries, one for the outbound flight and one for the return, each with its own times, flight number, aircraft and seats. ' +
   'A cruise confirmation is usually one stay entry for the cabin. ' +
+  "A fly-out excursion (a floatplane/air-taxi/bush-plane day trip such as bear viewing at a remote lodge, even when it is sold as a tour with a meeting location and a start/end time) is two transit entries with mode 'flight': the outbound from the operator's base (fromLabel) to the destination (toLabel) departing at the start time, and the return from the destination back to the base arriving at the end time — leave the outbound's endAt and the return's startAt empty unless the document states them. Both share the same confirmationNumber and costAmount. " +
   'Use the field names exactly as given and leave any field you cannot determine from the document empty — do not guess. ' +
-  'placeLabel, lodgingName, fromLabel and toLabel must be plain text only; never invent an id. For an airport, include its code, e.g. "Anchorage (ANC)". ' +
+  'placeLabel, lodgingName, fromLabel and toLabel must be plain text only; never invent an id. For an airport, include its code, e.g. "Anchorage (ANC)". When the document names a meeting location, check-in point or operator base (e.g. a floatplane company\'s office/dock), use that exact place name for fromLabel/toLabel — never substitute the nearest airport or city. ' +
   "When the document lists each traveler's seat, set seats on each transit entry for that flight only. " +
   "When the document breaks the price down per traveler, set passengerFares with each traveler's own total, and still give the overall total as costAmount on every entry it covers. " +
   'For any entry that is a meal/restaurant reservation or dining booking, also set mealType and, if the format is clear, diningFormat. ' +
@@ -794,7 +809,16 @@ export function travelerNamesIn(extraction: DocumentExtraction): string[] {
 }
 
 function entryTravelerNames(fields: ExtractedFields): string[] {
-  return [...(fields.travelerNames ?? []), ...(fields.seats ?? []).map((s) => s.travelerName)];
+  return [...listedTravelerNames(fields), ...(fields.seats ?? []).map((s) => s.travelerName)];
+}
+
+// An entry's travelerNames, unless the document's own headcount says the list
+// is incomplete — a tour confirmation for "4 Adults" that prints only the
+// purchaser's name under Contact Information names one person, not the party.
+// Trusting that partial list would book the entry for one traveler only.
+function listedTravelerNames(fields: ExtractedFields): string[] {
+  const names = fields.travelerNames ?? [];
+  return fields.travelerCount && names.length < fields.travelerCount ? [] : names;
 }
 
 // The trip's travelers plus a new one for each name a document gives that
@@ -976,13 +1000,17 @@ function withFares(
 // null ("whole party"), the convention Activity/Transit.travelers already use;
 // undefined when it names nobody `travelers` has — which, once the document's
 // own new travelers are in it (withDocumentTravelers), means it names nobody.
+// With no usable names, a stated headcount covering the whole trip party is
+// also null; a smaller unnamed headcount can't say who, so it's undefined.
 export function travelersFrom(
   fields: ExtractedFields,
   travelers: Traveler[],
 ): string[] | null | undefined {
-  const names = fields.travelerNames?.length
-    ? fields.travelerNames
-    : (fields.seats ?? []).map((s) => s.travelerName);
+  const listed = listedTravelerNames(fields);
+  const names = listed.length ? listed : (fields.seats ?? []).map((s) => s.travelerName);
+  if (!names.length && fields.travelerCount && fields.travelerCount >= travelers.length) {
+    return null;
+  }
   const ids = [
     ...new Set(
       names.map((n) => matchTraveler(n, travelers)).filter((id): id is string => id !== null),
@@ -1241,7 +1269,13 @@ export async function resolvePlacesForFields(fields: ExtractedFields): Promise<R
 // flight endpoint searches "<label> airport" within that type and only
 // accepts a result actually named an airport/airfield; if none is, the
 // endpoint stays unresolved for the reviewer's place picker rather than
-// pinning the wrong place. Every other mode takes the top plain result.
+// pinning the wrong place. That airport treatment only applies when the
+// label itself names an airport (an IATA code in parens, or the word
+// airport/airfield/aerodrome): a floatplane or air-taxi flight often departs
+// a named operator base ("Rust's Flying Service" on Lake Hood), and forcing
+// that through the airport-typed search resolves it to the nearest real
+// airport (ANC) instead of the meeting location the booking names. Every
+// other label/mode takes the top plain result.
 export function endpointSearch(
   label: string,
   mode?: string,
@@ -1250,7 +1284,7 @@ export function endpointSearch(
   includedType?: string;
   pick: (results: PlaceSearchResult[]) => PlaceSearchResult | null;
 } {
-  if (mode === 'flight') {
+  if (mode === 'flight' && labelNamesAirport(label)) {
     return {
       query: /\bairport\b/i.test(label) ? label : `${label} airport`,
       includedType: 'airport',
@@ -1258,6 +1292,10 @@ export function endpointSearch(
     };
   }
   return { query: label, pick: (results) => results[0] ?? null };
+}
+
+function labelNamesAirport(label: string): boolean {
+  return /\([A-Z]{3}\)/.test(label) || /\b(airport|airfield|aerodrome)\b/i.test(label);
 }
 
 // Turns one extraction's `noteworthy` callouts into drafts for
@@ -1450,7 +1488,13 @@ function mergePackages(current: Package[], incoming: Package[]): Package[] {
 // times, flight details, seats and booking. A place is only replaced while
 // the existing one still has no resolved place id. A time is only taken when
 // `fields` (what the document actually said) gives it — the draft fills
-// unstated ones with blankStay/blankTransit's placeholder defaults.
+// unstated ones with blankStay/blankTransit's placeholder defaults. When the
+// document gives only one end of a transit (a fly-out tour's end time for
+// its return flight) and the placeholder's other end would then fall on the
+// wrong side of it, that other end moves too, keeping the placeholder's own
+// planned duration — a return planned 3:00–4:30pm, confirmed to land by
+// 2:00pm, becomes 12:30–2:00pm rather than departing after it arrives. An
+// other end that's still consistent is left alone.
 export function mergeDraftIntoExisting(
   fields: ExtractedFields,
   existing: Activity | Stay | Transit,
@@ -1463,8 +1507,17 @@ export function mergeDraftIntoExisting(
   if (kind === 'transit') {
     const t = merged as Transit;
     const d = draft as Transit;
-    if (fields.startAt) t.departsAt = d.departsAt;
-    if (fields.endAt && !t.routeId) t.arrivesAt = d.arrivesAt;
+    const planned = t.departsAt && t.arrivesAt ? diffMinutesIso(t.departsAt, t.arrivesAt) : 0;
+    const takeDeparture = !!fields.startAt;
+    const takeArrival = !!fields.endAt && !t.routeId;
+    if (takeDeparture) t.departsAt = d.departsAt;
+    if (takeArrival) t.arrivesAt = d.arrivesAt;
+    const inverted = !!t.arrivesAt && diffMinutesIso(t.departsAt, t.arrivesAt) <= 0;
+    if (inverted && planned > 0 && takeDeparture && !takeArrival && !t.routeId) {
+      t.arrivesAt = addMinutesIso(t.departsAt, planned);
+    } else if (inverted && planned > 0 && takeArrival && !takeDeparture && t.arrivesAt) {
+      t.departsAt = addMinutesIso(t.arrivesAt, -planned);
+    }
     t.from = keepResolved(t.from, d.from);
     t.to = keepResolved(t.to, d.to);
     for (const key of TRANSIT_DETAIL_KEYS) {
