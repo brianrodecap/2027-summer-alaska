@@ -14,6 +14,7 @@ import {
   mergeDraftIntoExisting,
   notesFromExtraction,
   planDocumentImport,
+  planIncludedMeals,
   planIncludedTransfers,
   travelersFrom,
   withDocumentTravelers,
@@ -331,11 +332,11 @@ describe('draftBookings', () => {
     expect(bookingFor[0]).not.toBeNull();
     expect(bookingFor[1]).toBe(bookingFor[0]);
     expect(bookingFor[0]?.pricing).toEqual({
-      kind: 'perTraveler',
-      fares: [
+      perTraveler: [
         { travelerId: 't_alex', fare: { amount: 250, currency: 'USD' }, ticketNumber: '001' },
         { travelerId: 't_sam', fare: { amount: 250, currency: 'USD' }, ticketNumber: '002' },
       ],
+      fixed: [],
     });
     expect(extraNotes.size).toBe(0);
   });
@@ -353,8 +354,8 @@ describe('draftBookings', () => {
     };
     const { bookingFor, extraNotes } = draftBookings(stranger, travelers);
     expect(bookingFor[0]?.pricing).toEqual({
-      kind: 'total',
-      cost: { amount: 500, currency: 'USD' },
+      perTraveler: [],
+      fixed: [{ label: 'Total', amount: { amount: 500, currency: 'USD' } }],
     });
     expect(extraNotes.get(0)?.[0].text).toContain('Pat Stranger');
   });
@@ -705,7 +706,7 @@ describe('planDocumentImport', () => {
     const merged = entry.existing?.merged as Transit;
     expect(merged.travelers).toBeNull(); // all three of the (now three) travelers
     expect(merged.seats?.map((s) => s.travelerId)).toEqual(['t_alex', 't_sam', patId]);
-    expect(entry.booking?.pricing).toMatchObject({ kind: 'perTraveler' });
+    expect(entry.booking?.pricing?.perTraveler).toHaveLength(3);
     expect(entry.notes).toEqual([]);
   });
 
@@ -725,11 +726,11 @@ describe('planDocumentImport', () => {
         _id: 'bk_old',
         status: 'booked',
         pricing: {
-          kind: 'perTraveler',
-          fares: [
+          perTraveler: [
             { travelerId: 't_alex', fare: { amount: 240, currency: 'USD' }, ticketNumber: 'OLD1' },
             { travelerId: 't_sam', fare: { amount: 240, currency: 'USD' }, ticketNumber: 'OLD2' },
           ],
+          fixed: [],
         },
         confirmationNumber: 'TST123',
         depositPaidAt: '2027-01-15',
@@ -745,11 +746,11 @@ describe('planDocumentImport', () => {
     expect(plan[0].booking?._id).toBe('bk_old');
     expect(plan[0].booking?.depositPaidAt).toBe('2027-01-15');
     expect(plan[0].booking?.pricing).toEqual({
-      kind: 'perTraveler',
-      fares: [
+      perTraveler: [
         { travelerId: 't_alex', fare: { amount: 250, currency: 'USD' }, ticketNumber: 'OLD1' },
         { travelerId: 't_sam', fare: { amount: 250, currency: 'USD' }, ticketNumber: 'OLD2' },
       ],
+      fixed: [],
     });
     // The old booking's price isn't the document's stated total to contradict.
     expect(plan[0].notes.some((n) => n.kind === 'warning')).toBe(false);
@@ -802,5 +803,89 @@ describe('endpointSearch', () => {
     const search = endpointSearch('Denali Bus Depot', 'bus');
     expect(search.includedType).toBeUndefined();
     expect(search.pick([result('Denali Bus Depot')])?.label).toBe('Denali Bus Depot');
+  });
+});
+
+describe('per-traveler and fixed pricing', () => {
+  it('keeps a per-person rate as fares and a per-booking fee as a fixed charge', () => {
+    const fields = flightFields({
+      confirmationNumber: 'TOUR1',
+      costAmount: 200.01,
+      unitPrice: 90,
+      travelerCount: 2,
+      fixedCharges: [{ name: 'Transportation fee', amount: 20.01 }],
+    });
+    const { bookingFor, extraNotes } = draftBookings({ entities: [fields] }, travelers);
+    const pricing = bookingFor[0]?.pricing;
+    expect(pricing?.perTraveler.map((f) => f.fare.amount)).toEqual([90, 90]);
+    expect(pricing?.fixed).toEqual([
+      { label: 'Transportation fee', amount: { amount: 20.01, currency: 'USD' } },
+    ]);
+    expect(extraNotes.get(0)).toBeUndefined();
+  });
+
+  it('warns when the fares and fixed charges miss the stated total', () => {
+    const fields = flightFields({ costAmount: 250, unitPrice: 90, travelerCount: 2 });
+    const { extraNotes } = draftBookings({ entities: [fields] }, travelers);
+    expect(extraNotes.get(0)?.[0].kind).toBe('warning');
+  });
+
+  it('prices a room booking as its itemized fixed charges', () => {
+    const fields: ExtractedFields = {
+      kind: 'stay',
+      costAmount: 403.35,
+      fixedCharges: [
+        { name: 'Room (1 night)', amount: 375.2 },
+        { name: 'Taxes & fees', amount: 28.15 },
+      ],
+    };
+    const { bookingFor } = draftBookings({ entities: [fields] }, travelers);
+    expect(bookingFor[0]?.pricing?.perTraveler).toEqual([]);
+    expect(bookingFor[0]?.pricing?.fixed.map((c) => c.label)).toEqual([
+      'Room (1 night)',
+      'Taxes & fees',
+    ]);
+  });
+
+  it('keeps the overall total as a fixed charge when the headcount is not the whole party', () => {
+    const fields = flightFields({ costAmount: 100, unitPrice: 100, travelerCount: 1 });
+    const { bookingFor } = draftBookings({ entities: [fields] }, travelers);
+    expect(bookingFor[0]?.pricing).toEqual({
+      perTraveler: [],
+      fixed: [{ label: 'Total', amount: { amount: 100, currency: 'USD' } }],
+    });
+  });
+});
+
+describe('planIncludedMeals', () => {
+  const transit: Transit = {
+    ...placeholder('ph_tour', 'Float Base', 'Remote Lodge', '2027-07-08T08:00'),
+    scenarioId: 'sc_ideal',
+  };
+  const fields = flightFields({ includedMeals: [{ mealType: 'lunch' }] });
+
+  it('turns the same-scenario placeholder lunch into one included with the transit', () => {
+    const packed: Activity = {
+      ...blankActivity('leg_test', '2027-07-08', 'sc_ideal'),
+      mealType: 'lunch',
+      diningFormat: 'self-catered',
+      text: 'Packed lunch',
+      startAt: '2027-07-08T12:30',
+      date: null,
+    };
+    const otherScenario: Activity = { ...packed, _id: 'alt_lunch', scenarioId: 'sc_alt' };
+    const [meal] = planIncludedMeals(fields, transit, [otherScenario, packed]);
+    expect(meal.overrideId).toBe(packed._id);
+    expect(meal.activity.startAt).toBe('2027-07-08T12:30');
+    expect(meal.activity.diningFormat).toBe('included-with-transit');
+    expect(meal.activity.includedIn).toEqual({ entity: 'transit', id: 'ph_tour' });
+    expect(meal.activity.place?.id).toBe('place_far_airport');
+  });
+
+  it('adds a new meal when the day has none to update', () => {
+    const [meal] = planIncludedMeals(fields, transit, []);
+    expect(meal.overrideId).toBeUndefined();
+    expect(meal.activity.scenarioId).toBe('sc_ideal');
+    expect(meal.activity.mealType).toBe('lunch');
   });
 });

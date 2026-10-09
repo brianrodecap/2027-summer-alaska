@@ -2,7 +2,12 @@ import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 
-import { type BookingFormValue, hasPerTravelerPricing } from '../../model/bookingFormValue';
+import {
+  type BookingFormValue,
+  hasItemizedFixedCharges,
+  hasVaryingFares,
+} from '../../model/bookingFormValue';
+import { bookingFares, bookingFixedCharges } from '../../model/bookings';
 import { bookingNoun } from '../../model/formatting';
 import type { BookingStatus } from '../../model/types';
 
@@ -29,6 +34,11 @@ const BOOKING_STATUS_OPTIONS: { value: BookingStatus | ''; label: string }[] = [
 //
 // A booking covering more than one entry (a round trip's two flights) says
 // so under its status, since an edit here reaches every entry it covers.
+//
+// The price is two fields, matching Pricing's two parts: what each traveler
+// pays, and what the booking costs regardless of headcount (a room, a fee).
+// Either goes read-only when it can't be one number — fares that differ by
+// traveler, or several itemized fixed charges — and Save keeps it as is.
 export function BookingFields({
   value,
   onChange,
@@ -38,8 +48,10 @@ export function BookingFields({
   onChange: (value: BookingFormValue) => void;
   isMeal?: boolean;
 }) {
-  const perTraveler = hasPerTravelerPricing(value);
+  const varyingFares = hasVaryingFares(value);
+  const itemizedFixed = hasItemizedFixedCharges(value);
   const { covers } = value;
+  const fareCount = bookingFares(value.base)?.length ?? 0;
   return (
     <Stack spacing={1.5}>
       <TextField
@@ -58,20 +70,39 @@ export function BookingFields({
       </TextField>
       {value.status && (
         <>
+          <TextField
+            label="Confirmation #"
+            value={value.confirmationNumber}
+            onChange={(e) => onChange({ ...value, confirmationNumber: e.target.value })}
+            fullWidth
+          />
           <Stack direction="row" spacing={2}>
             <TextField
-              label="Confirmation #"
-              value={value.confirmationNumber}
-              onChange={(e) => onChange({ ...value, confirmationNumber: e.target.value })}
+              label="Per person"
+              type="number"
+              value={varyingFares ? '' : value.perPersonAmount}
+              onChange={(e) => onChange({ ...value, perPersonAmount: e.target.value })}
+              disabled={varyingFares}
+              helperText={
+                varyingFares
+                  ? 'Varies by traveler'
+                  : fareCount
+                    ? `× ${fareCount} travelers`
+                    : 'Grows with each traveler'
+              }
               fullWidth
             />
             <TextField
-              label="Cost"
+              label="Fixed"
               type="number"
-              value={value.costAmount}
-              onChange={(e) => onChange({ ...value, costAmount: e.target.value })}
-              disabled={perTraveler}
-              helperText={perTraveler ? 'Sum of each traveler’s fare' : undefined}
+              value={itemizedFixed ? '' : value.fixedAmount}
+              onChange={(e) => onChange({ ...value, fixedAmount: e.target.value })}
+              disabled={itemizedFixed}
+              helperText={
+                itemizedFixed
+                  ? (bookingFixedCharges(value.base) ?? []).map((c) => c.label).join(', ')
+                  : 'Room, fees — same for any party size'
+              }
               fullWidth
             />
           </Stack>

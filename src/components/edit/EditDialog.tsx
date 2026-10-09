@@ -77,11 +77,16 @@ function EditDialogBody({
 
   const handleSave = (): string | null => {
     const clone = structuredClone(entity) as Entity;
-    const result = applyEntityForm(kind, clone, {
-      activity: activityForm,
-      stay: stayForm,
-      transit: transitForm,
-    });
+    const result = applyEntityForm(
+      kind,
+      clone,
+      {
+        activity: activityForm,
+        stay: stayForm,
+        transit: transitForm,
+      },
+      tripTravelers.map((t) => t.id),
+    );
     if ('error' in result) return result.error;
     onSave(clone, result.bookings);
     return null;

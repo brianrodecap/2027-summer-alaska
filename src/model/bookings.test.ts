@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 
-import { bookingCost, bookingReferrers, withoutOrphanBookings } from './bookings';
+import {
+  bookingCost,
+  bookingReferrers,
+  fixedCost,
+  perTravelerCost,
+  withCurrentPricing,
+  withoutOrphanBookings,
+} from './bookings';
 import { blankActivity, blankTransit, commitEntityEdit, deleteEntityByKind } from './editForms';
 import { buildTripView, tripBookingSummary } from './tripModel';
 import type { Booking, Transit, TripData } from './types';
@@ -62,11 +69,11 @@ const roundTrip: Booking = {
   _id: 'booking_rt',
   status: 'booked',
   pricing: {
-    kind: 'perTraveler',
-    fares: [
+    perTraveler: [
       { travelerId: 't_a', fare: usd(300.1), ticketNumber: '001' },
       { travelerId: 't_b', fare: usd(200.2), ticketNumber: '002' },
     ],
+    fixed: [],
   },
   confirmationNumber: 'RT1234',
 };
@@ -86,10 +93,32 @@ describe('bookingCost', () => {
     expect(bookingCost(roundTrip)).toEqual(usd(500.3));
   });
 
-  it('returns the stored total for total pricing, and null when unpriced', () => {
-    const total: Booking = { ...roundTrip, pricing: { kind: 'total', cost: usd(80) } };
-    expect(bookingCost(total)).toEqual(usd(80));
+  it('sums fixed charges with the fares, and is null when unpriced', () => {
+    const fixed: Booking = {
+      ...roundTrip,
+      pricing: { perTraveler: [], fixed: [{ label: 'Room', amount: usd(80) }] },
+    };
+    expect(bookingCost(fixed)).toEqual(usd(80));
     expect(bookingCost({ ...roundTrip, pricing: null })).toBeNull();
+    const both: Booking = {
+      ...roundTrip,
+      pricing: { ...roundTrip.pricing!, fixed: [{ label: 'Fee', amount: usd(9.7) }] },
+    };
+    expect(bookingCost(both)).toEqual(usd(510));
+    expect(perTravelerCost(both)).toEqual(usd(500.3));
+    expect(fixedCost(both)).toEqual(usd(9.7));
+  });
+
+  it('reads a price saved in the old one-or-the-other shape', () => {
+    const legacy = {
+      ...roundTrip,
+      pricing: { kind: 'total', cost: usd(80) },
+    } as unknown as Booking;
+    expect(withCurrentPricing(legacy).pricing).toEqual({
+      perTraveler: [],
+      fixed: [{ label: 'Total', amount: usd(80) }],
+    });
+    expect(withCurrentPricing(roundTrip)).toBe(roundTrip);
   });
 });
 

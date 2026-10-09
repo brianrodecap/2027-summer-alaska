@@ -29,3 +29,10 @@ export function formatBudgetBucketAmount(
   if (!totals[bucket]) return null;
   return formatMoney({ amount: totals[bucket], currency: totals.currency ?? 'USD' });
 }
+
+// A totals object's costed amount — spent, pending and estimated together.
+// null when there's none.
+export function formatCostedTotal(totals: BudgetTotals): string | null {
+  const amount = totals.spent + totals.pending + totals.estimated;
+  return amount ? formatMoney({ amount, currency: totals.currency ?? 'USD' }) : null;
+}

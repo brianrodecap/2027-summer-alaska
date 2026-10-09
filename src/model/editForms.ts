@@ -483,6 +483,7 @@ export function changeMealDecisionForm(
 export function mergeMealOptionIntoActivity(
   duplicate: Activity,
   form: ActivityFormState,
+  party: string[],
 ): { activity: Activity; bookings: Booking[] } {
   const merged = structuredClone(duplicate);
   const newOption = mealOptionFromOptionForm(mealOptionFromForm(form));
@@ -491,7 +492,7 @@ export function mergeMealOptionIntoActivity(
   } else {
     setMealOptions(merged, [optionFromDecided(merged), newOption]);
   }
-  const booking = readBookingFormValue(form.booking);
+  const booking = readBookingFormValue(form.booking, pricedTravelers(form, party));
   return { activity: merged, bookings: booking ? [booking] : [] };
 }
 
@@ -704,16 +705,29 @@ export function applyActivityForm(activity: Activity, form: ActivityFormState): 
   return null;
 }
 
+// Who a per-person price covers: the entry's own travelers when it names
+// some, else `party` — every trip traveler's id.
+function pricedTravelers(
+  form: ActivityFormState | StayFormState | TransitFormState,
+  party: string[],
+): string[] {
+  return 'travelerIds' in form && form.travelerIds.length ? form.travelerIds : party;
+}
+
 // Every Booking document an applied form writes — paired with apply*Form's
 // own bookingId updates, and committed together by commitEntityEdit. An
 // undecided meal writes one per booked candidate, never its own (options and
 // the decided fields are mutually exclusive, see applyActivityForm).
 export function bookingWritesFor(
   form: ActivityFormState | StayFormState | TransitFormState,
+  party: string[],
 ): Booking[] {
   const values =
     'options' in form && form.options.length ? form.options.map((o) => o.booking) : [form.booking];
-  return values.map(readBookingFormValue).filter((b): b is Booking => b !== null);
+  const travelerIds = pricedTravelers(form, party);
+  return values
+    .map((v) => readBookingFormValue(v, travelerIds))
+    .filter((b): b is Booking => b !== null);
 }
 
 // The one Save step every form host shares (EditDialog, both wizards):
@@ -728,6 +742,7 @@ export function applyEntityForm(
     stay?: StayFormState | null;
     transit?: TransitFormState | null;
   },
+  party: string[],
 ): { error: string } | { bookings: Booking[] } {
   const form = forms[kind];
   if (!form) return { bookings: [] };
@@ -737,7 +752,7 @@ export function applyEntityForm(
       : kind === 'stay'
         ? applyStayForm(entity as Stay, form as StayFormState)
         : applyTransitForm(entity as Transit, form as TransitFormState);
-  return error ? { error } : { bookings: bookingWritesFor(form) };
+  return error ? { error } : { bookings: bookingWritesFor(form, party) };
 }
 
 // Backfills a live Google Places photo onto a specific Place value's own

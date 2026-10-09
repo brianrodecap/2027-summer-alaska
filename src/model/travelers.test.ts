@@ -62,11 +62,11 @@ function tripWithDuplicate(): TripData {
         status: 'booked',
         confirmationNumber: 'C1',
         pricing: {
-          kind: 'perTraveler',
-          fares: [
+          perTraveler: [
             { travelerId: 't_alex', fare: { amount: 100, currency: 'USD' } },
             { travelerId: 't_guest', fare: { amount: 100, currency: 'USD' }, ticketNumber: '9' },
           ],
+          fixed: [],
         },
       },
     ],
@@ -103,7 +103,7 @@ describe('mergeTravelers', () => {
     expect(after.activities[0].travelers).toEqual(['t_pat']);
     expect(after.stays[0].packages?.[0].travelers).toEqual(['t_pat']);
     expect(after.bookings[0].pricing).toMatchObject({
-      fares: [{ travelerId: 't_alex' }, { travelerId: 't_pat', ticketNumber: '9' }],
+      perTraveler: [{ travelerId: 't_alex' }, { travelerId: 't_pat', ticketNumber: '9' }],
     });
     expect(travelerUsage(after, 't_guest')).toEqual({
       transits: 0,

@@ -1,5 +1,5 @@
-import { bookingCost, bookingFares } from './bookings';
-import type { Booking, BookingStatus, Money } from './types';
+import { bookingCost, bookingFares, bookingFixedCharges } from './bookings';
+import type { Booking, BookingStatus, FixedCharge, Money, PassengerFare } from './types';
 
 // Shared by any "amount" text input that commits straight to a Money field
 // (readBookingFormValue below, StayPackagesField's per-fee cost input) — ''
@@ -18,16 +18,20 @@ export function moneyFromAmountInput(
 // this form writes — the existing one's, or a fresh id minted once when the
 // form is seeded, so reading the form twice yields the same document. `base`
 // is the document it was seeded from, carrying every field this form doesn't
-// edit (payment dates, per-traveler fares) through Save untouched. `covers`
+// edit (payment dates, ticket numbers) through Save untouched. `covers`
 // names every entry the seeded booking pays for — shown as "Covers …" when a
 // booking is shared (a round trip's two flights); read-only, never saved.
+// The price is edited as its two parts (see Pricing): one per-person amount
+// and one fixed amount, each only while it's a single number — fares that
+// differ by traveler, or several itemized fixed charges, show read-only.
 export interface BookingFormValue {
   id: string;
   base: Booking | null;
   covers: string[];
   status: BookingStatus | '';
   confirmationNumber: string;
-  costAmount: string;
+  perPersonAmount: string;
+  fixedAmount: string;
   bookedThrough: string;
 }
 
@@ -44,24 +48,34 @@ export function bookingFormValueFrom(
   booking: Booking | null | undefined,
   covers: string[] = [],
 ): BookingFormValue {
-  const cost = bookingCost(booking);
+  const fares = bookingFares(booking) ?? [];
+  const fixed = bookingFixedCharges(booking) ?? [];
   return {
     id: booking?._id ?? crypto.randomUUID(),
     base: booking ?? null,
     covers: booking ? covers : [],
     status: booking?.status ?? '',
     confirmationNumber: booking?.confirmationNumber ?? '',
-    costAmount: cost ? String(cost.amount) : '',
+    perPersonAmount: uniformFare(fares) ? String(fares[0].fare.amount) : '',
+    fixedAmount: fixed.length === 1 ? String(fixed[0].amount.amount) : '',
     bookedThrough: bookedThroughName(booking?.bookedThrough),
   };
 }
 
-// Per-traveler pricing is edited fare by fare, never through the single
-// total field — the total is their sum (bookingCost), so typing over it would
-// either contradict the fares or silently discard them. BookingFields shows
-// the total read-only in that case.
-export function hasPerTravelerPricing(value: BookingFormValue): boolean {
-  return bookingFares(value.base) !== null;
+function uniformFare(fares: PassengerFare[]): boolean {
+  return fares.length > 0 && fares.every((f) => f.fare.amount === fares[0].fare.amount);
+}
+
+// Fares that differ by traveler (a cruise's adult and child fares) can't be
+// one per-person number, so BookingFields shows them read-only and Save
+// keeps them as they are; likewise several itemized fixed charges.
+export function hasVaryingFares(value: BookingFormValue): boolean {
+  const fares = bookingFares(value.base) ?? [];
+  return fares.length > 0 && !uniformFare(fares);
+}
+
+export function hasItemizedFixedCharges(value: BookingFormValue): boolean {
+  return (bookingFixedCharges(value.base)?.length ?? 0) > 1;
 }
 
 // The id of the Booking a form writes, without building the document —
@@ -70,15 +84,36 @@ export function bookingIdFromForm(value: BookingFormValue): string | null {
   return value.status ? value.id : null;
 }
 
-export function readBookingFormValue(value: BookingFormValue): Booking | null {
+// `travelerIds` is who a per-person amount applies to when the booking has
+// no fares yet — the entry's own travelers, or the whole party. A booking
+// that already has fares keeps the same travelers (and ticket numbers).
+export function readBookingFormValue(
+  value: BookingFormValue,
+  travelerIds: string[],
+): Booking | null {
   if (!value.status) return null;
   const base = value.base;
-  const pricing: Booking['pricing'] = hasPerTravelerPricing(value)
-    ? (base?.pricing ?? null)
-    : (() => {
-        const cost = moneyFromAmountInput(value.costAmount, bookingCost(base)?.currency);
-        return cost ? { kind: 'total', cost } : null;
-      })();
+  const currency = bookingCost(base)?.currency;
+  const baseFares = bookingFares(base) ?? [];
+  const baseFixed = bookingFixedCharges(base) ?? [];
+  const perPerson = moneyFromAmountInput(value.perPersonAmount, currency);
+  const perTraveler: PassengerFare[] = hasVaryingFares(value)
+    ? baseFares
+    : perPerson
+      ? (baseFares.length ? baseFares.map((f) => f.travelerId) : travelerIds).map((travelerId) => ({
+          ...baseFares.find((f) => f.travelerId === travelerId),
+          travelerId,
+          fare: perPerson,
+        }))
+      : [];
+  const fixedMoney = moneyFromAmountInput(value.fixedAmount, currency);
+  const fixed: FixedCharge[] = hasItemizedFixedCharges(value)
+    ? baseFixed
+    : fixedMoney
+      ? [{ label: baseFixed[0]?.label ?? 'Fixed', amount: fixedMoney }]
+      : [];
+  const pricing: Booking['pricing'] =
+    perTraveler.length || fixed.length ? { perTraveler, fixed } : null;
   const booking: Booking = {
     ...base,
     _id: value.id,

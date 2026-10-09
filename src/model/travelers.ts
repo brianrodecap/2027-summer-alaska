@@ -91,9 +91,9 @@ const TRAVELER_SLOTS: Record<keyof TravelerUsage, TravelerSlot> = {
       ...data,
       bookings: data.bookings.map((b) => {
         const current = bookingFares(b);
-        if (!current) return b;
+        if (!current || !b.pricing) return b;
         const fares = combine(current, ids, resolveFareConflict);
-        return fares === current ? b : { ...b, pricing: { kind: 'perTraveler', fares } };
+        return fares === current ? b : { ...b, pricing: { ...b.pricing, perTraveler: fares } };
       }),
     }),
   },

@@ -59,8 +59,8 @@ function ByTravelerPanel({ byTraveler }: { byTraveler: BudgetView['byTraveler'] 
   return (
     <>
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1.5 }}>
-        A cost with no per-passenger fare split is divided evenly across every traveler — an
-        inferred share, not an authored one.
+        Each traveler's own per-person costs. Fixed costs (rooms, fees) aren't anyone's share, so
+        they're not divided here.
       </Typography>
       {byTraveler.map((g) => (
         <BudgetGroup key={g.name} headline={g.name} totals={g.totals} rows={[]} />

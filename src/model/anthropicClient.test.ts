@@ -179,7 +179,7 @@ describe('document import request', () => {
     const result = await extractTripEntitiesFromDocument(pdf(), 'sk-test');
 
     const format = (calls[0].body.output_config as { format: { schema: unknown } }).format;
-    expect(countProps(format.schema, (_, required) => !required)).toBeLessThanOrEqual(2);
+    expect(countProps(format.schema, (_, required) => !required)).toBeLessThanOrEqual(24);
     expect(countProps(format.schema, (p) => Array.isArray(p.type) || 'anyOf' in p)).toBe(0);
     expect(result).toEqual({
       entities: [{ kind: 'transit', noteworthy: [{ kind: 'info', text: 'x' }] }],

@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { withoutOrphanBookings } from '../model/bookings';
+import { withCurrentPricing, withoutOrphanBookings } from '../model/bookings';
 import {
   type Change,
   changedCollections,
@@ -112,7 +112,9 @@ export function TripDataProvider({
         const changes = [...shared, ...own].sort((a, b) =>
           a.at < b.at ? -1 : a.at > b.at ? 1 : 0,
         );
-        const { data, kept } = replayChanges(baseline, changes);
+        const replayed = replayChanges(baseline, changes);
+        const { kept } = replayed;
+        const data = { ...replayed.data, bookings: replayed.data.bookings.map(withCurrentPricing) };
         // The shipped JSON moved under some local edits, which drops them — compact them out.
         if (kept.length !== changes.length) trackSave(persist(store, slug, kept, 'replace'));
         commit({ slug, baseline, data, changes: kept, error: null });

@@ -1267,8 +1267,8 @@
           </li>
           <li>
             <strong>Per-traveler fares needed no new field</strong> to cover the ferry: its
-            <a href="#booking">Booking</a> is priced <code>perTraveler</code> exactly like the
-            cruise fare, the first confirmation that pricing shape isn't cruise-specific.
+            <a href="#booking">Booking</a> is priced per traveler exactly like the cruise fare, the
+            first confirmation that pricing shape isn't cruise-specific.
           </li>
           <li>
             <strong>mode: 'ferry'/'flight' are just values</strong>, not a schema change —
@@ -1338,16 +1338,17 @@
   _id: 'booking_scycup',
   status: 'booked',                  // planning | booked | cancelled
   confirmationNumber: 'SCYCUP',
-  pricing: {                         // exactly one way, or null when unpriced:
-    kind: 'perTraveler',             //   { kind: 'total', cost: Money }
-    fares: [                         //   { kind: 'perTraveler', fares: [...] }
+  pricing: {                         // null when unpriced; otherwise both parts,
+    perTraveler: [                   // either of which may be empty:
       { travelerId: 'trav_brian',   fare: { amount: 380.19, currency: 'USD' },
         ticketNumber: '0272161492448' },
       { travelerId: 'trav_stacy',   fare: { amount: 380.19, currency: 'USD' },
         ticketNumber: '0272161492449' },
-      // … one per ticketed traveler; the total ($1,520.76) is their sum, never stored
+      // … one per ticketed traveler
     ],
-  },
+    fixed: [],                       // charges that don't change with headcount, e.g.
+                                     //   { label: 'Room (1 night)', amount: Money }
+  },                                 // total ($1,520.76) = fares + fixed, never stored
   bookedThrough: undefined,          // optional: string | { name, confirmationNumber }
   depositPaidAt: undefined,          // optional: a payment schedule, when the
   finalPaymentDueAt: undefined,      // booking has one (the cruise fare does)
@@ -1364,12 +1365,17 @@
             ids pointing at it, the fare is stored once, edited once, and counted once.
           </li>
           <li>
-            <strong>Price is stored one way only.</strong> A booking that itemizes per traveler (an
-            airline's per-ticket fares, a cruise fare per guest) stores the fares, and its total is
-            computed as their sum (<code>bookingCost</code> in bookings.ts). One that only quotes an
-            overall price stores that total. Never both, so they can't disagree; the type makes
-            "both" unrepresentable. The budget's By Traveler view credits per-traveler fares exactly
-            and splits a total evenly (marked as inferred).
+            <strong>Price is split by what it scales with.</strong> <code>perTraveler</code> holds
+            what each traveler pays (an airline ticket, a cruise fare per guest, a tour's per-person
+            rate); <code>fixed</code> holds what the booking costs regardless of headcount (a room
+            rate and its taxes, a resort fee, a per-booking transportation fee), each labeled as the
+            document prints it. A tour sold at "$1,145 × 4 adults" plus a $137.40 transportation fee
+            is four fares and one fixed charge, never the fee folded into the fares. The total is
+            computed as their sum (<code>bookingCost</code> in bookings.ts) and never stored. The
+            split is what the budget needs to answer "what would one more traveler, or another
+            family, cost?": the per-traveler part grows with each person; the fixed part doesn't,
+            and another family needing its own room is another booking. The By Traveler view credits
+            each traveler's fares and leaves fixed charges whole rather than dividing them.
           </li>
           <li>
             <strong>Fares are keyed by traveler id, not name.</strong> <code>travelerId</code> is a

@@ -11,7 +11,15 @@
 // `Date`/`dayjs` object and hand it to a caller, or accept one as an input —
 // picker components convert to/from plain strings at their own edge instead.
 
-import { bookingById, bookingCost, bookingFares, bookingIdsInLeg, bookingOf } from './bookings';
+import {
+  bookingById,
+  bookingCost,
+  bookingFares,
+  bookingIdsInLeg,
+  bookingOf,
+  fixedCost,
+  perTravelerCost,
+} from './bookings';
 import type { EditKind, Entity } from './editForms';
 import { firstImage } from './formatting';
 import type {
@@ -44,6 +52,7 @@ import type {
   Note,
   Package,
   Place,
+  Pricing,
   Ref,
   RefEntityKind,
   ResolvedRouteInfo,
@@ -1996,7 +2005,7 @@ function bookingLineItems(
         booking: {
           _id: pkg._id,
           status: pkg.status,
-          pricing: pkg.cost ? { kind: 'total', cost: pkg.cost } : null,
+          pricing: packagePricing(pkg),
           confirmationNumber: pkg.confirmationNumber,
         },
       });
@@ -2039,6 +2048,27 @@ function bookingLineItems(
   return onePerBooking(items);
 }
 
+// A Package bought for named travelers (a dining add-on for two of the four)
+// is a per-traveler cost, split evenly among them; one for the whole stay (a
+// resort fee, parking) is a fixed charge.
+function packagePricing(pkg: Package): Pricing | null {
+  if (!pkg.cost) return null;
+  const travelers = pkg.travelers ?? [];
+  if (!travelers.length) return { perTraveler: [], fixed: [{ label: pkg.name, amount: pkg.cost }] };
+  const cents = Math.round(pkg.cost.amount * 100);
+  const share = Math.floor(cents / travelers.length);
+  return {
+    perTraveler: travelers.map((travelerId, i) => ({
+      travelerId,
+      fare: {
+        amount: (share + (i < cents % travelers.length ? 1 : 0)) / 100,
+        currency: pkg.cost!.currency,
+      },
+    })),
+    fixed: [],
+  };
+}
+
 // One booking can pay for several entities — a round-trip ticket covers two
 // Transits, a cruise fare covers both its Leg and the cabin Stay — so the
 // budget gets one row per booking document, never one per referrer, or the
@@ -2071,10 +2101,18 @@ function bucketedRows(items: BudgetLineItem[], today: string): BudgetRow[] {
   return rows;
 }
 
-function totalsFor(rows: BudgetRow[]): BudgetTotals {
+function totalsFor(rows: BudgetRow[], costOf = bookingCost): BudgetTotals {
   const totals = emptyBudgetTotals();
-  for (const row of rows) addToBudgetTotals(totals, row.bucket, bookingCost(row.booking));
+  for (const row of rows) addToBudgetTotals(totals, row.bucket, costOf(row.booking));
   return totals;
+}
+
+// The trip's costs by what they scale with: the per-traveler part grows with
+// every added traveler, the fixed part doesn't. Not-yet-costed rows have
+// neither, so they're counted only in the overall totals.
+function totalsByBasis(rows: BudgetRow[]): BudgetView['byBasis'] {
+  const costed = rows.filter((r) => r.bucket !== 'unplanned');
+  return { perTraveler: totalsFor(costed, perTravelerCost), fixed: totalsFor(costed, fixedCost) };
 }
 
 function groupRowsBy<K>(rows: BudgetRow[], keyOf: (row: BudgetRow) => K): Map<K, BudgetRow[]> {
@@ -2111,11 +2149,11 @@ function groupBudgetByDay(days: DayFrame[], rows: BudgetRow[]): BudgetDayGroup[]
     .filter((g) => g.rows.length);
 }
 
-// A row priced per traveler (the cruise fares, an airline ticket per
-// passenger) attributes its cost exactly as booked. Everything else has no
-// per-traveler breakdown at all — an even split across every trip traveler is
-// the least-wrong default (marked in the UI as inferred, not authored), rather
-// than leaving those costs out of the by-traveler view entirely.
+// Each traveler's own per-traveler costs (fares, a dining package bought for
+// them). Fixed charges aren't anyone's share — dividing a room rate or a
+// resort fee across the party would make it look like it grows with each
+// traveler, which is exactly what it doesn't do — so they're left to the
+// budget's own fixed total (see totalsByBasis) rather than split here.
 function groupBudgetByTraveler(travelers: Traveler[], rows: BudgetRow[]): BudgetTravelerGroup[] {
   const nameById = travelersById(travelers);
   const totalsByName = new Map<string, BudgetTotals>(
@@ -2128,23 +2166,8 @@ function groupBudgetByTraveler(travelers: Traveler[], rows: BudgetRow[]): Budget
   };
   for (const row of rows) {
     if (row.bucket === 'unplanned') continue;
-    const fares = bookingFares(row.booking);
-    const cost = bookingCost(row.booking);
-    if (fares?.length) {
-      for (const f of fares)
-        addToBudgetTotals(
-          totalsFor(nameById.get(f.travelerId) ?? f.travelerId),
-          row.bucket,
-          f.fare,
-        );
-    } else if (cost) {
-      // A 'booked' row's bucket doesn't guarantee a cost (see bookingBucket)
-      // — a booked package/perk with no separately-broken-out price, say —
-      // so there's simply nothing to divide across travelers here, same as
-      // addToBudgetTotals's own null-cost handling above.
-      const share = { amount: cost.amount / (travelers.length || 1), currency: cost.currency };
-      for (const t of travelers) addToBudgetTotals(totalsFor(t.name), row.bucket, share);
-    }
+    for (const f of bookingFares(row.booking) ?? [])
+      addToBudgetTotals(totalsFor(nameById.get(f.travelerId) ?? f.travelerId), row.bucket, f.fare);
   }
   return [...totalsByName.entries()].map(([name, totals]) => ({ name, totals }));
 }
@@ -2162,6 +2185,7 @@ export function buildBudgetView(
   return {
     today,
     totals: totalsFor(rows),
+    byBasis: totalsByBasis(rows),
     byLeg: groupBudgetByLeg(
       legs.map((s) => s.leg),
       rows,

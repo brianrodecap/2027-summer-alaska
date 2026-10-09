@@ -7,10 +7,12 @@
 import type {
   Activity,
   Booking,
+  FixedCharge,
   Leg,
   MealOption,
   Money,
   PassengerFare,
+  Pricing,
   Stay,
   Transit,
   TripData,
@@ -38,15 +40,51 @@ export function bookingOf(
   return bookingById(data.bookings, entity?.bookingId);
 }
 
-// The booking's total: the stored cost for 'total' pricing, or the sum of the
-// fares for 'perTraveler' (in the first fare's currency). null when unpriced.
+// Sums Money values to the cent, in the first one's currency. null for none.
+function sumMoney(amounts: Money[]): Money | null {
+  if (!amounts.length) return null;
+  const cents = amounts.reduce((sum, m) => sum + Math.round(m.amount * 100), 0);
+  return { amount: cents / 100, currency: amounts[0].currency };
+}
+
+// The booking's total: its per-traveler fares plus its fixed charges. null
+// when unpriced.
 export function bookingCost(booking: Booking | null | undefined): Money | null {
   const pricing = booking?.pricing;
   if (!pricing) return null;
-  if (pricing.kind === 'total') return pricing.cost;
-  if (!pricing.fares.length) return null;
-  const cents = pricing.fares.reduce((sum, f) => sum + Math.round(f.fare.amount * 100), 0);
-  return { amount: cents / 100, currency: pricing.fares[0].fare.currency };
+  return sumMoney([
+    ...pricing.perTraveler.map((f) => f.fare),
+    ...pricing.fixed.map((c) => c.amount),
+  ]);
+}
+
+// The part of the total that grows with each traveler, and the part that
+// doesn't. null when that part is empty.
+export function perTravelerCost(booking: Booking | null | undefined): Money | null {
+  return sumMoney((booking?.pricing?.perTraveler ?? []).map((f) => f.fare));
+}
+
+export function fixedCost(booking: Booking | null | undefined): Money | null {
+  return sumMoney((booking?.pricing?.fixed ?? []).map((c) => c.amount));
+}
+
+// A price saved before Pricing split into per-traveler and fixed parts —
+// one total, or fares alone — still sits in some browsers' saved edits (see
+// TripDataContext's replay). A lone total was a room or similar flat price,
+// so it reads as one fixed charge.
+type LegacyPricing =
+  { kind: 'total'; cost: Money } | { kind: 'perTraveler'; fares: PassengerFare[] };
+
+export function withCurrentPricing(booking: Booking): Booking {
+  const pricing = booking.pricing as Pricing | LegacyPricing | null;
+  if (!pricing || !('kind' in pricing)) return booking;
+  return {
+    ...booking,
+    pricing:
+      pricing.kind === 'total'
+        ? { perTraveler: [], fixed: [{ label: 'Total', amount: pricing.cost }] }
+        : { perTraveler: pricing.fares, fixed: [] },
+  };
 }
 
 // Two amounts the same to the cent, in the same currency.
@@ -59,8 +97,21 @@ export function sameMoney(a: Money | null | undefined, b: Money | null | undefin
   );
 }
 
+// The per-traveler fares, or null when the booking has none.
 export function bookingFares(booking: Booking | null | undefined): PassengerFare[] | null {
-  return booking?.pricing?.kind === 'perTraveler' ? booking.pricing.fares : null;
+  const fares = booking?.pricing?.perTraveler;
+  return fares?.length ? fares : null;
+}
+
+export function bookingFixedCharges(booking: Booking | null | undefined): FixedCharge[] | null {
+  const fixed = booking?.pricing?.fixed;
+  return fixed?.length ? fixed : null;
+}
+
+// A price that's only fixed charges, or only fares — the shape every writer
+// that knows just one part builds. null when there's nothing to price.
+export function fixedPricing(fixed: FixedCharge[]): Pricing | null {
+  return fixed.length ? { perTraveler: [], fixed } : null;
 }
 
 // Every entity that carries a bookingId — Legs, Stays, Transits, Activities

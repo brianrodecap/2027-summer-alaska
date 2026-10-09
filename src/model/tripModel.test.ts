@@ -977,7 +977,10 @@ describe('budget: Stay packages', () => {
     data.bookings.push({
       _id: 'booking_room',
       status: 'booked',
-      pricing: { kind: 'total', cost: { amount: 100, currency: 'USD' } },
+      pricing: {
+        perTraveler: [],
+        fixed: [{ label: 'Total', amount: { amount: 100, currency: 'USD' } }],
+      },
       confirmationNumber: null,
     });
     data.stays.push(

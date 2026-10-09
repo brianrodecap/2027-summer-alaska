@@ -3,8 +3,7 @@
     "_id": "booking_leg_cruise",
     "status": "booked",
     "pricing": {
-      "kind": "perTraveler",
-      "fares": [
+      "perTraveler": [
         {
           "travelerId": "trav_brian",
           "fare": {
@@ -33,7 +32,8 @@
             "currency": "USD"
           }
         }
-      ]
+      ],
+      "fixed": []
     },
     "confirmationNumber": "MWVV6Q",
     "depositPaidAt": "2026-08-06",
@@ -79,11 +79,23 @@
     "_id": "booking_381e78d7-8a39-4fdf-ab3e-de892f16da7b",
     "status": "booked",
     "pricing": {
-      "kind": "total",
-      "cost": {
-        "amount": 403.35,
-        "currency": "USD"
-      }
+      "perTraveler": [],
+      "fixed": [
+        {
+          "label": "Room (1 night)",
+          "amount": {
+            "amount": 375.2,
+            "currency": "USD"
+          }
+        },
+        {
+          "label": "Taxes & fees",
+          "amount": {
+            "amount": 28.15,
+            "currency": "USD"
+          }
+        }
+      ]
     },
     "confirmationNumber": "H-7BDFMHC3VB99",
     "bookedThrough": "Capital One Travel"
@@ -92,11 +104,23 @@
     "_id": "booking_342c42bc-9068-4c64-9e2a-f1d11bfbc8ed",
     "status": "booked",
     "pricing": {
-      "kind": "total",
-      "cost": {
-        "amount": 238.5,
-        "currency": "USD"
-      }
+      "perTraveler": [],
+      "fixed": [
+        {
+          "label": "Room (1 night)",
+          "amount": {
+            "amount": 222.81,
+            "currency": "USD"
+          }
+        },
+        {
+          "label": "Taxes & fees",
+          "amount": {
+            "amount": 15.69,
+            "currency": "USD"
+          }
+        }
+      ]
     },
     "confirmationNumber": "H-7ZCTG7HWBLFB",
     "bookedThrough": "Capital One Travel"
@@ -105,11 +129,16 @@
     "_id": "booking_3aaee9b5-4d98-4c45-a29f-15aa732ee0dd",
     "status": "booked",
     "pricing": {
-      "kind": "total",
-      "cost": {
-        "amount": 990,
-        "currency": "USD"
-      }
+      "perTraveler": [],
+      "fixed": [
+        {
+          "label": "Room, 2 nights × $495",
+          "amount": {
+            "amount": 990,
+            "currency": "USD"
+          }
+        }
+      ]
     },
     "confirmationNumber": "DSRAF5KTDHVO7"
   },
@@ -285,11 +314,37 @@
     "_id": "booking_act_jul5_5",
     "status": "planning",
     "pricing": {
-      "kind": "total",
-      "cost": {
-        "amount": 299,
-        "currency": "USD"
-      }
+      "perTraveler": [
+        {
+          "travelerId": "trav_brian",
+          "fare": {
+            "amount": 299,
+            "currency": "USD"
+          }
+        },
+        {
+          "travelerId": "trav_stacy",
+          "fare": {
+            "amount": 299,
+            "currency": "USD"
+          }
+        },
+        {
+          "travelerId": "trav_lorelei",
+          "fare": {
+            "amount": 299,
+            "currency": "USD"
+          }
+        },
+        {
+          "travelerId": "trav_redding",
+          "fare": {
+            "amount": 299,
+            "currency": "USD"
+          }
+        }
+      ],
+      "fixed": []
     },
     "confirmationNumber": null
   },
@@ -303,8 +358,7 @@
     "_id": "dd6d2a66-d78c-4ecb-9365-3ef67d548735",
     "status": "booked",
     "pricing": {
-      "kind": "perTraveler",
-      "fares": [
+      "perTraveler": [
         {
           "travelerId": "trav_brian",
           "fare": {
@@ -337,7 +391,8 @@
           },
           "ticketNumber": "0272161492451"
         }
-      ]
+      ],
+      "fixed": []
     },
     "confirmationNumber": "SCYCUP",
     "bookedThrough": "Capital One Travel"

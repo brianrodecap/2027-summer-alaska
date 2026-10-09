@@ -233,6 +233,14 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
           onSaved: withNoteFollowUp(transferNotes, openNoteDraftSequence),
           source: 'ai-import',
         })),
+        // A meal the transit's price covers (planIncludedMeals), confirmed
+        // right after the transit it's included with.
+        ...entry.meals.map(({ activity, overrideId }): DraftReview => ({
+          kind: 'activity',
+          entity: activity,
+          overrideId,
+          source: 'ai-import',
+        })),
       ];
     });
     openDraftSequence(drafts);

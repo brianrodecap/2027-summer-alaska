@@ -3,7 +3,15 @@
 // src/config/aiKey.ts for why this key is never hardcoded like config/places.ts's Google
 // key). Goes through anthropicClient.ts's shared SDK wrapper, with structured output.
 import { createMessage, responseText } from './anthropicClient';
-import { bookingCost, bookingFares, bookingOf, sameMoney, uniqueBookings } from './bookings';
+import {
+  bookingCost,
+  bookingFares,
+  bookingFixedCharges,
+  bookingOf,
+  fixedPricing,
+  sameMoney,
+  uniqueBookings,
+} from './bookings';
 import {
   blankActivity,
   blankPackage,
@@ -35,7 +43,9 @@ import type {
   Booking,
   DayFrame,
   DiningFormat,
+  FixedCharge,
   MealType,
+  Money,
   NoteKind,
   Package,
   PassengerFare,
@@ -108,6 +118,14 @@ export interface ExtractedFee {
   name: string;
   amount: number;
   currency?: string;
+}
+
+// A meal a transit's own price covers — the "light lunch at the lodge" a
+// fly-out bear-viewing tour includes. See planIncludedMeals, which drafts it
+// as a meal Activity included with that transit, queued for review after it.
+export interface ExtractedMeal {
+  mealType: MealType;
+  placeLabel?: string; // where it's served, when that isn't the transit's own destination
 }
 
 // A short risk/policy callout worth surfacing as its own Note once the
@@ -193,6 +211,9 @@ export interface ExtractedFields {
   mealType?: MealType; // activity: set only when this document is a meal/dining booking
   diningFormat?: DiningFormat; // activity: one of EXTRACTABLE_DINING_FORMATS only
   extraFees?: ExtractedFee[]; // stay: fees due separately from costAmount
+  unitPrice?: number; // one same-for-everyone per-person rate ("Adults $1,145.00 × 4")
+  fixedCharges?: ExtractedFee[]; // the part of costAmount that doesn't change with headcount
+  includedMeals?: ExtractedMeal[]; // transit: meals its price covers
   noteworthy?: ExtractedNote[]; // any kind: cancellation terms, occupancy limits, access constraints, ...
   includedTransfers?: ExtractedTransfer[]; // stay: round-trip shuttle/transfer bundled into the rate
   includedPerks?: string[]; // stay: named benefits already covered by the rate, e.g. 'Breakfast buffet'
@@ -308,6 +329,44 @@ export const ENTITY_SCHEMA = {
         "The booking's total price. When one booking covers several entries (a round trip's two flights), give that same total on each of them.",
     },
     costCurrency: { type: 'string', description: "ISO 4217 currency code, e.g. 'USD'." },
+    unitPrice: {
+      type: 'number',
+      description:
+        "When every traveler is charged the same per-person rate (e.g. 'Adults $1,145.00 × 4' is 1145), that rate alone — fees charged per booking go in fixedCharges. Omit when rates differ by traveler (use passengerFares) or nothing is priced per person.",
+    },
+    fixedCharges: {
+      type: 'array',
+      description:
+        "The lines of costAmount that don't change with the number of travelers, each as printed: a room or cabin rate, taxes and fees on it, a per-booking transportation or service fee. Per-person prices are never fixed charges (use unitPrice or passengerFares). Omit when the whole price is per person.",
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: "As printed, e.g. 'Transportation fee'." },
+          amount: { type: 'number' },
+          currency: { type: 'string' },
+        },
+        required: ['name', 'amount'],
+        additionalProperties: false,
+      },
+    },
+    includedMeals: {
+      type: 'array',
+      description:
+        "For a transit whose price includes a meal (e.g. 'Light lunch at the lodge' on a fly-out tour): one line per meal, on the entry that takes the travelers to where it's served (a fly-out's outbound). Omit when no meal is included.",
+      items: {
+        type: 'object',
+        properties: {
+          mealType: { type: 'string', enum: MEAL_TYPES },
+          placeLabel: {
+            type: 'string',
+            description:
+              "Where it's served, only when that's somewhere other than this entry's toLabel.",
+          },
+        },
+        required: ['mealType'],
+        additionalProperties: false,
+      },
+    },
     bookedThrough: {
       type: 'string',
       description:
@@ -396,7 +455,7 @@ type JsonSchema = Record<string, unknown>;
 // nor "make them required-but-nullable" fits. Instead every optional string or
 // array property is sent as required, with an empty value ('' or []) meaning "not
 // in the document"; an optional enum gains '' as one more allowed value. Only
-// non-string scalars (just costAmount today) stay optional. ENTITY_SCHEMA itself
+// non-string scalars (costAmount, unitPrice, travelerCount) stay optional. ENTITY_SCHEMA itself
 // keeps the plain optional shape because askAI.ts's propose_edit tool reuses its
 // properties, and a non-strict tool has neither cap.
 export function requireWithEmptyDefaults(schema: JsonSchema): JsonSchema {
@@ -558,7 +617,8 @@ const MULTI_ENTRY_INSTRUCTIONS =
   'Extract every distinct booking/itinerary entry from this document. ' +
   'A round-trip flight confirmation is two transit entries, one for the outbound flight and one for the return, each with its own times, flight number, aircraft and seats. ' +
   'A cruise confirmation is usually one stay entry for the cabin. ' +
-  "A fly-out excursion (a floatplane/air-taxi/bush-plane day trip such as bear viewing at a remote lodge, even when it is sold as a tour with a meeting location and a start/end time) is two transit entries with mode 'flight': the outbound from the operator's base (fromLabel) to the destination (toLabel) departing at the start time, and the return from the destination back to the base arriving at the end time — leave the outbound's endAt and the return's startAt empty unless the document states them. Both share the same confirmationNumber and costAmount. " +
+  "A fly-out excursion (a floatplane/air-taxi/bush-plane day trip such as bear viewing at a remote lodge, even when it is sold as a tour with a meeting location and a start/end time) is two transit entries with mode 'flight': the outbound from the operator's base (fromLabel) to the destination (toLabel) departing at the start time, and the return from the destination back to the base arriving at the end time — leave the outbound's endAt and the return's startAt empty unless the document states them. Both share the same confirmationNumber and costAmount. A meal the tour includes (e.g. 'Light lunch at the lodge') goes in the outbound's includedMeals. " +
+  "Split every price by what it scales with, on every entry the booking covers, with the overall total as costAmount: a per-person rate times a headcount (e.g. 'Adults $1,145.00 × 4') is unitPrice and travelerCount; anything charged per booking or per room — a room rate, its taxes, a transportation fee — is a fixedCharges line. " +
   'Use the field names exactly as given and leave any field you cannot determine from the document empty — do not guess. ' +
   'placeLabel, lodgingName, fromLabel and toLabel must be plain text only; never invent an id. For an airport, include its code, e.g. "Anchorage (ANC)". When the document names a meeting location, check-in point or operator base (e.g. a floatplane company\'s office/dock), use that exact place name for fromLabel/toLabel — never substitute the nearest airport or city. ' +
   "When the document lists each traveler's seat, set seats on each transit entry for that flight only. " +
@@ -719,20 +779,38 @@ export function mergeBooking(fields: ExtractedFields, base: Booking | null = nul
     return base;
   }
   const cost = moneyFrom(fields);
-  // A stated total that matches base's per-traveler fares is the same price,
-  // so the split (and its ticket numbers) is kept rather than flattened.
-  const baseCost = bookingCost(base);
-  const samePrice = sameMoney(cost, baseCost);
+  // A stated total that matches base's own price is the same price, so its
+  // split (and its ticket numbers) is kept rather than flattened. Otherwise
+  // the document's fixed lines replace base's; with neither those nor a
+  // per-person rate, the whole stated total is one fixed charge — what a
+  // room booking is. Per-person fares are added by draftBookings, which
+  // knows the travelers.
+  const samePrice = sameMoney(cost, bookingCost(base));
+  const fixed = fixedChargesFrom(fields);
+  const pricing: Booking['pricing'] = samePrice
+    ? (base?.pricing ?? null)
+    : fixed.length
+      ? { perTraveler: [], fixed }
+      : cost && fields.unitPrice == null
+        ? fixedPricing([{ label: 'Total', amount: cost }])
+        : (base?.pricing ?? null);
   const booking: Booking = {
     ...base,
     _id: base?._id ?? crypto.randomUUID(),
     status: fields.bookingStatus ?? base?.status ?? 'booked',
-    pricing: cost && !samePrice ? { kind: 'total', cost } : (base?.pricing ?? null),
+    pricing,
     confirmationNumber: fields.confirmationNumber ?? base?.confirmationNumber ?? null,
   };
   const bookedThrough = fields.bookedThrough ?? base?.bookedThrough;
   if (bookedThrough) booking.bookedThrough = bookedThrough;
   return booking;
+}
+
+function fixedChargesFrom(fields: ExtractedFields): FixedCharge[] {
+  return (fields.fixedCharges ?? []).map((c) => ({
+    label: c.name,
+    amount: { amount: c.amount, currency: c.currency || fields.costCurrency || 'USD' },
+  }));
 }
 
 // Titles and suffixes a document prints around a name that aren't part of
@@ -919,12 +997,15 @@ export function draftBookings(
       (booking, i) => mergeBooking(entities[i], booking),
       base,
     );
-    const docCost = indexes.map((i) => moneyFrom(entities[i])).find((c) => c) ?? null;
+    const entries = indexes.map((i) => entities[i]);
+    const docCost = entries.map(moneyFrom).find((c) => c) ?? null;
+    const docFixed = entries.map(fixedChargesFrom).find((f) => f.length) ?? null;
     const { booking, notes } = withFares(
       stated,
       bookingFares(base) ?? [],
       docCost,
-      groupFares,
+      groupFares.length ? groupFares : unitFares(entries, travelers),
+      docFixed ?? bookingFixedCharges(base) ?? [],
       travelers,
       confirmation,
     );
@@ -934,33 +1015,56 @@ export function draftBookings(
   return { bookingFor, extraNotes };
 }
 
+// A document that prices everyone at one per-person rate without naming
+// them ("Adults $1,145.00 × 4") still gives each traveler a fare when its
+// headcount is the whole party. Anything charged per booking on top (a
+// transportation fee) stays a fixed charge, never folded into the fares.
+function unitFares(entries: ExtractedFields[], travelers: Traveler[]): ExtractedFare[] {
+  const priced = entries.find((f) => f.unitPrice != null && f.travelerCount);
+  if (!priced?.unitPrice || priced.travelerCount !== travelers.length) return [];
+  const { unitPrice, costCurrency } = priced;
+  return travelers.map((t) => ({
+    travelerName: t.name,
+    amount: unitPrice,
+    currency: costCurrency,
+  }));
+}
+
 // priorFares are the base booking's own (for ticket numbers the document
 // leaves out); docCost is the total the document itself states — never a
 // base booking's older price, which isn't the document's to contradict.
+// `fixed` is the booking's fixed part, kept beside the fares. With no fares
+// to give (none stated, or a name that matches no traveler), the stated
+// booking keeps its own price — or, when that's empty, the document's total
+// as one fixed charge, so a known price is never dropped.
 function withFares(
   stated: Booking | null,
   priorFares: PassengerFare[],
-  docCost: { amount: number; currency: string } | null,
+  docCost: Money | null,
   fares: ExtractedFare[],
+  fixed: FixedCharge[],
   travelers: Traveler[],
   confirmationNumber: string | null,
 ): { booking: Booking | null; notes: ExtractedNote[] } {
-  if (!fares.length) return { booking: stated, notes: [] };
   const matched = fares.map((fare) => ({
     fare,
     travelerId: matchTraveler(fare.travelerName, travelers),
   }));
   const unmatched = matched.filter((m) => !m.travelerId).map((m) => m.fare.travelerName);
-  if (unmatched.length) {
-    return {
-      booking: stated,
-      notes: [
-        {
-          kind: 'info',
-          text: `Couldn't match ${unmatched.join(', ')} to a trip traveler, so this booking keeps its overall price instead of a per-traveler split.`,
-        },
-      ],
-    };
+  if (!fares.length || unmatched.length) {
+    const booking =
+      stated && !stated.pricing && docCost
+        ? { ...stated, pricing: fixedPricing([{ label: 'Total', amount: docCost }]) }
+        : stated;
+    const notes: ExtractedNote[] = unmatched.length
+      ? [
+          {
+            kind: 'info',
+            text: `Couldn't match ${unmatched.join(', ')} to a trip traveler, so this booking keeps its overall price instead of a per-traveler split.`,
+          },
+        ]
+      : [];
+    return { booking, notes };
   }
   // A fare the document gives no ticket number keeps the one already on file.
   const booking: Booking = {
@@ -970,16 +1074,16 @@ function withFares(
       confirmationNumber,
     }),
     pricing: {
-      kind: 'perTraveler',
-      fares: matched.map(({ fare, travelerId }) => {
+      perTraveler: matched.map(({ fare, travelerId }) => {
         const ticketNumber =
           fare.ticketNumber ?? priorFares.find((f) => f.travelerId === travelerId)?.ticketNumber;
         return {
           travelerId: travelerId as string,
-          fare: { amount: fare.amount, currency: fare.currency || 'USD' },
+          fare: { amount: fare.amount, currency: fare.currency || docCost?.currency || 'USD' },
           ...(ticketNumber ? { ticketNumber } : {}),
         };
       }),
+      fixed,
     },
   };
   const itemized = bookingCost(booking);
@@ -988,7 +1092,7 @@ function withFares(
       ? [
           {
             kind: 'warning',
-            text: `The per-traveler fares add up to ${formatMoney(itemized)}, but the document's stated total is ${formatMoney(docCost)}. Check which is right.`,
+            text: `The per-traveler fares and fixed charges add up to ${formatMoney(itemized)}, but the document's stated total is ${formatMoney(docCost)}. Check which is right.`,
           },
         ]
       : [];
@@ -1611,6 +1715,8 @@ export interface PlannedImportEntry {
   travelers: Traveler[];
   // A stay's bundled shuttle legs (see planIncludedTransfers).
   transfers: PlannedTransfer[];
+  // Meals a transit's price covers (see planIncludedMeals).
+  meals: PlannedMeal[];
 }
 
 // `addAsNew` holds the indexes of matched entries the reader chose to add
@@ -1672,6 +1778,7 @@ export function planDocumentImport(
     const draft = draftWith(booking);
     const merged = match ? mergeDraftIntoExisting(fields, match, draft) : null;
     const stay = fields.kind === 'stay' ? ((updating ? merged : draft) as Stay) : null;
+    const transit = fields.kind === 'transit' ? ((updating ? merged : draft) as Transit) : null;
     return {
       fields,
       placement,
@@ -1685,6 +1792,7 @@ export function planDocumentImport(
         stay && placement
           ? planIncludedTransfers(fields, stay, placement.legId, resolved, data.transits)
           : [],
+      meals: transit ? planIncludedMeals(fields, transit, data.activities) : [],
     };
   });
 }
@@ -1719,4 +1827,56 @@ export function planIncludedTransfers(
       ];
     },
   );
+}
+
+// A meal a transit's price includes, as a meal Activity linked to that
+// transit ('included-with-transit'), served at the transit's destination
+// unless the document names somewhere else. The day's existing meal of the
+// same type in the same scenario — a placeholder "packed lunch" — is updated
+// rather than doubled, keeping its time; anything else is added new.
+export interface PlannedMeal {
+  activity: Activity;
+  overrideId?: string; // the existing meal this updates
+}
+
+export function planIncludedMeals(
+  fields: ExtractedFields,
+  transit: Transit,
+  activities: Activity[],
+): PlannedMeal[] {
+  const date = dateOnly(transit.arrivesAt ?? transit.departsAt);
+  const claimed = new Set<string>();
+  return (fields.includedMeals ?? []).map(({ mealType, placeLabel }): PlannedMeal => {
+    const place: Place =
+      placeLabel?.trim() && placeLabel.trim() !== transit.to.label
+        ? { id: null, label: placeLabel.trim() }
+        : transit.to;
+    const match = activities.find(
+      (a) =>
+        !claimed.has(a._id) &&
+        a.mealType === mealType &&
+        a.legId === transit.legId &&
+        a.scenarioId === transit.scenarioId &&
+        (a.startAt ? dateOnly(a.startAt) : a.date) === date,
+    );
+    const included = {
+      text: null,
+      place,
+      diningFormat: 'included-with-transit' as const,
+      includedIn: { entity: 'transit' as const, id: transit._id },
+      options: null,
+      bookingId: null,
+    };
+    if (match) {
+      claimed.add(match._id);
+      return { activity: { ...structuredClone(match), ...included }, overrideId: match._id };
+    }
+    return {
+      activity: {
+        ...blankActivity(transit.legId, date, transit.scenarioId),
+        mealType,
+        ...included,
+      },
+    };
+  });
 }

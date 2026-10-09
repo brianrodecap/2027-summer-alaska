@@ -36,11 +36,24 @@ export interface PassengerFare {
   ticketNumber?: string;
 }
 
-// A booking's price is stored exactly one way: a single total, or per
-// traveler, in which case the total is the sum of the fares (bookingCost in
-// bookings.ts) and is never stored alongside them, so the two can't drift.
-export type Pricing =
-  { kind: 'total'; cost: Money } | { kind: 'perTraveler'; fares: PassengerFare[] };
+// A charge that doesn't change with how many travelers come along — a room
+// or cabin rate, a resort fee, a booking's transportation fee. Labeled as the
+// document prints it, so the budget can say what the fixed part is made of.
+export interface FixedCharge {
+  label: string;
+  amount: Money;
+}
+
+// A booking's price, split by what it scales with: the per-traveler fares
+// (grow with each added traveler) and the fixed charges (don't). Either part
+// may be empty. The total is always their sum (bookingCost in bookings.ts),
+// never stored alongside them, so it can't drift. The split is what lets the
+// budget answer "what would another traveler, or another family, cost?" —
+// a hotel room is fixed per booking, so another family is another booking.
+export interface Pricing {
+  perTraveler: PassengerFare[];
+  fixed: FixedCharge[];
+}
 
 export interface BookedThrough {
   name: string;
@@ -662,6 +675,8 @@ export interface BudgetTravelerGroup {
 export interface BudgetView {
   today: string;
   totals: BudgetTotals;
+  // The costed part of `totals`, split by what it scales with (see Pricing).
+  byBasis: { perTraveler: BudgetTotals; fixed: BudgetTotals };
   byLeg: BudgetLegGroup[];
   byDay: BudgetDayGroup[];
   byTraveler: BudgetTravelerGroup[];

@@ -152,11 +152,16 @@ function EditEventWizardBody({
 
   const handleSave = () => {
     const clone = structuredClone(entity) as Entity;
-    const result = applyEntityForm(kind, clone, {
-      activity: activityForm,
-      stay: stayForm,
-      transit: transitForm,
-    });
+    const result = applyEntityForm(
+      kind,
+      clone,
+      {
+        activity: activityForm,
+        stay: stayForm,
+        transit: transitForm,
+      },
+      tripTravelers.map((t) => t.id),
+    );
     if ('error' in result) {
       setError(result.error);
       return;
@@ -168,7 +173,11 @@ function EditEventWizardBody({
     // whole flow exists to avoid.
     const mergeTarget = mealMergeTarget(category, duplicateMealActivity, mergeIntoDuplicate);
     if (mergeTarget) {
-      const merged = mergeMealOptionIntoActivity(mergeTarget, activityForm);
+      const merged = mergeMealOptionIntoActivity(
+        mergeTarget,
+        activityForm,
+        tripTravelers.map((t) => t.id),
+      );
       onSave(merged.activity, merged.bookings);
       onDelete(kind, entity._id);
       return;

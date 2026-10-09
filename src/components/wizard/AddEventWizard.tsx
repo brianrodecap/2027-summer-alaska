@@ -166,11 +166,16 @@ export function AddEventWizard({
         : kind === 'transit'
           ? blankTransit(legId, date)
           : blankActivity(legId, date, activeScenarioId);
-    const result = applyEntityForm(kind, entity, {
-      activity: activityForm,
-      stay: stayForm,
-      transit: transitForm,
-    });
+    const result = applyEntityForm(
+      kind,
+      entity,
+      {
+        activity: activityForm,
+        stay: stayForm,
+        transit: transitForm,
+      },
+      tripTravelers.map((t) => t.id),
+    );
     if ('error' in result) {
       setError(result.error);
       return;
@@ -180,7 +185,11 @@ export function AddEventWizard({
     // as a second, competing Activity.
     const mergeTarget = mealMergeTarget(category, duplicateMealActivity, mergeIntoDuplicate);
     if (mergeTarget) {
-      const merged = mergeMealOptionIntoActivity(mergeTarget, activityForm);
+      const merged = mergeMealOptionIntoActivity(
+        mergeTarget,
+        activityForm,
+        tripTravelers.map((t) => t.id),
+      );
       onSaveEntity('activity', merged.activity, merged.bookings);
       return;
     }
