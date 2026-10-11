@@ -46,6 +46,7 @@ import {
   addTraveler,
   type ChangeProposal,
   checkedChanges,
+  dayPlanErrors,
   IMPORT_CONVENTIONS,
   isDateTime,
   PROPOSAL_PROPERTIES,
@@ -55,7 +56,7 @@ import {
   queueFromProposals,
   shapeErrors,
 } from './proposals';
-import { activityHeadline, formatTime, resolveActivityDate, transitRouteLabel } from './tripModel';
+import { activityHeadline, formatTime, transitRouteLabel } from './tripModel';
 import type { Activity, Booking, Route, Stay, Transit, Traveler, TripData } from './types';
 
 export class AskAIError extends Error {}
@@ -464,17 +465,6 @@ function parseDayPlan(input: unknown, ctx: ProposalContext): ProposedDayPlan {
   if (!(raw.changes ?? []).every((c) => c && typeof c === 'object' && !Array.isArray(c))) {
     throw new ToolInputError('Every change must be an object.');
   }
-  // A new entry stays on the plan's own leg and date: an override would add
-  // it to another day under this day's heading.
-  const stray = (raw.changes ?? []).filter(
-    (c) =>
-      !c.entityId && ((c.legId ?? raw.legId) !== raw.legId || (c.date ?? raw.date) !== raw.date),
-  );
-  if (stray.length) {
-    throw new ToolInputError(
-      `A new entry in a plan for ${raw.date} (leg ${raw.legId}) must be on that date and leg; leave its date and legId out.`,
-    );
-  }
   const changes = (raw.changes ?? []).map((c): ChangeProposal => ({
     ...c,
     kind: 'activity',
@@ -484,45 +474,26 @@ function parseDayPlan(input: unknown, ctx: ProposalContext): ProposedDayPlan {
     changes: c.changes ?? {},
     why: raw.summary!,
   }));
-  const newTravelers = checkChanges(changes, ctx);
-  if (!remove.every((id) => typeof id === 'string')) {
-    throw new ToolInputError('"remove" must list activity ids.');
+  // The same scope rules run again when the checked items are applied
+  // (applyDayPlan). The scope and change problems are reported together (the
+  // second set may follow from the first); the dry run below needs a plan that
+  // has none, so what applying would break is reported once these are fixed.
+  const errors = dayPlanErrors({ date: raw.date, legId: raw.legId, changes, remove }, ctx.data);
+  let newTravelers: Traveler[] | undefined;
+  try {
+    newTravelers = checkChanges(changes, ctx);
+  } catch (err) {
+    if (!(err instanceof ToolInputError)) throw err;
+    errors.push(err.message);
   }
-  const missing = remove.filter((id) => !ctx.data.activities.some((a) => a._id === id));
-  if (missing.length) throw new ToolInputError(`No activity ${missing.join(', ')} to remove.`);
-  // A removal is for this plan's day: Apply all would otherwise delete an
-  // activity from another day (or leg) under a "Re-plan <date>" heading.
-  // Updates are held to the same rule: an entry to change is on this day now
-  // (it may be moved off it, or another day's moved here as a new entry).
-  const elsewhere = [...remove, ...changes.flatMap((c) => (c.entityId ? [c.entityId] : []))].filter(
-    (id) => {
-      const a = ctx.data.activities.find((x) => x._id === id);
-      return a && (a.legId !== raw.legId || resolveActivityDate(a) !== raw.date);
-    },
-  );
-  if (elsewhere.length) {
-    throw new ToolInputError(
-      `${elsewhere.join(', ')} isn't on ${raw.date} in leg ${raw.legId}; a day plan changes and removes only that day's activities.`,
-    );
+  // Whatever applying it would leave broken (a meal left pointing at a removal)
+  // is found by applying it, as the user's Apply will. The place ids were
+  // checked above; a check with none given skips them.
+  if (!errors.length) {
+    const dry = applyBatch(ctx.data, changes, newTravelers ?? [], new Set(remove));
+    if ('error' in dry) errors.push(dry.error);
   }
-  // Something still pointing at a removed activity (a meal it covers) would be
-  // left with a reference to nothing.
-  const dangling = ctx.data.activities.flatMap((x) => {
-    const ref = x.includedIn;
-    const covers = ref && 'entity' in ref && ref.entity === 'activity' ? ref.id : null;
-    return covers && remove.includes(covers) && !remove.includes(x._id)
-      ? [`${covers} covers ${x._id}`]
-      : [];
-  });
-  if (dangling.length) {
-    throw new ToolInputError(`${dangling.join('; ')}: change or remove that too.`);
-  }
-  const changedAndRemoved = remove.filter((id) => changes.some((c) => c.entityId === id));
-  if (changedAndRemoved.length) {
-    throw new ToolInputError(
-      `${changedAndRemoved.join(', ')} is both changed and removed; do one or the other.`,
-    );
-  }
+  if (errors.length) throw new ToolInputError(errors.join('\n'));
   return { date: raw.date, legId: raw.legId, summary: raw.summary, changes, remove, newTravelers };
 }
 
@@ -893,12 +864,23 @@ export function applyDayPlan(
     Array.from({ length: plan.changes.length + plan.remove.length }, (_, i) => i),
   ),
 ): { data: TripData } | { error: string } {
-  return applyBatch(
-    data,
-    plan.changes.filter((_, i) => keep.has(i)),
-    plan.newTravelers,
-    new Set(plan.remove.filter((_, i) => keep.has(plan.changes.length + i))),
+  const changes = plan.changes.filter((_, i) => keep.has(i));
+  // A removal already done (the activity is gone) has nothing left to do, so it
+  // doesn't hold up the items checked with it; proposing one is still an error.
+  const checkedRemovals = plan.remove.filter((_, i) => keep.has(plan.changes.length + i));
+  const done = checkedRemovals.filter(
+    (id) => typeof id === 'string' && !data.activities.some((a) => a._id === id),
   );
+  const remove = checkedRemovals.filter((id) => !done.includes(id));
+  // Nothing but removals already done was checked: say so, not a silent success.
+  if (done.length && !changes.length && !remove.length) {
+    return { error: `Nothing left to apply: ${done.join(', ')} is already removed.` };
+  }
+  // The kept subset, against the trip as it is now: leaving an item unchecked
+  // can leave something pointing at a removal, and the trip may have moved.
+  const errors = dayPlanErrors({ date: plan.date, legId: plan.legId, changes, remove }, data);
+  if (errors.length) return { error: noLongerFits([errors.join(' ')]) };
+  return applyBatch(data, changes, plan.newTravelers, new Set(remove));
 }
 
 // One line for a new activity in a review list, naming its candidates when it's a

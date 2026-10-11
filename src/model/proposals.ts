@@ -29,7 +29,14 @@ import {
 import { DINING_FORMAT_LABEL, MEAL_TYPES, NOTE_KINDS } from './formatting';
 import { isIsoDate } from './isoDate';
 import { allPackages } from './packages';
-import { addDaysStr, dateOnly, diffMinutesIso, tripDateRange } from './tripModel';
+import {
+  activityRefId,
+  addDaysStr,
+  dateOnly,
+  diffMinutesIso,
+  resolveActivityDate,
+  tripDateRange,
+} from './tripModel';
 import type {
   Activity,
   Booking,
@@ -42,6 +49,7 @@ import type {
   Package,
   Payable,
   Place,
+  Ref,
   RefEntityKind,
   SeatAssignment,
   Stay,
@@ -1344,6 +1352,98 @@ export function checkedChanges(
     else errors.push(...(changes.length > 1 ? found.map((e) => `Change ${i + 1}: ${e}`) : found));
   });
   return errors.length ? { errors } : { state, changes: remapped };
+}
+
+// ---------- Day plans ----------
+
+// What a day plan — a batch of activity changes for one date — may do, checked
+// once for every way it arrives: the assistant proposing it, and applying the
+// items the user left checked (against a trip that may have moved since). The
+// plan names its leg and date; its changes and removals stay on that day,
+// where the heading the user reviews says they are.
+export function dayPlanErrors(
+  plan: { date: string; legId: string; changes: ChangeProposal[]; remove: unknown[] },
+  data: TripData,
+): string[] {
+  const errors: string[] = [];
+  const byId = new Map(data.activities.map((a) => [a._id, a]));
+  const listed = Array.isArray(plan.remove) ? plan.remove : [];
+  const remove = listed.filter((id): id is string => typeof id === 'string');
+  if (!Array.isArray(plan.remove) || remove.length !== listed.length) {
+    errors.push('"remove" must list activity ids.');
+  }
+  // (applyDayPlan drops removals already done before this runs, so a missing
+  // activity is an error when a plan is proposed and a no-op when it's applied.)
+  const missing = remove.filter((id) => !byId.has(id));
+  if (missing.length) errors.push(`No activity ${[...new Set(missing)].join(', ')} to remove.`);
+  // A new entry lands on the plan's leg and date unless it names its own, and
+  // its own would add it to another day under this day's heading.
+  if (
+    plan.changes.some(
+      (c) =>
+        !c.entityId &&
+        ((c.legId ?? plan.legId) !== plan.legId || (c.date ?? plan.date) !== plan.date),
+    )
+  ) {
+    errors.push(
+      `A new entry in a plan for ${plan.date} (leg ${plan.legId}) must be on that date and leg; leave its date and legId out.`,
+    );
+  }
+  // An entry to change or remove is on this day now (a change may move it off
+  // the day, or another day's activity be added as a new entry).
+  const changed = plan.changes.flatMap((c) => (c.entityId ? [c.entityId] : []));
+  const elsewhere = [...new Set([...remove, ...changed])].filter((id) => {
+    const a = byId.get(id);
+    return a && (a.legId !== plan.legId || resolveActivityDate(a) !== plan.date);
+  });
+  if (elsewhere.length) {
+    errors.push(
+      `${elsewhere.join(', ')} isn't on ${plan.date} in leg ${plan.legId}; a day plan changes and removes only that day's activities.`,
+    );
+  }
+  const changedSet = new Set(changed);
+  const both = remove.filter((id) => changedSet.has(id));
+  if (both.length)
+    errors.push(`${both.join(', ')} is both changed and removed; do one or the other.`);
+  return errors;
+}
+
+// Activities left pointing at one that's gone: a meal (or one of its candidate
+// options) covered by an activity the plan removed. Read off the activities as
+// they are after the plan is applied, so it can't disagree with what apply did.
+//
+// `includedIn` exists only on an activity and on its options (types.ts), so
+// those are the only places a reference to an activity can sit. The notes and
+// bookings a removed activity leaves behind aren't checked: setData sweeps them
+// (withoutOrphanNotes / withoutOrphanBookings).
+export function danglingCoverErrors(
+  activities: Activity[],
+  removed: ReadonlySet<string>,
+): string[] {
+  if (!removed.size) return [];
+  const gone = (ref: Ref | null | undefined) => {
+    const id = activityRefId(ref);
+    return id !== null && removed.has(id) ? id : null;
+  };
+  const messages = new Set<string>();
+  for (const a of activities) {
+    const covered: [subject: string, ref: Ref | null | undefined][] = [
+      [a._id, a.includedIn],
+      ...(a.options ?? []).map((o): [string, Ref | null] => [
+        `a candidate of ${a._id}`,
+        o.includedIn,
+      ]),
+    ];
+    for (const [subject, ref] of covered) {
+      const cover = gone(ref);
+      if (cover) {
+        messages.add(
+          `${subject} is covered by ${cover}, which is being removed. Keep ${cover}, take ${a._id} off it (change its includedWith or diningFormat), or remove ${a._id} too.`,
+        );
+      }
+    }
+  }
+  return [...messages];
 }
 
 // ---------- Matching places, packages and drives ----------

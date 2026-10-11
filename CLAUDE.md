@@ -21,8 +21,12 @@ A read-only itinerary site for upcoming trips (currently one: 2027 Alaska). Reac
 - Never pick among candidate entities by JSON array position; use a semantic field (e.g. a scenario's `tone === 'ideal'`).
 - No migrations for old data shapes, and don't flag their absence. Example: the pre-split `pricing: { kind: 'total' | 'perTraveler' }` form and `withCurrentPricing` were deleted on purpose, so never add replay or load-time support for them (`docs/README.md` has the history). When a shape changes, migrate `public/data/` in the same change and record it there.
 - AI tool input is untrusted: check its shape before reading it (`shapeErrors` in `src/model/proposals.ts`) and return errors the AI can fix, never throw. A new proposal field gets a shape check and a sample in the mutation test in `proposals.test.ts`.
-- A rule about what a change may do lives in one shared check that every entry point (import, chat edit, day plan, apply) goes through, and its hostile case goes in the `entry point parity` test in `proposals.test.ts`. A rule added to one path only is the bug.
+- A rule about what a change may do lives in one shared check that every entry point (import, chat edit, day plan, apply) goes through, and its hostile case goes in that path's parity test (search `parity` in `src/model/*.test.ts`). A rule added to one path only is the bug.
 - Large refactors land in slices of one concern, each with `npm run validate` passing and its own review. Never review (or let a review run on) a whole multi-concern working tree.
+- Refactor in two steps: move code unchanged (tests stay green with no edits), then change behavior in its own step. Moving and altering together is where new bugs come from.
+- A rule that refuses something ships with its ways out. List how it can legitimately be satisfied, and test each way plus one that doesn't. Check the state a change leaves behind (apply it, or read the result), never a second copy of how apply works.
+- A test must reach the rule it names: assert the rule's own message, and break the rule once to see the test fail. Write the test from the rule's statement, not from the implementation.
+- Before changing what a shared function does, list its callers (`findReferences`) and run their tests first. After a scripted edit, confirm it landed (diff, or the test count moved) before reporting it done.
 - Comments describe the code as it is. A removed feature leaves no trace: no "earlier version", no "not persisted on purpose".
 - Don't write implementation detail into this file while a design is still being iterated.
 

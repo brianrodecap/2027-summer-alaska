@@ -27,6 +27,7 @@ import { fetchPlaceImages } from './places';
 import {
   type ChangeProposal,
   checkedChanges,
+  danglingCoverErrors,
   PROPOSAL_PROPERTIES,
   type ProposedChanges,
   proposedTravelerIds,
@@ -138,17 +139,9 @@ export function applyBatch(
   const activities = queued
     .reduce((list, q) => upsertById(list, q.entity as Activity), data.activities)
     .filter((a) => !removed.has(a._id));
-  // The checked items may leave an activity's cover removed with the thing it
-  // covers kept; nothing may point at one that's gone.
-  const dangling = activities.find((a) => {
-    const ref = a.includedIn;
-    return ref && 'entity' in ref && ref.entity === 'activity' && removed.has(ref.id);
-  });
-  if (dangling) {
-    return {
-      error: `${dangling._id} is covered by an activity this plan removes; change or remove it too.`,
-    };
-  }
+  // Whatever the removals left pointing at them, read off the result.
+  const dangling = danglingCoverErrors(activities, removed);
+  if (dangling.length) return { error: dangling.join(' ') };
   const bookings = queued
     .flatMap((q) => q.bookings)
     .reduce((list: Booking[], b) => upsertById(list, b), data.bookings);

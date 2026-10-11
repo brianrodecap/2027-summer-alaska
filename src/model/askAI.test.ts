@@ -12,6 +12,7 @@ import {
   startConversation,
 } from './askAI';
 import type { AskAIToolContext } from './askAITools';
+import { dayPlanErrors } from './proposals';
 import type { Day, Route, Transit, TripData, TripView } from './types';
 
 // The turn loop streams, so the stubbed API answers with server-sent events. Each
@@ -878,7 +879,7 @@ describe('a day plan', () => {
       bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
     ).at(-1)!.content[0];
     expect(result.is_error).toBe(true);
-    expect(result.content).toMatch(/act_1 covers act_meal/);
+    expect(result.content).toMatch(/act_meal is covered by act_1, which is being removed/);
   });
 
   it('applies only the items left checked: a move, an addition, a removal', () => {
@@ -927,9 +928,257 @@ describe('a day plan', () => {
       remove: ['act_1'],
     };
     // Only the removal is left checked, so the meal keeps its cover reference.
-    expect('error' in applyDayPlan(plan, data, new Set([1]))).toBe(true);
+    const refused = applyDayPlan(plan, data, new Set([1]));
+    expect('error' in refused && refused.error).toMatch(/act_meal is covered by act_1/);
     // Removing the covered meal too leaves nothing pointing at it.
     const both = { ...plan, changes: [], remove: ['act_1', 'act_meal'] };
     expect('error' in applyDayPlan(both, data, new Set([0, 1]))).toBe(false);
+  });
+});
+
+// A day plan's rules are checked the same way whenever it is applied: its scope
+// by one shared check (proposals.ts's dayPlanErrors), and what applying leaves
+// broken by applying it (applyBatch). The plan is checked when proposed (the
+// tool-call tests above) and again when its checked items are applied, so what
+// the user reviews and what is applied can't disagree. Each hostile plan must be
+// refused on apply, with the rule's own message.
+describe('day plan parity', () => {
+  const data = () => {
+    const d = tripData();
+    d.activities.push(
+      {
+        ...d.activities[0],
+        _id: 'act_other_day',
+        startAt: '2027-07-20T09:00',
+      },
+      { ...d.activities[0], _id: 'act_same_day', startAt: '2027-07-14T18:00' },
+      { ...d.activities[0], _id: 'act_meal', includedIn: { entity: 'activity', id: 'act_1' } },
+    );
+    return d;
+  };
+  const plan = (over: Partial<ProposedDayPlan>): ProposedDayPlan => ({
+    date: '2027-07-14',
+    legId: 'leg_a',
+    summary: 'Plan',
+    changes: [],
+    remove: [],
+    ...over,
+  });
+  type PlanChange = ProposedDayPlan['changes'][number];
+  const update = (
+    entityId: string,
+    changes: PlanChange['changes'] = { text: 'Changed' },
+  ): PlanChange => ({ kind: 'activity', entityId, changes, why: 's' });
+  const addEntry = (changes: PlanChange['changes'], date = '2027-07-14'): PlanChange => ({
+    kind: 'activity',
+    legId: 'leg_a',
+    date,
+    changes,
+    why: 's',
+  });
+  // A meal's change to be covered by another activity.
+  const cover = (includedWith: string) => ({
+    diningFormat: 'included-with-activity' as const,
+    includedWith,
+  });
+  // The trip, with the meal's cover moved onto `n` of its candidate options.
+  const mealWithOptions = (n: number) => {
+    const d = data();
+    const meal = d.activities.find((a) => a._id === 'act_meal')!;
+    meal.includedIn = null;
+    meal.options = Array.from({ length: n }, (_, i) => ({
+      _id: `opt_${i + 1}`,
+      diningFormat: 'included-with-activity' as const,
+      place: null,
+      includedIn: { entity: 'activity' as const, id: 'act_1' },
+      bookingId: null,
+    }));
+    return d;
+  };
+  // [name, plan, whether dayPlanErrors (the scope check) is what refuses it, the refusal]
+  const hostile: [string, ProposedDayPlan, boolean, RegExp][] = [
+    ['removing another day’s activity', plan({ remove: ['act_other_day'] }), true, /isn't on/],
+    [
+      'changing another day’s activity',
+      plan({ changes: [update('act_other_day')] }),
+      true,
+      /isn't on/,
+    ],
+    ['removing a non-id', plan({ remove: [5 as never] }), true, /activity ids/],
+    [
+      'changing and removing the same activity',
+      plan({ changes: [update('act_1')], remove: ['act_1'] }),
+      true,
+      /both changed and removed/,
+    ],
+    [
+      'adding an entry on another date',
+      plan({ changes: [addEntry({ text: 'x' }, '2027-07-20')] }),
+      true,
+      /must be on that date/,
+    ],
+    [
+      'changing the same activity twice',
+      plan({ changes: [update('act_1'), update('act_1', { text: 'Again' })] }),
+      false,
+      /combine them/,
+    ],
+    [
+      'removing what a kept meal is covered by',
+      plan({ remove: ['act_1'] }),
+      false,
+      /act_meal is covered by act_1/,
+    ],
+    [
+      'adding an entry covered by a removal',
+      plan({
+        changes: [addEntry({ text: 'Lunch', ...cover('act_1') })],
+        remove: ['act_1', 'act_meal'],
+      }),
+      false,
+      /is covered by act_1, which is being removed/,
+    ],
+    [
+      'moving a meal onto an activity the plan also removes',
+      plan({
+        changes: [update('act_meal', cover('act_same_day'))],
+        remove: ['act_1', 'act_same_day'],
+      }),
+      false,
+      /act_meal is covered by act_same_day/,
+    ],
+  ];
+
+  it.each(hostile)('refuses %s', (_name, hostilePlan, byScope, message) => {
+    const applied = applyDayPlan(hostilePlan, data());
+    expect('error' in applied && applied.error).toMatch(message);
+    if (byScope) {
+      // The refusal is the shared scope check's own.
+      expect('error' in applied && applied.error).toContain(dayPlanErrors(hostilePlan, data())[0]);
+    }
+  });
+
+  it('refuses a checked subset that leaves a meal pointing at a removal', () => {
+    const subset = plan({
+      changes: [update('act_meal', { diningFormat: 'self-catered' })],
+      remove: ['act_1'],
+    });
+    expect('data' in applyDayPlan(subset, data(), new Set([0, 1]))).toBe(true);
+    // Only the removal is left checked: the meal keeps its cover.
+    const refused = applyDayPlan(subset, data(), new Set([1]));
+    expect('error' in refused && refused.error).toMatch(/act_meal is covered by act_1/);
+  });
+
+  it('names the removed cover once per meal, however many candidate options rely on it', () => {
+    for (const n of [1, 3]) {
+      const result = applyDayPlan(plan({ remove: ['act_1'] }), mealWithOptions(n));
+      const message = 'error' in result ? result.error : '';
+      expect(message).toMatch(
+        /a candidate of act_meal is covered by act_1, which is being removed/,
+      );
+      expect(message.match(/is covered by/g)).toHaveLength(1);
+    }
+  });
+
+  it('refuses a removal of an activity that is not there when proposed, and says nothing is left when applied', () => {
+    const proposal = plan({ remove: ['act_nope'] });
+    expect(dayPlanErrors(proposal, data()).join()).toMatch(/No activity act_nope to remove/);
+    const applied = applyDayPlan(proposal, data());
+    expect('error' in applied && applied.error).toMatch(/Nothing left to apply/);
+  });
+
+  it('names an off-day activity once, however often the plan lists it', () => {
+    const [message] = dayPlanErrors(
+      plan({ changes: [update('act_other_day')], remove: ['act_other_day', 'act_other_day'] }),
+      data(),
+    );
+    expect(message).toMatch(/^act_other_day isn't on/);
+  });
+
+  it('says so when the only checked removal is already done, and applies the rest', () => {
+    const onlyDone = applyDayPlan(plan({ remove: ['act_already_gone'] }), data());
+    expect('error' in onlyDone && onlyDone.error).toMatch(
+      /Nothing left to apply.*act_already_gone/,
+    );
+    // The unchecked item doesn't count: with nothing checked there is nothing to refuse.
+    const none = applyDayPlan(plan({ remove: ['act_already_gone'] }), data(), new Set());
+    expect('data' in none).toBe(true);
+  });
+
+  it('names a missing activity once, however often the plan lists it', () => {
+    const [message] = dayPlanErrors(plan({ remove: ['act_nope', 'act_nope'] }), data());
+    expect(message).toBe('No activity act_nope to remove.');
+  });
+
+  it('tells whoever reads a refused cover how to resolve it', () => {
+    const result = applyDayPlan(plan({ remove: ['act_1'] }), data());
+    expect('error' in result && result.error).toMatch(
+      /Keep act_1, take act_meal off it \(change its includedWith or diningFormat\), or remove act_meal too\./,
+    );
+  });
+
+  it('still applies the checked changes when a checked removal is already done', () => {
+    const result = applyDayPlan(
+      plan({ changes: [update('act_1', { text: 'Changed' })], remove: ['act_already_gone'] }),
+      data(),
+    );
+    if ('error' in result) throw new Error(result.error);
+    expect(result.data.activities.find((a) => a._id === 'act_1')?.text).toBe('Changed');
+  });
+
+  it('checks a new entry against the plan whether or not its leg and date were filled in', () => {
+    const bare = { kind: 'activity', changes: { text: 'x' }, why: 's' } as PlanChange;
+    expect(dayPlanErrors(plan({ changes: [bare] }), data())).toEqual([]);
+    expect(
+      dayPlanErrors(plan({ changes: [{ ...bare, date: '2027-07-20' }] }), data()),
+    ).toHaveLength(1);
+    expect(dayPlanErrors(plan({ changes: [{ ...bare, legId: 'leg_a' }] }), data())).toEqual([]);
+  });
+
+  it('reports every scope rule a plan breaks at once', () => {
+    const result = applyDayPlan(
+      plan({
+        changes: [update('act_1'), addEntry({ text: 'x' }, '2027-07-20')],
+        remove: ['act_1', 'act_other_day', 7 as never],
+      }),
+      data(),
+    );
+    const message = 'error' in result ? result.error : '';
+    for (const part of [
+      /activity ids/,
+      /must be on that date/,
+      /act_other_day isn't on/,
+      /act_1 is both changed and removed/,
+    ]) {
+      expect(message).toMatch(part);
+    }
+  });
+
+  it('refuses a change to an activity the trip no longer has', () => {
+    const result = applyDayPlan(plan({ changes: [update('act_deleted')] }), data());
+    expect('error' in result && result.error).toMatch(/act_deleted/);
+  });
+
+  it('refuses applying once the trip has moved an activity off the day', () => {
+    const moved = data();
+    moved.activities.find((a) => a._id === 'act_1')!.startAt = '2027-07-21T09:00';
+    const result = applyDayPlan(plan({ changes: [update('act_1')] }), moved);
+    expect('error' in result && result.error).toMatch(/isn't on 2027-07-14/);
+  });
+
+  it('accepts removing a cover when the plan moves the meal off it', () => {
+    const move = (changes: PlanChange['changes']) =>
+      plan({ changes: [update('act_meal', changes)], remove: ['act_1'] });
+    expect('data' in applyDayPlan(move({ diningFormat: 'self-catered' }), data())).toBe(true);
+    expect('data' in applyDayPlan(move(cover('act_same_day')), data())).toBe(true);
+    // Anything else about the meal leaves it pointing at the removed cover.
+    const refused = applyDayPlan(move({ text: 'Lunch' }), data());
+    expect('error' in refused && refused.error).toMatch(/act_meal is covered by act_1/);
+  });
+
+  it('accepts a plan that stays on its day', () => {
+    const ok = plan({ changes: [update('act_1')] });
+    expect(dayPlanErrors(ok, data())).toEqual([]);
+    expect('data' in applyDayPlan(ok, data())).toBe(true);
   });
 });

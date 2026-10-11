@@ -1690,13 +1690,15 @@ function spanEnd(
 // correct, not a scheduling mistake" signal — includedIn names exactly
 // which Activity it's bundled into, so only that specific pairing is
 // exempted, not every overlap this Activity happens to have.
+// The id of the activity a Ref points at, or null when it points at anything else.
+export function activityRefId(ref: Ref | null | undefined): string | null {
+  return ref && 'entity' in ref && ref.entity === 'activity' ? ref.id : null;
+}
+
 function isIncludedWithActivity(activity: Activity, other: Activity): boolean {
   return (
     activity.diningFormat === 'included-with-activity' &&
-    !!activity.includedIn &&
-    'entity' in activity.includedIn &&
-    activity.includedIn.entity === 'activity' &&
-    activity.includedIn.id === other._id
+    activityRefId(activity.includedIn) === other._id
   );
 }
 
