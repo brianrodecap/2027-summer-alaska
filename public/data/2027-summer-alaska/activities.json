@@ -3040,6 +3040,20 @@
     "includedIn": null,
     "options": [
       {
+        "_id": "act_jul17_dinner_opt2",
+        "diningFormat": "package",
+        "place": {
+          "id": null,
+          "label": "Sabatini's",
+          "images": []
+        },
+        "includedIn": {
+          "entity": "package",
+          "id": "pkg_princess_premier"
+        },
+        "bookingId": null
+      },
+      {
         "_id": "act_jul17_dinner_opt0",
         "diningFormat": "included",
         "place": {
@@ -3064,20 +3078,6 @@
         "includedIn": {
           "entity": "stay",
           "id": "stay_cruise"
-        },
-        "bookingId": null
-      },
-      {
-        "_id": "act_jul17_dinner_opt2",
-        "diningFormat": "package",
-        "place": {
-          "id": null,
-          "label": "Sabatini's",
-          "images": []
-        },
-        "includedIn": {
-          "entity": "package",
-          "id": "pkg_princess_premier"
         },
         "bookingId": null
       }
@@ -3228,20 +3228,6 @@
     "includedIn": null,
     "options": [
       {
-        "_id": "act_jul18_dinner_opt0",
-        "diningFormat": "included",
-        "place": {
-          "id": null,
-          "label": "Main Dining Room",
-          "images": []
-        },
-        "includedIn": {
-          "entity": "stay",
-          "id": "stay_cruise"
-        },
-        "bookingId": null
-      },
-      {
         "_id": "act_jul18_dinner_opt1",
         "diningFormat": "package",
         "place": {
@@ -3254,10 +3240,25 @@
           "id": "pkg_princess_premier"
         },
         "bookingId": null
+      },
+      {
+        "_id": "act_jul18_dinner_opt0",
+        "diningFormat": "included",
+        "place": {
+          "id": null,
+          "label": "Main Dining Room",
+          "images": []
+        },
+        "includedIn": {
+          "entity": "stay",
+          "id": "stay_cruise"
+        },
+        "bookingId": null
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul19_breakfast",
@@ -3379,20 +3380,6 @@
     "includedIn": null,
     "options": [
       {
-        "_id": "act_jul19_dinner_opt0",
-        "diningFormat": "included",
-        "place": {
-          "id": null,
-          "label": "Main Dining Room",
-          "images": []
-        },
-        "includedIn": {
-          "entity": "stay",
-          "id": "stay_cruise"
-        },
-        "bookingId": null
-      },
-      {
         "_id": "act_jul19_dinner_opt1",
         "diningFormat": "package",
         "place": {
@@ -3405,10 +3392,25 @@
           "id": "pkg_princess_premier"
         },
         "bookingId": null
+      },
+      {
+        "_id": "act_jul19_dinner_opt0",
+        "diningFormat": "included",
+        "place": {
+          "id": null,
+          "label": "Main Dining Room",
+          "images": []
+        },
+        "includedIn": {
+          "entity": "stay",
+          "id": "stay_cruise"
+        },
+        "bookingId": null
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul20_breakfast",
@@ -3584,20 +3586,6 @@
     "includedIn": null,
     "options": [
       {
-        "_id": "act_jul20_dinner_opt0",
-        "diningFormat": "included",
-        "place": {
-          "id": null,
-          "label": "Main Dining Room",
-          "images": []
-        },
-        "includedIn": {
-          "entity": "stay",
-          "id": "stay_cruise"
-        },
-        "bookingId": null
-      },
-      {
         "_id": "act_jul20_dinner_opt1",
         "diningFormat": "package",
         "place": {
@@ -3610,10 +3598,25 @@
           "id": "pkg_princess_premier"
         },
         "bookingId": null
+      },
+      {
+        "_id": "act_jul20_dinner_opt0",
+        "diningFormat": "included",
+        "place": {
+          "id": null,
+          "label": "Main Dining Room",
+          "images": []
+        },
+        "includedIn": {
+          "entity": "stay",
+          "id": "stay_cruise"
+        },
+        "bookingId": null
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul21_breakfast",
@@ -3780,20 +3783,6 @@
     "includedIn": null,
     "options": [
       {
-        "_id": "act_jul21_dinner_opt0",
-        "diningFormat": "included",
-        "place": {
-          "id": null,
-          "label": "Main Dining Room",
-          "images": []
-        },
-        "includedIn": {
-          "entity": "stay",
-          "id": "stay_cruise"
-        },
-        "bookingId": null
-      },
-      {
         "_id": "act_jul21_dinner_opt1",
         "diningFormat": "package",
         "place": {
@@ -3806,10 +3795,25 @@
           "id": "pkg_princess_premier"
         },
         "bookingId": null
+      },
+      {
+        "_id": "act_jul21_dinner_opt0",
+        "diningFormat": "included",
+        "place": {
+          "id": null,
+          "label": "Main Dining Room",
+          "images": []
+        },
+        "includedIn": {
+          "entity": "stay",
+          "id": "stay_cruise"
+        },
+        "bookingId": null
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul22_breakfast",
@@ -3965,20 +3969,6 @@
     "includedIn": null,
     "options": [
       {
-        "_id": "act_jul22_dinner_opt0",
-        "diningFormat": "included",
-        "place": {
-          "id": null,
-          "label": "Main Dining Room",
-          "images": []
-        },
-        "includedIn": {
-          "entity": "stay",
-          "id": "stay_cruise"
-        },
-        "bookingId": null
-      },
-      {
         "_id": "act_jul22_dinner_opt1",
         "diningFormat": "package",
         "place": {
@@ -3991,10 +3981,25 @@
           "id": "pkg_princess_premier"
         },
         "bookingId": null
+      },
+      {
+        "_id": "act_jul22_dinner_opt0",
+        "diningFormat": "included",
+        "place": {
+          "id": null,
+          "label": "Main Dining Room",
+          "images": []
+        },
+        "includedIn": {
+          "entity": "stay",
+          "id": "stay_cruise"
+        },
+        "bookingId": null
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul23_1",
@@ -4135,20 +4140,6 @@
     "includedIn": null,
     "options": [
       {
-        "_id": "act_jul23_dinner_opt0",
-        "diningFormat": "included",
-        "place": {
-          "id": null,
-          "label": "Main Dining Room",
-          "images": []
-        },
-        "includedIn": {
-          "entity": "stay",
-          "id": "stay_cruise"
-        },
-        "bookingId": null
-      },
-      {
         "_id": "act_jul23_dinner_opt1",
         "diningFormat": "package",
         "place": {
@@ -4159,6 +4150,20 @@
         "includedIn": {
           "entity": "package",
           "id": "pkg_princess_premier"
+        },
+        "bookingId": null
+      },
+      {
+        "_id": "act_jul23_dinner_opt0",
+        "diningFormat": "included",
+        "place": {
+          "id": null,
+          "label": "Main Dining Room",
+          "images": []
+        },
+        "includedIn": {
+          "entity": "stay",
+          "id": "stay_cruise"
         },
         "bookingId": null
       },
@@ -4178,7 +4183,8 @@
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul24_breakfast",
