@@ -422,14 +422,32 @@
           "credit": null,
           "caption": null
         }
-      ]
+      ],
+      "showWeather": true
     },
-    "departsAt": "2027-07-11T08:30",
-    "arrivesAt": "2027-07-11T09:30",
+    "departsAt": "2027-07-11T08:00",
+    "arrivesAt": "2027-07-11T09:00",
     "routeId": null,
     "routeVariant": null,
     "bookingId": "booking_transit_redoubt_out",
-    "images": []
+    "images": [],
+    "packages": [
+      {
+        "_id": "80f5b4b3-2bb6-489f-b4df-23feca9230ad",
+        "name": "Included with your tour",
+        "status": "booked",
+        "cost": null,
+        "confirmationNumber": null,
+        "benefits": [
+          "A window seat and 2-way headset",
+          "Rich knowledge of an Alaska bush pilot",
+          "Rust's meticulous attention to comfort and safety",
+          "Summertime shuttle from ANC & many hotels",
+          "Light lunch at the lodge"
+        ],
+        "travelers": null
+      }
+    ]
   },
   {
     "_id": "transit_redoubt_return",
@@ -465,11 +483,11 @@
         }
       ]
     },
-    "departsAt": "2027-07-11T15:00",
-    "arrivesAt": "2027-07-11T16:30",
+    "departsAt": "2027-07-11T12:30",
+    "arrivesAt": "2027-07-11T14:00",
     "routeId": null,
     "routeVariant": null,
-    "bookingId": null,
+    "bookingId": "booking_transit_redoubt_out",
     "images": []
   },
   {
@@ -504,14 +522,32 @@
           "credit": null,
           "caption": null
         }
-      ]
+      ],
+      "showWeather": true
     },
-    "departsAt": "2027-07-12T08:00",
-    "arrivesAt": "2027-07-12T09:00",
+    "departsAt": "2027-07-12T09:30",
+    "arrivesAt": "2027-07-12T10:30",
     "routeId": null,
     "routeVariant": null,
     "bookingId": "booking_transit_katmai_out",
-    "images": []
+    "images": [],
+    "carrier": "Rust's Flying Service",
+    "packages": [
+      {
+        "_id": "80908eaf-58ba-4163-9207-29214ddc0ed0",
+        "name": "Included with your tour",
+        "status": "booked",
+        "cost": null,
+        "confirmationNumber": null,
+        "benefits": [
+          "A window seat and 2-way headset",
+          "Rich knowledge of an Alaska bush pilot",
+          "Rust's meticulous attention to comfort and safety",
+          "Summertime shuttle from ANC & many hotels"
+        ],
+        "travelers": null
+      }
+    ]
   },
   {
     "_id": "transit_katmai_return",
@@ -547,12 +583,13 @@
         }
       ]
     },
-    "departsAt": "2027-07-12T16:30",
-    "arrivesAt": "2027-07-12T18:00",
+    "departsAt": "2027-07-12T18:00",
+    "arrivesAt": "2027-07-12T19:30",
     "routeId": null,
     "routeVariant": null,
-    "bookingId": null,
-    "images": []
+    "bookingId": "booking_transit_katmai_out",
+    "images": [],
+    "carrier": "Rust's Flying Service"
   },
   {
     "_id": "transit_portalsworth_out",

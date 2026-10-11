@@ -4358,22 +4358,22 @@
     "date": null
   },
   {
-    "_id": "act_lc_d1_katmai_bears",
+    "_id": "act_lc_d1_katmai_lunch",
     "legId": "leg_parks",
     "scenarioId": "scenario_lc_d1_ideal",
     "status": "planning",
-    "startAt": "2027-07-12T09:00",
+    "startAt": null,
     "durationMinutes": null,
-    "timeLabel": "Morning",
-    "priority": "high",
-    "text": "Brown bear viewing at Brooks Falls",
+    "timeLabel": "Midday",
+    "priority": null,
+    "text": "Packed lunch at Brooks Camp",
     "place": {
-      "id": "ChIJbfu09edF6FYRk_QoziBown4",
-      "label": "Brooks Falls Bear Viewing Platform",
+      "id": "ChIJ_1SvpuFF6FYRbWqogSLA7Ww",
+      "label": "Brooks Camp",
       "images": [
         {
           "placePhoto": {
-            "placeId": "ChIJbfu09edF6FYRk_QoziBown4"
+            "placeId": "ChIJ_1SvpuFF6FYRbWqogSLA7Ww"
           },
           "credit": null,
           "caption": null
@@ -4381,32 +4381,13 @@
       ]
     },
     "bookingId": null,
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [],
-    "date": "2027-07-11"
-  },
-  {
-    "_id": "act_lc_d1_katmai_lunch",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_lc_d1_ideal",
-    "status": "planning",
-    "startAt": "2027-07-12T12:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Packed lunch at Brooks Camp",
-    "place": null,
-    "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "self-catered",
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": "2027-07-12"
   },
   {
     "_id": "act_lc_d1_katmai_grounded",
@@ -4528,19 +4509,35 @@
     "legId": "leg_parks",
     "scenarioId": "scenario_lc_d3_redoubt_ideal",
     "status": "planning",
-    "startAt": "2027-07-11T12:30",
+    "startAt": "2027-07-11T11:00",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
-    "text": "Packed lunch at Redoubt Bay Lodge",
-    "place": null,
+    "text": "Light lunch at Redoubt Bay Lodge",
+    "place": {
+      "id": "ChIJQxwv6rO2xVYRSJZLdkGOLn4",
+      "label": "Redoubt Bay Lodge",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJQxwv6rO2xVYRSJZLdkGOLn4"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
+    },
     "bookingId": null,
     "mealType": "lunch",
-    "diningFormat": "self-catered",
-    "includedIn": null,
+    "diningFormat": "included-with-transit",
+    "includedIn": {
+      "entity": "transit",
+      "id": "transit_redoubt_out"
+    },
     "options": null,
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_lc_d3_redoubt_grounded",

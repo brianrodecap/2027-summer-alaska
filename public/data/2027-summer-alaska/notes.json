@@ -1664,5 +1664,53 @@
       }
     ],
     "images": []
+  },
+  {
+    "_id": "66c1178a-8723-4f52-af66-ee9a2c9114ac",
+    "kind": "info",
+    "text": "100% refund until Apr 12, 2027 (90+ days); 50% refund until Jun 26, 2027 (15–89 days); no refund from Jun 27, 2027 (14 days or less)",
+    "concerns": [
+      {
+        "entity": "transit",
+        "id": "transit_redoubt_out"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "3953483c-d782-4816-863f-cb11c25a6be1",
+    "kind": "info",
+    "text": "Meet at Rust's, 4525 Enstrom Cir. Free but limited parking — leave car keys with the office. Rust's also picks up from major hotels; bags can be left at the office for free. Bring a camera, sunglasses, bug spray, layers and any medications.",
+    "concerns": [
+      {
+        "entity": "transit",
+        "id": "transit_redoubt_out"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "aeb496fd-a1ee-4634-a442-0ccd06edda11",
+    "kind": "info",
+    "text": "100% refund until Apr 13, 2027 (90+ days before); 50% refund until Jun 27, 2027 (15–89 days); no refund 14 days or less before.",
+    "concerns": [
+      {
+        "entity": "transit",
+        "id": "transit_katmai_out"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "0031a3e9-1579-4c8c-ae45-c61e78635f7b",
+    "kind": "info",
+    "text": "Free but limited parking at Rust's (4525 Enstrom Cir); you must leave car keys with the office. Rust's also picks up from major hotels, and you can leave bags at the office for free. Small backpacks only, no large bags. Bring a camera, sunglasses, bug spray, rain gear and warm layers.",
+    "concerns": [
+      {
+        "entity": "transit",
+        "id": "transit_katmai_out"
+      }
+    ],
+    "images": []
   }
 ]

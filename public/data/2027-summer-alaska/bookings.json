@@ -206,15 +206,102 @@
   },
   {
     "_id": "booking_transit_redoubt_out",
-    "status": "planning",
-    "pricing": null,
-    "confirmationNumber": null
+    "status": "booked",
+    "pricing": {
+      "perTraveler": [
+        {
+          "travelerId": "trav_brian",
+          "fare": {
+            "amount": 1145,
+            "currency": "USD"
+          }
+        },
+        {
+          "travelerId": "trav_stacy",
+          "fare": {
+            "amount": 1145,
+            "currency": "USD"
+          }
+        },
+        {
+          "travelerId": "trav_lorelei",
+          "fare": {
+            "amount": 1145,
+            "currency": "USD"
+          }
+        },
+        {
+          "travelerId": "trav_redding",
+          "fare": {
+            "amount": 1145,
+            "currency": "USD"
+          }
+        }
+      ],
+      "fixed": [
+        {
+          "label": "Transportation fee",
+          "amount": {
+            "amount": 137.4,
+            "currency": "USD"
+          }
+        }
+      ]
+    },
+    "confirmationNumber": "3652A1"
   },
   {
     "_id": "booking_transit_katmai_out",
-    "status": "planning",
-    "pricing": null,
-    "confirmationNumber": null
+    "status": "booked",
+    "pricing": {
+      "perTraveler": [
+        {
+          "travelerId": "trav_brian",
+          "fare": {
+            "amount": 1495,
+            "currency": "USD"
+          }
+        },
+        {
+          "travelerId": "trav_stacy",
+          "fare": {
+            "amount": 1495,
+            "currency": "USD"
+          }
+        },
+        {
+          "travelerId": "trav_lorelei",
+          "fare": {
+            "amount": 1495,
+            "currency": "USD"
+          }
+        },
+        {
+          "travelerId": "trav_redding",
+          "fare": {
+            "amount": 1495,
+            "currency": "USD"
+          }
+        }
+      ],
+      "fixed": [
+        {
+          "label": "National Park Fee",
+          "amount": {
+            "amount": 120,
+            "currency": "USD"
+          }
+        },
+        {
+          "label": "Transportation Fee",
+          "amount": {
+            "amount": 179.4,
+            "currency": "USD"
+          }
+        }
+      ]
+    },
+    "confirmationNumber": "0B70AB"
   },
   {
     "_id": "booking_transit_portalsworth_out",
