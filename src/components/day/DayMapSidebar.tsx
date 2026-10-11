@@ -48,6 +48,7 @@ import {
   renderMaterialIcon,
   transitModeIconName,
 } from '../shared/materialIcon';
+import { TripImage } from '../shared/TripImage';
 import { dayElementId } from './dayLayout';
 import type { DayRowOpeners } from './openHandlers';
 
@@ -387,7 +388,6 @@ function PlaceMarker({
 } & DayRowOpeners) {
   const [markerRef, marker] = useAdvancedMarkerRef();
   const [infoOpen, setInfoOpen] = useState(false);
-  const image = firstImage(stop.place);
   return (
     <>
       <AdvancedMarker
@@ -416,14 +416,12 @@ function PlaceMarker({
       {infoOpen && (
         <InfoWindow anchor={marker} onClose={() => setInfoOpen(false)} maxWidth={280}>
           <Stack spacing={0.5} sx={{ py: 0.5, minWidth: 200 }}>
-            {image && (
-              <Box
-                component="img"
-                src={image.uri}
-                alt=""
-                sx={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 1 }}
-              />
-            )}
+            {/* Mounted only while the info window is open, so a marker nobody
+                clicks never looks up its photo. */}
+            <TripImage
+              image={firstImage(stop.place)}
+              sx={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 1 }}
+            />
             <Typography variant="subtitle2" sx={{ color: 'rgba(0, 0, 0, 0.87)', fontWeight: 700 }}>
               {stop.place.label}
             </Typography>

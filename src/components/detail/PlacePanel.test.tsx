@@ -23,9 +23,12 @@ describe('PlacePanel', () => {
     render(<PlacePanel place={place} onSelectImage={vi.fn()} onAutoImage={onAutoImage} />);
 
     await waitFor(() => expect(onAutoImage).toHaveBeenCalledTimes(1));
-    expect(onAutoImage).toHaveBeenCalledWith(
-      expect.objectContaining({ uri: expect.stringContaining('places/p1/photos/photo_1/media') }),
-    );
+    // The place's primary photo by reference — never the expiring photo name.
+    expect(onAutoImage).toHaveBeenCalledWith({
+      placePhoto: { placeId: 'p1' },
+      credit: null,
+      caption: null,
+    });
   });
 
   it('never calls onAutoImage when the place already has an image', async () => {

@@ -13,10 +13,10 @@ import type {
 
 import { createMessage } from './anthropicClient';
 import { buildTripContext } from './askAI';
-import { placeIdsIn, READ_TOOLS, runReadTool, ToolInputError } from './askAITools';
+import { READ_TOOLS, runReadTool, ToolInputError } from './askAITools';
 import { documentContent, DocumentImportError, type QueuedImport } from './documentImport';
 import { NOTE_KINDS } from './formatting';
-import { fetchPlaceImages } from './places';
+import { withPrimaryImage } from './placePhotos';
 import {
   ADD_TRAVELER_TOOL,
   addTraveler,
@@ -34,17 +34,7 @@ import {
   validateNote,
   validateProposal,
 } from './proposals';
-import type {
-  Activity,
-  Booking,
-  Image,
-  Note,
-  Stay,
-  Transit,
-  Traveler,
-  TripData,
-  TripView,
-} from './types';
+import type { Activity, Booking, Note, Stay, Transit, Traveler, TripData, TripView } from './types';
 
 const LOOKUP_TOOLS = new Set(['get_entity', 'search_places']);
 const MAX_REQUESTS = 12;
@@ -233,7 +223,12 @@ export async function importByProposals(
           call.id,
           // Settled to a reply here, so a failed lookup is never a rejection
           // left waiting while an earlier one is awaited.
-          runReadTool(call.name, call.input, { data, view, byDate: new Map() }).then(
+          runReadTool(call.name, call.input, {
+            data,
+            view,
+            byDate: new Map(),
+            searchedPlaceIds: state.searchedPlaceIds,
+          }).then(
             (text) => ({ text, isError: false }),
             (err: unknown) => ({
               text: err instanceof ToolInputError ? err.message : String(err),
@@ -265,9 +260,6 @@ export async function importByProposals(
       };
       if (LOOKUP_TOOLS.has(call.name)) {
         const { text, isError } = await lookups.get(call.id)!;
-        if (!isError) {
-          for (const id of placeIdsIn(text)) state.searchedPlaceIds.add(id);
-        }
         reply(text, isError);
       } else if (call.name === 'propose_change') {
         const proposal = call.input as ChangeProposal;
@@ -318,7 +310,7 @@ export async function importByProposals(
     results.sort((a, b) => order.indexOf(a.tool_use_id) - order.indexOf(b.tool_use_id));
     messages = [...messages, { role: 'user', content: results }];
     if (finished) {
-      const queue = await withPlaceImages(queueFromProposals(state));
+      const queue = withPlaceImages(queueFromProposals(state));
       return {
         queue,
         proposals: state.accepted,
@@ -336,19 +328,12 @@ export async function importByProposals(
   );
 }
 
-// A newly resolved place gets its photo, as one picked in the place picker
-// would — fetched for every place at once (fetchPlaceImages), best effort and
-// never a reason to fail the import.
-async function withPlaceImages(queue: QueuedImport[]): Promise<QueuedImport[]> {
-  const places = queue
-    .flatMap(({ entity }) => entryPlaces(entity))
-    .filter((place) => place.id && !place.images?.length);
-  const images = await fetchPlaceImages(places.map((place) => place.id as string)).catch(
-    () => new Map<string, Image>(),
-  );
-  for (const place of places) {
-    const image = images.get(place.id as string);
-    if (image) place.images = [image];
+// A newly resolved place gets its primary photo, as one picked in the place
+// picker would. The queue's entities are fresh drafts, so their places are
+// filled in where they are.
+function withPlaceImages(queue: QueuedImport[]): QueuedImport[] {
+  for (const { entity } of queue) {
+    for (const place of entryPlaces(entity)) place.images = withPrimaryImage(place).images;
   }
   return queue;
 }

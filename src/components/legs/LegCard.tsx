@@ -2,7 +2,6 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import CardActionArea from '@mui/material/CardActionArea';
 import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
 import Typography from '@mui/material/Typography';
 
 import { firstImage } from '../../model/formatting';
@@ -10,6 +9,7 @@ import { formatDateRangeLabel, tripDayCount } from '../../model/tripModel';
 import type { LegSummary } from '../../model/types';
 import { BookingChip } from '../shared/BookingChip';
 import { BookingProgressBar } from '../shared/BookingProgressBar';
+import { CardPhoto } from '../shared/CardPhoto';
 
 export function LegCard({
   summary,
@@ -28,14 +28,7 @@ export function LegCard({
       <CardActionArea onClick={() => onOpen(leg._id)}>
         {image && (
           <Box sx={{ position: 'relative', height: 140 }}>
-            <CardMedia
-              component="img"
-              image={image.uri}
-              alt={image.caption ?? ''}
-              title={image.credit ?? ''}
-              loading="lazy"
-              sx={{ height: 140 }}
-            />
+            <CardPhoto image={image} height={140} />
             <Box
               sx={{
                 position: 'absolute',

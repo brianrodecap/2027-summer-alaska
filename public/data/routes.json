@@ -30,8 +30,10 @@
               "label": "Butte",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJe9iB48DiyFYR0c3w5-2X6No/photos/AVoNoXTZxJs_t8Sn5lE2gehKNI3TZarYQ2ZsyROQrpOYHVkOdpHYtBMRgF1FoCg3gSeC5eiCtJ61cOiDa6lN6QqiCHEo0IyF4S1MxP7z5x40mUO3P1ZpCf2qlHiClg5JPd-9Z-wQAIrqMDuFqRsErfqml3RWcIHBXnxVc_MOY_QyA_KcNJzN4WVS4c1Ed9-MI-9OwoQDuRCLhw8JpljXfK_gXyWwck3ClgiaBSFVHce16qhMZq_ypVAArZt6-YOFu4WrKkk7lMVMSjSvoZvh0Rn9BBW-6OH1ffnqQxquNoyNbOHAyiyH5Pi2S92NXDQ-SBJJkopg9IonfYiLj0WLNanCGy-u3wZVSap3GizaM5ay6ANMtjvV1HUzwWrnWGUzwt0WMVIAB_-rdZEbjAyw1zBHWorhRhQefarr7Xe_9yfhh1alpFfN/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "Linda A. Darling",
+                  "placePhoto": {
+                    "placeId": "ChIJe9iB48DiyFYR0c3w5-2X6No"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -168,8 +170,10 @@
               "label": "Finger Mountain",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJq1HFuXaxLlERly-xPwd2LII/photos/AVoNoXQpsiwNAoMA1gG8S4A7Vmujgfdv3c50A5OFHwXSXHbpas4-AdLyXmC8Sn7096qJAiYEN0sN6yX4R70ZPfK4fUG46pOV5daYToR8vth3Q80WT71S0GnTNbEx9yp-QAhAPPkbo563lRC9EhjAKlaC6y1_aAGs_wMTQvp_IYE72v66dNaIv7H7-Aws6NxFBEqP6qgmyyeT8zcS1MZ-B031JZzULtW3neC7xAa3O894F8dAZ4K7zgmi_AFuy3IRo6TlmY3yZJYC4gVZUpR30JAWR1ZvRH4tr3xI_xOzZFIGjOJnS-LnxKNUnvAhPxB5rr1N8F6oSl-9rLfH66-98lEIUc2uPUV-cDYvAhm1JFcwvJ9vJ4WlL7T-OU6w09eE5T0kpujKW6fFG56vkSxsPHSqbVnfjYGZlh0_p6RlQX9ylxLVmQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "danny meerwijk",
+                  "placePhoto": {
+                    "placeId": "ChIJq1HFuXaxLlERly-xPwd2LII"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -186,8 +190,10 @@
               "label": "Arctic Circle Sign",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJq1OY5MlJKVERzomrV_shh1E/photos/AVoNoXRWhNdNd2OxUCUkoRdpwWD0gbFLZDgxlY-y2B9_VObH73uRkky97l_H_-EmAK_k5yXRLiyb-WdOGh-PfVF2xXbpa_AIJZMkbZPhAiLHEp49FW5ZMnt_0vrJyhsj4xSDMkRsXWwO-xVfZFi9qG5vy-_EJ8juEEpM6ReujXP7kv2f42CSRjwzjtvOA_Jtd_wWc0RKf6nR0t1vCH_eAroFUk7Maicz6EGfV9F8n1a6SAy7QbdEJgd6nr2C_AtaMlyaT8BGAQc2Ihrd50hQ4ERkcMSZEj3FvvjqRG8675smgcbJZZIRd0whVUqy3fURGDEq4KPqgQK9WM3pdjt7BSoxJ-fbQOu5QcGlzfHQ59atJ2pK-_bfENOMBTAJu7JSp9MgkquQuEeCLoonV1F5HGKGGrinuKF3CnqbL1gx5AnH0EXxOki9/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "F M P",
+                  "placePhoto": {
+                    "placeId": "ChIJq1OY5MlJKVERzomrV_shh1E"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -219,8 +225,10 @@
       "label": "Denali Visitor Center",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJlwIYyVPfzFYR5iw_rFsr6xc/photos/AVoNoXSy6zmOMYePGJ_zJmSdibUENNrNvR-DgQlZT5OfrWlqRBSD1VU3TwigWZDN11UdCAfI8EFIBQKo9Az4vQhKJNQvkVXWw7g1GYgIgE-pjEJ26cdNotiXRA_nPcPQRF0S4CDiNox-jItWQ8GlugDLcGSu3aCzi-SheQuNjwbMn1Raw3hj45vAz-AwlYqCVX-lLrzQMaiW5DT2V6kkCKEJ14qAs8wq5ie2ZS9F8PQ-GDvwY3W5DMSHh3RNtUxbBAOe-BetrqQowORvU_QsKKFLeO8-haNkJv6ptYE1J7A-9uC6Pp9dfhqXvMuKJGkjQAP2ZbnKN1jRh2e0GVPYyXH59fJl_Atgj_zqQOVjgM9BfAUQ2HKgU8Q0oqCEPq9OFXPQLQkhu5nNt9GmWg_v_-QsxpfKWKHRNhOB-ggeTfDLvd5NgGfbI0jphvdHjTqghOvU/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Jim Getten",
+          "placePhoto": {
+            "placeId": "ChIJlwIYyVPfzFYR5iw_rFsr6xc"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -230,8 +238,10 @@
       "label": "Fairbanks",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJqWX9Z09FMlEROvf-CeAF2LM/photos/AVoNoXRl642MSg91QGPKlG43lmoQbPwhZiEdTGRZMDTtgTqk75ZW6thumKMa-As8wvYzyi3-sgsHwvnWhs_5hCYiY8MRmSTRryZRGlZ5tx-nRwaZSPeNUcqYzPOPeEyXpBIaS0ABtY23fVEk1SjxWESCjkFpKHJ_mGi25q8aEWRfyzDG3HM9s9WeXQhRGFCe8XxcRfIMEz-4FVKNm7a25GZ_sKUuJWPPpYKupAiOt-J_Rdv6GsqyBwJjYTgoafxYcrQrzhHBn0zQzY58fA6gzeayUzTTcNERxbyaZ3Aws-7uuVyd77CwN7tfU-vxO9T2Sxr07004L3aLRkAlVLSbZXlDT0k5wQYSf-ecjPDOET75O4DiEWu5Oo-WKCPcvD1u9w3gv8mnPPxJj-krHjM5JtUkBEmnHWDhnrUdKe2kjgMQ7l0JNA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Marino Rodrigues",
+          "placePhoto": {
+            "placeId": "ChIJqWX9Z09FMlEROvf-CeAF2LM"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -248,8 +258,10 @@
               "label": "Tatlanika Gift Shop and Campground",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJhXnkIkq0MlERbxl8lVwyH-s/photos/AVoNoXSvwxuGPEfl6ADFK0OpdRNbcCcZtfIRPMdAwUWm-4tQp9PocmPiaZ6yszwyU4rNPzZ1aDXEG11f8BH7Han_k0UrfrjdeJKZRXpCmrcqXRBl6641SiLoswJ0Pvr6e0PT9tx-O52RXCI2QAN86EfQG9CiA8b1ZOBJCPr404YZy4u9ojDsM7mwaUBG0yKF6DFH9cR_PinRhUUL_fStHEoZjAOygfVA8kEZfnALHVp1cIGZYxSlv22oykwKxoGdtUilm8v_HaHoY8zAUK4lQNS3zrOX6kH8c1fRerkVj0NXwJWPsRbzKeQah8hLvHWVOCU4H82Bmoy6pfN_BrGHmeLLwbjkXHVb0TwkvBRppVx7qNEu0G83HluWmEbcksUetWTG-AQ6dNZS_5N5ULvrxbJtFe-jo-HxyV9rQ0l21fyb5K4/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "James Brecht",
+                  "placePhoto": {
+                    "placeId": "ChIJhXnkIkq0MlERbxl8lVwyH-s"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -322,8 +334,10 @@
               "label": "Denali Viewpoint South",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJMQSzDXyDzlYR0kjMv9sRo-I/photos/AVoNoXRYBkUrymp7hPly__SI_qPEmtDml3fc5AQfWo6nC1JQFPqlVOyJ6ByVBEH0SJSY_7jt_PESNdBS5XSz8LnT8J1YMjERnfBeJBGOZPhWmwryMmmUD9mOjAIJoDx6-IL8B9mOREVs60ZCVIguZTLt6NQ8Ie6ZIM5WJI9ddB0dnd4yNFmy4MB0eTdUWQoRzxd1zKloWMVN00o6XE8gj32cIZcsL50vwOkHzPN882_-NKfiYTHpCQAk1MPtyUtp0whRwOoxB4f8JteJOWoT53wENesO0KETZHtzAIC3ry3rJDWwtRnnMgm24p33nMIS0c10ragSk_kYbI0hiA0eqBbIIFJNc3G-nJWU6MbkpJVYF6E1x2VXSwOGkdgoWFiO1A2CmLMPLcGRP7iwa5cJuSTRhHFsIm-4U_KYlYplQ2r95ZdOQud4/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "Gary Rients",
+                  "placePhoto": {
+                    "placeId": "ChIJMQSzDXyDzlYR0kjMv9sRo-I"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -340,8 +354,10 @@
               "label": "Denali View North",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJW1BnSrYwzFYRJFJvnughNoQ/photos/AVoNoXTUpxjeHryf_PJNs4FbmppUPGygJoBTucYDFjYPlmq6_ed5wYkNduTjAjXutb_l7fWm7o3_Y3YeqPVBjQNzSNmXKlTH1hJs1u8_mHsBxERMFfGd0SK93QpQxSY8qpBo7BsCF7wATQeLSvUWeEM7a8fyarutdBYqLqLUa5kcfgIKI8WYUCSAGiO8K32wjBLF8JiFdd7CRHggDQVusgr-s1aL6h3QYzAOBKdw-6Qx33tAhWDmlnR2VKuXACY1u2rBXYwYsIB_2tHT-SF7tRmBgesRsISSaSwi1Op1YQUE-vSe4CyeZuLDuj2xQsZKDgu9lj90xLCCCU6SqqeLw84aP8D2vvDYFE_yMr3cV7whzixj0yBwFLJpRzB4ac5U0FNKeQ4SHE9GU5Mq3MT8Y3rHvzDuJMtr65o794FzBVTTa4NGw9s/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "Jeff Knarr",
+                  "placePhoto": {
+                    "placeId": "ChIJW1BnSrYwzFYRJFJvnughNoQ"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -381,8 +397,10 @@
               "label": "Anton Anderson Memorial Tunnel",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJP-mqa6UMyFYR9H38x2090-k/photos/AVoNoXRAd3aV8WM6CHCddKd8f17IyftdYish0HGHNsTSi5QiTr85sn-JS8SCg95REMy76C7-XRIh9a6ww4rRwer0Qp8yC4gjCxzY8Lt97FLfc4wai9tnn0XQfsrt2iFU44t9mUnETs8FmfxExbk17TM8tENhVsTt_g6LJ4CZfA3ggAYjFaebwkCoHo-9OqpvXN0CSszvyNMAz6VpMLZSSdShOH3BrTpObkmWzaceThQ0bUS_xcrPFy3L5h2BpldWVniy41F2F5nL8d0f41iQSG2n9H4Y56gbGRbX7vMfNRo7BFU00viN5IijMU57I8G80y-Tl3IP54gv3tHCz5a1Z7Kqgf0zkqBdV-7K5dLQ9q_yWRcLrsIN7mi1ovqAbo1JXYs9S9ScNOi3TNUZzmAf2bYNtNMcS3z9w1c/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "Jessica DePatie",
+                  "placePhoto": {
+                    "placeId": "ChIJP-mqa6UMyFYR9H38x2090-k"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -430,8 +448,10 @@
               "label": "Arctic Circle Sign",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJq1OY5MlJKVERzomrV_shh1E/photos/AVoNoXTCtci0GaqAj3jM51dvO6kaG4RBSyo7pDknwupo3_dJZjtuNrh2t5HOB-w2sNWM4hmeCWS1Yq3UsNmsnEyIJwTKazNozI-FsSH4fQhICrRlOp_rS3wThgSxrqOBFieNUL8nvMe6whdyRRLHsLEBggP6SIVoTzjORLx_0-E17s4Y3eIslI_eSu58GDMTE2_TnU86BCWHykPJxwoDTSvcy5wDr-WqWu6A8tc-caZkVQCWkitPWpFe5k2z1k2g87grVMIUs0CLGyPyCAbwGmUbCNXU0HNZq7-J_FKnx6HkldPcpZIOrG54TJRI9FwjaUFr8uIUezVVCtN5ZxSd2S4btEN_-Aoz6Pr3r0jHFwljJqVyz8PMFOydDGeH1Glujnpsoi6mjeWhBcQvh3NvzVhYEHIrCSIc7GAcME3Q4BjVqkYlyjyQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "F M P",
+                  "placePhoto": {
+                    "placeId": "ChIJq1OY5MlJKVERzomrV_shh1E"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -448,8 +468,10 @@
               "label": "Finger Mountain",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJq1HFuXaxLlERly-xPwd2LII/photos/AVoNoXRBxeoT0fPGcQ3HWlYckw6CLID3VYVURB_xVdpgrhdQMBNQXI6vSkrbIhV1xVZVWSWd0g377Pc24APBInP0u0w085akQgFLbhPTrn5jZeyF2474a7bc6uASfe_rkavZpO2S0am65ENXZ8tM5X-hJU8mr2Rwj5WgeciNwk1P8bu1VsD2p1nP2VZGowiWDbsjInCjDoXxw8vWhgHFOFNoO_4P8k2QTh-iKEjIi-R8KveBxXumhPJaq8CY1xDc447-bSt5wKFCIYB0YRNGZ0pdEcYr592HkxrR6uALivuXhXU1kkuB-uE5r7epmvjSo8w7yHwxe-E9b8hEjvdDIYcii5X1Vb2_z8kwSNi8r53iF9RATEE1R85wlW8KMV9lyvkOU7ooKZbTfIkT6jKGsHRukB-4OMon1Q9wAq63g0oCzfaN0g/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "danny meerwijk",
+                  "placePhoto": {
+                    "placeId": "ChIJq1HFuXaxLlERly-xPwd2LII"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -525,8 +547,10 @@
               "label": "Denali Viewpoint South",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJMQSzDXyDzlYR0kjMv9sRo-I/photos/AVoNoXTpZ15VqOYG8-_XEzVLCrbR_orL--f4kNF2Z35ZcTRdLuFFlXAtF2iT_C58AVhdenEE-ko47Lxw0c2RJt5i_W3jqYxSwhpIOixGqDH8vLA2E6mO760iHESkTPideCi6C_m3S1XDhkDvgb9kgZqbAfJwtTXgJKwwadY6E-n8uOY4JRj2D9YB_XSp6Ra_qUiEnczut0EE-Zw4DVAAAEAjiSYGZzdJ1upHRbT9S2UOk5wdWo1U_XhxqmKkAWve_8v2Qc9ANBg6ZzsY6nk8dzUhKsEFy6OegSyT3VyDkkKQfn0UnrIrRSpioGOeVRlYwobfAsvFFXsjPzHw-KmHyRQrFGpSYFlXLsfHxOR1i5Fd8NjGiwKq-yNadtq4PPBI9eOV5MxtaZ4iK1PxJhw5AG060gSItpJnuidvCEVjT-_5Q2Ey1hKN/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "Gary Rients",
+                  "placePhoto": {
+                    "placeId": "ChIJMQSzDXyDzlYR0kjMv9sRo-I"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -543,8 +567,10 @@
               "label": "Denali View North",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJW1BnSrYwzFYRJFJvnughNoQ/photos/AVoNoXRIuc8cJWqxM3-NQYRyU_L3GPP7lBS17brC3tFx_5GGQyXhBBibs1t2OdqFO5oQMneL1iPF9nueDIbhEPXjJnggYrhpTYn3gT5RwQHQftLV3T3waG0ASTW5GguCOwXN1YkdBJ6-CCMFG2fB1nCpoEJ6MEHZ_B6VGopvVswtuJ1tlAJH6f_YumCfETz2uEo2PgOuTO1yPfswarFXMuesXHzHelWD_WJxonKAoH5XrGgEv4E8PU84uB1Z6HxOTQSl3x1kUI6wQoFiDBHIDBtqoHubrHBFF3Uud67XC2z7BV74cpp08FHlIemOUH1h3_SL18BJe8avjO49KQ42F1ICM7rb9dCE1wiq2FPzb57FeK1C6KRTyVkPZM32mv5vQw1EOyBBAEgOO0LhRC3QMq_1y2C_i19y7kMjwB8HEtZXenE7fek/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "Jeff Knarr",
+                  "placePhoto": {
+                    "placeId": "ChIJW1BnSrYwzFYRJFJvnughNoQ"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -570,8 +596,10 @@
       "label": "Denali Bus Depot",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJh0yE6LLYzFYRkQ2PsoJ3EBk/photos/AVoNoXR3YubUGrYLJxGX3ofw4mfaDV9thLIIG1hfrzzRtD2e46Gb8QUe5fl8rxcX1Yf_PiULlbpJDp3lXSXA7eq6dSJhaSt8dfa0oSF9PvY8crzSVYM2RKRlY-_2P7XczhCAZkfGSgtCXPuGBEJiM6cslS7qBxLHQFhG8iD4o_g-zuGBuYdEyQrGPxQ10gBXDfrc91VFwOvrVP0UshllBNCKQDDnJD8U-jsz_3LVoZtWO8nxQlZsZY8jpE2a-JtmqzTf1x_5sG7tLNR_DyCSRYPLwp9duE2Iqk6n70gKZLk2bGKdy3FhZKnD7N5UeC6CGPn7Z6P0EP4egsxRHRfapTdnHMzFqWyPBf0HYoR5cB3KlZOMGi9455tOXsdsAUQHw1qO3vY_w36UuQzFnrVdxPV5mKeojCIE0NyDDF0cEZFa1yyyDA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Denali Bus Depot",
+          "placePhoto": {
+            "placeId": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -581,8 +609,10 @@
       "label": "Denali Bus Depot",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJh0yE6LLYzFYRkQ2PsoJ3EBk/photos/AVoNoXR3YubUGrYLJxGX3ofw4mfaDV9thLIIG1hfrzzRtD2e46Gb8QUe5fl8rxcX1Yf_PiULlbpJDp3lXSXA7eq6dSJhaSt8dfa0oSF9PvY8crzSVYM2RKRlY-_2P7XczhCAZkfGSgtCXPuGBEJiM6cslS7qBxLHQFhG8iD4o_g-zuGBuYdEyQrGPxQ10gBXDfrc91VFwOvrVP0UshllBNCKQDDnJD8U-jsz_3LVoZtWO8nxQlZsZY8jpE2a-JtmqzTf1x_5sG7tLNR_DyCSRYPLwp9duE2Iqk6n70gKZLk2bGKdy3FhZKnD7N5UeC6CGPn7Z6P0EP4egsxRHRfapTdnHMzFqWyPBf0HYoR5cB3KlZOMGi9455tOXsdsAUQHw1qO3vY_w36UuQzFnrVdxPV5mKeojCIE0NyDDF0cEZFa1yyyDA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Denali Bus Depot",
+          "placePhoto": {
+            "placeId": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -599,8 +629,10 @@
               "label": "Savage River Loop Trailhead",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJn-qS2Y4izVYRMd4cnEMLm84/photos/AVoNoXQTwbtmOFcwt_7a4UpaW9lha4zaJQs8gCToqY_GMW-OYHUHXUg4UiTBePWXVgMxVyLE5th6dsyoZ0otmqVXkyuKoASLMV_tas1BjPMb9i-jHuR8ngDsDgjJFM5mZvazFfkFEetNj3dedy_mamL662QAHuVkw89RUlUmUB_TJ6ueyi6O8hLthQa-aRCLfY0f6PJ330hhV7mZU2CdbXG_VX96nP3xVGc367pzLaC26Kr4uvsywDOCsFpFDsiF90CssU7Wxwcb5xpzKFSxieK_qn8-Q1nfjQSJtbFaMmtM9K1dU3OFELKJG4n9C-cFa8goF6VgSoPoltr90Bqb_Cyql-qF9_1qOjOEieHS2A_bdmf3yB7wDdrxfEpAlXnD1sBpj_Bk6oMSm9COJJBHkSZNZD6b4top-RKpuITYVgWBnQwc6ZQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "Spencer",
+                  "placePhoto": {
+                    "placeId": "ChIJn-qS2Y4izVYRMd4cnEMLm84"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -617,8 +649,10 @@
               "label": "Teklanika Rest Stop",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJ30RTwZUQzVYRRLJe3DMMGEg/photos/AVoNoXS-2rNJy5habLkqPWy-FMM77JytmOR8S0wqVshWmRUIpItCFxcdJTAgJdT_TbcIzWfdZMncJYSP8z9C2xnEfvNrUUdEEsnu6asZZ0-d2ZNhGVi_R9YJ8MkrhT2lXqS5MZZczFn3UFEjOu-Z7TCy2hETomgjdc0ya7XyuixGmzT-95-EYtyW8ZvdJNIvfbFug8NQ9-wDmkB2C2HY33FkzLQgYttR4e5O2UZ1HeV5aryinIWmjOS0spPK5lXEie4rvZCmMtFhnwFElFNPE9Xah6KA3xaMDz_JEyRD55JzO4-OT2NqHAgivqAhIGJJBfZLNmbZGL2wAP7ykHgnHgPOXkugzwGMzo05Sp_fDIodUzb9xUYVsdmtB6zexpy-5HMX0N9uUx1a0JqdmPsz1E3WQdnOA-ct0u70VIphOAzCFJ5f048Ysg_zmTvFkZYpgTxV/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "Wojciech Tański",
+                  "placePhoto": {
+                    "placeId": "ChIJ30RTwZUQzVYRRLJe3DMMGEg"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -635,8 +669,10 @@
               "label": "Polychrome Overlook",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJqfcxFdMOzVYRvdQHJx-6VI8/photos/AVoNoXR84nkLUVHsw-hejfzmxzZPJjr7IfMay4oFc6v2OJAENkZI_N9zxS9ibj_bs-Dyziq9jWr7M0w15Tbt8i3WCljn1Qz2GeSyqnYrm-2Xc2-_JCKeKM4QnmfPF43aVhlDyYHc-bZcI2iIn7xfFjQGfSD9M3xrtQ1WZ1er8k7xRcpGwl4rdoTOKEgAfM28iGETRhrPVWvf765DLaZyYPkOqwr6naDiA4J9ftPVfFQGvaa_nKuV01K8BKIExJRJRUgV2pjSmCf-jmigTJZNYsQLDSwJVlC-GNAYSV0xOWWzMrQJrRarJin2cpsvTtxelTg837h538kAosUyxgxcW90wxceIHDtLZ2PBCpPFaWX8kiPXG5ETsb6DnnqLiQiQxjtV7OMJCw4V0Xo423I0xDSg-7rtTFLXg2QPdORUYoHmixUaTKQ8/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "Dominic Galloro",
+                  "placePhoto": {
+                    "placeId": "ChIJqfcxFdMOzVYRvdQHJx-6VI8"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -653,8 +689,10 @@
               "label": "Toklat River Ranger Station",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJ37w5IVEKzVYRhUd9W-UxoNg/photos/AVoNoXRuv0JtqcLyVbmPCvpyscp-Ud-U3ZviOA-Do5YhhAJVDHZSp54G0C-ha8yJskx4yQg7ba8zT05HBMx5NLN2b5Ltaq3cDx3GeUfKQkuEcUGnuYPNrgT1TA3BiYZzkG0RP5pBAmWsi9xat579OpmGziGxDzqYbRidyCCvT_gIIt6GKLmt_FzK51EAcI2EMbo2cJ8Wvj1o_qALDny5rZYUvWcJUOZoznxVbTgeqtrZ1Ghxf49_QiWczpjRU9Sd9wFGzF16RLhlaZrLSL9qluHi45c0uxCw6NqEJuqkEGAA4XjzehwCoqQy0KoP-C-iJLZoBGmr6QA-WW4QFpiGF37Blsuwmr8ebNuoH_Y5pm1AXUqKjH7D5zlq43SjGDVwG3O_E7cHgD9aagM6RGlfTpsLxKXUum9Sxa_2wgXce2IRtb9ccHLO/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "Darvin Martin",
+                  "placePhoto": {
+                    "placeId": "ChIJ37w5IVEKzVYRhUd9W-UxoNg"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -671,8 +709,10 @@
               "label": "Stony Hill Scenic Overlook",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJEfbMbs-hzVYRsw-Gqdh5zsE/photos/AVoNoXS509Wn6BeLmwu-1HpgdJ8lGFHfbBhMm7DioAl6VzHF8HIqKNs-hlSm9iPspas0IHAzLmjdWrzEYSpIMhM1QkzGtsYYF-T-W6Dj87QME-O5JdYph2UmykCa9MChqaCX0k5QPmzqB0RnCbKNNhThFuvZZGMFdIph16_2ijDXaB1IFp-U07Tv1-tRQWTDbxH1WH29r0ho8RexBoqkUYPcHo12RGEgOOlWP-GPy-2nzilyXlSQ7ZgybARVf9Rk24LNj3hx-kPf1rhOuDDD4PscKU3h5nQwaBkYIfVrGBfE7aP5LsQ4fx8B3TlopY4cQWXdqW03GDHV6zjLHBmYUW8-4OZviW4pgVveKjGkHRqGKt3derd40Avjio1z0mkkTZIX1NN2SnJ_PoccQQfO5C2k0T27iAjzcEHLjzxQUhBd0KC7rPK18drjDfkMwP5sysVQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "Jason Williams",
+                  "placePhoto": {
+                    "placeId": "ChIJEfbMbs-hzVYRsw-Gqdh5zsE"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]
@@ -689,8 +729,10 @@
               "label": "Eielson Visitor Center",
               "images": [
                 {
-                  "uri": "https://places.googleapis.com/v1/places/ChIJsYRgs6uYzVYRoIkxAtOU_KE/photos/AVoNoXQ_RMUGOoNLDhga928U6u6IiMRLacO7pM5-oI6mFxvaNS5M7sHL4vU1BIyqxgxxPLsB2HpIiWJniHmj7EqFSHveL6jtKtA-Xp8rd-Lze6wXNjztxle_XvHFOujHBfvDXNO_x4MIO7koCHSyg-rHpCg2UpOfvZ7XPOxZpiGGjcr5GJDBIr2lDwu481HrpTy799fZqRFql0ELVoNDX1PTkHHt_5-wAMRkysY6cEpR9F4j2UwY8f9w8j4yFx2HRA5Da7tIYXdSr-7nQti5EHt38hf_PEM7Arn7fym0U3RTcSmh73DlyV8vikOa41lVh5tXZgSI0Kyeb4vjXla2MKBHmczZU1Hr37PGLsLosrOYsk0fvnoHJ32hQwhFjm-3-CKrsHdgV8gYSqE52oV0SxqtJtUSKKILnWjUK3jAQwAfIfa-uhrA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-                  "credit": "Wei-Cheng Hung",
+                  "placePhoto": {
+                    "placeId": "ChIJsYRgs6uYzVYRoIkxAtOU_KE"
+                  },
+                  "credit": null,
                   "caption": null
                 }
               ]

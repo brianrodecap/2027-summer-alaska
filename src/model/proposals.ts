@@ -26,7 +26,7 @@ import {
   optionFromDecided,
   setMealOptions,
 } from './editForms';
-import { DINING_FORMAT_LABEL, MEAL_TYPES, NOTE_KINDS } from './formatting';
+import { DINING_FORMAT_LABEL, MEAL_TYPES, NOTE_KINDS, sameName } from './formatting';
 import { isIsoDate } from './isoDate';
 import { allPackages } from './packages';
 import {
@@ -662,9 +662,28 @@ function withTravelerIds(change: ChangeProposal, ids: ReadonlyMap<string, string
   };
 }
 
+// Every place id the trip itself names — its entries' and its routes' (a day's
+// lookup lists route stops too) — so any id a lookup showed is one of these or
+// a search's.
+// Built once per trip data — every proposal of an import or a chat turn is
+// checked against the same data.
+const knownPlaceIdsByData = new WeakMap<TripData, Set<string>>();
 function knownPlaceIds(data: TripData): Set<string> {
+  const known = knownPlaceIdsByData.get(data);
+  if (known) return known;
   const entries: Entity[] = [...data.stays, ...data.transits, ...data.activities];
-  return new Set(entries.flatMap(entryPlaces).flatMap((place) => (place.id ? [place.id] : [])));
+  const routePlaces = data.routes.flatMap((r) => [
+    r.from,
+    r.to,
+    ...r.variants.flatMap((v) => v.places.map((p) => p.place)),
+  ]);
+  const ids = new Set(
+    [...entries.flatMap(entryPlaces), ...routePlaces].flatMap((place) =>
+      place?.id ? [place.id] : [],
+    ),
+  );
+  knownPlaceIdsByData.set(data, ids);
+  return ids;
 }
 
 // The entry ids, package ids and new-entry or new-package keys a note or
@@ -804,67 +823,94 @@ export function shapeErrors(p: ChangeProposal): string[] {
 }
 
 // Every problem with one proposal, in words the AI can act on. Empty means
-// it's accepted.
+// it's accepted. Checked in stages: what it targets, then (once its shape is
+// sound) its fields and its booking, then — only when those pass — the entry
+// as it would be saved.
 export function validateProposal(p: ChangeProposal, state: ProposalState): string[] {
-  const errors: string[] = [];
-  const { data } = state;
+  if (!EDIT_KINDS.includes(p.kind)) return [`kind must be one of ${EDIT_KINDS.join(', ')}.`];
   // The state is fixed for this call, so what's derived from it is built once.
   let refs: Map<string, RefEntityKind> | undefined;
   const referableOnce = () => (refs ??= referable(state));
-  let transits: Transit[] | undefined;
-  const proposedTransitsOnce = () => (transits ??= proposedTransits(state, referableOnce));
-  // The trip's drives as they'd be saved: a drive this import updates stands in
-  // for its stored copy, so a moved drive isn't counted on both days.
-  const drivesAsSaved = (also: Transit[] = []) => {
-    const proposed = [...proposedTransitsOnce(), ...also];
-    const replaced = new Set(proposed.map((t) => t._id));
-    return [...data.transits.filter((t) => !replaced.has(t._id)), ...proposed];
-  };
-  const travelerIds = new Set([...data.trip.travelers, ...state.newTravelers].map((t) => t.id));
-  if (!EDIT_KINDS.includes(p.kind)) return [`kind must be one of ${EDIT_KINDS.join(', ')}.`];
+  const errors: string[] = [];
   if (typeof p.why !== 'string' || !p.why.trim())
     errors.push('Give a why: the reason a person would accept.');
+  const target = validateTarget(p, state, referableOnce);
+  errors.push(...target.errors);
+  const malformed = shapeErrors(p);
+  if (malformed.length) return [...errors, ...malformed];
+  errors.push(
+    ...validateFields(p, state, target.base, referableOnce),
+    ...validateBooking(p, state),
+  );
+  if (errors.length) return errors;
+  return validateAsSaved(p, state, target.base, referableOnce);
+}
 
-  let base: Entity | undefined;
+// The entry a proposal updates, or — for a new one — where it goes: its leg,
+// a date within the trip, and its scenario.
+function validateTarget(
+  p: ChangeProposal,
+  state: ProposalState,
+  referableOnce: () => Map<string, RefEntityKind>,
+): { base: Entity | undefined; errors: string[] } {
+  const { data } = state;
+  const errors: string[] = [];
   if (p.entityId) {
-    base = findByKind(p.kind, p.entityId, data);
+    const base = findByKind(p.kind, p.entityId, data);
     if (!base) errors.push(`No ${p.kind} ${p.entityId} on the itinerary.`);
     if (state.accepted.some((a) => a.entityId === p.entityId)) {
       errors.push(`${p.entityId} is already updated by an earlier proposal; combine them.`);
     }
-  } else {
-    // A key is only needed when a note or an included meal points at the new
-    // entry; given, it must be its own.
-    if (p.key && referableOnce().has(p.key)) errors.push(`The key ${p.key} is already used.`);
-    if (!data.legs.some((l) => l._id === p.legId)) errors.push(`No leg ${p.legId}.`);
-    if (!p.date || !isIsoDate(p.date)) errors.push('A new entry needs date as YYYY-MM-DD.');
-    else {
-      // Within a day of the trip's own dates (a booking can start the trip a
-      // day early) — a date beyond that is a misread, or another trip's. The
-      // entry's own start counts too: a stay or drive saves at checkInAt or
-      // departsAt, whatever its date says.
-      const range = tripDateRange(data.stays, data.transits, data.activities);
-      const own = [p.date, p.changes?.checkInAt, p.changes?.departsAt]
-        .filter((at): at is string => typeof at === 'string' && at.length >= 10)
-        .map((at) => at.slice(0, 10));
-      const outside = range
-        ? own.find(
-            (day) => day < addDaysStr(range.startDate, -1) || day > addDaysStr(range.endDate, 1),
-          )
-        : undefined;
-      if (range && outside) {
-        errors.push(
-          `${outside} is outside this trip (${range.startDate} to ${range.endDate}). Check the date, or leave this entry out if the document is for another trip.`,
-        );
-      }
-    }
-    if (p.scenarioId && !data.scenarios.some((s) => s._id === p.scenarioId)) {
-      errors.push(`No scenario ${p.scenarioId}.`);
+    return { base, errors };
+  }
+  // A key is only needed when a note or an included meal points at the new
+  // entry; given, it must be its own.
+  if (p.key && referableOnce().has(p.key)) errors.push(`The key ${p.key} is already used.`);
+  if (!data.legs.some((l) => l._id === p.legId)) errors.push(`No leg ${p.legId}.`);
+  if (!p.date || !isIsoDate(p.date)) errors.push('A new entry needs date as YYYY-MM-DD.');
+  else {
+    // Within a day of the trip's own dates (a booking can start the trip a
+    // day early) — a date beyond that is a misread, or another trip's. The
+    // entry's own start counts too: a stay or drive saves at checkInAt or
+    // departsAt, whatever its date says.
+    const range = tripDateRange(data.stays, data.transits, data.activities);
+    const own = [p.date, p.changes?.checkInAt, p.changes?.departsAt]
+      .filter((at): at is string => typeof at === 'string' && at.length >= 10)
+      .map((at) => at.slice(0, 10));
+    const outside = range
+      ? own.find(
+          (day) => day < addDaysStr(range.startDate, -1) || day > addDaysStr(range.endDate, 1),
+        )
+      : undefined;
+    if (range && outside) {
+      errors.push(
+        `${outside} is outside this trip (${range.startDate} to ${range.endDate}). Check the date, or leave this entry out if the document is for another trip.`,
+      );
     }
   }
+  if (p.scenarioId && !data.scenarios.some((s) => s._id === p.scenarioId)) {
+    errors.push(`No scenario ${p.scenarioId}.`);
+  }
+  return { base: undefined, errors };
+}
 
-  const malformed = shapeErrors(p);
-  if (malformed.length) return [...errors, ...malformed];
+// A diningFormat the import can set, or the error naming the ones it can.
+function extractableFormatError(what: string, format: DiningFormat | undefined): string | null {
+  return format && !EXTRACTABLE_DINING_FORMATS.includes(format)
+    ? `${what} diningFormat must be one of ${EXTRACTABLE_DINING_FORMATS.join(', ')}.`
+    : null;
+}
+
+// The proposal's own fields, each on its own terms: which apply to its kind,
+// their formats, the places, travelers and entries they name, and its packages.
+function validateFields(
+  p: ChangeProposal,
+  state: ProposalState,
+  base: Entity | undefined,
+  referableOnce: () => Map<string, RefEntityKind>,
+): string[] {
+  const { data } = state;
+  const errors: string[] = [];
   const c = p.changes ?? {};
   if (!p.entityId) {
     // A new entry has to say what it is and, for a booking-like one, when.
@@ -902,23 +948,16 @@ export function validateProposal(p: ChangeProposal, state: ProposalState): strin
   if (c.diningFormat && !formats.includes(c.diningFormat)) {
     errors.push(`diningFormat must be one of ${formats.join(', ')}.`);
   }
-  const optionFormat = p.addOption?.diningFormat;
-  if (optionFormat && !EXTRACTABLE_DINING_FORMATS.includes(optionFormat)) {
-    errors.push(
-      `An added option's diningFormat must be one of ${EXTRACTABLE_DINING_FORMATS.join(', ')}.`,
-    );
-  }
+  const optionFormat = extractableFormatError("An added option's", p.addOption?.diningFormat);
+  if (optionFormat) errors.push(optionFormat);
   if (c.mealOptions !== undefined) {
     if (!Array.isArray(c.mealOptions) || !c.mealOptions.length) {
       errors.push('mealOptions must list at least one candidate.');
     }
     for (const option of c.mealOptions ?? []) {
       if (!option?.place?.label) errors.push('Each meal option needs a place with a label.');
-      if (option?.diningFormat && !EXTRACTABLE_DINING_FORMATS.includes(option.diningFormat)) {
-        errors.push(
-          `A meal option's diningFormat must be one of ${EXTRACTABLE_DINING_FORMATS.join(', ')}.`,
-        );
-      }
+      const format = extractableFormatError("A meal option's", option?.diningFormat);
+      if (format) errors.push(format);
     }
   }
   let knownPlaces: Set<string> | undefined;
@@ -933,6 +972,8 @@ export function validateProposal(p: ChangeProposal, state: ProposalState): strin
       );
     }
   }
+  errors.push(...resolvedPlaceErrors(p, base));
+  const travelerIds = new Set([...data.trip.travelers, ...state.newTravelers].map((t) => t.id));
   for (const id of proposedTravelerIds(p)) {
     if (!travelerIds.has(id)) errors.push(`No traveler ${id} on the trip.`);
   }
@@ -972,8 +1013,20 @@ export function validateProposal(p: ChangeProposal, state: ProposalState): strin
       );
     }
   }
+  errors.push(...packageFieldErrors(p, referableOnce));
+  return errors;
+}
+
+// Each proposed package on its own: a unique key and name, a priced cost said
+// when it's paid, a rate that fits the entry, and what it requires.
+function packageFieldErrors(
+  p: ChangeProposal,
+  referableOnce: () => Map<string, RefEntityKind>,
+): string[] {
+  const errors: string[] = [];
+  const packages = p.changes?.packages ?? [];
   const packageKeys = new Set<string>();
-  for (const pkg of c.packages ?? []) {
+  for (const pkg of packages) {
     if (pkg.key && (referableOnce().has(pkg.key) || packageKeys.has(pkg.key))) {
       errors.push(`The key ${pkg.key} is already used.`);
     }
@@ -981,11 +1034,8 @@ export function validateProposal(p: ChangeProposal, state: ProposalState): strin
     // Two packages in one proposal can't share a name: a name restates a package.
     if (
       typeof pkg.name === 'string' &&
-      (c.packages ?? []).filter(
-        (other) =>
-          typeof other?.name === 'string' &&
-          other.name.trim().toLowerCase() === pkg.name.trim().toLowerCase(),
-      ).length > 1
+      packages.filter((other) => typeof other?.name === 'string' && sameName(other.name, pkg.name))
+        .length > 1
     ) {
       errors.push(
         `Two packages are named ${pkg.name}: give each its own name, e.g. "${pkg.name} (adults)".`,
@@ -1008,9 +1058,17 @@ export function validateProposal(p: ChangeProposal, state: ProposalState): strin
       errors.push(`${pkg.name}: say what it requires — 'car', 'pet' or 'none'.`);
     }
   }
+  return errors;
+}
+
+// The proposal's booking: each price line, its ref and status, and the same
+// price as any earlier proposal naming the same ref.
+function validateBooking(p: ChangeProposal, state: ProposalState): string[] {
+  if (!p.booking) return [];
+  const errors: string[] = [];
   const lines = [
-    ...(p.booking?.perTraveler ?? []).map((f) => ({ name: `Fare for ${f.travelerId}`, line: f })),
-    ...(p.booking?.fixed ?? []).map((c) => ({ name: c.label, line: c })),
+    ...(p.booking.perTraveler ?? []).map((f) => ({ name: `Fare for ${f.travelerId}`, line: f })),
+    ...(p.booking.fixed ?? []).map((c) => ({ name: c.label, line: c })),
   ];
   for (const { name, line } of lines) {
     if (typeof line.amount !== 'number') errors.push(`${name}: amount must be a number.`);
@@ -1019,26 +1077,35 @@ export function validateProposal(p: ChangeProposal, state: ProposalState): strin
       errors.push(`${name}: a fare can't be negative.`);
     if (!isPayable(line.payable)) errors.push(sayWhenPaid(name));
   }
-  if (p.booking) {
-    if (typeof p.booking.ref !== 'string' || !p.booking.ref.trim()) {
-      errors.push('A booking needs a ref, the same on every entry that booking covers.');
-    }
-    if (!BOOKING_STATUSES.includes(p.booking.status)) {
-      errors.push(`A booking's status must be one of ${BOOKING_STATUSES.join(', ')}.`);
-    }
-    // Naming an earlier booking's ref without a price is that same booking.
-    const earlier = state.accepted.find(
-      (a) => a.booking?.ref === p.booking?.ref && a.booking && isPriced(a.booking),
-    )?.booking;
-    if (earlier && isPriced(p.booking) && !samePrice(earlier, p.booking)) {
-      errors.push(
-        `Booking ${p.booking.ref} was already proposed at ${describeTotal(earlier)}; this one says ${describeTotal(p.booking)}. Give one booking one price.`,
-      );
-    }
+  if (typeof p.booking.ref !== 'string' || !p.booking.ref.trim()) {
+    errors.push('A booking needs a ref, the same on every entry that booking covers.');
   }
-  if (errors.length) return errors;
+  if (!BOOKING_STATUSES.includes(p.booking.status)) {
+    errors.push(`A booking's status must be one of ${BOOKING_STATUSES.join(', ')}.`);
+  }
+  // Naming an earlier booking's ref without a price is that same booking.
+  const { ref } = p.booking;
+  const earlier = state.accepted.find(
+    (a) => a.booking?.ref === ref && a.booking && isPriced(a.booking),
+  )?.booking;
+  if (earlier && isPriced(p.booking) && !samePrice(earlier, p.booking)) {
+    errors.push(
+      `Booking ${p.booking.ref} was already proposed at ${describeTotal(earlier)}; this one says ${describeTotal(p.booking)}. Give one booking one price.`,
+    );
+  }
+  return errors;
+}
 
-  // Checks on the entry as it would be saved.
+// Checks on the entry as it would be saved: its times in order, a cruise's port
+// calls inside it, what its packages require, and where an added option goes.
+function validateAsSaved(
+  p: ChangeProposal,
+  state: ProposalState,
+  base: Entity | undefined,
+  referableOnce: () => Map<string, RefEntityKind>,
+): string[] {
+  const errors: string[] = [];
+  const c = p.changes ?? {};
   const entry = applyChanges(p, base, new Map(), referableOnce);
   if (p.kind === 'transit') {
     const t = entry as Transit;
@@ -1073,35 +1140,8 @@ export function validateProposal(p: ChangeProposal, state: ProposalState): strin
         errors.push(`${where}: leaves ${call.departsAt}, not after it arrives ${call.arrivesAt}.`);
       }
     }
-    for (const pkg of c.packages ?? []) {
-      if (pkg.requires === 'car' && !drivenToOrFrom(s, drivesAsSaved())) {
-        errors.push(
-          `${pkg.name}: no drive arrives or leaves on this stay's check-in or check-out day, so the party has no car to park here. Leave it out.`,
-        );
-      }
-    }
   }
-  if (p.kind !== 'stay') {
-    // A car-only package on a drive or an activity needs a drive that day.
-    const day = p.kind === 'transit' ? (entry as Transit).departsAt : (entry as Activity).startAt;
-    const date = day ? dateOnly(day) : (p.date ?? (entry as Activity).date);
-    const drives = drivesAsSaved(p.kind === 'transit' ? [entry as Transit] : []);
-    for (const pkg of c.packages ?? []) {
-      if (
-        pkg.requires === 'car' &&
-        (!date || !drivenToOrFrom({ checkInAt: date, checkOutAt: date }, drives))
-      ) {
-        errors.push(
-          `${pkg.name}: no drive happens on ${date ?? 'its day'}, so the party has no car here. Leave it out.`,
-        );
-      }
-    }
-  }
-  for (const pkg of c.packages ?? []) {
-    if (pkg.requires === 'pet' && !data.trip.pets) {
-      errors.push(`${pkg.name}: the party isn't traveling with pets. Leave it out.`);
-    }
-  }
+  errors.push(...packageRequirementErrors(p, state, entry, referableOnce));
   if (p.addOption) {
     const meal = base as Activity | undefined;
     if (p.kind !== 'activity' || !meal?.mealType) {
@@ -1109,6 +1149,109 @@ export function validateProposal(p: ChangeProposal, state: ProposalState): strin
     } else if (!meal.options?.length && (meal.place || meal.diningFormat)) {
       errors.push(
         `${p.entityId} is already decided; add an option only to a meal still being decided.`,
+      );
+    }
+  }
+  return errors;
+}
+
+// Whether the party can use each package: a car-only one needs a drive on the
+// entry's days (a stay's check-in or check-out day, else the entry's own day),
+// and a pet one needs a pet on the trip.
+function packageRequirementErrors(
+  p: ChangeProposal,
+  state: ProposalState,
+  entry: Entity,
+  referableOnce: () => Map<string, RefEntityKind>,
+): string[] {
+  const packages = p.changes?.packages ?? [];
+  if (!packages.length) return [];
+  const errors: string[] = [];
+  // Whether the party has a car: a drive on a stay's check-in or check-out day,
+  // else on the entry's own day — asked only for a car-only package.
+  const noCar =
+    packages.some((pkg) => pkg.requires === 'car') && noCarFor(p, state, entry, referableOnce);
+  for (const pkg of packages) {
+    if (pkg.requires === 'car' && noCar) errors.push(`${pkg.name}: ${noCar} Leave it out.`);
+    if (pkg.requires === 'pet' && !state.data.trip.pets) {
+      errors.push(`${pkg.name}: the party isn't traveling with pets. Leave it out.`);
+    }
+  }
+  return errors;
+}
+
+// Why the party has no car for the entry, or null when it has one. The trip's
+// drives are taken as they'd be saved: a drive this import updates stands in
+// for its stored copy, so a moved drive isn't counted on both days.
+function noCarFor(
+  p: ChangeProposal,
+  state: ProposalState,
+  entry: Entity,
+  referableOnce: () => Map<string, RefEntityKind>,
+): string | null {
+  const proposed = [
+    ...proposedTransits(state, referableOnce),
+    ...(p.kind === 'transit' ? [entry as Transit] : []),
+  ];
+  const replaced = new Set(proposed.map((t) => t._id));
+  const drives = [...state.data.transits.filter((t) => !replaced.has(t._id)), ...proposed];
+  if (p.kind === 'stay') {
+    return drivenToOrFrom(entry as Stay, drives)
+      ? null
+      : "no drive arrives or leaves on this stay's check-in or check-out day, so the party has no car to park here.";
+  }
+  const day = p.kind === 'transit' ? (entry as Transit).departsAt : (entry as Activity).startAt;
+  const date = day ? dateOnly(day) : (p.date ?? (entry as Activity).date);
+  return date && drivenToOrFrom({ checkInAt: date, checkOutAt: date }, drives)
+    ? null
+    : `no drive happens on ${date ?? 'its day'}, so the party has no car here.`;
+}
+
+// A proposal that names a resolved place by anything but its id or exact name
+// would otherwise either drop that place or keep it on a guess — so it's
+// turned down, telling the AI the id to restate or to search for the new one.
+// A venue on the ship has no Google place to search for, so it's let through.
+function resolvedPlaceErrors(p: ChangeProposal, base: Entity | undefined): string[] {
+  if (!base) return [];
+  const c = p.changes ?? {};
+  const errors: string[] = [];
+  const pairs: [string, ProposedPlace | undefined, Place | null | undefined][] = [
+    ['place', c.place, 'place' in base ? base.place : undefined],
+    ['lodging', c.lodging, 'lodging' in base ? base.lodging?.place : undefined],
+    ['from', c.from, 'from' in base ? base.from : undefined],
+    ['to', c.to, 'to' in base ? base.to : undefined],
+  ];
+  for (const [field, proposed, current] of pairs) {
+    if (!proposed || proposed.placeId || proposed.onboard || !current?.id) continue;
+    if (keepsPlace(proposed, current)) continue;
+    errors.push(
+      `${field}: ${p.entityId}'s ${field} is ${current.label} (placeId ${current.id}). Give that placeId to keep it, or search_places for "${proposed.label}" and use a result's placeId.`,
+    );
+  }
+  // A port call is restated by its id too: one without an id can only be a port
+  // the stay doesn't have resolved on that day — or, given no day, a stop of a
+  // kind the stay has no resolved call of (a timeless scenic passage beside
+  // resolved ports is a new stop, not one of them respelled).
+  const calls = 'portCalls' in base ? (base.portCalls ?? []) : [];
+  for (const call of c.portCalls ?? []) {
+    if (
+      call.place.placeId ||
+      calls.some((old) => !old.place.id && sameName(old.place.label, call.place.label))
+    ) {
+      continue;
+    }
+    const day = (call.arrivesAt ?? call.departsAt)?.slice(0, 10);
+    const resolved = calls.filter(
+      (old) =>
+        old.place.id &&
+        (day ? (old.arrivesAt ?? old.departsAt)?.slice(0, 10) === day : old.kind === call.kind),
+    );
+    if (resolved.length) {
+      const named = resolved
+        .map((old) => `${old.place.label} (placeId ${old.place.id})`)
+        .join(', ');
+      errors.push(
+        `portCalls: ${call.place.label} has no placeId, and the stay already calls at ${named}${day ? ` on ${day}` : ''}. Give the placeId of the port it is, or search_places for "${call.place.label}".`,
       );
     }
   }
@@ -1448,45 +1591,6 @@ export function danglingCoverErrors(
 
 // ---------- Matching places, packages and drives ----------
 
-// Words of four letters or more that name a kind of place or say nothing at
-// all, so they'd pair any airport with any airport, or any dinner with any
-// dinner, rather than one business with itself.
-const GENERIC_WORDS = new Set(
-  (
-    'about after airport before breakfast brunch cabin cabins campground ' +
-    'center dinner evening excursion from have hotel international into lodge ' +
-    'lunch meal memorial morning motel municipal national near night onto ' +
-    'over park regional resort restaurant state station suites terminal that ' +
-    'their then this tour tours trip visit will with your'
-  ).split(' '),
-);
-
-// Distinctive words of a label: an airport code in parentheses plus words of
-// four letters or more that aren't GENERIC_WORDS, so "Ted Stevens Anchorage
-// International (ANC)" and "Anchorage (ANC)" share both 'anc' and
-// 'anchorage', but "Kotzebue Airport" and "Anchorage Airport" share nothing.
-function labelTokens(label: string | null | undefined): Set<string> {
-  const text = label ?? '';
-  const codes = [...text.matchAll(/\(([A-Z0-9]{3,4})\)/g)].map((m) => m[1].toLowerCase());
-  const words = (text.toLowerCase().match(/[a-z0-9]+/g) ?? []).filter(
-    (w) => w.length >= 4 && !GENERIC_WORDS.has(w),
-  );
-  return new Set([...codes, ...words]);
-}
-
-function sharedTokenCount(a: Set<string>, b: Set<string>): number {
-  return [...a].filter((t) => b.has(t)).length;
-}
-
-// Lenient on purpose: a document spells a business however it likes ("The
-// Salmon Bake Restaurant"), so one shared distinctive word is enough. The AI's
-// own candidate matching (askAIDrafts.ts's sameCandidate) is exact instead.
-export function placesShare(a: Place | null | undefined, b: Place | null | undefined): boolean {
-  if (!a || !b) return false;
-  if (a.id && b.id) return a.id === b.id;
-  return sharedTokenCount(labelTokens(a.label), labelTokens(b.label)) > 0;
-}
-
 // A re-imported confirmation restates the packages it already added (the
 // resort fee, "Included with your stay"), so one with a name already on the
 // stay updates that package — its price and perks — instead of adding a copy.
@@ -1509,13 +1613,12 @@ export function matchingPackage<P extends { name: string; travelers?: string[] |
   name: string,
   travelers: string[] | null | undefined,
 ): P | undefined {
-  const norm = (n: string) => n.trim().toLowerCase();
   const who = (t: string[] | null | undefined) => [...(t ?? [])].sort().join();
-  const sameName = list.filter((p) => norm(p.name) === norm(name));
-  if (sameName.length <= 1 || travelers === undefined) {
-    return sameName.length === 1 ? sameName[0] : undefined;
+  const named = list.filter((p) => sameName(p.name, name));
+  if (named.length <= 1 || travelers === undefined) {
+    return named.length === 1 ? named[0] : undefined;
   }
-  const covering = sameName.filter((p) => who(p.travelers) === who(travelers));
+  const covering = named.filter((p) => who(p.travelers) === who(travelers));
   return covering.length === 1 ? covering[0] : undefined;
 }
 
@@ -1569,54 +1672,19 @@ export function drivenToOrFrom(
 
 // ---------- Turning proposals into drafts ----------
 
-// Words that say what a place is. "Anchorage Hotel" is not "… Anchorage
-// International Airport" though both share "anchorage": a label that names a
-// kind of place needs the other to name it too.
-const PLACE_KIND_WORDS = [
-  'airport',
-  'hotel',
-  'lodge',
-  'motel',
-  'resort',
-  'restaurant',
-  'campground',
-  'cabin',
-  'cabins',
-  'station',
-  'terminal',
-  'park',
-];
-
-function sameKindOfPlace(proposed: string, current: string): boolean {
-  const kinds = (label: string) =>
-    new Set(
-      label
-        .toLowerCase()
-        .split(/[^a-z]+/)
-        .filter((w) => PLACE_KIND_WORDS.includes(w)),
-    );
-  const have = kinds(current);
-  return [...kinds(proposed)].every((w) => have.has(w));
+// Whether a proposed place is the entry's current one: the same place id, or —
+// given no id — exactly the same name. Never a guess from shared words: a
+// proposal that names a resolved place any other way is turned down
+// (resolvedPlaceErrors), so the AI restates the id or searches for the new one.
+function keepsPlace(p: ProposedPlace, current: Place | null | undefined): boolean {
+  if (!current) return false;
+  return p.placeId ? current.id === p.placeId : sameName(current.label, p.label);
 }
 
+// The place a proposal names, as stored: the entry's current one when the
+// proposal keeps it (keepsPlace), else a new place.
 function placeFrom(p: ProposedPlace, current: Place | null | undefined): Place {
-  // A proposal that names the same place without an id — every distinctive
-  // word of its label already in the entry's ("Anchorage Airport" for "Ted
-  // Stevens Anchorage International Airport") — keeps the resolved one. One
-  // shared word isn't enough here: "Alaska Salmon Bake" isn't "The Alaska
-  // Fish House", and keeping that would quietly drop the change.
-  const proposed = labelTokens(p.label);
-  if (
-    !p.placeId &&
-    current?.id &&
-    sameKindOfPlace(p.label, current.label) &&
-    proposed.size > 0 &&
-    sharedTokenCount(proposed, labelTokens(current.label)) === proposed.size
-  ) {
-    return p.onboard === undefined ? current : { ...current, onboard: p.onboard };
-  }
-  // Restating the entry's own place id keeps its other flags and contact fields.
-  if (p.placeId && current?.id === p.placeId) {
+  if (current && keepsPlace(p, current)) {
     const { onboard: _drop, ...rest } = current;
     const onboard = p.onboard ?? current.onboard;
     // The stored label is the curated one; the proposal's loose spelling of the
@@ -1690,12 +1758,13 @@ function applyChanges(
       const earlier = s.portCalls ?? [];
       const used = new Set<(typeof earlier)[number]>();
       s.portCalls = c.portCalls.map((call) => {
-        const proposed = labelTokens(call.place.label);
+        // By place id; a call without one is the same port only as an old
+        // call that has no id either, by the same name (a resolved port is
+        // restated by its id — see resolvedPlaceErrors).
         const samePort = (e: (typeof earlier)[number]) =>
           call.place.placeId
             ? e.place.id === call.place.placeId
-            : proposed.size > 0 &&
-              sharedTokenCount(proposed, labelTokens(e.place.label)) === proposed.size;
+            : !e.place.id && sameName(e.place.label, call.place.label);
         // The same port by place alone, so a port that becomes a scenic pass
         // (or back) keeps its place and times. One cruise can call at a port
         // on two days: each old call is matched once, by the day the proposal
@@ -1790,12 +1859,11 @@ function applyChanges(
   return withPackages(a);
 }
 
-// Deliberately stricter than placesShare (any shared distinctive word): a
-// candidate can carry a real place id, so a name-only match must be exact —
+// By place id when both have one; otherwise only by exactly the same name —
 // "Salmon Bake" and "Salmon Smokehouse" are two candidates.
 function sameCandidate(option: MealOption, proposed: ProposedMealOption): boolean {
   if (proposed.place.placeId && option.place?.id) return proposed.place.placeId === option.place.id;
-  return option.place?.label.trim().toLowerCase() === proposed.place.label.trim().toLowerCase();
+  return sameName(option.place?.label, proposed.place.label);
 }
 
 // Sets a meal's candidates. One that matches a candidate the meal already has
@@ -1983,8 +2051,7 @@ export function travelerSlug(name: string): string {
 
 // A traveler already in `travelers` by that name, ignoring case and spacing.
 export function travelerNamed(name: string, travelers: Traveler[]): Traveler | undefined {
-  const wanted = name.trim().toLowerCase();
-  return travelers.find((t) => t.name.trim().toLowerCase() === wanted);
+  return travelers.find((t) => sameName(t.name, name));
 }
 
 // A traveler the document names who isn't on the trip yet, with the id

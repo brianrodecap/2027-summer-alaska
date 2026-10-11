@@ -155,7 +155,7 @@ const DAY = {
   notes: [{ _id: 'note_1', kind: 'warning', text: 'Bring rain gear', concerns: [], images: [] }],
 } as unknown as Day;
 
-function tools(data: TripData): AskAIToolContext {
+function tools(data: TripData): Omit<AskAIToolContext, 'searchedPlaceIds'> {
   return {
     data,
     view: { dateRange: { startDate: '2027-07-14', endDate: '2027-07-14' } } as TripView,
@@ -464,20 +464,27 @@ describe('propose_edit with a route', () => {
     expect('error' in resolved && resolved.error).toMatch(/routed drive/);
   });
 
-  it('drops a renamed endpoint’s old place id, and keeps an unrenamed one', () => {
+  it('turns down renaming a resolved endpoint without a placeId, and keeps an unrenamed one', () => {
     const resolvedEnds = {
       ...drive,
       from: { id: 'place_anc', label: 'Anchorage' },
       to: { id: 'place_sew', label: 'Seward' },
     };
-    const resolved = resolveProposalDraft(
+    const trip = { ...data, transits: [resolvedEnds] };
+    const guessed = resolveProposalDraft(
       edit({}, { from: { label: 'Anchorage' }, to: { label: 'Whittier' } }),
-      { ...data, transits: [resolvedEnds] },
+      trip,
     );
-    expect(resolved).toMatchObject({
+    expect(guessed).toHaveProperty('error', expect.stringContaining('placeId place_sew'));
+
+    const searched = resolveProposalDraft(
+      edit({}, { from: { label: 'Anchorage' }, to: { placeId: 'place_whit', label: 'Whittier' } }),
+      trip,
+    );
+    expect(searched).toMatchObject({
       draft: {
         from: { id: 'place_anc', label: 'Anchorage' },
-        to: { id: null, label: 'Whittier' },
+        to: { id: 'place_whit', label: 'Whittier' },
       },
     });
   });
@@ -596,6 +603,7 @@ describe('place ids from earlier turns', () => {
   it('accepts a place a search in an earlier turn found', async () => {
     const earlier: AskAIConversation = {
       ...startConversation(tripData()),
+      searchedPlaceIds: ['p_found'],
       apiMessages: [
         { role: 'user', content: 'Where could we eat?' },
         {

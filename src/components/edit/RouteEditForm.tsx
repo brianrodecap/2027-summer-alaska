@@ -71,17 +71,13 @@ export function RouteEditForm({
       <PlacePickerField
         place={form.from}
         onChange={(place) => onChange({ ...form, from: place ?? { id: null, label: '' } })}
-        onPicked={(picked) =>
-          recomputeAllVariants({ ...form, from: { id: picked.id, label: picked.label } })
-        }
+        onPicked={(picked) => recomputeAllVariants({ ...form, from: picked })}
       />
       <Typography variant="subtitle2">To</Typography>
       <PlacePickerField
         place={form.to}
         onChange={(place) => onChange({ ...form, to: place ?? { id: null, label: '' } })}
-        onPicked={(picked) =>
-          recomputeAllVariants({ ...form, to: { id: picked.id, label: picked.label } })
-        }
+        onPicked={(picked) => recomputeAllVariants({ ...form, to: picked })}
       />
       <Divider />
       <Typography variant="subtitle2">Variants</Typography>
@@ -184,9 +180,9 @@ export function RouteEditForm({
                     onChange={(picked) => {
                       updatePlace(vi, variant, pi, (p) => ({ ...p, place: picked ?? undefined }));
                     }}
-                    onPicked={async (result) => {
+                    onPicked={async (picked) => {
                       const nextPlaces = variant.places.map((p, i) =>
-                        i === pi ? { ...p, place: { id: result.id, label: result.label } } : p,
+                        i === pi ? { ...p, place: picked } : p,
                       );
                       const nextVariant = await recomputeVariant(
                         { ...variant, places: nextPlaces },

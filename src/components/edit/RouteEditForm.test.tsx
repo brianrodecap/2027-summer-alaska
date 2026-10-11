@@ -20,20 +20,6 @@ vi.mock('./usePlaceSearch', () => ({
   }),
 }));
 
-// Only the live Place Details fetch needs stubbing — everything else
-// (photoMediaUrl/placeImageFromPhoto's own URL building, invoked here via the
-// real placeImageFromPhoto) stays real so the assertion below exercises the
-// same code a real pick would run.
-vi.mock('../../model/places', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../model/places')>();
-  return {
-    ...actual,
-    fetchFirstPlaceImage: vi
-      .fn()
-      .mockResolvedValue(actual.placeImageFromPhoto({ name: 'places/place_diner/photos/photo_1' })),
-  };
-});
-
 function routeWithPlaces(labels: string[]): Route {
   return {
     _id: 'route_test',
@@ -100,7 +86,7 @@ describe('RouteEditForm', () => {
     );
   }, 15_000);
 
-  it('backfills the first Google photo onto a freshly picked waypoint place', async () => {
+  it('gives a freshly picked waypoint place its primary Google photo', async () => {
     let latestForm: Route | undefined;
     render(
       <Harness
@@ -119,11 +105,7 @@ describe('RouteEditForm', () => {
     await waitFor(
       () => {
         expect(latestForm?.variants[0].places[0].place?.images).toEqual([
-          {
-            uri: expect.stringContaining('places/place_diner/photos/photo_1/media'),
-            credit: null,
-            caption: null,
-          },
+          { placePhoto: { placeId: 'place_diner' }, credit: null, caption: null },
         ]);
       },
       { timeout: 10_000 },

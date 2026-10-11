@@ -19,11 +19,27 @@ export type BookingStatus = 'planning' | 'requested' | 'booked' | 'cancelled';
 // unbooked odds and ends (shore excursions, included meals) underneath it.
 export type BookingProgress = 'booked' | 'partial' | 'unplanned';
 
-export interface Image {
-  uri: string;
-  credit: string | null;
-  caption: string | null;
+// A Google Places photo, stored by its place id — the one Places value
+// Google's terms let us keep. Google's photo *names* expire (a stored media
+// URL eventually 400s), so none is ever stored: the link is built when the
+// image renders, from a freshly fetched name (see placePhotos.ts). A photo a
+// viewer picked keeps its author and size so the same photo can be found
+// again; with neither, it's the place's primary (first-listed) photo.
+export interface PlacePhotoRef {
+  placeId: string;
+  author?: string;
+  widthPx?: number;
+  heightPx?: number;
+  // Which of several photos sharing that author and size (0 = the first
+  // listed); absent when it was the only one.
+  nth?: number;
 }
+
+// Either a plain web image or a Google Places photo. A place photo's credit is
+// null when stored: its author comes back from Google with the photo itself.
+export type Image = { credit: string | null; caption: string | null } & (
+  { uri: string } | { placePhoto: PlacePhotoRef }
+);
 
 export interface Money {
   amount: number;

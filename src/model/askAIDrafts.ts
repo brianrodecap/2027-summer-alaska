@@ -21,9 +21,9 @@ import {
   upsertById,
   withTripTravelers,
 } from './editForms';
-import { NOTE_KINDS } from './formatting';
+import { NOTE_KINDS, sameName } from './formatting';
 import { isIsoDate } from './isoDate';
-import { fetchPlaceImages } from './places';
+import { withPrimaryImage } from './placePhotos';
 import {
   type ChangeProposal,
   checkedChanges,
@@ -37,10 +37,8 @@ import { dateOnly, DEFAULT_ROUTE_TONE, resolveActivityDate } from './tripModel';
 import type {
   Activity,
   Booking,
-  Image,
   Note,
   NoteKind,
-  Place,
   Ref,
   RefEntityKind,
   Route,
@@ -56,24 +54,9 @@ import type {
 //
 // The assistant names places by id and label only, so an entry it drafts has no
 // photo. Whatever it produces — one drafted activity, or everything an applied plan
-// adds or changes — goes through the same two steps before it's reviewed or applied:
-// fetchMissingPlaceImages looks up a photo for each place still without one, and
-// withPlaceImages/withPlaceImagesInData fill them in, the same way document import and
-// PlacePickerField give a newly-picked place its first photo.
-
-// Every real place id the activities name (their own place and each meal candidate's)
-// whose place has no image yet.
-export function placeIdsMissingImages(activities: Activity[]): string[] {
-  return activities.flatMap((a) =>
-    [a.place, ...(a.options ?? []).map((o) => o.place)].flatMap((p) =>
-      p?.id && !p.images?.length ? [p.id] : [],
-    ),
-  );
-}
-
-export function fetchMissingPlaceImages(activities: Activity[]): Promise<Map<string, Image>> {
-  return fetchPlaceImages(placeIdsMissingImages(activities));
-}
+// adds or changes — gets each place without an image its primary photo before it's
+// reviewed or applied, the same way document import and PlacePickerField give a
+// newly-picked place its photo. Nothing is fetched: the photo is resolved when drawn.
 
 // The activities `next` adds or changes relative to `prev` — by identity, since the
 // apply functions keep every untouched activity as the same object.
@@ -82,16 +65,12 @@ export function changedActivities(prev: TripData, next: TripData): Activity[] {
   return next.activities.filter((a) => !before.has(a));
 }
 
-// Gives each of the activity's places that has no image yet its fetched one. Returns
+// Gives each of the activity's places that has no image yet its primary photo. Returns
 // the activity itself when nothing changes, so a whole-trip pass stays cheap.
-export function withPlaceImages(activity: Activity, images: ReadonlyMap<string, Image>): Activity {
-  const fill = (place: Place | null): Place | null => {
-    const image = place?.id && !place.images?.length ? images.get(place.id) : undefined;
-    return image ? { ...place!, images: [image] } : place;
-  };
-  const place = fill(activity.place);
+export function withPlaceImages(activity: Activity): Activity {
+  const place = withPrimaryImage(activity.place);
   const options = activity.options?.map((o) => {
-    const filled = fill(o.place);
+    const filled = withPrimaryImage(o.place);
     return filled === o.place ? o : { ...o, place: filled };
   });
   const optionsChanged = options?.some((o, i) => o !== activity.options![i]);
@@ -99,12 +78,14 @@ export function withPlaceImages(activity: Activity, images: ReadonlyMap<string, 
   return { ...activity, place, options: optionsChanged ? options! : activity.options };
 }
 
-export function withPlaceImagesInData(
-  data: TripData,
-  images: ReadonlyMap<string, Image>,
-): TripData {
-  if (!images.size) return data;
-  return { ...data, activities: data.activities.map((a) => withPlaceImages(a, images)) };
+// withPlaceImages over the activities an applied change added or changed.
+export function withPlaceImagesInData(prev: TripData, next: TripData): TripData {
+  const changed = new Set(changedActivities(prev, next));
+  if (!changed.size) return next;
+  return {
+    ...next,
+    activities: next.activities.map((a) => (changed.has(a) ? withPlaceImages(a) : a)),
+  };
 }
 
 // ---------- batches of changes ----------
@@ -655,9 +636,8 @@ function matchingVariant(
   spec: Pick<RouteVariant, 'tone' | 'label'>,
 ): RouteVariant | undefined {
   const sameTone = variants.filter((v) => v.tone === spec.tone);
-  const label = spec.label.trim().toLowerCase();
   return (
-    sameTone.find((v) => v.label.trim().toLowerCase() === label) ??
+    sameTone.find((v) => sameName(v.label, spec.label)) ??
     (sameTone.length === 1 ? sameTone[0] : undefined)
   );
 }

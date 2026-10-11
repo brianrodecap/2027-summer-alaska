@@ -14,8 +14,10 @@
       "label": "Ted Stevens Anchorage International Airport",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJERqXa7WiyFYRr2-9pzRat5Y/photos/AVoNoXSfs7NjrEJ_QpSH8Tnfuvw1lEnP6apnATDHgJ-2R3x1fuxxMea1B76_llf-CFbhjtk7CjmDysExYPj1-nKKAM4V1Ek7qt68YwW0MpUlhAL5a5EKzZVQ0Q-DcvWiKxGy_X2PWj-saRVhy1OWuLVGaALih1t2TuPTPt3F3LZ7INeW6Gp9zNuSIMJSAtgwF-dGi_VYr67fH_1Cex0mXRV7IwLfk6EgGMwIzmB7SIldr4lIfbgvEiT7MPRopO0pFyHbE742wasCowDkcPfKwOAB2yDIp2PYM_HplbDetaESGWnd6S71g10lUMtaklejv7H4owF4ELqQvGcWnrsgDUtWqKymtTLoofBws76Q_M9UZTx6MstTF_T93M133jF2gXUPxMR3fNrrJ81VGEF71u9fFtNvllhD2ps_aHMQaovcSCsAsw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Mandar Pathak",
+          "placePhoto": {
+            "placeId": "ChIJERqXa7WiyFYRr2-9pzRat5Y"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -28,8 +30,11 @@
     "travelers": null,
     "images": [
       {
-        "uri": "https://places.googleapis.com/v1/places/ChIJERqXa7WiyFYRr2-9pzRat5Y/photos/AVoNoXT04b5x82TEsW6fk94Wj5HA-lCLb0pB5Weg5-nWB7UHPzVoA3XBXCXpjY3emSZL5Wy5Uo6rnDi9VeIWpKqRSsCUAjoF2ngxvg96CtoFyGkjhsc3fD700V_uHHQeLY_hVZQpP9rMy2Sii2kbNiNlxbRgJ2BFF-8VCQY-a6ev6Q-NdjRPZsJlR9W5ZAiIIgOpywVbtPWoEivWNw_rI26KbZolUyr9UhGXUuEult9j0nGozP6I3mRQ04ZXewppgY12dNO5O4pPXYi7XmSe6bZIY4vXDxp3IJ5mk9wI0CmsrLi8FVQxVdVTWVLODL-HCwZb-U2gvjw-qfxoQVHsYp3KP0QQ4DjVvka0PEMvypCx3L3pJY8kL0Htnqu6drsoUi36mYDWLaNQzJbSvaRY-62O6ZqZcLEr33o_kU6Ic1NTpUERbQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-        "credit": "Mandar Pathak",
+        "placePhoto": {
+          "placeId": "ChIJERqXa7WiyFYRr2-9pzRat5Y",
+          "author": "Mandar Pathak"
+        },
+        "credit": null,
         "caption": null
       },
       {
@@ -87,8 +92,10 @@
           "label": "Humpy’s Great Alaskan Alehouse",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJ14LWxYC9yFYRkKKOyOoSric/photos/AVoNoXReDZ7nv4vtrjgag3oXQpO164HrwiF8wPC-B67ykWE9w1w54wqfhrfwl-sBKMHKs9C9Sh7jH5O-vjzICQ18NkpyaYLIOyY5-DxLeQcY4eS5zvcc1i3WPQngk2xqlgHrXBBRy_avVmEFEVVLtI7XLLExVBKFntDg5zJZnGFBihOAvMwr8iEFIi7vRJMLZ9_XLqxcpvEJ7nZbYeE1694mrfz22aKk_xEFH2Qd5iPPjjHisQnzH2KnK60RNoNO2TG1oxoVDrOFVuajIDMengHvX9c_oAyEGCyuyg4R8DaMuXE1eSACbnJteuT6Acb0w_3gUYbiEeuQclfmh5SKoLZsIv6mGpxy8QZeQFDazhQwZ2Sbh9NDN-dzVocixvnQiAZBU_fwn7E2rtBLlmCwGdq1hpT72CLbMnxSCcg2-dJ4SQVdyITF/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Humpy's Great Alaskan Alehouse",
+              "placePhoto": {
+                "placeId": "ChIJ14LWxYC9yFYRkKKOyOoSric"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -104,8 +111,10 @@
           "label": "Denny’s Restaurant",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJd8fPpV6WyFYRJuE6eGv25vQ/photos/AVoNoXSuT7EYlgoshOkk1mn00QFya4kgnFA1-L_wUyuj9-1OXwxh9PXJqpAGzej5PV_7RIfH-KBHOO8U_sk38j5AZLat8k-GYGhzcFyMuvD4Le9zB8XtYbHhc6tG4d13inCbGDCEY-Ab9LR_OmOAp_MeRRijsvEI6H2AQDyicQDKzeN-7zu-xUnl7lLJcg_lLDbGGIqMN9VWsiWWdMJsyyANbyqzHNtH7N01ywbppRt1RPwpnus1qdTHs405OQPjPrRbTQdqQRdym__kPTO9A1IE6wir5HnuenH8D3s52-5fVk4eErWSPoWJA6MsC667mzi5hVFWSviMduHdbzk_ou8YYwwharPxonKalpQkJvVhZv03LhaBlitVk4-tCGC3leN9kYMQx7XIWSpqZCtot0EuV9U2bfiWMQPA7p1l8TSeRxIgYg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Sandeep Singh Goraya",
+              "placePhoto": {
+                "placeId": "ChIJd8fPpV6WyFYRJuE6eGv25vQ"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -178,8 +187,11 @@
     "travelers": null,
     "images": [
       {
-        "uri": "https://places.googleapis.com/v1/places/ChIJ-9r9Su3GzlYRd2bK5bTAhq0/photos/AVoNoXRlEYtehUaI6ghFQ1gM602PXz9gxqHWZBQJUMfZyjKYw783kYxMEDqIcpzt4vg7tDmHZxG_WxZ7mR9k-SFTkJ8Y2p3BQIxfjyAEislBug3uWvMBQe7xNNphZASE6EcnViKPrjfmonc7ZgD_HKRnEsbO3sVuuA39btAFXwhJSghk8g__nnzlp_5aLeTpD2snSQ8aXblpH92PAeBCLGBrYXmOFeXi4JNiKsICfbSJzJQ4ylQ4HEzFp9vwYiRdtfh_xx9oUomt7kI5N0b1PWjzFBb7R2PGgh_oM2aGbaJgHTp4B5tISgJTKjBDEpqYIamNZONI4BAaHftXur39GouXiwGn0MHg1k4eUhOLprIosZtCZiY1qMDrhH1Hw2WZE9SYamuwxvdsZQ_vwFnYwkubhcqjqPiRMO5QPEuJRxlh69Y/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-        "credit": "Alaska Birch Syrup & Wild Harvest: Shop",
+        "placePhoto": {
+          "placeId": "ChIJ-9r9Su3GzlYRd2bK5bTAhq0",
+          "author": "Alaska Birch Syrup & Wild Harvest: Shop"
+        },
+        "credit": null,
         "caption": null
       }
     ]
@@ -199,8 +211,10 @@
       "label": "K2 Aviation",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJ3yZKTfOVzlYR66TXF7zl7dg/photos/Aa-ngMYBVzfS_CbJpCUThuMNgpCxlDzLCo267s7itxgT0IHY4rkNIpZC-F8enhfWvAAIBn1jmM042aIxl4e9RaL0aFXyDH_FpVBbYfOdxhGM6CUmhdu5sAmOH51A0h6Eo5kQnu5nj8UefbL1oXg9aJ7xgNMoK6tfGAT_uKAQgSP-JN-aoS3yAq1vXVNl7bDBKLLTIH1Kzy_kKwCDzu-3uuDOXVO0XuC9xDRmiz3_iUqVNRPGPr8GDBSku_EcLuhG_NbYfm_3n3Gw9ohIGi11Pwaacm6Iia2P6tbjgbLDKpHl3qO-J-QGjvLJBFDTh9qM0HLqHF-gZdwYrupzMKrv4hStciNyTjaPg-gF3FfGm7_VTMDMRYDbOamLI3BWJQgfEuJWKINqQRQ0D6PwbP3WZ22IzFcnt_ijs3IdJQ5LmaVcJtl_lCY/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "K2 Aviation",
+          "placePhoto": {
+            "placeId": "ChIJ3yZKTfOVzlYR66TXF7zl7dg"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -334,8 +348,11 @@
     "travelers": null,
     "images": [
       {
-        "uri": "https://places.googleapis.com/v1/places/ChIJj6m5aoTAzlYRyQI-9AWEsFc/photos/AVoNoXQegQowB_uMQmDEKWyE1w6NUHyus3_y2uPrQoSsQq7hakfyfr8tf3ZXIDJTToNWjNYPEgzzoB-2eW9vjEwFGaVnFznZ9H2BwMS-VjXpBiZwwdf3TqT1QZONei-IikeaM9M4460usR9VeELz_UfkhGyc8oTsAXWjp1RGjATkzWgTfhkeIp3W4ZjoeoH_r6FPNDpJAxlDHg0KIdezyA9veg1Yf1zsyi7PK_zZxTspgLgSTvCvtDnMSUSuiHlszeGq_6lyNIM-VRyXv5KMf0iVMZj6nvzFdgIq9QVrzMWB2XxbrEn5hu0QN9uUMNghAOLsLMH2tqierENqOhJ9YGren609UTT3VrmqBiqWQOObFU4kuQuvVVLWumw3v1CbwIlw34leLJ0FpzbOB7EQZ9umeqi0AX-o0UFow5HrlDXZJPi2wg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-        "credit": "zealouscease",
+        "placePhoto": {
+          "placeId": "ChIJj6m5aoTAzlYRyQI-9AWEsFc",
+          "author": "zealouscease"
+        },
+        "credit": null,
         "caption": null
       }
     ],
@@ -394,8 +411,11 @@
     "travelers": null,
     "images": [
       {
-        "uri": "https://places.googleapis.com/v1/places/ChIJl5APv_m5zlYRInGU8O6jjLM/photos/AVoNoXSz-XKFZp1IDnFLodzmYVa44ERgxwRt80JTc7TGHT1ibk8I1DFR0MpmCYS1HyKdVVL99OLJPlJtP40T7xWjNV9R8Cj2nuf0S3Lg8UVKqUAubftdgPOw47ib1KawSOS9s_AEjesYlAn_NHy0OxKNsD__ejS7wwn6CN7f71nPhEUvpAUVmoVT95DkuXNV_4A8bVptV8r8wVg80FDx-i0O_IL4Fl4-i46-ROLWm1XrBh6yaKG17QXKmwOP2MMF40I8fYvNB7-K8n-eVfc_4UqAKJ4lbOh9T4DAGc2NtQro8UzvTUdVdmtH45Gp_5NaY0u7MnYQhBztu3l9X8bS4_pCnUhIluwjoTabN2LnShbrULZiSyP4aj-XaZEJaffaXA3kwvHgLpwjlk0N9eQYNLDS3EWRh6V-MOXgG81Lqeyvx_KEvw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-        "credit": "AK Sled Dog Tours",
+        "placePhoto": {
+          "placeId": "ChIJl5APv_m5zlYRInGU8O6jjLM",
+          "author": "AK Sled Dog Tours"
+        },
+        "credit": null,
         "caption": null
       }
     ],
@@ -424,8 +444,11 @@
     "travelers": null,
     "images": [
       {
-        "uri": "https://places.googleapis.com/v1/places/ChIJRcDJfvyVzlYRIOTHFeZRV_Q/photos/AVoNoXSMDV93Suxywgbts8-10LNW2C3NyI76UKCH9_gwOb_4vmysy6lE7txI_T6MN8tMQxRmoMl7cCylLasSsQr1NIR0pl4rsTdPeWd--f0370lVJckxSlXqAIUFeVgwb-sqZCPyYuN0YUXFfOZk9cYHz7N_aXMjG1OphBFAacGPlcnxjpGVAIe_15R_fO6pg-Alk2BPgym2v4Ta-e8eZcnkuqJ7bIOZ7tdizIcFTM0dlFy7X9YWfHAh-0nfgOISAz1iFXX9TAT9Wr_hex4y67lJp2f4gotQDTqh2ORaGPNyDv1gx9E4qNe_YxDGLJobOaMdNbXQCq7dlqx4V-vgNdPKAj0QrU6XypnpD6yrL4mS0Hh7ebzTuMu5Op5u0DPQWoBSqIz2tJH-qULWKdX0xo3g4e75H6hHXPToT_YmckmA9BHcXXMH/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-        "credit": "Talkeetna River Walk",
+        "placePhoto": {
+          "placeId": "ChIJRcDJfvyVzlYRIOTHFeZRV_Q",
+          "author": "Talkeetna River Walk"
+        },
+        "credit": null,
         "caption": null
       }
     ],
@@ -539,8 +562,11 @@
     "travelers": null,
     "images": [
       {
-        "uri": "https://places.googleapis.com/v1/places/ChIJoQxNrpKVzlYRE3yIXLzxvcs/photos/AVoNoXQy2rM2D8IvpuC0_TTYoh_xKtHHApSpXJzDQbFQiRgsMNeUKoxYTdUPU0VKbmJQ-q2-Dui5S2nULzE5LrVAybFXlTVay_OI88ddBN_njjQHh3sg2Mz1velVmZIqVPphYeN-dYsB28wl3RUthQhVMbDxUITa8qtZXTEvzD-Mqp-NdE_Gjr2zFN98M4luCuBSoVzp2I6VRwzhTrc2yMFdwuKU9EZDOQAg3f7j7GWJlG_6MZCnEnyYi_WD_dlWPIzoGFd3uIhG3GUDxpMnpn7NKo01fP6jPsA8EmMXf89U_jevlrQqhPiwLs2n6Dkfc1mzi7gH5TE0UznQDzvvAr6QtaenpAvd9XjjbEQgVnpiPjtRsCOeiBKHz_o5s-Gytrv9Pmx8laWABxObcfnfHkVvdu2JIknPjUkCrODJCstfZEY/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-        "credit": "Talkeetna Spinach Bread",
+        "placePhoto": {
+          "placeId": "ChIJoQxNrpKVzlYRE3yIXLzxvcs",
+          "author": "Talkeetna Spinach Bread"
+        },
+        "credit": null,
         "caption": null
       }
     ]
@@ -579,8 +605,10 @@
           "label": "McKinley Creekside Café & Bakery",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJ_______vzVYRmrMHqUcWB60/photos/Aa-ngMY4r0VdD0Ev1Ib-wfXTJl4k452qiRiHhtm8e1SXsorSUZw2XXLNcGj9aa4RSTD7CowJ-sTIg4d4M2lYv6qXm-tdsYZyztgDVokM8ZgUriciO8Ng_9N0hmlCA0Wq--yukYDYBYvGz4-N8nppIkrMmTrURlKoNoqxwRnI0D-vNcC5Lli57ObzWGpTXZdxVyE4utBoE1LGPHLFj5DRtLdgaJgW5QhdQzJTD5Z1b0mxiTnqOK6R5zPy0kbpDOBYSd5TRwRAwcpTfVt-ThQpG_OrpWS3aNhXGclOfEP14iOhRnQSOuVdf13NVnvZkbAX9vJKoKl7KW6UiErIZPbweAY_PaVIG5x8iTSzEujKzBjszNeN0p2DQtztNamWIRNJrNqIxWZn2LDcyws7-_hrB_m7XPuuyQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "McKinley Creekside Café & Bakery",
+              "placePhoto": {
+                "placeId": "ChIJ_______vzVYRmrMHqUcWB60"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -617,8 +645,10 @@
           "label": "Pike's Landing",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJv3H6MxdbMlERx8t1TVLJCdY/photos/Aa-ngMa5fob60M0FSNKbcnq22wcelaMH1Qt2nAfQwP0vM0k262EILJD3Au4vaYOaYqwfjSChVtCuxKQhyMzPMWmqYjdQ202FB7I-06zoXMrPB0QzoieDdTfOOPXgS0Q95wJ5RvMU_OV59FKuVyEzzrasSuWc_ibttLlAfxRCQiO5LhHD0ovktc1rU7eES76IrqWCoZ-Xla_z6w9sEwV7bqkGXR5P3Ef2wAF35pHbhZrGIzeiQWQFaVZ9m1xZF7s5-Z9voxh5M3QK3C90QwRYapzu_cYDjQEUzbcXOM-XTWPIlSxhR7PstdI4Fo1fXeGA819ZvEjFrISPKicUYh1w_ei39zI2vkNXIFtK8taX1wu1zUJED_tHIj-urGhHyl_IbBfvmtzWng8GlIWBwPecsZ-5HvJsTTPU/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Charles Curley",
+              "placePhoto": {
+                "placeId": "ChIJv3H6MxdbMlERx8t1TVLJCdY"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -634,8 +664,10 @@
           "label": "Big Daddy's BBQ & Banquet Hall",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJ85b9MUhFMlERdUKO8oayZ2M/photos/Aa-ngMaTzlAgeVf5kEdfn-LOL__YbDL61P-nJBslliZmeffsKrBVHRgbKrd-yzfS7vkIYJQA8BKkIkHwTvq8ZL--uVnEpySeRluuoie4-fDVdzfkUv4dhDbMIPmcooednUmpVeIT7WVmtP0qNR3L4WA28s7RS4r_1_hrRBXJbN143xbmXbpqq6h_0oqDFiOdc1l2zWDFSWKRE_FngZheElJSkqRTVxldhL0eYh9JAaaxZZVC_cGP4DA4LYP-M3RziclyRvuNMCTqMFtolt2Ph8sgmJhbZX6ivhPHSeQ1YFQlYeA5kFIGYIUqVuc5JQqXL4JegsVF51sDkq6YIs-3p501OraW4H0QYg92_9uMz5PuGqk2lKUUPPBCdLu8JtJOxW0ibglNOVLJsVKkU47isFKqFGJ5OjxZk2c/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Tim Beaman",
+              "placePhoto": {
+                "placeId": "ChIJ85b9MUhFMlERdUKO8oayZ2M"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -1198,8 +1230,10 @@
           "label": "Yukon River Camp",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJCSqfQ1VLKVER9FZigu88Qtg/photos/Aa-ngMZmCB-6bCdqZ9U-9BvXfApKHLT0e8FAFtY70kdVYBkMEBr7bgrmi8zdtR9r0RFV--qWiOl_MUX4HdCLRgiRR6bLmI6RRFYiRnAOCTDdF74ew3QjQDJJpivG6wc9CYNEGXBcc4b8sDbnjXlEJrpwI8EnxOlJCiiZD7EoprkNLKIPueKhrtmPTa1m3P_F5J8m7y4lLN14BLNinCpSf-6JxPOaNuegZD25A8KaGcJdxXcSJ41AJvLxTi8Z0agveh7eaXiT9N96OIXo3nf_K0hobkKiF5WVVHSio7goByyz6koi8Bm-N0r0gglAcGtACU6oBkyS-p5eQ6MR_fPNfJfTHGAz6VqD1M4d_eKU6lzW5tbDc3WiHPulHb4u51cKoAW2bjY3amG-O8tEXyVyYI08m9X0ZDIbr5yB7CrBGpDIzH2rhBefbI0_TQOZjgBVxqZn/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Ella Lin",
+              "placePhoto": {
+                "placeId": "ChIJCSqfQ1VLKVER9FZigu88Qtg"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -1523,8 +1557,10 @@
       "label": "Buffalo Center Drive-In",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJM56Y08aLNFERXTjxur2q62I/photos/AVoNoXTN8JjfZxtoO1Xq4hh8RQvioQC1yH9Q-x1TCJf2GsRj4C9xSu1wZok1AznE553sZdiM3o4EHAOeJC_qI2bteamAtmPbCQnv1SUWvMwegZeKiByoXRth5H8xuETj327PvhHd0Po7_4AEfNiv122h4udBZRF4l-KS3LxarF-UwEeHcqc8-9HeVIZN-7rfOZ290NJ9vmRb_KMhswc9IT7L7wazWSojVFJgXO5H43MMzwXi-yBuYCwo7ZsKhRFw7PA2_GWV6XTNR6gID9fQ0hJ_Ao2KHzs3lKsCmdF1i0il44-es_Q4pYOqS1EUU-27b8uoWHvZiNjmoWj69UrjKUiZ1vR-E4iQ_pu16ZrWbgniT0gh4IkwZtY1H2VGk7zUNoBBglHy6zeWQuc74p3hctPi_OAh8hdOXuPVp6JZKoG2iibV2g/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Lorena Sims",
+          "placePhoto": {
+            "placeId": "ChIJM56Y08aLNFERXTjxur2q62I"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -1583,8 +1619,10 @@
       "label": "George I. Ashby Memorial Museum",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJD_gXFWOWtVYRvSRwYiqDR2M/photos/AVoNoXR86qzzTakMiWJEJd_e0iJyVBwZiqbqYYDZlhGbYIWQuYQOljc40YPQpfxqnAb-HdZc3DhmzSPkrmX6Uoh4I_1H4V4CTt4Zi2dCgP0PvpLpiKDZhmAFH-Ek3-bEhUVlH7BwqooPksHkDZw_94kWzjq-dxOrTF0QQ9LPFTmPARmfYrEtAr5PfY_eJ_6IHZZCjyf3vrNczKPA3s36AimjDFQRf2Ct09EnRE_KXmafxF63u0tEV0vn5UeVu6fl5q9G3KQe1naPON9ipNKCm3fEXQesIYCjWNZgEfFFiPMJ6_VQflndXMxD_g2onfqZk4zYYJgmvVxzXw3Y7X2zcA1jzTL1F7UtvI4QpbbAwwtLi4JcZRpceTO1IjgFrWDhu4k_J4Xc6Ay30aF_APm1Tc77iSxMEzPJ31pdkWbQSXvg-TGPCY9V/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Frank Neuber (FrankN)",
+          "placePhoto": {
+            "placeId": "ChIJD_gXFWOWtVYRvSRwYiqDR2M"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -1784,8 +1822,10 @@
           "label": "McCarthy Lodge Resort",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJFY-zlXGFs1YRhZ9_0rBMPTI/photos/AVoNoXRjFBoQt0E2D4RrZRP0eM6tSmmtaQTGjYz0HN6am3c_tt_3czsyivAY8rGDTo_GYgi0hvs0-AjfWWMqWEMX5In55vGF4jxGAO-vii-1xYD6ngU7aM0xrptQB9yPiCfKgTQYzsYmbK5ZAtHoM9eWoHk_9ZnEikNmwZE_eardROxrJtANDvKL8TseEgVvyHKytkNckT168pwanM4rIl2qglkIhA_srIRPmoEXN-DTUjh0xFbygEUU2UoQuPLxvpxTZAV7ju0bkYAkd_YC4XpUWcn9SDBKuV8h9PrtWsxO3f8naN4a2hwoaazf_lbiZ2thqx2lYKtCIEmHvMRtCRzpZRyXpXaPsfEqC2-KjhQzUaKK292y-AI8I16vtw6JB8Y0IIz7_OEm6-1zaTGjQ2lngPR9c06cDae9lkFENE3tbkjaWs30YDsXFqA3mki2Mw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "McCarthy Lodge Resort",
+              "placePhoto": {
+                "placeId": "ChIJFY-zlXGFs1YRhZ9_0rBMPTI"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -2051,8 +2091,10 @@
           "label": "Snow City Cafe",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJQcnnU4G9yFYRRfrr7uDX1Rs/photos/AVoNoXRBEUiihQavRlHmZQEhELQ4U2T_8gOOeT3pAlD0YVdJmCjtLtYNzh05wVBFu3e3WfDfV2jET272BQXM46bpRqvggan1hQFsMTtEe10aMKpUH58v7PraVKzUdq50O_2q3oKg-U_wHFE1_W9_TZsToj1n02cL2MpEC4_0DbU8zXeYjW5ZoNGAA_UNToVz6SkaxUglrHWk5wPXzhqdbKfE8SdCols2Hspww5m35EHgbp48O8y51DDU9H_jYP9EQsBQTBTvubD1VtxvZqyUNSWV5GbyOfNxCPaF4pFlHxckBAoXgvHpeR-z6obu9FDgc7WL9y1E-2NUE4xRfmOvcliFIpEp3jFOn-YRPl230-IkYGdKgcY4bHmPlTqY8Zyczy6lmC837rS009eWX6XQZHJV90qwQ4m1gZDqVIS7QkUu7hZT6nQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Snow City Cafe",
+              "placePhoto": {
+                "placeId": "ChIJQcnnU4G9yFYRRfrr7uDX1Rs"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -2148,8 +2190,10 @@
           "label": "Empress",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJ5Zp8oFYXzVARlNVi2f7GvyQ/photos/Aa-ngMaxIE8-Z8bBiCLvmT7M5P_hoDPoy22TBS6eMoEYCvAFaabo5xR3LmHzekwOKTOVPPvpGzCfw0anlhYMnSNzdU-d_YztsY4IkRCFcL_sJ4eKboNroD2gY3WRRjMx1tswyAAKsscWTG6j7IfdP0_apPm5-ppUxBYJ6HFywgAl_0tCM0TFGr6q3lk4kGh7eJ_V7IeKu6tXwck--l2Qe1VULOCFD6u3EZWSfaHRYN6s4HupD_I9A3RvPgm7cbajjT4HVk1R6-fT7N4A5KQL1SRJNr3n_WlwjSEYSitjFBi0mheJoG3abXD6pDHoIybbWFHsEsDAv99jA1QJCIYJyggPscSLaqdEOx0y7uD5ey91DPDYc2b5Mrgvgh3fwtnrIn5_ThDsvQoTLR-gACmpEifMoqTwO8hQjAe05bBcRW-o-e39kyFE/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Sergey Mishenev",
+              "placePhoto": {
+                "placeId": "ChIJ5Zp8oFYXzVARlNVi2f7GvyQ"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -2165,8 +2209,10 @@
           "label": "Bison Store & Restaurant",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJHxwWQVIXzVARXZHgjj-LZwU/photos/Aa-ngMaLXuIpFimCQhoLdWbbJrMxv_KrmV1k8fl6RE1o2qqJtQyRlYygO4ydYn5P2ei_exSp64YqoufYo6OzGclODce2kiasGIHdzqMnZ8Z3KST4RSVa7--wtyUXNN3hyU6bIwsmKOmiOQNF-9tp_yxrB7ghU4de1uJM5bn6SoLmJ8UJ8KNuIjTsEEXMMj0PhN8ZsYZRQExCHucS_qOFcgIcT_KuKi0KMdnnUT3khyQd-SpmI_rLZLkC4A97JWK0XETsgC9qbKHQyZAeU2EOnXNSvKKNQcuqTsveZcXvAQ2YbneMJ9d4WRnkWtBl82U6804Y7yEgFfr85W2WCphW8HIuybj3mrp4Ejjy0CSj5kX-pS1AeKOQhOCbeTQEa703zyDCyWFHrqzxQW0hAcYUWpfw8hnj9VdDH9iO1ONXO14PjAJD9Q/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Max Park",
+              "placePhoto": {
+                "placeId": "ChIJHxwWQVIXzVARXZHgjj-LZwU"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -2435,8 +2481,10 @@
       "label": "Little Louie's",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJyfidPVEXzVARzxH_okzDMHM/photos/AVoNoXTw-H8RY3Sid2uh96cOX-NaPhCpXiUmXNEqNOmd3rQ867-llBIMFQehaE_v7uUAXzGRTzQgSONXUpjx0hIxXMjYrb1rKzBA1UMbnFDxl9Jvl0HgzzOeZwGIeGQLVhfNZMVbej2Ctkqo2eOSVwWXuxF5Y60ls8jDYnTw0wQ1S8KBpJhK9JB_Yd7_ZdcXal4sBL5xaLshTHS7FIXqmIPgL2grfNzZi-5EPcyHUVfhIioW7qR3sWjg5izOoY9MRzVJqg-UKWpjaVKcdAXoKpqZrAGbAD912_47Sy49vrX7h5TWa_SQCkNVEoeV2rcnQ_h8TfacuUReGd-Xr6VED9YNT_91SbUpgt4yIkm6PeRxktSC05AeFQKCa-upB3n2ybZAwgyI_QF9JODH6MSVbCPZKhcyDlVFxKs/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Swan Starling",
+          "placePhoto": {
+            "placeId": "ChIJyfidPVEXzVARzxH_okzDMHM"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -2573,8 +2621,10 @@
       "label": "Northwest Arctic Heritage Center",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJg65tX1cXzVAR9z2Gr7xJSN4/photos/AVoNoXSfnTBXd5p1A7lj9QhzXkQDAGLOtKIV57nEsPnGyVqQz5XmjGtYNQvtHunyCljaLoU5imSc9BcolBXL_oKMS4tqX61mBFRLaDTV0LuAg8qSia5Wpe9VZvxoAkqA9RDDr6Lz13c30A5QMKTMAWDzR-1Q9PW9rFcXGtkASjdnn0SibdHOJ8iwaDps-RqPyYcm3YVMtE3aRbNQT3_CLUBFEgUjkmk6i6qi_W8WcLZ8BF5iME3BKhuypw8AlF9rP_wuqRFXHY5vUjiboF35RIIozdL6FX_Vkx8xw3vrKqMzihCPn8NCrujNsTQQexkmqw9T59QCKnleiwdyQLrvnX3dbauJyi2bFebhBnyrETtJlm6M5cVWFVPCOXbuH_mdchxSqNAzEwdtCe44ZoTrBfQ7QItjOPAl1fF4UBb7fzyiiJqV93U/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "N R",
+          "placePhoto": {
+            "placeId": "ChIJg65tX1cXzVAR9z2Gr7xJSN4"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -2603,8 +2653,10 @@
       "label": "Nullaġvik Hotel",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJo6lg1JGXyFYR5CruzmerxY8/photos/AVoNoXTK7JQf-iFcMTPRECBkj70F8DgAFcVn5-dXqCyRz8mjK7bVd3R5Dq4tpti5CcELsFCKs2IdgmTecp0bRbNmUFUu6aIp8e75dmnhUg-y2JzN8E3UzpJNjWReUo1kk5bxr_guuwW_Psy7vgBOvsA82CfFEkyLVQ4oj9kCBAHJ5MnelxTVQuAcn2Dqed-acV-vsJPqZXUF88Gwg08PVFa5rF9iDJShwC4KWsWnshcW0M-8oB0zr7rwFXJumjNuGvZJJw5VFSv37PM58HRUZE_WyR5-nKjgZiPNjqq1KiN5kmhMehA-_-J8FrYgL8eQybZg79HcL7CTgU2KjP-MkNsrKs6Vqv1LFRA3otHpekYNMMmCr8yyYVnQS8ivVPXuDRpqIhQA_6-A2jsQCisw4G4BPTdFXr028j_KMBuIpc38iuw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Ethan Shubert",
+          "placePhoto": {
+            "placeId": "ChIJo6lg1JGXyFYR5CruzmerxY8"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -2633,8 +2685,10 @@
       "label": "Bison Store & Restaurant",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJHxwWQVIXzVARXZHgjj-LZwU/photos/Aa-ngMbamsz5LKxxa3LeOhTXA3kx1XvXgXGpPBDI07osEHiRf-sZFCwjn_V26MfZRBFFkrhMI_dqq9frnWak6jxs0ZSQBBNqjeCPAQSf4iBCpYjRipdlEkaC8qefRMYZVtshPxKMUeO98SiwZ81XwcZX-wOhxYkaGrRwFXlcnVv8AI4XAJChaxqKBULNQewFn5IcUFYXNelDZqljWTZGwd4P8PwdkI3stF8dCsgmlXktOROgkEky9rnh39gvJRXIUfhj8IQ-LwdhGQE7zQ_xHClx3ZiQvMf0gMqHP8XGvxp0J3b8cX4TlZM-WXE0HLG12A2gMssdmHSwOUnXRSoYgj_fcO3pf-1sQbRdFlaf8KEpYCQH101qAP8d5WRmmtXQlG8d65b5X1WFacLCZNlIW4YTzmEQTpjV621zd1sTXJ42ZaTZhg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Max Park",
+          "placePhoto": {
+            "placeId": "ChIJHxwWQVIXzVARXZHgjj-LZwU"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -2672,8 +2726,10 @@
           "label": "Moose's Tooth Pub & Pizzeria",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJ3wBgzrmXyFYRbIyKWCfhB9c/photos/AVoNoXQ8zjpmnx8DeuoUFqQWfQvqqb3RA5CxHkJNPLOzL6cEMqSzrWxFY-vsQ97ZJq_U6sLl41PLgzC8NpxfkLErPKBC7XP6S5ariDakjC_5EgVlLfj7vsxrKE8IU30OhaBiw8FFaUHarDiedwVIw0M7ERPLu4tP4m7WOVRwdNbSIZIpVR7Biv8pIxJQxcDO-zeG4asLYsAwid3Fhy-xsNuEiZ72C7O_IM0dR8HgliiRsGXrh_fXWhS78eqHXKYvNByqWc0ywJU7oXYo80p7ECQhcYI1xZHWXjuetW-OZFOKntOllxuXHAt_wm45hLEDbV_aAg7UvgWsIBnCfRIe3niHNF-IKtvOxRhv2zZ2NK5krwPgIVXealfvIfB8C0fo8FhdU_nn2NNrZPRcjmiB2LmIf7udpl7ljNf-SEbSMbbeSrTD2zZ4/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Gayle V",
+              "placePhoto": {
+                "placeId": "ChIJ3wBgzrmXyFYRbIyKWCfhB9c"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -2689,8 +2745,10 @@
           "label": "Hotel Captain Cook",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJoUUNNIG9yFYRT1rea_yflgI/photos/AVoNoXRPW7U5m5JOF-WdgA7A4fN12S_5J0ZvnGL5s1_GfdsQLmw-dqELnTXpHyE9iM1JYqJlni3BMjqt2pV58yZFK4AXocwhTSaeP8-Zfl19w9IouTEc_nAP26dpvumRDbRGU6B4XABtxfzYUqigjnquij4iY0O9Zf5MtcKSuayYKn7BCOsHP1mTXXeGnBixQIlfjo0Mv4be6HbXUnqqEZAWb-aZqqKHTADdp64upTVdH8Ky89XC_9yy1OHtvj7m41ehdCoSSkD1mUqPLXUclBLUxzemIcB5jL-Ck_0FF9JKz8rt_h6ZCn-mp2PVz-q4YuQLvW852dzWUkPXXD28n5gcJoGGr3pAWvizuGlR5qB-Nf_nsV7Qh67-eVCyCh4QKoH9GXqvQq_-252Dfge_osqHNiXrkfLBSaJbz2AuzeJCSsF3PYlFfHTiSinQSZH88YkT/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Nathan Pettyjohn",
+              "placePhoto": {
+                "placeId": "ChIJoUUNNIG9yFYRT1rea_yflgI"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -2727,8 +2785,10 @@
           "label": "Snow City Cafe",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJQcnnU4G9yFYRRfrr7uDX1Rs/photos/AVoNoXRBEUiihQavRlHmZQEhELQ4U2T_8gOOeT3pAlD0YVdJmCjtLtYNzh05wVBFu3e3WfDfV2jET272BQXM46bpRqvggan1hQFsMTtEe10aMKpUH58v7PraVKzUdq50O_2q3oKg-U_wHFE1_W9_TZsToj1n02cL2MpEC4_0DbU8zXeYjW5ZoNGAA_UNToVz6SkaxUglrHWk5wPXzhqdbKfE8SdCols2Hspww5m35EHgbp48O8y51DDU9H_jYP9EQsBQTBTvubD1VtxvZqyUNSWV5GbyOfNxCPaF4pFlHxckBAoXgvHpeR-z6obu9FDgc7WL9y1E-2NUE4xRfmOvcliFIpEp3jFOn-YRPl230-IkYGdKgcY4bHmPlTqY8Zyczy6lmC837rS009eWX6XQZHJV90qwQ4m1gZDqVIS7QkUu7hZT6nQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Snow City Cafe",
+              "placePhoto": {
+                "placeId": "ChIJQcnnU4G9yFYRRfrr7uDX1Rs"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -2815,8 +2875,10 @@
       "label": "Kenai Fjords Tours",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJTbp77Hecx1YRRQiYmotUsnM/photos/AVoNoXQd4BeG64dSXp0lO7FjasMsU7d5bdGHSHz0NHbvtD8rdr15lPpiSmCkg1CAwHWr61QoLg3ePK3D6L9Gd4ocLX0vxPhNZjyZVSBBTc-sitBe1oX8HzSqGJkmA2IQdMk_5VVnl3zcOEbIoubCMc_fApk00HJGcHwTxuHfN--o0k-ZfBmmhTJOeMnmR7AAbHajCjTo7ckl8dGiQTojU2NdboTLTKO0cEan7PDUjhyZnuD_TQtahk_d_tXInBaMmVqkUM28rnYXtR0KLuvvnX4GwgQUK0TG2Mz0J5e4-c16SQZ-KhZmy-z68A3LXWuAywpdQATkcmKIdgzYykkZha_3liWjuP-2rSFKdBsKEFqKd6nv6KsjGg-P3kgPQjOQTKAIiwqJ6DdZBl32s4flC5cz8vM4NmWO9rnZ_3slH_5gzM8Yunclx18NrUnI-DXrbXs0/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Kenai Fjords Tours",
+          "placePhoto": {
+            "placeId": "ChIJTbp77Hecx1YRRQiYmotUsnM"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -2854,8 +2916,10 @@
           "label": "Seward Brewing Company",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJSUdVzGOcx1YR2p9uwkBAhww/photos/AVoNoXQgYZB-EMn6uQhNH8QuLGJY2WPOF3fIUuaea7t1u590JL5BrA092jqDNBRgFwDMjVmkNKKgbCNSZ77NfBsrIbydjoNrM8ggb9UwMsTrLyt8qsorXjtRRS04H7vVv5w_zAG6fDVBHoluyVk5Ixvx5_FUTiHNiN6WGDYfJYDVprji7kSjzq26lcHNU7Jc1DK55eXHV0xBY_8h47R6lck7paZxOCSRslL0-amLdqWFU4dyVLxBly6M56nK3se7IhSLK45nAS0-7JYeGw87XkJJ4YhV3mAKDWzbhQTxKFt5BLJoMimGnHXeq7nAAe4vrmdhDm1ErPIW-v3o7J8zk56P0eomMBHpjcOXKYEPO4VKX14e2gCEN9Zj8yQbvMx7CdNQKykBtg07Do6b4y3GVeaDVbXbZoazRlxit7xGd-gfwCDGR6_xk9ko_HsINWydnwmc/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Seward Brewing Company",
+              "placePhoto": {
+                "placeId": "ChIJSUdVzGOcx1YR2p9uwkBAhww"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -2892,8 +2956,10 @@
           "label": "Varly's Swiftwater Seafood Cafe",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJmYKErWcMyFYRXK2Z2rCuuZU/photos/AVoNoXQnyeyQDVzgZbHuKyh4K7dxnHNXTOLXiQHpxvtfbMFDWC1O4AKunTAFFB1082pQfn5si9k4GLeQzwkBXA2eQuDhp8O62RVuqJ_btOwrP3_76xaeGxWKM58c2ZrC5Xv-mSH-kC1nvwrP86bf22T-8-f_LG4V7GqzhGFO-vqI8eSGcPhTfSeUeG99g3vZgOQYP1_R0-Rzy7uXGnGnxt6nJb_gE4eWEnjHTaAenKWZYEtzBHQKYfPyyfOMnB5MZmaDDF2Cb8vjPdhUS3jEj1csP-tKQS6bl2pe29oyM_OBrSa-dfithB-IfKW_62MsMe7ncKQk9Od1Bqi_JOuKlcGF6_xvM-EkubxZjudg_ciEZNbZhZ9Edn1AZgtZIQ5KNF044e86wy1pB-OlAsXW9dn6Nx8WMh8/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "MyT Life",
+              "placePhoto": {
+                "placeId": "ChIJmYKErWcMyFYRXK2Z2rCuuZU"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -2909,8 +2975,10 @@
           "label": "Whittier Ice Cream and Pizza",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJmYKErWcMyFYRd4UxrsTOyJA/photos/AVoNoXR9NyuFIRUHI6GWnehvwDPhiOzLr2c8dzOfANrtb0J33ZcrOCBkYwPKgfZ_AyoGpD15j9Zr_nk0-3MWhFAT6JwBmLD8vaNbZNxgEqTIDMDNz_7gEnKkKLRArvgtVn7S4vDMFGcXQhy45SKcpZKvq7a3dtcMEWJuiOND1D3NFTwi7GjyXMTzmOcbXaqlY3aCa7NgoeYSsFMJbFnixLIfhM6ahn30iNAcPNxqOZOCz5Vcz9QHYXVkYysfk1EBWX7D9Vu3Xu01JSbddvqVkpwBW2egBRgN6mya4W7q8BtVzNVDUUxxI4K1HjSiXkGQzCnnBG7m7nmxesyIOQaQraZeACWkCDdfQBGn97xHivsUQDhugqNrQlMjq0EVJxIKdvveGVdn4rCwiqSaTJg9UZ9j2_ivhqDpVrNDn7xtJzYeX5Q/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Whittier Ice Cream and Pizza",
+              "placePhoto": {
+                "placeId": "ChIJmYKErWcMyFYRd4UxrsTOyJA"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -2938,8 +3006,10 @@
       "label": "Whittier Alaska Cruise Ship Terminal 1",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJmVCAZBYNyFYRgccbPfb2SBI/photos/AVoNoXQNMjc_4qocFVEN-F24K9EbAAeKJP-J5VQSsiCyIIuyez0-W_idX1N0zScdyIi3w4Ujky699l5cl_ZeeItG3j1RVPFjh52z2th-6mlMW16yBu8YrqcdvbWGihn3oFe0fOMiup6IXVxxnzzCNi5sm-K1-TTo7YKgoXLvHyJShN_NyOXWP8N4Ji9e496qcOhSSBp163wOF7-2ssnYPWKohAKwz3zss1GgHijIfGArHQAKwQJd-bAMlqsgGJWxPdJR40WXAFGJayFz7iEVvnMbBl9YAZ-ABmISPkkHu0Eazu37uXaMqe_TmUJZfKzp_0oDTBZ6dURDasgTbV2FkWOpzlnm8gFI-zLb2kS35RiJeK1spfPrtrC4QLfzzOmUSuu7QxJDbIAPSiXhe1cmFJry43egTggCAK_Kqp9i27Vz25L5bh_M/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "virgil Ellsworth",
+          "placePhoto": {
+            "placeId": "ChIJmVCAZBYNyFYRgccbPfb2SBI"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -3814,8 +3884,10 @@
           "label": "The Alaska Fish House",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJMRMY-wQlDFQRAiENUPcxRho/photos/AVoNoXSKaY1bLx7THCvgsyYl_E4iZ99RZPZ9wNAzJ1YeGHoEZ-cQNKlrnrVhuZ0Y5Aa1jpJJrVTpLopCQa2D5t854s7BDPs8NshcHZ9Y_qVzlhCfn4XKRc1gMAZuSQEmRmbRURD9KXvtrrsh2M2b_zSZ7z6gg511-ijrwURDayoQqcO-GSpHQthv6N0cLp2Rwh2uZWS4dw4DhYk3OOMQrj7loZFR9WQio9WajVx-J4I-X0KCn671eIDvEc-M76hJvAL5LYnaJx14U0W7Bvxzy5XgHsmxtpYSzh6raIGn7Rpm3m1h84_yRN7LOLqKVpqaxWrk9xiqTqdsLPjI9fmkucTmwOSpL23II1rcfyB7MIFGH15BqLxy2OFr3zW7CK1wWb56VN6DO0d1lSXYwhYgY9uGJbY2q77Ry-s3coAwkCZLoAg1dg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "The Alaska Fish House",
+              "placePhoto": {
+                "placeId": "ChIJMRMY-wQlDFQRAiENUPcxRho"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -3831,8 +3903,10 @@
           "label": "Annabelle's Famous Keg and Chowder House",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJE8iWLAQlDFQRDFmpCh0rZTQ/photos/AVoNoXQ6ldlbgG8qo9BiA_9t4DpW7c0nxmih0NEaXdVerSriT9w-EqmR6lm9VIul6ZsHOYhcI6Gkmas0degru_akABv53LxJ8K88v32oiTOC6Pq_8cUqmg8uWW3-OnOmYGoUgLWWTyrqVrTTBizr-XKRxxW9DXDTL2Ij--RKX66QbpT6UEajaxK-2AComAlQTnI6CYAtyZayoowq58Ou68ukkXmy7vJFhWzU7E21MuSmLrKARgV9jjIzKukKKyMvMGfTGJTBxoQhWjp_40uYMW8PBIHx-7EWQICEIaTbW_pTLFwhTL7KbatK9CoXtIyPHUeOlPVZOVMhM6eiRhbyGsjo9X11inwyh8AotkB0ZZD8OWRMsdKLMvdyeqDxI2AIAiefHNMMmLsP4EcOkN3Dx-P9gpVEtgsjDpBYwNCuQ2TOug1tog/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Annabelle's Famous Keg and Chowder House",
+              "placePhoto": {
+                "placeId": "ChIJE8iWLAQlDFQRDFmpCh0rZTQ"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -4176,8 +4250,10 @@
       "label": "Coyote Air",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJ_0I_bsnBKFERI4b1NuS8eVM/photos/AVoNoXSO7FGN5yLdg71D4ryUNN9xinvPfmox_BHgIoEW2y7fGWrswSVSd6We_CArGOXtufnbF1GMp0ZeTVkYE3RgwcICnd3xA4vISoh21h7de5KqOjiDJ_tuQKQ_Cm5rIp-XANCnqQhFOj5HM4o9ZJDIK94bYhNjNYPV5kcto1uQpPiRISJkpqVB7fQtgtWHfx5EZCL-_RCwi269oFXovTtWLvawLjW6id2u_STNJ-Gn-WovZK3M6u_LlT4GGoGAijjxcB36o1byhv4IvGYHxeBbt-2LyjFJ-Pn-Oi3_nPVo1_Lj36LEvmWAUJ-273-KNyLxWpjj2b8Z3e94orcjWojpg051e4iTOFr2wvZe0QLPsb01WbQTY_wCvNifk6AI3DWD9y18PC5IUKE0c3-lfWncUA0QKCIMxp7M1e1m68ZGiGd7Q5EjX5vGFW_8Ut1uiB1M/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Matt Walters",
+          "placePhoto": {
+            "placeId": "ChIJ_0I_bsnBKFERI4b1NuS8eVM"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -4296,8 +4372,10 @@
       "label": "Brooks Falls Bear Viewing Platform",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJbfu09edF6FYRk_QoziBown4/photos/AVoNoXRzAt12ZYIPMoRfte9VLsCPG7Its1p4Kh0zfe3jBXfVXgZNixhLjTv8JZWm_vV1pjZ0xHjARpR4oe4iZCcxju9G-JHarMr7F_4Bv6rX6_Dk4ePk9Kq_WK9Sd7uCwZT_ht7ZumY7410JlBHOPo-9yO_D15E2oejGLNMA2YnblbsfJVJGO1w5DkOA9fzd4ScznkaHh8wtY0L1xdUZIalmqg6s3EntWxEB-aPq2C-BejCl1DsjUS9bK8hZXUqAFX38iSdvOyKGTNn0ITYNOb40L5O9GGEeldSYvePRvFGQnJWikUBl5zptyfmF5tihkHtk6pDQ2lqACUjBe_0m1BvkLNJ04wQbZyRa_2GHKNBrHAJ5cUn6DX1DnCORgevyHaZ_oMiE7ffcxpPKWuhm8g7zZSvLbsuWLUUJO-zLVszyzifZUjUN/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Megan Zinck",
+          "placePhoto": {
+            "placeId": "ChIJbfu09edF6FYRk_QoziBown4"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -4345,8 +4423,10 @@
       "label": "Rust's Flying Service",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJnaVbp1K9yFYRyaefNvkHj8k/photos/AVoNoXRcBNdkRpp77SttTmD6_GeGflceQSFTB2rIzy_Kk27d-hZbtR8gII8BygVczXwNf3jHWRq9oCz8Gx5zPifaGUNoATMoY3r60Ss2EvNW2G4L4ucxq_ch0Kk-8WAUiMU35nhCkOwyOAMryvMtpDBUSPTj65qaFCmoItDFGidraKD_Nmc8M8Uk7HJ8KXBo9xobz4PXYxE3WB0pmC_DIFEavzVnPLRo7dV6ChQ0eKOvd6lKYlvn54zq0SuqEvCoxw6ZDQb_LNQmUyqLpx9HyFmY7doSyzesgAk8An-WlkRbNgf_cMV0zAc3d2FjewIvdrFp07veWn0AycIidg0-H0_q2zU8ehL4BR3sTgYvossJv8zKp5eYYYKHwOnkS80dRSYn3PDDkjZEWXHmN4L6GavxEWV9m5oUwSd79YWo3Jg8RL3pcIDk/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Rust's Flying Service",
+          "placePhoto": {
+            "placeId": "ChIJnaVbp1K9yFYRyaefNvkHj8k"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -4375,8 +4455,10 @@
       "label": "Tanalian Falls Trailhead",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJi_W6IRJnw1YR6WJaXFWJUxM/photos/AVoNoXRN8oEncMoEp6-Ui6gOAjoLLKVvxTZYcFa_AteQ0eCT5FSNs69gpSooX4IgqJWKHyNNI7bQGRkR1TIEQx5p9JfZvnRUxfp8wtaPOPkUkjaZ3S1ajSqkLGbwhJXHcGbJXZ_GwURzycbDZm9GWDPxoLcxkJm76_Ebu75xtZR6iNYGp7b6ASVwvc9GQvZ9qXYt6up8SsRhuW4pkpX9LcDNXvFMEH5h8-56MyfHCF5HXMBmQIVrxBjTtbli_dyaYsfUIidDMAAM7gZ0qDCh2KWwptyNdqIfaE5vzFwI7e57CelbCjTkqGlRvBz0i0xCuXRO05bn-_UGaeQBdjTsB5gBtYVmDa6AhhnjBAT-Fjvc7kWBg9I3t3whE8n8Hsg_zdiRGYVouLMv01m9V8qHwKa0maUaPAZQDTF4__VbNE0ZNpG-iA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "David Western",
+          "placePhoto": {
+            "placeId": "ChIJi_W6IRJnw1YR6WJaXFWJUxM"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -4424,8 +4506,10 @@
       "label": "Lake Clark Air Services",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJk1PG0UaWyFYRa7b0os7ZSgY/photos/AVoNoXSiQVGNRNsr8182ZAdNTbd7nln25BHg7ED310kpz_xHJWxwlJ9DqvQdltZ0oiAwHSK16_oEqieiJZ1uF7s0jiKkz4VgRieh5fsmLwlY4JPzRn-O2s4IWh6cm7fLwTm8JW5gjrDI_Q7X7fo0faNnOmSNnvTiADGz5yoV7w30shZhXBiEdOxRxGModKO275asLL0S4ppWuHnDLAqQLPvfAFAToCiXlQ4W2moHoGs6r0yw-x88w-jwQGvj5_03-D31fHy2mdQOhrnNLIZhbkc5gj55UTSeVLHRZbD92FaZyjyWFADoqSPPqQweQCo5PIKlIGS2kTgBDBt8jN4iUVFHAMvbIPkxxU3zpDlIOQf2lslyM3pBYyG29pmomQkpGkjHdZprtvhihmgubNwuy6ymer32o8GmDYhXn9Nb_LZYGcM/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Melissa Bubash",
+          "placePhoto": {
+            "placeId": "ChIJk1PG0UaWyFYRa7b0os7ZSgY"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -4473,8 +4557,10 @@
       "label": "Rust's Flying Service",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJnaVbp1K9yFYRyaefNvkHj8k/photos/AVoNoXRcBNdkRpp77SttTmD6_GeGflceQSFTB2rIzy_Kk27d-hZbtR8gII8BygVczXwNf3jHWRq9oCz8Gx5zPifaGUNoATMoY3r60Ss2EvNW2G4L4ucxq_ch0Kk-8WAUiMU35nhCkOwyOAMryvMtpDBUSPTj65qaFCmoItDFGidraKD_Nmc8M8Uk7HJ8KXBo9xobz4PXYxE3WB0pmC_DIFEavzVnPLRo7dV6ChQ0eKOvd6lKYlvn54zq0SuqEvCoxw6ZDQb_LNQmUyqLpx9HyFmY7doSyzesgAk8An-WlkRbNgf_cMV0zAc3d2FjewIvdrFp07veWn0AycIidg0-H0_q2zU8ehL4BR3sTgYvossJv8zKp5eYYYKHwOnkS80dRSYn3PDDkjZEWXHmN4L6GavxEWV9m5oUwSd79YWo3Jg8RL3pcIDk/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Rust's Flying Service",
+          "placePhoto": {
+            "placeId": "ChIJnaVbp1K9yFYRyaefNvkHj8k"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -4576,8 +4662,10 @@
           "label": "Club Paris",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJocFKwymWyFYRFUAUTcZY81s/photos/Aa-ngMZm0xRbwEpuKFtIlHVRWE7tsxudXyCp7pkDmJaBrztvee9MCyo47I_8XLG0n4f9RzkKtXgoqtxhybngug83kzbfiuLbyvhmIZiHiot5X0aBJODmrEU8CL-yjxiJsvpL7XQ3IxH608mztO4-n_iNTW2KtdfQ3xw35d3YBaDuPj3m0cwE9k3NDISxUbOSLs_7j_73KfOEN6cd49tFEh7-2SW-nsj9gEqltwNtUboyveKbbgUuHE-poI0hzi5IIxAH3ecUMKm8z8dp55tfyJMPnozer6g8remXtDs9_0XfGJ1xHgU8qIbI7gOAWXVoZQYLYnN9icMA3KDfQDP4f-QcXkTWnl8qj3i0mUDEkOvTqgRkg2PEVwcFb_lpswlZ4CChNRy5VX_OJRfU30--C1uHHniFhKaTspYuvPUBMJclVoxCHnJDQZc1xZDZ8i9taJzG/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Katy Bloomquist",
+              "placePhoto": {
+                "placeId": "ChIJocFKwymWyFYRFUAUTcZY81s"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -4593,8 +4681,10 @@
           "label": "The Marx Bros Cafe",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJ9fW-Boe9yFYRrCJkSjmpmf0/photos/Aa-ngMZvDsndBh4DuEGuzPdBZavvblZUqCuQ7FWWUbRF6pD7kxJY7YI7pGTjFiVnq52ZB7_3XUo8f2WXrS4XImzTxB_784ILBOhqLdL-8cR2xugwhCD07CApID3muTbJG5taXvKGuemmzABLrk5DzF8b2UpCo708hwS-VtGDhm8DEEtERBWzeOo_hX8XcDZVBo7tv0J0N072iWxKG2lWsXuMrP3s_9mk47DGHkGoHo_mhXd6JRSF3H2q3qdd8Pl551f-0U-ibtJG6TB_JOIOXRn4bKOKEJg6VEyZeTsIyv0ZKj9tcUmGAr6JH-5ZZ3MOI95GzJTG-HRsKfzKq4yxMFqDxu2ChBYWyVFo_wb-xKEumsd17BlwEbZsA7l9gbKbMhdrJqtiEnskdJKPzr_9UvwKkdQgiJ4/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "The Marx Bros Cafe",
+              "placePhoto": {
+                "placeId": "ChIJ9fW-Boe9yFYRrCJkSjmpmf0"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -4631,8 +4721,10 @@
           "label": "Simon & Seafort's Saloon & Grill",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJn5_VXoG9yFYR9CeiXUVguBc/photos/Aa-ngMba6iX4-u-VxWRpb3NYwSwluI4XXcB7YPFyUxTANSFzL7NlmkCitOsK9CqMwArROlxnh9-SV1SfpcH2yA67I0AP8VvrI1leYilv-EHgAMw1XY-T3bc9vC4e2IUQEUlURz7K9GN0Jjgj4QyeH-EPsWaE2Ey4ctge0WXsSrsPTmJvpNhmSmxkNW1CNL8nS9F1t4ilCcQFBuNdnuJ_HKqNfjamabreIEZ5FD9od1DokKB3ZEHVuaBJAYBYIMMgmZmded16cofuZTTxQWFCFp0zrqc9uMq2M0PTz8dDeI1luf55jxZI25XyHaq8bqF3nXniu-v2SSJhqwCq40S3F8c6o1RcaE6DYPCi99wiS-UEZpoBYsIU24S8k5sAcXJt0KVzWsfKmkc9JAQr1EKdgXHk8NtJCnovutM/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Simon & Seafort's Saloon & Grill",
+              "placePhoto": {
+                "placeId": "ChIJn5_VXoG9yFYR9CeiXUVguBc"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -4648,8 +4740,10 @@
           "label": "Orso",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJ7bXHMYe9yFYR4rlzElC4dYY/photos/Aa-ngMaW4zkyPG33CSr94bfvgwaEMlB2oC1av87Skvick7HkLCPiIJm7TvDRN9eELHfp_fijZG9unVCrEgqff2WXElDt5g-63MvcIEfH5k3miXQmwcHy2iR7zzDlPikkTZfUXz0jZQy5Rk83MCWz9DSSp5DbvydhdfQ24GmHpR7LrMMtylKVnjjwzuVgeCjzq1cgqncNPv8clBRXQgHRt_xHXiC7bZGy7imMkFXWQ-jD9vbjk7_HzYgT5q9Q10ZmMrjJUQ5SAMmDPxoG6dtV7VTZxjJq70YrH9DG-eefeAQcuNY9ZrQDvSm6ZXjf-bphscS-LAePyC1XEr5pcL0PMQMJhIDdRAQ2yHvlWjaZvc0nlSMuZgysavJqBZbBzlJFGd1FjeA4El5lBdIwvGXONVcN8vDiD6_s1akuhVJx9yyG1dmR/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Orso",
+              "placePhoto": {
+                "placeId": "ChIJ7bXHMYe9yFYR4rlzElC4dYY"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -4665,8 +4759,10 @@
           "label": "Crow's Nest",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJoUUNNIG9yFYRePdi9vDW4DI/photos/Aa-ngMZMYj5uk5etKyLnoiSvVDFk4ekh8pPXh2aHPSTSamoybO39eKJoZiUFwNT9xACkvdF7fEd0DhWnskodoqQVgqHAss1Qybw795n750S0iieNGoMSfK7lYoaDti7fhikx4Cuba8KYRdVkS2zzYM0q0duVbonU01dNlOtBKocceaWUKKf9-nc5wKSIC0FvjPFkgFP6TCkT4fpKMpuaAm6l8OzKlZK0Ejh5wXOS17AwWEU-d1j17Ra3gXsk0Bge19D_MmAQE3OmUYWRUS4WFLmYsXpADVSk6C2Cxhp3sf7YFq7jh73eECfccuaSK4CDXdpScYroRRckQH4h6Pukl7uBcS6DFNTSqOiqJS8xLfdrQ31YwBpjpvoFEBL7KxbCSQOp251dZL_w_OtF1PoZZs46KxgGYLgwNz9uVcEWoR4iePAVmg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Texas YD",
+              "placePhoto": {
+                "placeId": "ChIJoUUNNIG9yFYRePdi9vDW4DI"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -4703,8 +4799,10 @@
           "label": "Spenard Roadhouse",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJFRAGpNuXyFYRudEsUXaA4Ys/photos/Aa-ngMb5IYMjbwS84g_8ivz-vidNilpW_GtvPzn2Q4MrrwUuQHBxxCNI1zs6KQ6SGlavnqHgAr8vl2ls92p2Jz7IiS22s3HwgJ3DuE91gkOkQsZ-tqnw8wMCFXx-fV_VzRzj9D_4ajAVkt6gM7lvE5Kjsl-xkIvFYSoF1w6bIr6Qcw6B9bdqh_FbXM2cQus01PO_N5NJ9JhJnJhL8ckAn0oyURwW_-9YpO3GQLZQcxpI4be_NZpKZDaIdlOCOXabTe0Jln9NJKh1oFb2J--nQtJttJknIu2NHKowywXPVR2B8ZM6FWIjkpDan27yvzbYbtQeFNcBXZ22kOSihtU_omx02-jnv8Rfnha94w0HkELjAvlVNfatBQ50XMGH3jNZ2ewv8Eyf1hVQN9pMyFW04L-n2uTK5vucGYClxgpaGEslG_vGfUFv/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Spenard Roadhouse",
+              "placePhoto": {
+                "placeId": "ChIJFRAGpNuXyFYRudEsUXaA4Ys"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -4720,8 +4818,10 @@
           "label": "Moose's Tooth Pub & Pizzeria",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJ3wBgzrmXyFYRbIyKWCfhB9c/photos/Aa-ngMbnp0a84cG99M1jVXkCkwy3sxCwikXqEYF9CxGMxjNP8rrsj2rlqjCNQxH-wVQKIZaUj7bw9jz_IuXrPXElsFZyGCiMntefp1UBHgerkJHAk3VgbtNRZLY7m7Wk_Fwxl19UU288Qx05C-JpdJO4Li6Acjy5sNUyK4Hgnx9zzecVms-Jij30eN4mqBNukwXu8fe2SOukXZPsfrH8nirc9iypUYmm2HDyZSarmUiyKbx6QK2uIS566Tx-Ep9QXhWIPj1s__xuJ0Abq3JMsSm59oZFrTRycqCazOM1rfwiJU-5hAl_9o59IKOco6Zku5--as2nY7yiKZ4y75xm6Wq_JD9-GHu_eOUQW99ZTN1Il86A4AqgH0VYGdqlmSHDdiZtSuH6UB5xCojOyEHZuIt5jAe31MzlIq4/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Gayle V",
+              "placePhoto": {
+                "placeId": "ChIJ3wBgzrmXyFYRbIyKWCfhB9c"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -4749,8 +4849,10 @@
       "label": "49th State Brewing - Anchorage",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJcRhn_Ya9yFYRAgyWbeaWyFI/photos/AVoNoXQLcyMy5fKTR1tLUm2E-Dd0YtpE8GzCMqzHT9Cdf1-6BtdmFc-yF4dKViXygHxVsovru2n0Z1auhn7RewZvcXusDoMIgpNMBuYiqBAMGfdpzKoqd5r8_VDKzOfa9H5vIRhb5vyyIIWrflxwSV_3sU9VkOLgYCBLquQ4evDIqszQWjLr5d3duQQaBMWCERThNF3a8hTzYwufugjZpZ156oNKhsIjI6Z24kOVfDn53M6Ppp5I8uw-Vgb3UtEFL2mdmehr7-BfoOXYgHoHc2iP6PHXZ7QO918GZCAtXJNgqVMEvExmfnfX-9C_xas3EjKsKwz7ktt5_fLhS_gdOrM0uMaPvefQcMySH9J0SeoboMO9PSh5ZfPeRkEsaZ2ARg8AzEbTjtpI7KOA4Ht8haAP0aiT3jlyOjpGkdXS_0AkiokpcolVQWwU_Z52ZBJV9Y3j/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "49th State Brewing - Anchorage",
+          "placePhoto": {
+            "placeId": "ChIJcRhn_Ya9yFYRAgyWbeaWyFI"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -4961,8 +5063,10 @@
       "label": "Pratt Museum",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJ3UP9TgsywVYRrixGjH6GKfM/photos/AVoNoXT0-3o8CPqoIROI4Ky07US031MuTjaP7kYgPyY_LzJq70XQJA2Ti0SebgnzK8g1_-Zgdxq1deuEh3SvXF2-B_SpAxHOLXvYuWM7t42j9whkQ3qg2NV4VjUH7jahyQQnyxa8fFj131md6kaVLAik62VbVM-SqwO_UOBbdngPVkhaw2_TGUs8NXD_uuHXP-S9tyLpAov_V1u0CsrFBlTA59sQD7x_urBNKAsQsuSLXHLBnfigz3iY2liZr-ZuyFZgPM3tOSrYI3RK8DRu0TXcxIJC3v8O-HjLx35dh2F5j-DFxVG-m6KRZ7L8GBnVnJg6YzUlX8jvOIFBVo2zongPr_SF5a8Z6xnPxJ08F0sTZmOidyKU9d7i7r2nZtL-qPKimPfwQDVCjKBUbV1hbuy8CXn-pgWE0sDBvPTLDg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Chris Yust LaClaire",
+          "placePhoto": {
+            "placeId": "ChIJ3UP9TgsywVYRrixGjH6GKfM"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -5037,8 +5141,10 @@
       "label": "Walmart Supercenter",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJOe6XNsaXyFYRC3S8q6sEmUE/photos/AVoNoXS9fwFIVUGt_7o3o6ZQCQWYXEGOMtgkIodXAaYzWI9aUFzllk6hxbSm5tGhay4Bpij5GEzqKhiwgIPgNW9Q7erDHgM4aKB7SU1Xojq5S3rv4fa-8fEwWRcAUPKEtPtvj6iwQ_LMywNCKQ2PU2EmqPskY2mrkPAqJpSgA-RnwSUBWPYegukLPm-WWsy0Qtg4J6qlZMi0nOvlYyztJa2YAaZ8xcz6WWny_FK7ZL5Lf8lbDHa8vtyCi83tW8EYBSF3WqM-csPQiUd4hqESN2Yhkw6-WL2YSlWgSrclcd4piLBdyrrlbplmAo6kO4oWdK48rA5ToZwqoLQwit8QM7i_-XBSulCM6d96TtRgUBBd3AMWSw4Vq2rFBYBUlDGp2C0QwE0ispdeJbVa8IPvKwCldUz67x28Mme3dkKgHn8Fv7e0fg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Walmart Supercenter",
+          "placePhoto": {
+            "placeId": "ChIJOe6XNsaXyFYRC3S8q6sEmUE"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -5051,8 +5157,11 @@
     "travelers": null,
     "images": [
       {
-        "uri": "https://places.googleapis.com/v1/places/ChIJ-ThFGNCZyFYRE9YZ2gxC9Pw/photos/AVoNoXRTK-ceLdX732-1nkS-7EXBocK75nhwSgn_z73841oeg7vjCwgTzDXmhJjFwPZu4O-zvlPVRQIAV8lRglxEnd-0UU7aZKbvwCeK2SQWogzKn5wjyfnWjsg-JY0AW0pyiPQhka_CGL6MJ0U55tTrhU7CAymALl9EH6hl_OHGfLKasAlAldtZRts38WlgKS_OhxwlaYdy5KXlEuApLsCLpOzHxhyw9pF3GYEbr_XNCAspQLaUVvEQH4UNt1LytM3p58jdJjjdvgkH1HVI-Yc4vSlxQ02jSL0UuChwOvSwfQ3QuoneWAfpRW3KCLOG_ka2mLuoUr37i8LV2IB_cVGbUBZ04zInwj2UGwGXGb95bQKJr9_wlxqRxCJtz3cbj6e689jyQgS8Ub_yNiYVVQ1671w7B-_3zE--BLvUebL4pjT3C83B/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-        "credit": "Walmart Supercenter",
+        "placePhoto": {
+          "placeId": "ChIJ-ThFGNCZyFYRE9YZ2gxC9Pw",
+          "author": "Walmart Supercenter"
+        },
+        "credit": null,
         "caption": null
       }
     ]
@@ -5163,8 +5272,10 @@
       "label": "Copper Valley Air Service",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJmb_m9FyFtVYRcM6RvzyFDFg/photos/AVoNoXQO-hJfm_7pETJIihuQUw_SJyTVBFpIA41L062x6NzMMh2eC3IpY1yFebbuqFRhPG0zReBEMGAqcvCwAqJSUsnBpOsZM4nay_ex1mhQBGMub3TNNGVEWSD9_JL8eDpxA9OaPPWn-hUeuOHFjbg9_Rkl26LtQdW9wDUQ1Sa581uzcAGcAv6YaXm-VTRseUiodPbVCn76FGX3Mm1uN6uCuEKnABl5F9vAlbV7k-RncxeSd2iym4u8oaNaWyafuJbvlxgjXAFYMh03yM9UBo9CVJ7WTzsLMvyX0vG00Bq0LxWpJ6KcLqEOiDOfyLR227GjZMmCHR0j_p16ExlnMRpTRcll_1cvP46jQUOrIXzRIQdxndWPcTR9qitKLw3HQrm2zqNR49Nbrt5zB04Hi3m1AbWpdRw-dMoA1kQFZw8w2RRMng/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Copper Valley Air Service",
+          "placePhoto": {
+            "placeId": "ChIJmb_m9FyFtVYRcM6RvzyFDFg"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -5283,8 +5394,10 @@
       "label": "Port Alsworth Visitor Center",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJH0pLWWtnw1YRjEtrw7olBe8/photos/AVoNoXQlroi_IO3UQqHtxLAFOP2iW2s2IGYJBrrBdNx-ONRkDJrJHrR7P7uYJL3u_xfB_d-EIiDge0SvjSsQzEq6XtFqoPVw2B8qpIwHryTE7UIJlbBbL4UZXRF1ipP-BwIT3H94iq2uMOi72EWMZu_m4O4zydijlnk41ImezrJ_naVd9UA3znFT5vpS1Bs0FTgIBSQWIy-CliPzNxg-p0SnzFblbA3RZCRdeyMy8IdWCOJh62N3PrT6K7OyLaQZaqwj2FEcJ8tjKVPlsR7qXkixWoYxB-NZjQ5UVO-iuZm1THhTEXiD_lajpljXTLZ8cVyAeGi_KkDxg2j9oGJX15k-oXiKmEkqXBgFdNf-ZUAb7BSeqhyCPNGWsGNrrkxmZwLHkQnMmuUutfhsUmWVHqv3FJ3bbZFAWkovxWmaLcXe0PIuRKU/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Erica Gantt",
+          "placePhoto": {
+            "placeId": "ChIJH0pLWWtnw1YRjEtrw7olBe8"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -5313,8 +5426,10 @@
       "label": "Alaska 4x4 Rentals",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJk1yonu9bMlER3tc_jXM9MiQ/photos/AVoNoXRooQrusNqg_3bEG5ZF8e0tlRKLd62cMp_aVakF_YOJuws6ECaHM2dIH_IWDhidTfdgZw7dp60lrxmASAORhrEnuDat-w9w5JwcAfWN2qvlRQIyRYSy74kx-aQl_FKXjaMUc3hLFgtuEX_K_uwf3K1MvDXWTQ54AJUeQf2dOOoDJ_LdkTTEp9M8Fxlb80dq2pNvap8VK2L1G5rd8JCPUg3_dkjLFFttNEaWQHu4N1JTxJM6stQ7xOvCXYRYpvzy8n2qa3c70U_3JImdI5Y7H3CJkdR66dyEHPLG71A8AMJ3nAhXy2sv84h0JduenkeRG7B9O6KBkBKq061-n3Ka7_FaPsXkx7cr1x5kq0en4x2PxnYOUBIWyouy9LLgkw7EX1el9SLakxSX3QF6JCLwJJ5Gmwf3-iU/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Alaska 4x4 Rentals",
+          "placePhoto": {
+            "placeId": "ChIJk1yonu9bMlER3tc_jXM9MiQ"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -5343,8 +5458,10 @@
       "label": "Alaska Aviation Museum",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJExnfV029yFYRTYFt5lqdbNI/photos/Aa-ngMasoqkBLMk0ML2l24TQasePHTKrA-5j1ZuoyVpBPEbgTw0zmQ4W6BANwOSCFfhIwWAgnp-MmIArLegcfcKtXUZIOBfKGnqQR3GP-BqH1g9_QZUMoNxPrVqEEuHGSwbKDLZqxxG7mmrCpd-J-M_aJKKS-LdJAFfxXjKPwCF3LeXikrkQVUhQk20GmrZve0eCiQcVSk6KKCITlIxTVk_nXJfT9EnIPXTzKnb3PyjK4H1ZpSS5EjOED79KXJt6Ev8XSbsrvFyBCtkwje4RiIWMAYMeXYIT1xlI5LcF1TCGIf-W9aco0Ds0XCt__IBxlBsv0dBDVxoWH9VO7845Iq-jmCo5-Nu-yc3GRGXQbRl2OfeWyscjKWfykhEA4B0kTSiT1IHIIaHAUPz5KHmXUVgbWvwvipY2Sn4pVeWbet9dSnQ2KA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Alaska Aviation Museum",
+          "placePhoto": {
+            "placeId": "ChIJExnfV029yFYRTYFt5lqdbNI"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -5373,8 +5490,10 @@
       "label": "Snow City Cafe",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJQcnnU4G9yFYRRfrr7uDX1Rs/photos/Aa-ngMYIAQytBYn7sH_qqWxejEUnt3hq1sC0736YzBmR68jd-XZaxgX02yC7Mt2qR3zK_hEqdXoMKkGD6czjDx9hYTX1L6yhn6IvQJfTlUj0-GodeeElu28PjTYKlr_YdAVNfTKRVKSWnTvozd5-Ox2NQyvXN0rZx16kgAueoMAgYAVjqKmVdWHJo33TJYwI0dpy4ncRpCmFr_9h_nZ2O0R6C7oOaj6b0l6QF6C63bO8197aY0wpw1CuVawn6waTxg6HAjv8qnX1Mper8m7iE6hbfBDA0s9Fi262aE94EVUAQXRWwl6tuEmas6DSwrq1xH6ucen8FzG1erHuJHQeX3kb3BS5TrMAZzkDLtH46y5v_lv93GxABndYlXzcoDyPcTalzyTcAGAO2xYRYLNpRQCeRfdKHB3E/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Snow City Cafe",
+          "placePhoto": {
+            "placeId": "ChIJQcnnU4G9yFYRRfrr7uDX1Rs"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -5403,8 +5522,10 @@
       "label": "Anchorage Museum",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJjUPnbCmWyFYRr_lSUBrKRVc/photos/Aa-ngMb4BAhuVLy3rWtuQ0a0BUzLwCteU3jvaBZWt_hST8hd1MwXouvGDIF9zahtlu-EweKVq9LnCTcO5xG-qRr5xmzwGDqpTzywF6X_rT6MCjXPnu0WeKl6v0aQA5GTGXXiv3UVfAS6rMW9k3m9f20_I-J-tiD5AGItSkZuq7eM3GROTarGkOcgicaEQ3tJcnso5YdZNuoBeXnBnDytYI01lP9PsuUQ9ybTZvWTKZVGRQPoPV9xrVfF4lm_BBd7tzCFc_FI2Vosr2NRwAq1yp7Hr4HeUZMNX1hX_nxKgPSIJLTAWGrMC3np-k6yzUCuR44WnmwfzYTAaElXbcz8-3aQC--ez6tGEQ2cAxWjmapHDvJiOTeQrMUocLlc6gb9hMWIvfJ5xav0Qt68M_EaWSMBmQOVTVwb_zDmQunHDWMu_mwS1w-m/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Julius Choudhury",
+          "placePhoto": {
+            "placeId": "ChIJjUPnbCmWyFYRr_lSUBrKRVc"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -5433,8 +5554,10 @@
       "label": "Ship Creek Overlook Park",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJrd5ZFSeWyFYRUt2nHaEYzm4/photos/Aa-ngMYNLB27bk-D0-kHv_zPcC1_yWv9VkpijQeGqYZ3zttIZHR95uxBGZV5Pwg0fqrtx2jopSaxAm-LcR9phphZwmfO21fi1km9CDmpMrfgJ88vh1PRvliG2BYRmdCQQnbymBgrU4b7WkJg5nCMW0P-4pP23xvIOM1-3m5hEuaMDMZcNbmLT0X0LYoxYl3aJs0D1xtkYtodQeovp7nRDVbEFF7E8rI9Pclz5pkumH1NQZN47gxPzcZ-Oo0Aopw7btaFWWGK63vOwDR0Xv2BgtCaK3y3VLol2ajaaPgSbJpn61E06NFL6lCWDo7agt6nzj_VGeig2P699lzqJLxuKW9Kg_oBlpNMA5hugmST1r3PXSvz7arsLO_ZfnnSxOP8r0ujyHvqZr6w7FyB4h6XCmKqH0qgyTc/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Z H.",
+          "placePhoto": {
+            "placeId": "ChIJrd5ZFSeWyFYRUt2nHaEYzm4"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -5472,8 +5595,10 @@
           "label": "Fire Island Rustic Bakeshop",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJfwCs6dSXyFYRS-bVg_88uxw/photos/Aa-ngMYSDJVFMf_FdKlUeYdqSJjmQ316HXRZ8-83K6I9Ppw9Z9-L8ArIOId5sfvOKU9G5LfSewyBVAfcVVGjBIlaKlM-FHLhBBh9JWSVHXFnfOvji_wQjGip6_6TIiOmPOn15xzhcINxtZls99bTAfrKbRTcP3Fi20LOP5vuoGj7JrnQI4kGqwltxPbLpHoKuucHBfExLAPAohCDmvRsS294I8qzAk2AKLIUKRG0sMmjLrYgQIryFv2BMPFJrWk5iHXur4ZT9spfyFxzaz8HuybbvOFwN8XNrRGJebGGiyeWKTbMs2KAzuligAeO34RXgeiTW45aGUu9sDO9VFYOr0quVchikLb4MGmzrS1cU0QQ3vlTLj4rnjSPfdEs9RtIBuMMxE-7qStY1N7lh_dh_j8WvCmwOOQSVyjHrEoFiOqF-aC8/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "John Tan",
+              "placePhoto": {
+                "placeId": "ChIJfwCs6dSXyFYRS-bVg_88uxw"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -5489,8 +5614,10 @@
           "label": "Kriner's Diner",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJi7vxS86XyFYRDY_lYuVnTy4/photos/Aa-ngMZhWi3R9u5ZpAS3cJBjTRDl9aDdkjbuuOcTrmGPItrXZ1En1cB9Wkjx4zek_7IMYbuFfoZF0DmtCf6ybtKu1JRWPQ-ruvtZBMmN3ei-4t6X4unUffK_8Kt5tTeIEE_06STV0v_Lps306pUKZWyjcaWNizFHpR-2qmBXoD8RST-mHLMnJvWGFUzz-BOS1WKI_3HETSqb2yhVK_OuV_9qSpwOqc0-xTIegl3Hhvrdzh1PchoFqOLhP9UyJMqtKcEdeNg8pedFqOlxQFozwg0OWiFag9n79cpPVAVlOEtD3_W46s8ytAz5EegzuOCoD8DNTIFSTEUJsaYEowEgYXGrf4x30sKaHd1MRx_Wr-oDP7gptTy59HZFkz7eryiVI-xIgVNHr7i5c0d_jVY8tPDkB2jy7HwBzHs/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Sam Wasson",
+              "placePhoto": {
+                "placeId": "ChIJi7vxS86XyFYRDY_lYuVnTy4"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -5527,8 +5654,10 @@
           "label": "Gwennie's Old Alaska Restaurant",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJpXZvL-OXyFYR737JPrpzBNs/photos/Aa-ngMaQFc-L1GuOzwxImyFp7rCoUc1-B48deH2B-G1vEo-QoJ0K9RTBqT-nD2wbE4O38jA-HvcphiLKkj6A2yeqrkSjWPU2NFScjNlW36Gq273Hy_-tpTXM38nVFpRAJbOTYx9Sh_Ve6lvowsuuUpAisa_0es2NZtc-ED53dVsPkmXFPOAyJBom_vQTsyKJHkkeRxMIOyS8-7CQpFcAbF2XPyizI_1ehp1vdz1wf5ZX3OiDWsvZgWhW_odbdbdN1VXOVHfKh7Pp5p_FQFY4VwMABfIqAbPRrIkHTzXrYoomeWGcq8kd5e6XpsMQqijg2v1yEqwCpdR8NT7V3w_jIYqL2gfKpSx87WpgnH689iAjiY_JxULfGdlteTe1wvgoHvMCVxBhSDD0nuhrYF_W4ylu6BVLM-2R1Fc7S0FYEVPPYc4_IklnrG0cDeUHQVC4nApu/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Molly Hukle",
+              "placePhoto": {
+                "placeId": "ChIJpXZvL-OXyFYR737JPrpzBNs"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -5544,8 +5673,10 @@
           "label": "Kaladi Brothers Coffee (Northern Lights)",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJscKQVtmXyFYRPGdminCpVMk/photos/Aa-ngMZJAipwUHcX2Wnxh2JvfpHMY6aBoudhFT8YD_rhXZ6P2ztCGl6wZTQwy3-_YlyJL75PVhYs8i1qj4zNw0vT4a0EUlOb77tQ3I4TMRJ0zWPpw_qnFcIpi1-nP2QCXo8Oxu_aRUZ5U1fbN37DZAY_xDYvaT-TQZqziFnX74P1fqmOoQNLBMfBISLLx7DDRLYccRHU1bayTLcgJkjMzt1-3yt4-ZcYNBTnscjqhfnb93Mw7buVfmj4xiFfKVSi9t0NdLoRBPsOGaNF9_z9k93Njy2lzOucd09yhZeb4XBqBrhEg3u-osudpu9N7MBdDIzHyHsRHM9Yjhxzs2BFh9GSkqpFR2RBsYiOtl7KyeZtyoSQoueGW0-RXGoYsZ5_dTO4yS5oe86AIOq2P6PkKuk8xzp3yGGfmaMsZGZDKpxlLSg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Kaladi Brothers Coffee",
+              "placePhoto": {
+                "placeId": "ChIJscKQVtmXyFYRPGdminCpVMk"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -5582,8 +5713,10 @@
           "label": "Kaladi Brothers Coffee (Northern Lights)",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJscKQVtmXyFYRPGdminCpVMk/photos/Aa-ngMZJAipwUHcX2Wnxh2JvfpHMY6aBoudhFT8YD_rhXZ6P2ztCGl6wZTQwy3-_YlyJL75PVhYs8i1qj4zNw0vT4a0EUlOb77tQ3I4TMRJ0zWPpw_qnFcIpi1-nP2QCXo8Oxu_aRUZ5U1fbN37DZAY_xDYvaT-TQZqziFnX74P1fqmOoQNLBMfBISLLx7DDRLYccRHU1bayTLcgJkjMzt1-3yt4-ZcYNBTnscjqhfnb93Mw7buVfmj4xiFfKVSi9t0NdLoRBPsOGaNF9_z9k93Njy2lzOucd09yhZeb4XBqBrhEg3u-osudpu9N7MBdDIzHyHsRHM9Yjhxzs2BFh9GSkqpFR2RBsYiOtl7KyeZtyoSQoueGW0-RXGoYsZ5_dTO4yS5oe86AIOq2P6PkKuk8xzp3yGGfmaMsZGZDKpxlLSg/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Kaladi Brothers Coffee",
+              "placePhoto": {
+                "placeId": "ChIJscKQVtmXyFYRPGdminCpVMk"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -5599,8 +5732,10 @@
           "label": "Gwennie's Old Alaska Restaurant",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJpXZvL-OXyFYR737JPrpzBNs/photos/Aa-ngMaQFc-L1GuOzwxImyFp7rCoUc1-B48deH2B-G1vEo-QoJ0K9RTBqT-nD2wbE4O38jA-HvcphiLKkj6A2yeqrkSjWPU2NFScjNlW36Gq273Hy_-tpTXM38nVFpRAJbOTYx9Sh_Ve6lvowsuuUpAisa_0es2NZtc-ED53dVsPkmXFPOAyJBom_vQTsyKJHkkeRxMIOyS8-7CQpFcAbF2XPyizI_1ehp1vdz1wf5ZX3OiDWsvZgWhW_odbdbdN1VXOVHfKh7Pp5p_FQFY4VwMABfIqAbPRrIkHTzXrYoomeWGcq8kd5e6XpsMQqijg2v1yEqwCpdR8NT7V3w_jIYqL2gfKpSx87WpgnH689iAjiY_JxULfGdlteTe1wvgoHvMCVxBhSDD0nuhrYF_W4ylu6BVLM-2R1Fc7S0FYEVPPYc4_IklnrG0cDeUHQVC4nApu/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Molly Hukle",
+              "placePhoto": {
+                "placeId": "ChIJpXZvL-OXyFYR737JPrpzBNs"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -5637,8 +5772,10 @@
           "label": "Prospector's Pizzeria & Alehouse",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJ1UmKAKbYzFYRZc2DmiZ5MPk/photos/Aa-ngMZLEJCv9xrTAB1UYJ4Cf5PBkQrKiX0wgVjgMzu_qeZjVvRkWu1m4wFor4spALDb_f0m5EUqhUE6vX7jeEj4kavnntDhXpsL_8oH2WFbSsIbiiD-Xz8njD19dVjVnsG1qRLWtbd7Y6Qa5MeVS5S-2P829_a2iyrg_QlIjt8HFwS4B1ezAHDzjLzIqW8QJer5KBhRLy2aqkwrnkkNpZneR0uAngNM7cxKA5rUavxk8PoLxs9PBvk4CQisTkeFCGSOGL9ANVsLL5TPUUmohOTqRyL0ClKk0CEFGa_-ZvfzS9hQ9NcVgQBM1HNHcpGzlr67zg_CrjdwuBgszIyfQklF8aPLTMLnYyo0nbnrpOmlZkm7PbhKPr0hiE5A7XuQf6Ifkz8kPvSmN7ZLdEGuUgMqSZxT2kHr/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Prospector's Pizzeria & Alehouse",
+              "placePhoto": {
+                "placeId": "ChIJ1UmKAKbYzFYRZc2DmiZ5MPk"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -5654,8 +5791,10 @@
           "label": "McKinley Creekside Café & Bakery",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJ_______vzVYRmrMHqUcWB60/photos/Aa-ngMY4r0VdD0Ev1Ib-wfXTJl4k452qiRiHhtm8e1SXsorSUZw2XXLNcGj9aa4RSTD7CowJ-sTIg4d4M2lYv6qXm-tdsYZyztgDVokM8ZgUriciO8Ng_9N0hmlCA0Wq--yukYDYBYvGz4-N8nppIkrMmTrURlKoNoqxwRnI0D-vNcC5Lli57ObzWGpTXZdxVyE4utBoE1LGPHLFj5DRtLdgaJgW5QhdQzJTD5Z1b0mxiTnqOK6R5zPy0kbpDOBYSd5TRwRAwcpTfVt-ThQpG_OrpWS3aNhXGclOfEP14iOhRnQSOuVdf13NVnvZkbAX9vJKoKl7KW6UiErIZPbweAY_PaVIG5x8iTSzEujKzBjszNeN0p2DQtztNamWIRNJrNqIxWZn2LDcyws7-_hrB_m7XPuuyQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "McKinley Creekside Café & Bakery",
+              "placePhoto": {
+                "placeId": "ChIJ_______vzVYRmrMHqUcWB60"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -5671,8 +5810,10 @@
           "label": "The Shack at Denali Park Village",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJl4laD3vfzFYRYfw7b8b0vjA/photos/Aa-ngMYpkkWHqBsVMqgfHqApaeLdMTpxivKo8AR8Kx2-Ox9nBkghJ9vNw6x19brt5a3SWZDUyhGn_crE6kN4RU23LRBeqQT8I6NZwy265t_Vl3TmMccSFxxZ-ENAByxQEYm2pe2xd7mE_NK7FgGYU5WUYCXJQ2G94HbSc8EruFD-Cxrj0Q0T575D2OECGqRLX6k99T98PjJ53ppYB-E5OBs0dg9GVubDzneQND8BB44_f3q1NU4JVAmMq-pEN3jgQ-pIeHZYImx5SsO5KSCShtzi7zX97q-1GuIeJ0cmy_tEdFgljpDnxh9kStV661DIF_2nAgblobZ-1o_mlwCr61yp-GumgjJSASDsaTn8kGg4YO7b2galCw9P7FGplYaO4hGqnaJ0GXKzun1rqJ9eGW8ZPlXOQ7zmugI1Mi3BUrpSB8Osfw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "The Shack at Denali Park Village",
+              "placePhoto": {
+                "placeId": "ChIJl4laD3vfzFYRYfw7b8b0vjA"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -5709,8 +5850,10 @@
           "label": "McKinley Creekside Café & Bakery",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJ_______vzVYRmrMHqUcWB60/photos/Aa-ngMY4r0VdD0Ev1Ib-wfXTJl4k452qiRiHhtm8e1SXsorSUZw2XXLNcGj9aa4RSTD7CowJ-sTIg4d4M2lYv6qXm-tdsYZyztgDVokM8ZgUriciO8Ng_9N0hmlCA0Wq--yukYDYBYvGz4-N8nppIkrMmTrURlKoNoqxwRnI0D-vNcC5Lli57ObzWGpTXZdxVyE4utBoE1LGPHLFj5DRtLdgaJgW5QhdQzJTD5Z1b0mxiTnqOK6R5zPy0kbpDOBYSd5TRwRAwcpTfVt-ThQpG_OrpWS3aNhXGclOfEP14iOhRnQSOuVdf13NVnvZkbAX9vJKoKl7KW6UiErIZPbweAY_PaVIG5x8iTSzEujKzBjszNeN0p2DQtztNamWIRNJrNqIxWZn2LDcyws7-_hrB_m7XPuuyQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "McKinley Creekside Café & Bakery",
+              "placePhoto": {
+                "placeId": "ChIJ_______vzVYRmrMHqUcWB60"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -5748,8 +5891,10 @@
       "label": "Denali Visitor Center",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJlwIYyVPfzFYR5iw_rFsr6xc/photos/Aa-ngMaGyrtduHc-HHKtY6RLPE1ngnl6thEodPU6nnZMHzXtcVfbNGWtU5ktEpl9vGRm4_XeYpYkAevC1Z6QgvMcHH-WkvRwL1YOd51hx0CCszgUEjJEQ96G3h_V5VJ_zt7gbU99ns7WzDKNBBupNUPvatnrsWDO5f3DeFMzBe_csyZHemZ0_PjCfZvYYPXsk6N1i6oaaYxzRCfgeMiCalEPdGmuVDT977v9HYFpH06oYRvkanxRhNqUziyDYAFvXwwqVbVu0D7asX6ZJG0heUByClcRz8jrIGsyWfbnfN7oiFfeyI4RAdCDTBijas2DGaBvHuqvmBJPhhVguVMjwWgj-xEvYKIF3ORBNy-fr7UXPATjq39eUPWQhL-i1CDa70UpJEnbD9F73qTirXtq9630jlwhhDoSlOGKUWTVAJ02Y7tXvQ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "sindhu k",
+          "placePhoto": {
+            "placeId": "ChIJlwIYyVPfzFYR5iw_rFsr6xc"
+          },
+          "credit": null,
           "caption": null
         }
       ]
@@ -5778,8 +5923,10 @@
       "label": "Horseshoe Lake Trail",
       "images": [
         {
-          "uri": "https://places.googleapis.com/v1/places/ChIJr6tfl6zYzFYRE-XnuXy-Z58/photos/Aa-ngMYQ2z_yWDk8jnOel68YVjhN18dwKpGB25F_W_VscVeHbr7abhXT_9SJy2bCdmnUIM2aEzID4HKwmf8MMJXGEVRz7y2-Hd1NaD-bsF9J9t--j-DXCQMhgqHyzt2S579IxBOXW6G0l8Ne2OqBropgt8eb-XR_VKeFA3vAQc6zWRNr5L178JDf5FFjplXP_kY-MMTa7vCcPvValrIeV6-iyK-sQAbkDKaYKLllqhbPWwoPYikL7lzlD5QpXYC9xZDpcOseqIcYVEESRCmjf8I441-JrwfGRpk_RQ49LtqsfSqNAPIQtpJOMKvg5Es2cxOcnLKaGVNJI3JoE5InRgZk-TMLlOM-EB5R2v4pekQcdwMs1Szblpx4cL2ufsV-tKbbX_90WR50oGljUs8KPaD8A-cNNp8w_HYpjZtGdwG5_b8sXw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-          "credit": "Jordan Marie",
+          "placePhoto": {
+            "placeId": "ChIJr6tfl6zYzFYRE-XnuXy-Z58"
+          },
+          "credit": null,
           "caption": null
         }
       ]

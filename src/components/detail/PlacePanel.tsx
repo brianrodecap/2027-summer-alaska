@@ -13,11 +13,11 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import {
   MAX_PHOTOS,
-  photoThumbnailUrl,
-  type PlaceAuthorAttribution,
-  placeImageFromPhoto,
-  type PlacePhoto,
-} from '../../model/places';
+  photoMediaUrl,
+  placePhotoImage,
+  placePrimaryImage,
+} from '../../model/placePhotos';
+import type { PlaceAuthorAttribution, PlacePhoto } from '../../model/places';
 import type { Image, Place } from '../../model/types';
 import { usePlaceDetails } from './usePlaceDetails';
 
@@ -68,8 +68,8 @@ function EmailLine({ email }: { email: string }) {
 }
 
 // A horizontal thumbnail strip of whatever photos Google currently lists for
-// this place — live only, never persisted (see placeImageFromPhoto, called
-// only for whichever single photo a click actually picks). Each <img> is
+// this place — live only: a click stores the picked photo as a PlacePhotoRef
+// (see placePhotoImage), never the name these URLs are built from. Each <img> is
 // fetched at a size matched to its own 120x90 display, not the larger size a
 // chosen hero gets — requesting hero-sized media for every thumbnail here
 // was pulling down several times the pixel data any of them needed, on every
@@ -95,7 +95,7 @@ function PlacePhotoStrip({
           <Box
             key={photo.name}
             component="img"
-            src={photoThumbnailUrl(photo.name)}
+            src={photoMediaUrl(photo.name, 'thumbnail')}
             loading="lazy"
             alt=""
             title={photo.authorAttributions?.[0]?.displayName}
@@ -133,9 +133,9 @@ function PlacePhotoStrip({
 }
 
 // Only draws on fields the Places API (New) actually returns for this site's
-// field mask — hours/website/maps link (Enterprise) plus photos (the
-// separate, cheaper Photos SKU) — still nothing from Enterprise+Atmosphere
-// (no rating/reviews; see model/places.ts).
+// field mask — hours/website/maps link plus photos — still nothing from
+// Enterprise+Atmosphere (no rating/reviews). Billing: see model/places.ts and
+// model/placePhotos.ts.
 export function PlacePanel({
   place,
   onSelectImage,
@@ -169,10 +169,11 @@ export function PlacePanel({
   useEffect(() => {
     if (!onAutoImage || place.images?.length) return;
     if (persistedPlaceId.current === place.id) return;
-    const photo = photos[0];
-    if (!photo) return;
+    // Only a place Google has a photo for gets one stored — the image itself
+    // is "this place's primary photo", resolved whenever it's drawn.
+    if (!photos.length || !place.id) return;
     persistedPlaceId.current = place.id;
-    onAutoImage(placeImageFromPhoto(photo));
+    onAutoImage(placePrimaryImage(place.id));
   }, [photos, place.id, place.images, onAutoImage]);
 
   // A named-but-unresolved place (place.id: null — a shipboard restaurant
@@ -277,7 +278,7 @@ export function PlacePanel({
       </Stack>
       <PlacePhotoStrip
         photos={photos}
-        onSelect={(photo) => onSelectImage(placeImageFromPhoto(photo))}
+        onSelect={(photo) => place.id && onSelectImage(placePhotoImage(place.id, photo, photos))}
       />
     </Stack>
   );

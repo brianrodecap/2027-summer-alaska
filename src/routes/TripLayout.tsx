@@ -13,6 +13,7 @@ import Typography from '@mui/material/Typography';
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, Outlet, useMatch, useParams } from 'react-router-dom';
 
+import { useResolvedImage } from '../components/shared/useResolvedImage';
 import { Wordmark } from '../components/shared/Wordmark';
 import { TravelersDialog } from '../components/trips/TravelersDialog';
 import { exportEdits } from '../model/exportEdits';
@@ -96,6 +97,7 @@ function TripHero() {
     useTripData();
   const [travelersOpen, setTravelersOpen] = useState(false);
   const tripName = view?.trip.name;
+  const heroImage = useResolvedImage(view?.trip.images[0] ?? null);
 
   useEffect(() => {
     if (!tripName) return;
@@ -128,7 +130,6 @@ function TripHero() {
     sectionLabel ? { label: trip.name, to: `/${slug}` } : { label: trip.name },
     ...(sectionLabel ? [{ label: sectionLabel }] : []),
   ];
-  const heroImage = trip.images[0];
   // The photo hero is a dark surface in both color modes, so it renders under the
   // dark theme: its icons, chips and h4 gold then resolve to dark-mode values
   // without any per-element overrides. Only the outlined chips' border needs a
@@ -150,7 +151,7 @@ function TripHero() {
         ...(heroImage
           ? {
               color: 'common.white',
-              backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.68)), url("${heroImage.uri}")`,
+              backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.68)), url("${heroImage.src}")`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             }

@@ -7,11 +7,11 @@ import {
   parseAlternative,
   parseNote,
   parseRoute,
-  placeIdsMissingImages,
   type ProposedAlternative,
   resolveNoteProposal,
   resolveRouteProposal,
   withPlaceImages,
+  withPlaceImagesInData,
 } from './askAIDrafts';
 import { blankActivity } from './editForms';
 import { applyMealOptions, type ChangeProposal } from './proposals';
@@ -294,19 +294,10 @@ function museumSpec() {
 }
 
 describe('place images', () => {
-  const photo: Image = { uri: 'https://example.test/p1.jpg', credit: null, caption: null };
-  const images = new Map([['p1', photo]]);
-
-  it('collects imageless place ids from a place and its meal candidates', () => {
-    const meal = activity('a');
-    applyMealOptions(meal, [
-      { place: { label: 'One', placeId: 'p1' } },
-      { place: { label: 'Two' } },
-    ]);
-    const own: Image = { uri: 'https://example.test/own.jpg', credit: null, caption: null };
-    const pictured = activity('b', { place: { id: 'p2', label: 'Two', images: [own] } });
-    const plain = activity('c', { place: { id: 'p3', label: 'Three' } });
-    expect(placeIdsMissingImages([meal, pictured, plain])).toEqual(['p1', 'p3']);
+  const primary = (placeId: string): Image => ({
+    placePhoto: { placeId },
+    credit: null,
+    caption: null,
   });
 
   it('finds only the activities an apply added or changed', () => {
@@ -318,23 +309,32 @@ describe('place images', () => {
     expect(changedActivities(prev, next).map((a) => a._id)).toEqual(['b', 'c']);
   });
 
-  it('fills an imageless place and each imageless meal candidate', () => {
+  it('gives an imageless resolved place and each such meal candidate its primary photo', () => {
     const a = activity('a', { place: { id: 'p1', label: 'One' } });
-    expect(withPlaceImages(a, images).place?.images).toEqual([photo]);
+    expect(withPlaceImages(a).place?.images).toEqual([primary('p1')]);
 
     const meal = activity('m');
     applyMealOptions(meal, [
       { place: { label: 'One', placeId: 'p1' } },
-      { place: { label: 'Two', placeId: 'p9' } },
+      { place: { label: 'Two' } },
     ]);
-    const filled = withPlaceImages(meal, images);
-    expect(filled.options?.map((o) => o.place?.images)).toEqual([[photo], undefined]);
+    const filled = withPlaceImages(meal);
+    expect(filled.options?.map((o) => o.place?.images)).toEqual([[primary('p1')], undefined]);
   });
 
   it('keeps an existing image and returns the same activity when nothing changes', () => {
     const own: Image = { uri: 'https://example.test/own.jpg', credit: null, caption: null };
     const a = activity('a', { place: { id: 'p1', label: 'One', images: [own] } });
-    expect(withPlaceImages(a, images)).toBe(a);
+    expect(withPlaceImages(a)).toBe(a);
+  });
+
+  it('fills only the activities an apply added or changed', () => {
+    const untouched = activity('a', { place: { id: 'p1', label: 'One' } });
+    const prev = { activities: [untouched] } as TripData;
+    const added = activity('b', { place: { id: 'p2', label: 'Two' } });
+    const result = withPlaceImagesInData(prev, { activities: [untouched, added] } as TripData);
+    expect(result.activities[0]).toBe(untouched);
+    expect(result.activities[1].place?.images).toEqual([primary('p2')]);
   });
 });
 

@@ -29,8 +29,6 @@ import {
 } from '../../model/askAI';
 import {
   applyAlternative,
-  changedActivities,
-  fetchMissingPlaceImages,
   type ProposedAlternative,
   type ProposedNote,
   type ProposedRoute,
@@ -230,7 +228,7 @@ const MessageList = memo(function MessageList({
   applied: readonly string[];
   busyId: string | null;
   onReview: (proposal: AskAIProposal) => void;
-  onApply: (proposal: AskAIProposal, kept: ReadonlySet<number>) => Promise<void>;
+  onApply: (proposal: AskAIProposal, kept: ReadonlySet<number>) => void;
 }) {
   return messages.map((m, mi) => (
     <Bubble key={mi} role={m.role}>
@@ -248,7 +246,7 @@ const MessageList = memo(function MessageList({
             items={summary.items}
             applied={applied.includes(proposal.id)}
             busy={busyId === proposal.id}
-            onApply={(kept) => void onApply(proposal, kept)}
+            onApply={(kept) => onApply(proposal, kept)}
           />
         ) : (
           <ReviewItem
@@ -317,9 +315,9 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages.length, pending?.text, pending?.lookups.length]);
 
-  // The assistant names places by id only, so whatever it drafts gets a photo looked up
-  // for each place still without one before it's reviewed or applied (see
-  // fetchMissingPlaceImages).
+  // The assistant names places by id only, so whatever it drafts gets each place still
+  // without an image its primary photo before it's reviewed or applied (see
+  // withPlaceImages).
   const reviewEdit = useCallback(
     async (proposal: ProposedEdit, trip: TripData) => {
       const resolved = resolveProposalDraft(proposal, trip);
@@ -330,7 +328,7 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
       let { draft } = resolved;
       if (resolved.kind === 'activity') {
         const activity = draft as Activity;
-        draft = withPlaceImages(activity, await fetchMissingPlaceImages([activity]));
+        draft = withPlaceImages(activity);
       }
       openFromDraft({
         kind: resolved.kind,
@@ -375,15 +373,10 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
     [data, reviewEdit, reviewRoute, openNoteEdit, openNoteDraftSequence],
   );
 
-  // Applies a batch with the checked items only. It runs once against the current
-  // trip to find the activities it adds or changes and look up their places' photos
-  // (the item shows busy meanwhile), then again against the latest data — the trip may
-  // have changed during the lookup — with the photos filled in. (Two runs, not
-  // three, and the photos are keyed by place id, so the new activities' fresh
-  // ids differ between runs harmlessly — a reviewed false positive.)
+  // Applies a batch with the checked items only, as one setData call, giving the places
+  // of the activities it adds or changes their primary photos.
   const handleApply = useCallback(
-    async (proposal: AskAIProposal, kept: ReadonlySet<number>) => {
-      if (!data) return;
+    (proposal: AskAIProposal, kept: ReadonlySet<number>) => {
       let run: (prev: TripData) => { data: TripData } | { error: string };
       if (proposal.type === 'dayPlan') {
         run = (prev) => applyDayPlan(proposal.plan, prev, kept);
@@ -398,14 +391,6 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
       } else {
         return;
       }
-      const check = run(data);
-      if ('error' in check) {
-        setLocalError(check.error);
-        return;
-      }
-      setBusyId(proposal.id);
-      const images = await fetchMissingPlaceImages(changedActivities(data, check.data));
-      setBusyId(null);
       // setData runs the updater synchronously, so a failure is known right after.
       let failure: string | null = null;
       const ran = setData((prev) => {
@@ -414,7 +399,7 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
           failure = result.error;
           return prev;
         }
-        return withPlaceImagesInData(result.data, images);
+        return withPlaceImagesInData(prev, result.data);
       }, 'ai-chat');
       if (failure || !ran) {
         setLocalError(failure ?? "The trip isn't loaded, so nothing was applied.");
@@ -422,7 +407,7 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
       }
       markApplied(proposal.id);
     },
-    [data, setData, markApplied],
+    [setData, markApplied],
   );
 
   if (!data) return null;

@@ -22,6 +22,10 @@ export interface AskAIToolContext {
   data: TripData;
   view: TripView;
   byDate: ReadonlyMap<string, Day>;
+  // Where search_places records the place ids it returns — the proof a
+  // proposal's placeId came from a real lookup (see proposals.ts's
+  // validateProposal). Every other id a lookup shows is the trip's own.
+  searchedPlaceIds: Set<string>;
 }
 
 export class ToolInputError extends Error {}
@@ -59,16 +63,6 @@ function dayFor(ctx: AskAIToolContext, date: string): Day {
 }
 
 // ---------- get_day ----------
-
-// The place ids a lookup's text names, in the "(placeId …)" form placeTag and
-// search_places write them — read back here, beside the format, so the
-// proposal checks (proposals.ts) know which ids came from a real lookup. The
-// text includes the trip's own notes and labels, so one containing that form
-// would pass for a lookup — accepted, since the check guards against ids the
-// model invented, not against the user's own data (a reviewed false positive).
-export function placeIdsIn(text: string): string[] {
-  return [...text.matchAll(/\(placeId ([^)\s]+)\)/g)].map((m) => m[1]);
-}
 
 function placeTag(place: Place | null | undefined): string {
   if (!place) return '';
@@ -322,6 +316,7 @@ export async function runReadTool(
 
     case 'search_places': {
       const results = await searchPlaces(stringField(input, 'query', true));
+      for (const p of results) ctx.searchedPlaceIds.add(p.id);
       if (!results.length) return 'No places found.';
       return results.map((p) => `${p.label} — ${p.address} (placeId ${p.id})`).join('\n');
     }

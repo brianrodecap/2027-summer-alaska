@@ -1,12 +1,10 @@
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
-import LandscapeIcon from '@mui/icons-material/Landscape';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
 import CardActionArea from '@mui/material/CardActionArea';
 import CardContent from '@mui/material/CardContent';
-import CardMedia from '@mui/material/CardMedia';
 import CircularProgress from '@mui/material/CircularProgress';
 import Grid from '@mui/material/Grid';
 import IconButton from '@mui/material/IconButton';
@@ -16,6 +14,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { BookingProgressBar } from '../components/shared/BookingProgressBar';
+import { CardPhoto } from '../components/shared/CardPhoto';
 import { SettingsButton } from '../components/shared/SettingsButton';
 import { Wordmark } from '../components/shared/Wordmark';
 import { TripEditDialog } from '../components/trips/TripEditDialog';
@@ -159,29 +158,7 @@ export function TripsHome() {
                   }}
                 >
                   <Box sx={{ position: 'relative', height: 160, flexShrink: 0 }}>
-                    {image ? (
-                      <CardMedia
-                        component="img"
-                        image={image.uri}
-                        alt={image.caption ?? ''}
-                        title={image.credit ?? ''}
-                        loading="lazy"
-                        sx={{ height: 160 }}
-                      />
-                    ) : (
-                      <Box
-                        sx={{
-                          height: 160,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          bgcolor: 'primary.container',
-                          color: 'primary.onContainer',
-                        }}
-                      >
-                        <LandscapeIcon sx={{ fontSize: 48 }} />
-                      </Box>
-                    )}
+                    <CardPhoto image={image} height={160} />
                     <Box
                       sx={{
                         position: 'absolute',

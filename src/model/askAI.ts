@@ -32,7 +32,6 @@ import {
 } from './askAIDrafts';
 import {
   type AskAIToolContext,
-  placeIdsIn,
   READ_TOOL_NAMES,
   READ_TOOLS,
   readToolLabel,
@@ -124,6 +123,9 @@ export interface AskAIConversation {
   itineraryHash: string;
   apiMessages: BetaMessageParam[];
   messages: AskAIMessage[];
+  // Every place id this conversation's searches have returned — the ones a
+  // proposal may use beyond those already on the trip.
+  searchedPlaceIds: string[];
 }
 
 // ---------- trip context, fed to the model as its system prompt ----------
@@ -295,22 +297,6 @@ const PROPOSE_EDIT_TOOL: BetaTool = {
     required: ['kind', 'changes', 'summary'],
   },
 };
-
-// The place ids the conversation's earlier lookups returned, read back from
-// their tool results.
-function placeIdsFromHistory(messages: BetaMessageParam[]): string[] {
-  return messages.flatMap((message) =>
-    typeof message.content === 'string'
-      ? []
-      : message.content.flatMap((block) => {
-          if (block.type !== 'tool_result') return [];
-          if (typeof block.content === 'string') return placeIdsIn(block.content);
-          return (block.content ?? []).flatMap((part) =>
-            part.type === 'text' ? placeIdsIn(part.text) : [],
-          );
-        }),
-  );
-}
 
 // What a proposal is checked against when the assistant makes it: the trip
 // as it is now, the place ids this conversation's searches found, and the
@@ -640,6 +626,7 @@ export function startConversation(data: TripData): AskAIConversation {
     itineraryHash: hashDoc(itinerary),
     apiMessages: [],
     messages: [],
+    searchedPlaceIds: [],
   };
 }
 
@@ -668,7 +655,8 @@ export interface AskAITurnInput {
   // The date the reader is looking at, if any — lets "this day" mean something.
   focusDate?: string | null;
   data: TripData;
-  tools: AskAIToolContext;
+  // The turn adds the conversation's own searchedPlaceIds.
+  tools: Omit<AskAIToolContext, 'searchedPlaceIds'>;
   apiKey: string;
   events?: AskAITurnEvents;
   signal?: AbortSignal;
@@ -728,10 +716,10 @@ export async function runAskAITurn(
 
   const proposals: AskAIProposal[] = [];
   const lookups: string[] = [];
-  // Place ids this conversation's lookups have returned, in earlier turns too —
-  // the ones a proposal may use beyond those already on the trip (see
-  // proposals.ts's validateProposal).
-  const searchedPlaceIds = new Set(placeIdsFromHistory(conversation.apiMessages));
+  // Place ids this conversation's searches have returned, in earlier turns too;
+  // search_places adds to it as this turn runs (see proposals.ts's validateProposal).
+  const searchedPlaceIds = new Set(conversation.searchedPlaceIds);
+  const lookupContext = { ...tools, searchedPlaceIds };
   // People add_traveler added — this turn, or an earlier one whose proposal is
   // still pending — for proposals to name. Anyone since saved is on the trip.
   const addedTravelers: Traveler[] = travelersFromHistory(conversation.messages, data);
@@ -767,9 +755,7 @@ export async function runAskAITurn(
         const label = readToolLabel(use.name, use.input);
         lookups.push(label);
         events.onLookup?.(label);
-        const text = await runReadTool(use.name, use.input, tools);
-        for (const id of placeIdsIn(text)) searchedPlaceIds.add(id);
-        return result(text);
+        return result(await runReadTool(use.name, use.input, lookupContext));
       }
       return result(`Unknown tool ${use.name}.`, true);
     } catch (err) {
@@ -846,6 +832,7 @@ export async function runAskAITurn(
     itineraryHash: update?.hash ?? conversation.itineraryHash,
     apiMessages,
     messages: [...conversation.messages, { role: 'user', text: question }, reply],
+    searchedPlaceIds: [...searchedPlaceIds],
   };
 }
 

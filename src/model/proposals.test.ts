@@ -616,21 +616,38 @@ describe('what a package requires', () => {
 });
 
 describe('second code-review fixes', () => {
-  it('keeps a resolved place only for the same name, not one shared word', () => {
-    const state = proposalState(trip());
-    const to = (label: string): ChangeProposal => ({
+  it('keeps a resolved place only by its id or exact name, never by shared words', () => {
+    const to = (place: { label: string; placeId?: string }): ChangeProposal => ({
       entityId: 'ph_out',
       kind: 'transit',
-      changes: { to: { label } },
+      changes: { to: place },
       why: 's',
     });
-    state.accepted.push(to('Remote Fishing Camp'));
-    expect((queueFromProposals(state)[0].entity as Transit).to).toMatchObject({
-      id: null,
-      label: 'Remote Fishing Camp',
+    const keptTo = (proposal: ChangeProposal) => {
+      const state = proposalState(trip());
+      state.accepted.push(proposal);
+      return (queueFromProposals(state)[0].entity as Transit).to;
+    };
+    expect(keptTo(to({ label: 'remote lodge ' })).id).toBe('place_lodge');
+    expect(keptTo(to({ label: 'Lodge', placeId: 'place_lodge' }))).toMatchObject({
+      id: 'place_lodge',
+      label: 'Remote Lodge',
     });
-    state.accepted[0] = to('The Remote Lodge');
-    expect((queueFromProposals(state)[0].entity as Transit).to.id).toBe('place_lodge');
+
+    // Any other spelling is turned down with the id to restate, not guessed at.
+    const errors = validateProposal(to({ label: 'The Remote Lodge' }), proposalState(trip()));
+    expect(errors.join()).toMatch(/Remote Lodge \(placeId place_lodge\)/);
+    expect(errors.join()).toMatch(/search_places for "The Remote Lodge"/);
+  });
+
+  it('lets a shipboard venue replace a resolved place without a search', () => {
+    const onboard: ChangeProposal = {
+      entityId: 'ph_out',
+      kind: 'transit',
+      changes: { to: { label: 'Ship Theater', onboard: true } },
+      why: 's',
+    };
+    expect(validateProposal(onboard, proposalState(trip())).join()).not.toMatch(/placeId/);
   });
 
   it('puts a new stay on its scenario', () => {
@@ -808,6 +825,66 @@ describe('second code-review fixes', () => {
       kind: 'scenic',
       arrivesAt: '2027-07-01T08:00',
       departsAt: '2027-07-01T17:00',
+    });
+  });
+
+  it('turns down a port call that names a resolved port without its id', () => {
+    const data = trip();
+    data.stays = data.stays.map((s) => ({
+      ...s,
+      checkInAt: '2027-06-27T16:00',
+      checkOutAt: '2027-07-02T08:00',
+      portCalls: [
+        {
+          kind: 'port' as const,
+          place: { id: 'place_port', label: 'Test Port' },
+          arrivesAt: '2027-06-28T07:00',
+          departsAt: '2027-06-28T17:00',
+        },
+        {
+          kind: 'scenic' as const,
+          place: { id: null, label: 'Glacier Bay' },
+          arrivesAt: '2027-06-29T07:00',
+          departsAt: null,
+        },
+      ],
+    }));
+    const calls = (...portCalls: NonNullable<ChangeProposal['changes']['portCalls']>) =>
+      ({
+        entityId: 'stay_hotel',
+        kind: 'stay',
+        changes: { portCalls },
+        why: 's',
+      }) as ChangeProposal;
+    const guessed = calls({
+      kind: 'port',
+      place: { label: 'Port of Test' },
+      arrivesAt: '2027-06-28T07:00',
+    });
+    expect(validateProposal(guessed, proposalState(data)).join()).toMatch(
+      /Port of Test has no placeId.*Test Port \(placeId place_port\) on 2027-06-28/,
+    );
+    // A timeless scenic passage beside resolved ports is a new stop, not a respelled port.
+    const passage = calls(
+      { kind: 'port', place: { placeId: 'place_port', label: 'Test Port' } },
+      { kind: 'scenic', place: { label: 'Tracy Arm' } },
+    );
+    expect(validateProposal(passage, proposalState(data))).toEqual([]);
+    // A timeless port call without an id still can't stand in for a resolved port.
+    expect(
+      validateProposal(
+        calls({ kind: 'port', place: { label: 'Port of Test' } }),
+        proposalState(data),
+      ).join(),
+    ).toMatch(/Port of Test has no placeId/);
+    // An unresolved port is still restated by its exact name, and keeps its times.
+    const scenic = calls({ kind: 'scenic', place: { label: 'glacier bay' } });
+    const state = proposalState(data);
+    expect(validateProposal(scenic, state)).toEqual([]);
+    state.accepted.push(scenic);
+    expect((queueFromProposals(state)[0].entity as Stay).portCalls?.[0]).toMatchObject({
+      place: { id: null, label: 'Glacier Bay' },
+      arrivesAt: '2027-06-29T07:00',
     });
   });
 

@@ -15,6 +15,8 @@ A read-only itinerary site for upcoming trips (currently one: 2027 Alaska). Reac
 
 ## Rules
 
+- Before starting a change, run `gh issue list --label backlog` and find the open items that touch the same files or area. List them and ask whether to pull each into scope; never fold one in without asking, and ask even when it looks small. Deferred work (a skipped review finding, a follow-up) is filed as a GitHub issue with the `backlog` label, not kept in a local note.
+- Before reporting a task done, run one `/simplify` pass, then one `/code-review` pass, over the task's diff (per slice, for a sliced refactor), and apply what they find. Every finding left unfixed, and any add-on work either surfaces, goes to the backlog as an issue. The final report lists the issue numbers filed. `/simplify` checks quality only; `/code-review` is the correctness check.
 - Never run `git commit` or `git push` unless the user's message says to. "Ship it", "make sure it's in" and "wrap up" are not asking; stop with the change in the working tree. Ask before deleting anything.
 - Use MUI components and `src/theme.ts` tokens; add icons through `materialIcon()`, never ad hoc. Lato only.
 - Tests use synthetic in-memory fixtures, never real trip data or `attachments/`.

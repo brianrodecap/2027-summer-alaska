@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { documentContent } from './documentImport';
 import { blankPackage } from './editForms';
-import { drivenToOrFrom, mergePackages, placesShare } from './proposals';
+import { drivenToOrFrom, mergePackages } from './proposals';
 
 describe('documentContent', () => {
   it('reads a saved email as its text, whatever type the browser gave it', async () => {
@@ -44,24 +44,6 @@ describe('drivenToOrFrom', () => {
   it('is false for a drive mid-stay, or a flight in', () => {
     expect(drivenToOrFrom(stay, [drive('2027-07-02T09:00')])).toBe(false);
     expect(drivenToOrFrom(stay, [drive('2027-07-01T09:00', 'flight')])).toBe(false);
-  });
-});
-
-describe('placesShare', () => {
-  it('compares resolved places by id, and labels by a distinctive word', () => {
-    expect(placesShare({ id: 'a', label: 'X' }, { id: 'b', label: 'X' })).toBe(false);
-    expect(
-      placesShare(
-        { id: null, label: 'McCarthy Bridge' },
-        { id: null, label: 'McCarthy footbridge' },
-      ),
-    ).toBe(true);
-    expect(
-      placesShare(
-        { id: null, label: 'Kotzebue Airport' },
-        { id: null, label: 'Anchorage Airport' },
-      ),
-    ).toBe(false);
   });
 });
 

@@ -621,11 +621,20 @@
           The Image shape, used by every entity's <code>images</code> list
         </p>
         <pre class="schema"><code>type Image = {
-  uri: string,             // Wikimedia Commons Special:FilePath link, an official
+  // exactly one of uri / placePhoto
+  uri?: string,            // Wikimedia Commons Special:FilePath link, an official
                             // site's own photo, or (later) a personal upload
+  placePhoto?: {           // a Google Places photo, kept by place id only —
+    placeId: string,       // Google's photo names expire and may not be stored,
+    author?: string,       // so the media URL is built at render time from a
+    widthPx?: number,      // fresh lookup; author + size pin a photo a viewer
+    heightPx?: number,     // picked, and without them it's the place's primary
+    nth?: number,          // photo; nth picks among several sharing author + size
+  },
   credit: string | null,   // attribution text — required by the license on most
                             // Commons photos; null for public-domain (NPS/USGS) or
-                            // once-added personal photos
+                            // once-added personal photos, and always null for a
+                            // placePhoto (its author comes back with the photo)
   caption: string | null,  // optional, shown under the photo if present
 }</code></pre>
       </section>

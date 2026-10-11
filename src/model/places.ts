@@ -7,16 +7,15 @@
 // and exact — a free-text search can silently match the wrong business (this
 // project's own migration caught a Talkeetna museum query resolving to an
 // unrelated museum in Texas). Scoped to Enterprise-tier fields (hours,
-// website, maps link) plus the separate, cheaper Photos SKU (~$7/1k on top,
-// billed only for the `photos` field itself — see PlacePanel for the actual
-// photo media fetch, a second, unauthenticated-by-us request the browser
-// makes directly) — still nothing from Enterprise+Atmosphere (no
+// website, maps link) plus `photos` (photo metadata, which on its own is the
+// Essentials IDs Only SKU — see placePhotos.ts, which asks for nothing else
+// and fetches the photo media itself, the separately billed request, as a
+// plain <img src>) — still nothing from Enterprise+Atmosphere (no
 // rating/reviews, which add review display/attribution obligations on top of
 // the extra cost).
 import { PLACES_API_KEY } from '../config/places';
 import { memoizeAsync } from './asyncCache';
 import { googleApiFetch } from './googleApiFetch';
-import type { Image } from './types';
 
 export interface PlaceOpeningHours {
   openNow?: boolean;
@@ -68,54 +67,6 @@ const FIELD_MASK = [
   'nationalPhoneNumber',
 ].join(',');
 
-// Google returns up to 10 photos per place — capped well below that so one
-// lookup can never queue up more lazy-loaded media fetches than a thumbnail
-// strip could ever show at once. Exported so PlacePanel's own thumbnail
-// strip renders exactly this many, never more.
-export const MAX_PHOTOS = 4;
-
-// Two distinct sizes for two distinct jobs, never the same URL for both —
-// requesting the hero's own 400px size for every one of MAX_PHOTOS thumbnail
-// previews (each displayed at only ~120x90) was pulling down several times
-// the pixel data any of them actually needed, on every single lookup.
-// Thumbnails stay small; only the one photo an entity actually stores as its
-// hero (see formatting.ts's withHeroImage) is ever fetched at the larger size.
-const PHOTO_THUMBNAIL_DIMENSION_PX = 240;
-const PHOTO_HERO_DIMENSION_PX = 400;
-
-// Photo Media is fetched directly by the browser as a plain <img src> (see
-// PlacePanel's loading="lazy" thumbnails) — never through googleApiFetch's
-// header-based auth, since a hotlinked <img> can't attach a custom header.
-// Google's media endpoint is built for exactly this, taking the key as a
-// query param instead.
-function photoMediaUrl(photoName: string, dimensionPx: number): string {
-  const params = new URLSearchParams({
-    maxWidthPx: String(dimensionPx),
-    maxHeightPx: String(dimensionPx),
-    key: PLACES_API_KEY,
-  });
-  return `https://places.googleapis.com/v1/${photoName}/media?${params}`;
-}
-
-// The small size PlacePanel's own thumbnail strip previews at — never
-// persisted, since these are shown live and re-fetched fresh every time the
-// strip renders (see PlacePanel).
-export function photoThumbnailUrl(photoName: string): string {
-  return photoMediaUrl(photoName, PHOTO_THUMBNAIL_DIMENSION_PX);
-}
-
-// The Image[] shape every entity's own top-level `images` stores (see
-// formatting.ts's withHeroImage) — built only for whichever single photo a
-// viewer actually clicks in the strip, at the larger hero-appropriate size,
-// so nothing this size is ever fetched for a photo nobody picked.
-export function placeImageFromPhoto(photo: PlacePhoto): Image {
-  return {
-    uri: photoMediaUrl(photo.name, PHOTO_HERO_DIMENSION_PX),
-    credit: photo.authorAttributions?.[0]?.displayName ?? null,
-    caption: null,
-  };
-}
-
 // Keyed by place id, caching the in-flight/resolved promise so the same place
 // is never fetched twice in one page session (activities can repeat across
 // scenario branches, e.g. the same breakfast spot on the ideal and alternate plan).
@@ -139,6 +90,13 @@ export async function fetchPlace(id: string): Promise<PlaceDetails> {
 
 export function getPlace(id: string): Promise<PlaceDetails> {
   return memoizeAsync(cache, id, () => fetchPlace(id));
+}
+
+// The full lookup for `id` if this page load has already started one — so a
+// photo lookup (placePhotos.ts) for a place whose side sheet is open reads its
+// photos from there instead of asking Google a second time.
+export function placeAlreadyRequested(id: string): Promise<PlaceDetails> | undefined {
+  return cache.get(id);
 }
 
 // Free-text search — the Places API (New) Text Search endpoint, used only by
@@ -186,32 +144,4 @@ async function fetchSearch(query: string, includedType?: string): Promise<PlaceS
 
 export function isPlacesApiKeyConfigured(): boolean {
   return Boolean(PLACES_API_KEY) && !PLACES_API_KEY.startsWith('REPLACE_');
-}
-
-// The gate-fetch-extract-convert recipe behind every "give this place its
-// first live photo" call site that isn't already inside a component driving
-// usePlaceDetails (PlacePickerField's post-pick backfill, mainly) — kept
-// here rather than assembled ad hoc in a UI event handler, alongside the
-// other Place business logic. Resolves to null on a missing key, a fetch
-// failure, or a place with no photos.
-export async function fetchFirstPlaceImage(id: string): Promise<Image | null> {
-  if (!isPlacesApiKeyConfigured()) return null;
-  const details = await getPlace(id).catch(() => null);
-  const photo = details?.photos?.[0];
-  return photo ? placeImageFromPhoto(photo) : null;
-}
-
-// fetchFirstPlaceImage over several ids at once, deduped and in parallel — for a
-// batch of AI-drafted entries (see askAIDrafts.ts's withPlaceImages), which name
-// places by id only and never carry a photo of their own. Ids with no photo (or
-// a failed lookup) are simply absent from the result.
-export async function fetchPlaceImages(ids: Iterable<string>): Promise<Map<string, Image>> {
-  const unique = [...new Set(ids)];
-  const images = await Promise.all(unique.map((id) => fetchFirstPlaceImage(id)));
-  return new Map(
-    unique.flatMap((id, i) => {
-      const image = images[i];
-      return image ? [[id, image] as const] : [];
-    }),
-  );
 }

@@ -64,6 +64,7 @@ const ctx = {
   } as unknown as TripData,
   view: { dateRange: { startDate: '2027-07-10', endDate: '2027-07-20' } } as TripView,
   byDate: new Map([[day.date, day]]),
+  searchedPlaceIds: new Set<string>(),
 };
 
 describe('describeDay', () => {

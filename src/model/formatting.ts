@@ -66,6 +66,19 @@ export function firstImage(
   return null;
 }
 
+// Two spellings of one name, ignoring case and surrounding space — how a
+// proposal, a package, a traveler or a route variant is matched by name.
+export function sameName(a: string | null | undefined, b: string | null | undefined): boolean {
+  return !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
+// What makes two images the same one, for de-duplicating a list of them.
+export function imageKey(image: Image): string {
+  if ('uri' in image) return image.uri;
+  const { placeId, author = '', widthPx = '', heightPx = '' } = image.placePhoto;
+  return `place:${placeId}|${author}|${widthPx}x${heightPx}`;
+}
+
 // Makes `image` the entity's own hero — firstImage's first entry — moving
 // it there if it's already stored, prepending it otherwise. This is the
 // *entity's* own top-level `images` (Activity/Stay/Transit), not a Place's —
@@ -75,7 +88,8 @@ export function firstImage(
 // of which specific place (or, for a meal, which candidate) the photo came
 // from.
 export function withHeroImage(images: Image[] | null | undefined, image: Image): Image[] {
-  return [image, ...(images ?? []).filter((img) => img.uri !== image.uri)];
+  const key = imageKey(image);
+  return [image, ...(images ?? []).filter((img) => imageKey(img) !== key)];
 }
 
 // A Stay's own Place, null-safe over a possibly-absent lodging — shared by

@@ -90,8 +90,10 @@
         "label": "Hotel Captain Cook",
         "images": [
           {
-            "uri": "https://places.googleapis.com/v1/places/ChIJoUUNNIG9yFYRT1rea_yflgI/photos/AVoNoXRPW7U5m5JOF-WdgA7A4fN12S_5J0ZvnGL5s1_GfdsQLmw-dqELnTXpHyE9iM1JYqJlni3BMjqt2pV58yZFK4AXocwhTSaeP8-Zfl19w9IouTEc_nAP26dpvumRDbRGU6B4XABtxfzYUqigjnquij4iY0O9Zf5MtcKSuayYKn7BCOsHP1mTXXeGnBixQIlfjo0Mv4be6HbXUnqqEZAWb-aZqqKHTADdp64upTVdH8Ky89XC_9yy1OHtvj7m41ehdCoSSkD1mUqPLXUclBLUxzemIcB5jL-Ck_0FF9JKz8rt_h6ZCn-mp2PVz-q4YuQLvW852dzWUkPXXD28n5gcJoGGr3pAWvizuGlR5qB-Nf_nsV7Qh67-eVCyCh4QKoH9GXqvQq_-252Dfge_osqHNiXrkfLBSaJbz2AuzeJCSsF3PYlFfHTiSinQSZH88YkT/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-            "credit": "Nathan Pettyjohn",
+            "placePhoto": {
+              "placeId": "ChIJoUUNNIG9yFYRT1rea_yflgI"
+            },
+            "credit": null,
             "caption": null
           }
         ]
@@ -117,8 +119,10 @@
         "label": "Nullaġvik Hotel",
         "images": [
           {
-            "uri": "https://places.googleapis.com/v1/places/ChIJo6lg1JGXyFYR5CruzmerxY8/photos/AVoNoXTK7JQf-iFcMTPRECBkj70F8DgAFcVn5-dXqCyRz8mjK7bVd3R5Dq4tpti5CcELsFCKs2IdgmTecp0bRbNmUFUu6aIp8e75dmnhUg-y2JzN8E3UzpJNjWReUo1kk5bxr_guuwW_Psy7vgBOvsA82CfFEkyLVQ4oj9kCBAHJ5MnelxTVQuAcn2Dqed-acV-vsJPqZXUF88Gwg08PVFa5rF9iDJShwC4KWsWnshcW0M-8oB0zr7rwFXJumjNuGvZJJw5VFSv37PM58HRUZE_WyR5-nKjgZiPNjqq1KiN5kmhMehA-_-J8FrYgL8eQybZg79HcL7CTgU2KjP-MkNsrKs6Vqv1LFRA3otHpekYNMMmCr8yyYVnQS8ivVPXuDRpqIhQA_6-A2jsQCisw4G4BPTdFXr028j_KMBuIpc38iuw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-            "credit": "Ethan Shubert",
+            "placePhoto": {
+              "placeId": "ChIJo6lg1JGXyFYR5CruzmerxY8"
+            },
+            "credit": null,
             "caption": null
           }
         ]
@@ -144,8 +148,10 @@
         "label": "Hotel Captain Cook",
         "images": [
           {
-            "uri": "https://places.googleapis.com/v1/places/ChIJoUUNNIG9yFYRT1rea_yflgI/photos/AVoNoXRPW7U5m5JOF-WdgA7A4fN12S_5J0ZvnGL5s1_GfdsQLmw-dqELnTXpHyE9iM1JYqJlni3BMjqt2pV58yZFK4AXocwhTSaeP8-Zfl19w9IouTEc_nAP26dpvumRDbRGU6B4XABtxfzYUqigjnquij4iY0O9Zf5MtcKSuayYKn7BCOsHP1mTXXeGnBixQIlfjo0Mv4be6HbXUnqqEZAWb-aZqqKHTADdp64upTVdH8Ky89XC_9yy1OHtvj7m41ehdCoSSkD1mUqPLXUclBLUxzemIcB5jL-Ck_0FF9JKz8rt_h6ZCn-mp2PVz-q4YuQLvW852dzWUkPXXD28n5gcJoGGr3pAWvizuGlR5qB-Nf_nsV7Qh67-eVCyCh4QKoH9GXqvQq_-252Dfge_osqHNiXrkfLBSaJbz2AuzeJCSsF3PYlFfHTiSinQSZH88YkT/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-            "credit": "Nathan Pettyjohn",
+            "placePhoto": {
+              "placeId": "ChIJoUUNNIG9yFYRT1rea_yflgI"
+            },
+            "credit": null,
             "caption": null
           }
         ]
@@ -209,8 +215,10 @@
           "label": "Hubbard Glacier",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJg_jo6m9VrFYRPcarxgmpnks/photos/Aa-ngMaND7EwVNgcrWZnJrkpyBRBigoWBipfqTgRT53nvFtr2DhHRUsZOPwwQgb49sjBZeofPvERO24zMTTpn4yFVbL2Gn_koSLuv0OIUdobUdTN_PAEnDfbbyaylYU9BXeuoWq3iOHfUmHXYnZPM9R41Bq_VP1mN0derQIU3VwKPATtCyjGKpoAQ2POwQzIHw4XejJui60-l1ZQ95wl6b0urEgJj_XuZ5ZsO4bA9O4FRbSF1IH8IE_cg467PDBb3CQGRzcnBjPbGbfNB-a-cKK0duvU3BPwGm_sxZPOoBrztX49WSmq7HU7MnBn4LK80N08CFn0e7ZULMtuiRc4dGKbV3T8DMzoQx8Qrwi3v6tixcYFXAbjFgFa7zthCHhUStE-yqpV4NsSsAZGfPlaYA1GtDZbfdM/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "David Welch",
+              "placePhoto": {
+                "placeId": "ChIJg_jo6m9VrFYRPcarxgmpnks"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -225,8 +233,10 @@
           "label": "Glacier Bay National Park and Preserve",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJpwhC0wkNqlYRYD228-ekk-I/photos/Aa-ngMYckgKDCaY0kIGQSutt7hwna6GbenprnV0GoNuo8NuSCeKJylIBBgANDOO0UEhZZmRiqghUvKOptuUfdtCdmupfTt2GVjpurrvN45_-legDeJFpaSqFLBtVKSUNHQpnBsQTixc19HWmmRb3B7KBOobCYY6yYVkGq9O4C5QOCjBCrsd3Aw-LHp0_ipI4krp8ZFU-rqAqCBYtq52ZeiRgEpRPjijjGZcdwuGMLMQ10IuKOSYc9npgTHjMehOxRMPm-X1kCk1Bdq8uZf_RfOp-AknITyyuXpZqC4DBcYhcpsSl6KTeWpz-g7Sg3Ej4lM3Qucqqr_iKeeK48xV1Or26VQXIEEDOrSMFdNeX_RdTFu_Gzae5_pcMagPJOVNCQtze2x6rzoVlvUjnQLzGzk0dmZ58FRNn/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Artur Wydro",
+              "placePhoto": {
+                "placeId": "ChIJpwhC0wkNqlYRYD228-ekk-I"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -241,8 +251,10 @@
           "label": "Icy Strait Point",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJs0Y9MR8eAVQRQxmi943PqIU/photos/Aa-ngMa_7M-fbCNQ40pY5pOG6BM6W0oKULIALxxd0WFxOd9A9PvatpO3WWDekN4J-O_6W9r4WTimh7fSXD9k28pwckenRLvNxL--YsysTxWPL_wnMHwEMkpa_2kRPaZ_f0EoBcaNn_Z7laL_yobpPlxikSEFTBFOvx9STt4L-Mevj49fwrTaUSawxnHSQWRbuPASJ4w1yesD4skiSKTkVEUtyiohpJrNuzBBNKn31CNfmXtHFPgBilqPrCsPcmPjjTELFHqYE6-glHIB265vCVXF5Pzu8QxMR7N8QYtWtmQ4ENyy-gZj7-GqVS8XGeOhqK49fw2agBwzmz3d-b_p53LNhQgKySj8XBN4slMrIHNkPMM7kEugn6smS6h1lKE3htKBnewpCcbZvcFgdDJM6Jxz6hkdZOZ5/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Tom Hall",
+              "placePhoto": {
+                "placeId": "ChIJs0Y9MR8eAVQRQxmi943PqIU"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -257,8 +269,10 @@
           "label": "Juneau",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJ5VsxfHjfAFQR_2_Vuu0fQpc/photos/Aa-ngMaJR5eVlipgScvtPU2VzZZPO9mnn2BB2IkudLqjpFfRpr75y4zCBNFJZ3YwxIP5z2YYn_Gc3ZPg0Pe6qVd0Z-Q43oujvqeVXyL9AR5_tRSxUcyj_RTeXfWKGy2lUcV1yC-8X8vrHYMnHnzG8dWyGh_oXuG-bl8JrblH5oea0rM9oUpB0s8F0TPu7BXG6_yn_sXAjJFY1TJ8ucCXrKkw1e7X8-iZggWjOPX76YtsgLDw5IWhaJwp5UvHOlZoUoAoYXbnbrHoXXtls9VO3h-diV2Kkld7q2xdKqG01D0RNNK-0Cecu0P8iI7cmBoGAwfxT1-jnkjB1VDG_aai4L2kJRFZob0SwM9j9UbNQnNjRS3w73AtvwFPItuD0vmSJwVBc_LheC2pHFRzfKyUPyU9YGrkp8AqFsgm9lS73vjW_25B/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Frank Linskens",
+              "placePhoto": {
+                "placeId": "ChIJ5VsxfHjfAFQR_2_Vuu0fQpc"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -273,8 +287,10 @@
           "label": "Ketchikan",
           "images": [
             {
-              "uri": "https://places.googleapis.com/v1/places/ChIJWallngQlDFQR41-dVTqRwbQ/photos/Aa-ngMbYtCiM2U2N2VhMF66dHPapFdMwT1vGcY6deNEYFlsO132BJ0mIE2Mt6wA-2vxY39j-6X6K3VWIMb16ji8URaFV8IKkmVLNnvn6-gfI2I-fkW_X4963jamF-CvXnCGOeODmpnz9am1oepTEQdlj5kuxf2R-qK9xxb4c1FYQMQ-Eim6f7AdRSRA30P9jJHuiLy_pryODxMP241SnNqCrDMdZMyhJAbcu_GVG4XcISdS6Bvxiz2x8g81pIz7UNzZLcwghQQUDBwq8R6an2owtZmYPfwuPHD6hzLOuD92udfuMHf-33B8FcdbULw7CvRWmRlwHXzkcsiSebWiWmFGnXC1rB4ae8-_tH5X_pr-J3m7YRCm5H5TxtNkE8xpyAg8IoqL42t6bsyvipftT3Wyxw8CC9cYwPVSoEBfqy5dWV2uuPw/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-              "credit": "Priyank Modi",
+              "placePhoto": {
+                "placeId": "ChIJWallngQlDFQR41-dVTqRwbQ"
+              },
+              "credit": null,
               "caption": null
             }
           ]
@@ -304,8 +320,10 @@
         "label": "Denali Cabins - Denali National Park",
         "images": [
           {
-            "uri": "https://places.googleapis.com/v1/places/ChIJ_______vzVYRkYm_DgC2jnw/photos/AVoNoXSYuDzq00Dc4C9um7vA8ugMRpqz8v0SdEIetkaPg3GZdcddmtibKJP3IowsbBmUQMx4YgV3QYA4YVk96RFo4eyGES_MvZImpKNDRl6JsssBSZl8cSvE1xAnS1CPSwH_MTr3brfiWe6cVKqoXXvwus7Y_MR5gZYhxJpenbodxwFyG-wRgqGNvK_2Ghse0SOvkm6BZh7nKEnIjt-317EWlj6nzwp5cJCSCw5tVIJK4gKdk0jgBllSEmjwPhRJooBnNBBobPVXROEpRLbulvnpbhrAakXauD7q8eeCHVLBbiLa1PbMJcx4sFPEm2zpN_6eSRNaSBhI2ZaCg-pCQvprfwXEz-ttDWPwVeEZEBQ71DqPqLg8oBx2Oa5qPDZHrQIhr4NHY3ewgeCd6FEiYVLdj9rjHiZq_QejMpzjH72DeUXSBm9Lw_FjWIQiqD-nBSJx/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-            "credit": "Denali Cabins - Denali National Park",
+            "placePhoto": {
+              "placeId": "ChIJ_______vzVYRkYm_DgC2jnw"
+            },
+            "credit": null,
             "caption": null
           }
         ]
@@ -344,8 +362,10 @@
         "label": "Westmark Fairbanks Hotel & Conference Center",
         "images": [
           {
-            "uri": "https://places.googleapis.com/v1/places/ChIJ_aR34k5FMlERqYeOQVWen5I/photos/AVoNoXQDTL6jxgvE9_eD2aBCXEI45JoIqzuavJ5JusLouUrib6sBgH9JyzSewmH3UCv__TdZFmub4ojT74qsGZNPVTmtKgOiRLoUObJzgctt7lmyyYtxgezwHyvlS1Shtaoewop0GAAp5TF46krccyskHrBmw5WQqpQI8jZU45bR744hDkB07LFZeGzDhBzuVT0DIwbM_gFEQnhRMgvE8WKWNGS9oUHv-FiTl3FSqdVSjE1sQbJPsKEWe_i9QEYqQvvVJ8BhHrf3_rk7OOJUJ_-5ASEPw6U1d15DUibSp4yqsMiIDBYELQPuCDaayHnjLNgYR5LzW1w528VM4r92csN2BiXshnAQtMZAmx_v1NpP4o0ph_Gf-EfIZwKDvX14qXzs2V7IH089IRWQCjNFfk-2e1lWSJPmrEu36_AevF-FNxF86ICndJY9lS1sdB6RcApW/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-            "credit": "Westmark Fairbanks Hotel & Conference Center",
+            "placePhoto": {
+              "placeId": "ChIJ_aR34k5FMlERqYeOQVWen5I"
+            },
+            "credit": null,
             "caption": null
           }
         ]
@@ -385,8 +405,10 @@
         "label": "Kennicott Glacier Lodge",
         "images": [
           {
-            "uri": "https://places.googleapis.com/v1/places/ChIJ2_1lpi2Cs1YRTk9_q-YuUM4/photos/AVoNoXTV7FGgRfs8Gl-wh-V-3szTvUHTwgfBcjuseTElLPFxTsGT8AT8-kFD2u4dHwo7tlyZ82H62UAgPPKiCG71f6j3xfaH6KLUnlC8gTVVutnLDguKQzKdw-8pqkBEx4OShzoThPaMPP2WmO8G8bnLNxt1t-J21hLy2YwjhtZE3RFx_X_vUZKh2ORCObu1bC5eVi0_Gu8k5JqC2rRmc1pSvKp821YupVe1hwOfoJAJ0rpMOU1-vlsTn0pIuCT16gdQE_BVzAVxURHyxqAWIFsUBRNIZm_kDCrjadlwHVJJ2_n3riFhZNF9ZHoVM_fDUJfNdqzg6ovAaraERSe5ifgExnw2NoNyK0VLPbnWJ-ZoJ6FDaBp6SJiWr6DeQQtNoH9ZdY9lL0MzGjG2WUl_rXgkI8IMptFI1-rqBHC94JL3392_HA/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-            "credit": "Kennicott Glacier Lodge",
+            "placePhoto": {
+              "placeId": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4"
+            },
+            "credit": null,
             "caption": null
           }
         ]
@@ -411,8 +433,10 @@
         "label": "Best Western Valdez Harbor Inn",
         "images": [
           {
-            "uri": "https://places.googleapis.com/v1/places/ChIJD9qRQo5GtlYRvRABJDjj8lE/photos/AVoNoXT8GXaN2t9_4Sj0EMRizzqKcq7kofp83etwqw6volPx0WuS3g-0Vq6nqUvIEY0uVcyzIIkJfeRR0x1M03D6znkzMrNbXjoxTJ7pzSzESfmmQEWKaPsaZWayBm1MsVQ-TmjI6t-QsRsQYFKrWfTFN7vBZgNpHuNptePiDdM1SQFg0_R1KsBnADm53icu1vW_YwgjaTRru7DArSNre_HHrIhhIURfsMGDX_jdF1GKDjGiBzFzlr_e8To3m7cAGy7GI2Q3BIGqimc_pNv2dsI1NOjRTSE8ohQIFHogxi5kI7JMJNc_KA627n4gpNlVwVlukAQ-yu-jtMzLrzz7fWN3_6rQdXCSDC1jBnNjSmMJAgfy8tOwfGjnb8ELlBOPBQ7rsXuDkauIJdfVtYkRqRk3WT8D9n4wpoyZEehjIS4Ro2jOAn2kniPxIRUK_JU_ioFJ/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-            "credit": "Best Western Valdez Harbor Inn",
+            "placePhoto": {
+              "placeId": "ChIJD9qRQo5GtlYRvRABJDjj8lE"
+            },
+            "credit": null,
             "caption": null
           }
         ]
@@ -436,8 +460,10 @@
         "label": "Sheep Mountain Lodge",
         "images": [
           {
-            "uri": "https://places.googleapis.com/v1/places/ChIJ69kB6Dl1yVYRrWn-KL13EpE/photos/AVoNoXTm-dpO61k3ViLLAQF_KdvNVgI2s_1_xF9BdVlBm7DRzwf0eLlXBgKSj6eXIVDpQsbfdHqex1coPAqG10WIF5EyKEPzoP6gucOlr2V6d4hwGcDtFQ6WI4CJ0GocoSdiyIDk4RmKSs1-YW3OP0Ek4L2RtJnSBslL7XYEo3StRmt7jyjbf1C0cv2P_cCQSh_LNvQQuJaQRT2bzGj8CcRyTTxTtp5SlPdCEzg56mPdfNwj05H0aXKeRXWqyH_Cgz62HxZBsRD4qdSqMD0vLXUQlMU9eEcYd9qtVjdIu9sRWz_0JAkUR5eEK_wyEKN1eDhPizN38MMLjNKMXya92RHggAMugPmuYFgLRojxgAXoNU9ZzTvl7wXhwvL0T2af--t746JHZsIsEkJ1tB9ZYnGSxJr883sZGKiQ3rsfC_t-yf9j5B9c/media?maxWidthPx=400&maxHeightPx=400&key=AIzaSyAHMCIGQoJLDgU0Eio_bJKJkIQU36LP1uc",
-            "credit": "Sheep Mountain Lodge",
+            "placePhoto": {
+              "placeId": "ChIJ69kB6Dl1yVYRrWn-KL13EpE"
+            },
+            "credit": null,
             "caption": null
           }
         ]
