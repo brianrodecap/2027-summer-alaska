@@ -17,7 +17,6 @@ import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { memo, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { getStoredApiKey, setStoredApiKey } from '../../config/aiKey';
 import {
   applyDayPlan,
   type AskAIMessage,
@@ -47,7 +46,6 @@ import { useTripData } from '../../state/useTripData';
 import { useTripEdits } from '../daysview/useTripEdits';
 import { ImportDocumentPanel } from '../edit/ImportDocumentPanel';
 import { RouteEditDialog } from '../edit/RouteEditDialog';
-import { ApiKeyField } from '../shared/ApiKeyField';
 import { ICON_NAMES } from '../shared/materialIcon';
 import { useChat } from './useChat';
 import { useFitToViewport } from './useFitToViewport';
@@ -288,7 +286,6 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
   const { saveRoute, deleteRoute } = useTripEdits();
   const { openNoteDraftSequence, openNoteEdit } = useNoteEdit();
   const [routeReview, setRouteReview] = useState<{ route: Route; isNew: boolean } | null>(null);
-  const [apiKey, setApiKey] = useState(() => getStoredApiKey() ?? '');
   const [question, setQuestion] = useState('');
   const [importOpen, setImportOpen] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -411,22 +408,12 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
   );
 
   if (!data) return null;
-  const hasKey = Boolean(apiKey.trim());
 
   const handleSend = () => {
     const trimmed = question.trim();
-    if (!trimmed || !hasKey || pending) return;
-    try {
-      setStoredApiKey(apiKey.trim());
-    } catch {
-      // Storage is blocked or full. The key still works for this visit, so the
-      // question goes out anyway; it just won't be remembered.
-      setLocalError(
-        "Couldn't save your API key in this browser — you'll need to paste it again next visit.",
-      );
-    }
+    if (!trimmed || pending) return;
     setQuestion('');
-    void chat.send(trimmed, apiKey.trim(), focusDay?.date ?? null).then((answered) => {
+    void chat.send(trimmed, focusDay?.date ?? null).then((answered) => {
       // A failed or stopped turn isn't kept, so put the question back to resend.
       if (!answered) setQuestion((current) => current || trimmed);
     });
@@ -510,8 +497,7 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
             {error}
           </Alert>
         )}
-        {!hasKey && <ApiKeyField value={apiKey} onChange={setApiKey} />}
-        {importOpen && <ImportDocumentPanel apiKey={apiKey} onClose={() => setImportOpen(false)} />}
+        {importOpen && <ImportDocumentPanel onClose={() => setImportOpen(false)} />}
         {focusDay && (
           <Typography variant="caption" color="primary">
             Looking at {focusDay.dateLabel}
@@ -551,7 +537,7 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
               color="primary"
               aria-label="Send"
               onClick={handleSend}
-              disabled={!question.trim() || !hasKey}
+              disabled={!question.trim()}
             >
               <SendIcon />
             </IconButton>

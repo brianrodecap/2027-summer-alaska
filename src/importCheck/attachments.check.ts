@@ -1,8 +1,11 @@
 // `npm run check:import` — the real document import (proposalImport.ts), run on
 // every booking document listed in attachments/expected.json, judged against
 // what a person entered from it (see goldenCheck.ts). Live Claude and Google
-// Places calls, so it needs ANTHROPIC_API_KEY in the environment, costs about a
-// quarter per document, and never runs in `npm test`.
+// Places calls, so it needs ANTHROPIC_API_KEY and GOOGLE_API_KEY in the
+// environment, costs about a quarter per document, and never runs in `npm test`.
+// The keys live in gitignored files at the repo root:
+//   ANTHROPIC_API_KEY="$(cat trippin-api-key-claude.txt)" \
+//   GOOGLE_API_KEY="$(cat trippin-api-key-google.txt)" npm run check:import
 //   IMPORT_CHECK_ONLY=<part of a file name>[,<another>] runs just those documents
 //   IMPORT_MODEL / IMPORT_EFFORT read with another model or effort, to compare
 //
@@ -64,7 +67,7 @@ function describeFinding(f: Finding): string {
 }
 
 const golden = readJson(join(ATTACHMENTS, 'expected.json')) as Record<string, GoldenDocument>;
-const apiKey = process.env.ANTHROPIC_API_KEY ?? '';
+const hasKeys = Boolean(process.env.ANTHROPIC_API_KEY && process.env.GOOGLE_API_KEY);
 // IMPORT_CHECK_ONLY=<part of a file name>[,<another>] runs just those documents.
 const only = process.env.IMPORT_CHECK_ONLY?.toLowerCase().split(',').filter(Boolean) ?? [];
 const documents = Object.entries(golden).filter(
@@ -108,12 +111,12 @@ function runCost(): string {
 }
 
 describe('importing each booking document gives what a person entered', () => {
-  it('has an Anthropic API key to read the documents with', () => {
-    expect(apiKey, 'Set ANTHROPIC_API_KEY to run the import check.').not.toBe('');
+  it('has the Anthropic and Google API keys to import with', () => {
+    expect(hasKeys, 'Set ANTHROPIC_API_KEY and GOOGLE_API_KEY to run the import check.').toBe(true);
   });
 
   for (const [name, doc] of documents) {
-    it.skipIf(!apiKey)(name, async () => {
+    it.skipIf(!hasKeys)(name, async () => {
       const started = Date.now();
       const data = placeholderData(loadTrip(doc.trip ?? DEFAULT_TRIP), doc);
       const view = buildTripView(data);
@@ -124,7 +127,7 @@ describe('importing each booking document gives what a person entered', () => {
       // a run, recorded as such rather than vanishing from runs.csv.
       let run: Awaited<ReturnType<typeof importByProposals>>;
       try {
-        run = await importByProposals(file, apiKey, data, view, {
+        run = await importByProposals(file, data, view, {
           model: MODEL,
           effort: TAKES_EFFORT ? EFFORT : null,
         });

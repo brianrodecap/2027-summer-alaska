@@ -1,21 +1,31 @@
 import BrightnessAutoIcon from '@mui/icons-material/BrightnessAuto';
 import DarkModeIcon from '@mui/icons-material/DarkMode';
 import LightModeIcon from '@mui/icons-material/LightMode';
+import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Dialog from '@mui/material/Dialog';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
+import Divider from '@mui/material/Divider';
 import Stack from '@mui/material/Stack';
+import TextField from '@mui/material/TextField';
 import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
+import { useState } from 'react';
 
+import {
+  getAnthropicApiKey,
+  getGoogleApiKey,
+  setAnthropicApiKey,
+  setGoogleApiKey,
+} from '../../config/apiKeys';
 import type { ThemePreference } from '../../config/themePreference';
 import { useThemePreference } from '../../state/useThemePreference';
 
-// Site-wide user preferences (per browser, not per trip). Currently just the
-// color mode; new preferences get their own labeled section below it.
+// Site-wide user preferences (per browser, not per trip): the color mode and the
+// API keys. New preferences get their own labeled section.
 export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { preference, setPreference } = useThemePreference();
 
@@ -57,10 +67,121 @@ export function SettingsDialog({ open, onClose }: { open: boolean; onClose: () =
             System follows your device&apos;s light/dark setting. Saved in this browser only.
           </Typography>
         </Stack>
+        <Divider sx={{ my: 2 }} />
+        <ApiKeysSection />
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Close</Button>
       </DialogActions>
     </Dialog>
+  );
+}
+
+// One API key: masked, never autofilled.
+function ApiKeyField({
+  label,
+  helperText,
+  value,
+  onChange,
+}: {
+  label: string;
+  helperText: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <TextField
+      label={label}
+      type="password"
+      autoComplete="off"
+      fullWidth
+      size="small"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      helperText={helperText}
+    />
+  );
+}
+
+// False when the browser refused the write; the key is still held for this visit.
+function trySave(save: () => void): boolean {
+  try {
+    save();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function ApiKeysSection() {
+  const [saved, setSaved] = useState(() => ({
+    anthropic: getAnthropicApiKey(),
+    google: getGoogleApiKey(),
+  }));
+  const [anthropic, setAnthropic] = useState(saved.anthropic);
+  const [google, setGoogle] = useState(saved.google);
+  const [error, setError] = useState<string | null>(null);
+  const next = { anthropic: anthropic.trim(), google: google.trim() };
+  const changed = next.anthropic !== saved.anthropic || next.google !== saved.google;
+
+  const handleSave = () => {
+    // Only changed keys are written, each on its own, so one failed write
+    // can't drop the other key.
+    const googleChanged = next.google !== saved.google;
+    const anthropicSaved =
+      next.anthropic === saved.anthropic || trySave(() => setAnthropicApiKey(next.anthropic));
+    const googleSaved = !googleChanged || trySave(() => setGoogleApiKey(next.google));
+    // Google lookups are gated when each component first renders and the map's
+    // script loads once, so a new Google key takes effect on a fresh page. A
+    // reload would lose an unsaved Anthropic key, so it waits for a clean save.
+    if (googleChanged && googleSaved && anthropicSaved) {
+      window.location.reload();
+      return;
+    }
+    setSaved(next);
+    setError(
+      anthropicSaved && googleSaved
+        ? null
+        : [
+            "Couldn't save in this browser, which has storage blocked or full.",
+            !anthropicSaved && 'The Anthropic key works only until you leave.',
+            !googleSaved && 'The new Google key needs saved storage to take effect.',
+            googleChanged && googleSaved && 'Reload the page to start using the new Google key.',
+          ]
+            .filter(Boolean)
+            .join(' '),
+    );
+  };
+
+  return (
+    <Stack spacing={2}>
+      <Typography variant="subtitle2" component="h3">
+        API keys
+      </Typography>
+      <ApiKeyField
+        label="Anthropic API key"
+        helperText="For the assistant and document import. Sent only to api.anthropic.com."
+        value={anthropic}
+        onChange={setAnthropic}
+      />
+      <ApiKeyField
+        label="Google API key"
+        helperText="For maps, place details, photos and weather. Sent only to Google."
+        value={google}
+        onChange={setGoogle}
+      />
+      {error && <Alert severity="warning">{error}</Alert>}
+      <Typography variant="caption" color="text.secondary">
+        Kept only in this browser, never committed. Saving a new Google key reloads the page.
+      </Typography>
+      <Button
+        variant="contained"
+        disabled={!changed}
+        onClick={handleSave}
+        sx={{ alignSelf: 'flex-start' }}
+      >
+        Save keys
+      </Button>
+    </Stack>
   );
 }

@@ -148,7 +148,6 @@ function withUserReminder(messages: BetaMessageParam[], text: string): BetaMessa
 
 export async function importByProposals(
   file: File,
-  apiKey: string,
   data: TripData,
   view: TripView,
   // A different model or effort to read with — for comparing them in the
@@ -190,7 +189,6 @@ export async function importByProposals(
         tools,
         messages,
       },
-      apiKey,
       (msg) => new DocumentImportError(msg),
       'Claude declined to process this document.',
     );

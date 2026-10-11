@@ -55,7 +55,7 @@ export function useAssistantChat() {
   // Resolves true once the turn is answered; false if it failed or was
   // stopped, so the caller can hand the question back for another try.
   const send = useCallback(
-    async (question: string, apiKey: string, focusDate: string | null): Promise<boolean> => {
+    async (question: string, focusDate: string | null): Promise<boolean> => {
       // One turn at a time; abortRef is set for exactly as long as one runs.
       if (!data || !view || abortRef.current) return false;
       const controller = new AbortController();
@@ -68,7 +68,6 @@ export function useAssistantChat() {
           focusDate,
           data,
           tools: { data, view, byDate: live.byDate },
-          apiKey,
           signal: controller.signal,
           events: {
             onText: (delta) => setPending((p) => p && { ...p, text: p.text + delta, progress: '' }),

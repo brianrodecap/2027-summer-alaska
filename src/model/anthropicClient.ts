@@ -1,7 +1,7 @@
 // The one place the Anthropic API is called from, via the official SDK, directly from
-// the browser with a user-supplied key (see src/config/aiKey.ts for why this key is
-// never hardcoded like config/places.ts's Google key — `dangerouslyAllowBrowser` is
-// that same accepted trade-off). Shared by src/model/proposalImport.ts (document
+// the browser with a user-supplied key (see src/config/apiKeys.ts for why this key is
+// never hardcoded like the Google key — `dangerouslyAllowBrowser` is that same
+// accepted trade-off). Shared by src/model/proposalImport.ts (document
 // import) and src/model/askAI.ts (multi-turn chat with tools):
 // only the request plumbing every caller needs identically lives here — model,
 // refusal fallback, and turning API failures into each caller's own error type.
@@ -11,6 +11,8 @@ import type {
   BetaMessage,
   MessageCreateParamsNonStreaming,
 } from '@anthropic-ai/sdk/resources/beta/messages/messages';
+
+import { getAnthropicApiKey } from '../config/apiKeys';
 
 export const MODEL_ID = 'claude-opus-5-5';
 
@@ -61,11 +63,12 @@ export class RequestAbortedError extends Error {}
 // failure, a cancellation, a refusal stop reason). Interpreting `content` is left to
 // the caller, since that genuinely differs by call shape.
 async function send(
-  apiKey: string,
   run: (client: Anthropic) => Promise<BetaMessage>,
   makeError: (message: string) => Error,
   refusalMessage: string,
 ): Promise<BetaMessage> {
+  const apiKey = getAnthropicApiKey();
+  if (!apiKey) throw makeError('Add your Anthropic API key in Settings.');
   const { AnthropicClient, client } = await loadClient(apiKey);
   let message: BetaMessage;
   try {
@@ -82,12 +85,10 @@ async function send(
 
 export function createMessage(
   request: MessageRequest,
-  apiKey: string,
   makeError: (message: string) => Error,
   refusalMessage: string,
 ): Promise<BetaMessage> {
   return send(
-    apiKey,
     (client) => client.beta.messages.create(withFallback(request)),
     makeError,
     refusalMessage,
@@ -105,14 +106,12 @@ export interface StreamHandlers {
 // generated, and the promise resolves with the complete message once it's done.
 export function streamMessage(
   request: MessageRequest,
-  apiKey: string,
   makeError: (message: string) => Error,
   refusalMessage: string,
   handlers: StreamHandlers,
   signal?: AbortSignal,
 ): Promise<BetaMessage> {
   return send(
-    apiKey,
     (client) => {
       const stream = client.beta.messages.stream(withFallback(request), { signal });
       if (handlers.onText) stream.on('text', handlers.onText);

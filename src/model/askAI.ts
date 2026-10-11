@@ -657,7 +657,6 @@ export interface AskAITurnInput {
   data: TripData;
   // The turn adds the conversation's own searchedPlaceIds.
   tools: Omit<AskAIToolContext, 'searchedPlaceIds'>;
-  apiKey: string;
   events?: AskAITurnEvents;
   signal?: AbortSignal;
 }
@@ -692,7 +691,7 @@ export async function runAskAITurn(
   previous: AskAIConversation | null,
   input: AskAITurnInput,
 ): Promise<AskAIConversation> {
-  const { question, focusDate, data, tools, apiKey, events = {}, signal } = input;
+  const { question, focusDate, data, tools, events = {}, signal } = input;
   const conversation = previous ?? startConversation(data);
   const update = previous ? itineraryUpdateFor(previous, data) : null;
   const prompt = focusDate
@@ -783,7 +782,6 @@ export async function runAskAITurn(
         ...(lastRequest ? { tool_choice: { type: 'none' as const } } : {}),
         messages: apiMessages,
       },
-      apiKey,
       (msg) => new AskAIError(msg),
       'Claude declined to respond to that.',
       { onText: events.onText, onThinking: events.onProgress },

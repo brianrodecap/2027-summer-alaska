@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { setAnthropicApiKey } from '../config/apiKeys';
 import { createMessage } from './anthropicClient';
 
 // Every test here stubs the global fetch the SDK calls, so nothing reaches the real
@@ -46,6 +47,8 @@ function reply(content: unknown[], stopReason = 'end_turn') {
 
 const makeError = (message: string) => new Error(message);
 
+beforeEach(() => setAnthropicApiKey('sk-test'));
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -55,7 +58,6 @@ describe('createMessage', () => {
     const calls = stubApi(200, reply([{ type: 'text', text: 'hi' }]));
     await createMessage(
       { max_tokens: 100, messages: [{ role: 'user', content: 'hello' }] },
-      'sk-test',
       makeError,
       'declined',
     );
@@ -67,6 +69,7 @@ describe('createMessage', () => {
   });
 
   it("turns an API error into the caller's error with the API's own message", async () => {
+    setAnthropicApiKey('bad');
     stubApi(401, {
       type: 'error',
       error: { type: 'authentication_error', message: 'invalid x-api-key' },
@@ -74,11 +77,23 @@ describe('createMessage', () => {
     await expect(
       createMessage(
         { max_tokens: 100, messages: [{ role: 'user', content: 'hello' }] },
-        'bad',
         makeError,
         'declined',
       ),
     ).rejects.toThrow('invalid x-api-key');
+  });
+
+  it('asks for a key, without calling the API, when none is set', async () => {
+    setAnthropicApiKey('');
+    const calls = stubApi(200, reply([{ type: 'text', text: 'hi' }]));
+    await expect(
+      createMessage(
+        { max_tokens: 100, messages: [{ role: 'user', content: 'hello' }] },
+        makeError,
+        'declined',
+      ),
+    ).rejects.toThrow('Add your Anthropic API key in Settings.');
+    expect(calls).toHaveLength(0);
   });
 
   it('reports a refusal that survived the fallback', async () => {
@@ -86,7 +101,6 @@ describe('createMessage', () => {
     await expect(
       createMessage(
         { max_tokens: 100, messages: [{ role: 'user', content: 'hello' }] },
-        'sk-test',
         makeError,
         'declined',
       ),

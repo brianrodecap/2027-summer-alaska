@@ -19,7 +19,6 @@ import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
-import { getStoredApiKey, setStoredApiKey } from '../../config/aiKey';
 import { DOCUMENT_ACCEPT, importErrorMessage } from '../../model/documentImport';
 import {
   applyLegForm,
@@ -42,7 +41,6 @@ import { slugify } from '../../model/slug';
 import { buildTripView } from '../../model/tripModel';
 import type { Leg, Trip } from '../../model/types';
 import { LegFormFields } from '../legs/LegFormFields';
-import { ApiKeyField } from '../shared/ApiKeyField';
 
 function summarizeImport(result: ProposalImport): string {
   const counts = new Map<EditKind, number>();
@@ -125,7 +123,6 @@ export function TripEditDialog({
 
   const [showImport, setShowImport] = useState(false);
   const [file, setFile] = useState<File | null>(null);
-  const [apiKey, setApiKey] = useState(() => getStoredApiKey() ?? '');
   const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
   const [importError, setImportError] = useState<string | null>(null);
   const [imported, setImported] = useState<ProposalImport | null>(null);
@@ -139,15 +136,14 @@ export function TripEditDialog({
   };
 
   const handleExtract = async () => {
-    if (!file || !apiKey.trim()) return;
+    if (!file) return;
     setImportStatus('loading');
     setImportError(null);
     try {
-      setStoredApiKey(apiKey.trim());
       // A new trip has nothing on it yet; the document is read against an
       // empty draft of it — the travelers entered so far and the pets setting.
       const draft = draftTripData(trip?.travelers ?? [], form.pets);
-      const result = await importByProposals(file, apiKey.trim(), draft, buildTripView(draft), {
+      const result = await importByProposals(file, draft, buildTripView(draft), {
         newTrip: true,
       });
       if (!form.name.trim() && result.tripName) handleNameChange(result.tripName);
@@ -230,12 +226,11 @@ export function TripEditDialog({
                   }}
                 />
               </Button>
-              <ApiKeyField value={apiKey} onChange={setApiKey} />
               {importStatus !== 'success' && (
                 <Button
                   variant="contained"
                   onClick={handleExtract}
-                  disabled={!file || !apiKey.trim() || importStatus === 'loading'}
+                  disabled={!file || importStatus === 'loading'}
                   sx={{ alignSelf: 'flex-start' }}
                 >
                   {importStatus === 'loading' ? <CircularProgress size={20} /> : 'Read it'}

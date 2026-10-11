@@ -12,5 +12,6 @@ dist/
 # Playwright MCP session output (snapshots, screenshots, console logs)
 .playwright-mcp/
 
-# Plaintext API key file found sitting in the working tree — never commit it.
-/trippin-api-key.txt
+# Local API keys for `npm run check:import` (trippin-api-key-claude.txt,
+# trippin-api-key-google.txt) — never commit them.
+/trippin-api-key-*.txt

@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { setAnthropicApiKey } from '../config/apiKeys';
 import {
   applyDayPlan,
   type AskAIConversation,
@@ -107,6 +108,8 @@ function stubTurns(...replies: string[]) {
   return bodies;
 }
 
+beforeEach(() => setAnthropicApiKey('sk-test'));
+
 afterEach(() => {
   vi.unstubAllGlobals();
 });
@@ -164,7 +167,7 @@ function tools(data: TripData): Omit<AskAIToolContext, 'searchedPlaceIds'> {
 }
 
 function turn(conversation: AskAIConversation | null, question: string, data = tripData()) {
-  return runAskAITurn(conversation, { question, data, tools: tools(data), apiKey: 'sk-test' });
+  return runAskAITurn(conversation, { question, data, tools: tools(data) });
 }
 
 describe('runAskAITurn', () => {
@@ -185,7 +188,6 @@ describe('runAskAITurn', () => {
       question: 'Anything to know about the 14th?',
       data: tripData(),
       tools: tools(tripData()),
-      apiKey: 'sk-test',
       events: { onLookup: (label) => lookups.push(label) },
     });
 

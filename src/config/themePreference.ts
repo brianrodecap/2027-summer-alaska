@@ -1,7 +1,7 @@
 import { safeGetItem, safeSetItem } from './safeStorage';
 
 // The user's chosen color mode, kept in localStorage per browser (same
-// no-backend storage approach as aiKey.ts, minus the secrecy concerns).
+// no-backend storage approach as apiKeys.ts, minus the secrecy concerns).
 // 'system' defers to the OS-level prefers-color-scheme setting.
 const THEME_PREFERENCES = ['light', 'dark', 'system'] as const;
 export type ThemePreference = (typeof THEME_PREFERENCES)[number];

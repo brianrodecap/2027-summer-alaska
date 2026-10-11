@@ -1,10 +1,11 @@
 import Box from '@mui/material/Box';
 import Tab from '@mui/material/Tab';
 import Tabs from '@mui/material/Tabs';
+import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { APIProvider } from '@vis.gl/react-google-maps';
 
-import { PLACES_API_KEY } from '../../config/places';
+import { getGoogleApiKey } from '../../config/apiKeys';
 import type { Day } from '../../model/types';
 import { AssistantPanel } from '../assistant/AssistantPanel';
 import { DayMapSidebar } from '../day/DayMapSidebar';
@@ -61,8 +62,12 @@ export function SidebarSlot({
             <Tab value="assistant" label="Assistant" />
           </Tabs>
           <Box sx={{ flex: 1, minHeight: 0 }}>
-            {view === 'map' ? (
-              <APIProvider apiKey={PLACES_API_KEY}>
+            {view === 'map' && !getGoogleApiKey() ? (
+              <Typography variant="body2" color="text.secondary" sx={{ p: 2 }}>
+                Add a Google API key in Settings to show the map.
+              </Typography>
+            ) : view === 'map' ? (
+              <APIProvider apiKey={getGoogleApiKey()}>
                 <DayMapSidebar
                   activeDay={activeDay}
                   onOpenActivity={onOpenActivity}

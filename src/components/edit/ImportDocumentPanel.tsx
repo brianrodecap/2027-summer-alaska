@@ -6,7 +6,6 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
-import { setStoredApiKey } from '../../config/aiKey';
 import { DOCUMENT_ACCEPT, importErrorMessage, type QueuedImport } from '../../model/documentImport';
 import { EDIT_KIND_LABEL, type Entity, entityStartAt, findByKind } from '../../model/editForms';
 import { importByProposals, type ProposalImport } from '../../model/proposalImport';
@@ -89,7 +88,6 @@ export function ImportEntryRow({ draft, before }: { draft: QueuedImport; before:
 }
 
 interface ImportDocumentPanelProps {
-  apiKey: string;
   onClose: () => void;
 }
 
@@ -101,7 +99,7 @@ interface ImportDocumentPanelProps {
 // (src/model/proposals.ts); each opens for review one at a time through
 // EditContext's openDraftSequence, where any can be skipped. This panel
 // never commits anything itself.
-export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProps) {
+export function ImportDocumentPanel({ onClose }: ImportDocumentPanelProps) {
   const { openDraftSequence } = useEdit();
   const { openNoteDraftSequence } = useNoteEdit();
   const { data, view } = useTripData();
@@ -117,12 +115,11 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
   const [before, setBefore] = useState<ReadonlyMap<string, Entity | null>>(new Map());
 
   const handleExtract = async () => {
-    if (!file || !apiKey.trim() || !data || !view) return;
+    if (!file || !data || !view) return;
     setLoading(true);
     setErrorMessage(null);
     try {
-      setStoredApiKey(apiKey.trim());
-      const imported = await importByProposals(file, apiKey.trim(), data, view);
+      const imported = await importByProposals(file, data, view);
       setBefore(new Map(imported.queue.map((d) => [d.entity._id, existingEntry(data, d)])));
       setReadAgainst(data);
       setResult(imported);
@@ -200,7 +197,7 @@ export function ImportDocumentPanel({ apiKey, onClose }: ImportDocumentPanelProp
           <Button
             variant="contained"
             onClick={handleExtract}
-            disabled={!file || !apiKey.trim() || loading}
+            disabled={!file || loading}
             sx={{ alignSelf: 'flex-start' }}
           >
             {loading ? <CircularProgress size={20} /> : 'Read it'}

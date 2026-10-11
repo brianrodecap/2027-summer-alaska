@@ -11,7 +11,7 @@ A read-only itinerary site for upcoming trips (currently one: 2027 Alaska). Reac
 
 ## Commands
 
-`npm run dev`, `npm test`, `npm run validate` (lint + format:check + test + `tsc -b`; run it after any code change). If `node` is missing, `source ~/.nvm/nvm.sh`. After AI-import changes, recommend the paid `npm run check:import`.
+`npm run dev`, `npm test`, `npm run validate` (lint + format:check + test + `tsc -b`; run it after any code change). If `node` is missing, `source ~/.nvm/nvm.sh`. After AI-import changes, recommend the paid `npm run check:import`; it reads its keys from the gitignored `trippin-api-key-claude.txt` and `trippin-api-key-google.txt` (command in `src/importCheck/attachments.check.ts`).
 
 ## Rules
 
@@ -34,7 +34,6 @@ A read-only itinerary site for upcoming trips (currently one: 2027 Alaska). Reac
 
 ## Gotchas
 
-- Two secret strategies coexist on purpose: the Google Places key (`src/config/places.ts`) is committed and protected by referrer/quota restriction; the Anthropic key is never committed, and is pasted once per browser into `localStorage`.
 - `vite.config.ts` `base` must equal the repo name exactly (`/2027-summer-alaska/`). `npm run preview` doesn't reproduce the sub-path; smoke-test the live URL after a deploy.
 - Pages source must be "GitHub Actions", not "Deploy from a branch".
 - Vite Fast Refresh can silently fail after editing a file that exports both components and constants. If a UI fix doesn't show, reload the page before concluding it failed.

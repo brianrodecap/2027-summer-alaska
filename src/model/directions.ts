@@ -3,8 +3,8 @@
 // travel.minutes/travel.miles in automatically from two Place IDs instead
 // of requiring a hand-typed guess) and by the day timeline's own
 // place-to-place travel info (TravelSegmentRow). A separate Google Cloud API
-// from Places (see config/places.ts's own key note): the Routes API has to
-// be enabled for PLACES_API_KEY too, or every lookup here fails closed (the
+// from Places (see config/apiKeys.ts): the Routes API has
+// to be enabled on that key too, or every lookup here fails closed (the
 // route editor just leaves the fields as they were when that happens, same
 // as a failed place search).
 import { memoizeAsync } from './asyncCache';

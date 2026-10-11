@@ -1,5 +1,6 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { setAnthropicApiKey } from '../config/apiKeys';
 import { blankTransit } from './editForms';
 import { draftTripData, importByProposals, stagedFromProposals } from './proposalImport';
 import { buildTripView } from './tripModel';
@@ -32,7 +33,10 @@ function stubTurns(...replies: unknown[][]): Record<string, unknown>[] {
   return bodies;
 }
 
-afterEach(() => vi.unstubAllGlobals());
+beforeEach(() => setAnthropicApiKey('sk-test'));
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 const call = (id: string, name: string, input: unknown) => ({ type: 'tool_use', id, name, input });
 const pdf = () => new File(['%PDF-1.4 synthetic'], 'booking.pdf', { type: 'application/pdf' });
@@ -79,7 +83,7 @@ describe('importByProposals', () => {
       }),
     ]);
     const data = trip();
-    const result = await importByProposals(pdf(), 'sk-test', data, buildTripView(data));
+    const result = await importByProposals(pdf(), data, buildTripView(data));
 
     const [body] = bodies;
     expect((body.tools as { name: string }[]).map((t) => t.name)).toEqual([
@@ -104,7 +108,7 @@ describe('importByProposals', () => {
       call('a', 'propose_change', proposal),
     ]);
     const data = trip();
-    const result = await importByProposals(pdf(), 'sk-test', data, buildTripView(data));
+    const result = await importByProposals(pdf(), data, buildTripView(data));
     expect(result.requests).toBe(1);
     expect(result.queue).toHaveLength(1);
     expect(result.rejected).toEqual([]);
@@ -122,7 +126,7 @@ describe('importByProposals', () => {
       ],
     );
     const data = trip();
-    const result = await importByProposals(pdf(), 'sk-test', data, buildTripView(data));
+    const result = await importByProposals(pdf(), data, buildTripView(data));
     expect(result.requests).toBe(2);
     expect(result.queue).toHaveLength(1);
     expect(result.rejected.map((r) => r.tool)).toEqual(['propose_change', 'finish']);
@@ -137,7 +141,7 @@ describe('importByProposals', () => {
       ],
     );
     const data = trip();
-    const result = await importByProposals(pdf(), 'sk-test', data, buildTripView(data));
+    const result = await importByProposals(pdf(), data, buildTripView(data));
 
     const turned = (bodies[1].messages as { content: unknown }[]).at(-1)?.content as {
       is_error?: boolean;
@@ -179,7 +183,7 @@ describe('a new trip from a document', () => {
       ],
     );
     const draft = draftTripData([], false);
-    const result = await importByProposals(pdf(), 'sk-test', draft, buildTripView(draft), {
+    const result = await importByProposals(pdf(), draft, buildTripView(draft), {
       newTrip: true,
     });
     expect(result.tripName).toBe('Catalina');

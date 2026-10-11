@@ -1,5 +1,12 @@
-// The committed Google Places key is restricted to the site's own referrers
-// (see src/config/places.ts), which a browser sends on its own. Under the
+import { setAnthropicApiKey, setGoogleApiKey } from '../config/apiKeys';
+
+// The import reads its keys where Settings keeps them (src/config/apiKeys.ts);
+// here they come from ANTHROPIC_API_KEY and GOOGLE_API_KEY.
+setAnthropicApiKey(process.env.ANTHROPIC_API_KEY ?? '');
+setGoogleApiKey(process.env.GOOGLE_API_KEY ?? '');
+
+// The Google key is restricted to the site's own referrers
+// (see src/config/apiKeys.ts), which a browser sends on its own. Under the
 // attachments check there's no page, so Google calls carry the local dev
 // server's address as their referrer, the same as running the import from
 // `npm run dev` would.

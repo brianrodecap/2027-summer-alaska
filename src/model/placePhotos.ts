@@ -6,7 +6,7 @@
 // once per page load — the media fetch itself (one plain <img src> per photo
 // shown) is the only per-image cost. A lookup that fails stays failed for the
 // page load: each row naming that place would otherwise retry it on mount.
-import { PLACES_API_KEY } from '../config/places';
+import { getGoogleApiKey } from '../config/apiKeys';
 import {
   fetchPlaceFields,
   isPlacesApiKeyConfigured,
@@ -33,7 +33,7 @@ export type PhotoSize = keyof typeof PHOTO_SIZE_PX;
 // param for exactly this.
 export function photoMediaUrl(photoName: string, size: PhotoSize): string {
   const px = String(PHOTO_SIZE_PX[size]);
-  const params = new URLSearchParams({ maxWidthPx: px, maxHeightPx: px, key: PLACES_API_KEY });
+  const params = new URLSearchParams({ maxWidthPx: px, maxHeightPx: px, key: getGoogleApiKey() });
   return `https://places.googleapis.com/v1/${photoName}/media?${params}`;
 }
 

@@ -13,7 +13,7 @@
 // plain <img src>) — still nothing from Enterprise+Atmosphere (no
 // rating/reviews, which add review display/attribution obligations on top of
 // the extra cost).
-import { PLACES_API_KEY } from '../config/places';
+import { getGoogleApiKey } from '../config/apiKeys';
 import { memoizeAsync } from './asyncCache';
 import { googleApiFetch } from './googleApiFetch';
 
@@ -143,5 +143,5 @@ async function fetchSearch(query: string, includedType?: string): Promise<PlaceS
 }
 
 export function isPlacesApiKeyConfigured(): boolean {
-  return Boolean(PLACES_API_KEY) && !PLACES_API_KEY.startsWith('REPLACE_');
+  return Boolean(getGoogleApiKey());
 }
