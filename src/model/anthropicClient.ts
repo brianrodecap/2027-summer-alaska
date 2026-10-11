@@ -1,8 +1,8 @@
 // The one place the Anthropic API is called from, via the official SDK, directly from
 // the browser with a user-supplied key (see src/config/aiKey.ts for why this key is
 // never hardcoded like config/places.ts's Google key — `dangerouslyAllowBrowser` is
-// that same accepted trade-off). Shared by src/model/documentImport.ts (structured-
-// output document extraction) and src/model/askAI.ts (multi-turn chat with tools):
+// that same accepted trade-off). Shared by src/model/proposalImport.ts (document
+// import) and src/model/askAI.ts (multi-turn chat with tools):
 // only the request plumbing every caller needs identically lives here — model,
 // refusal fallback, and turning API failures into each caller's own error type.
 import type Anthropic from '@anthropic-ai/sdk';
@@ -20,7 +20,11 @@ export const MODEL_ID = 'claude-opus-5-5';
 const FALLBACK_BETA = 'server-side-fallback-2026-07-01';
 
 // `betas` here are any extra ones a caller needs; the fallback beta is always added.
-export type MessageRequest = Omit<MessageCreateParamsNonStreaming, 'model' | 'fallbacks'>;
+// `model` defaults to MODEL_ID; a caller passes one only to compare models
+// (the attachments check's IMPORT_MODEL).
+export type MessageRequest = Omit<MessageCreateParamsNonStreaming, 'model' | 'fallbacks'> & {
+  model?: string;
+};
 
 // The API's own error message (e.g. "invalid x-api-key") rather than the SDK's
 // "401 {json}" rendering, since this is shown to the user as-is.
@@ -43,7 +47,7 @@ async function loadClient(apiKey: string) {
 function withFallback(request: MessageRequest) {
   return {
     ...request,
-    model: MODEL_ID,
+    model: request.model ?? MODEL_ID,
     betas: [FALLBACK_BETA, ...(request.betas ?? [])],
     fallbacks: 'default' as const,
   };

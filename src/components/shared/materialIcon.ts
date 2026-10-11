@@ -1,4 +1,5 @@
 import AltRouteIcon from '@mui/icons-material/AltRoute';
+import AnchorIcon from '@mui/icons-material/Anchor';
 import AttractionsIcon from '@mui/icons-material/Attractions';
 import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
 import CabinIcon from '@mui/icons-material/Cabin';
@@ -8,6 +9,7 @@ import CelebrationIcon from '@mui/icons-material/Celebration';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloudIcon from '@mui/icons-material/Cloud';
 import CommuteIcon from '@mui/icons-material/Commute';
+import DeleteIcon from '@mui/icons-material/Delete';
 import DirectionsBikeIcon from '@mui/icons-material/DirectionsBike';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
@@ -20,6 +22,7 @@ import GroupIcon from '@mui/icons-material/Group';
 import HelpOutlineIcon from '@mui/icons-material/Help';
 import HikingIcon from '@mui/icons-material/Hiking';
 import HotelIcon from '@mui/icons-material/Hotel';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import InfoIcon from '@mui/icons-material/Info';
 import KitchenIcon from '@mui/icons-material/Kitchen';
 import LandscapeIcon from '@mui/icons-material/Landscape';
@@ -64,6 +67,7 @@ type IconComponent = ComponentType<SvgIconProps>;
 
 const ICONS: Record<string, IconComponent> = {
   hotel: HotelIcon,
+  delete: DeleteIcon,
   directions_car: DirectionsCarIcon,
   directions_walk: DirectionsWalkIcon,
   directions_bike: DirectionsBikeIcon,
@@ -102,6 +106,8 @@ const ICONS: Record<string, IconComponent> = {
   terrain: TerrainIcon,
   storefront: StorefrontIcon,
   schedule: ScheduleIcon,
+  hourglass_empty: HourglassEmptyIcon,
+  anchor: AnchorIcon,
   paid: PaidIcon,
   request_quote: RequestQuoteIcon,
   group: GroupIcon,

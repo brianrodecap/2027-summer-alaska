@@ -3,14 +3,20 @@ import { describe, expect, it } from 'vitest';
 import {
   applyRouteForm,
   applyScenarioSave,
+  applyStayForm,
   applyTransitForm,
+  applyTripForm,
   blankRouteVariant,
+  blankStay,
   blankTransit,
   NO_BOOKINGS,
+  packagesFromForm,
   routeFormFrom,
+  stayFormFrom,
   transitFormFrom,
+  tripFormFrom,
 } from './editForms';
-import type { Route, Scenario, Transit } from './types';
+import type { Package, Route, Scenario, Transit, Trip } from './types';
 
 // Synthetic fixture only — never the real public/data/routes.json, which is the
 // site's live, actively-edited reference data rather than a fixed test fixture.
@@ -204,5 +210,109 @@ describe('applyScenarioSave', () => {
       ideal: 'alternate',
       alt: 'ideal',
     });
+  });
+});
+
+describe('trip form: pets', () => {
+  const trip: Trip = { _id: 'trip_t', name: 'Test Trip', travelers: [], images: [] };
+
+  it('stores pets only when the party brings them', () => {
+    const on = applyTripForm(trip, { ...tripFormFrom(trip, 'test-trip'), pets: true }, []);
+    expect(typeof on !== 'string' && on.trip.pets).toBe(true);
+    const off = applyTripForm({ ...trip, pets: true }, tripFormFrom(trip, 'test-trip'), []);
+    expect(typeof off !== 'string' && 'pets' in off.trip).toBe(false);
+  });
+});
+
+describe('packagesFromForm', () => {
+  const row = (overrides: Partial<Package>): Package => ({
+    _id: 'p',
+    name: 'Fee',
+    status: 'booked',
+    cost: { amount: 10, currency: 'USD' },
+    confirmationNumber: null,
+    benefits: null,
+    travelers: null,
+    ...overrides,
+  });
+
+  it('drops unnamed rows and a due date never picked', () => {
+    expect(packagesFromForm([row({ name: ' ' })])).toBeNull();
+    const [kept] = packagesFromForm([row({ payable: { dueBy: '' } })]) ?? [];
+    expect('payable' in kept).toBe(false);
+    const [atProperty] = packagesFromForm([row({ payable: 'atProperty' })]) ?? [];
+    expect(atProperty.payable).toBe('atProperty');
+  });
+
+  it('keeps no charge settings on a package with no cost', () => {
+    const [free] =
+      packagesFromForm([row({ cost: null, per: 'night', payable: 'atProperty' })]) ?? [];
+    expect('per' in free || 'payable' in free).toBe(false);
+  });
+
+  it('drops an emptied list from a transit instead of storing null', () => {
+    const transit = { ...blankTransit('leg_t', '2027-07-01'), packages: [row({})] };
+    const form = { ...transitFormFrom(transit, NO_BOOKINGS), packages: [] };
+    form.departsTime = '08:00';
+    form.arrivesDate = '2027-07-01';
+    form.arrivesTime = '09:00';
+    expect(applyTransitForm(transit, form)).toBeNull();
+    expect('packages' in transit).toBe(false);
+  });
+});
+
+describe('stay form: port calls', () => {
+  it('keeps named stops, drops unfinished rows, and leaves a hotel with none', () => {
+    const stay = blankStay('leg_t', '2027-07-17');
+    const form = {
+      ...stayFormFrom(stay, NO_BOOKINGS),
+      checkInDate: '2027-07-17',
+      checkInTime: '16:00',
+      checkOutDate: '2027-07-24',
+      checkOutTime: '08:00',
+    };
+    const juneau = {
+      kind: 'port' as const,
+      place: { id: 'place_juneau', label: 'Juneau' },
+      arrivesAt: '2027-07-21T06:30',
+      departsAt: '2027-07-21T16:15',
+    };
+    const blank = { ...juneau, place: { id: null, label: ' ' }, arrivesAt: null, departsAt: null };
+    expect(applyStayForm(stay, { ...form, portCalls: [juneau, blank] })).toBeNull();
+    expect(stay.portCalls).toEqual([juneau]);
+
+    // Times entered with no port would be lost silently, so it is an error instead.
+    const timedBlank = { ...juneau, place: { id: null, label: ' ' } };
+    expect(applyStayForm(stay, { ...form, portCalls: [juneau, timedBlank] })).toMatch(/no port/);
+
+    expect(applyStayForm(stay, { ...form, portCalls: [] })).toBeNull();
+    expect('portCalls' in stay).toBe(false);
+  });
+
+  it('turns down a named stop with no time, or one outside the stay', () => {
+    const stay = blankStay('leg_t', '2027-07-17');
+    const form = {
+      ...stayFormFrom(stay, NO_BOOKINGS),
+      checkInDate: '2027-07-17',
+      checkInTime: '16:00',
+      checkOutDate: '2027-07-24',
+      checkOutTime: '08:00',
+    };
+    const call = {
+      kind: 'port' as const,
+      place: { id: 'place_juneau', label: 'Juneau' },
+      arrivesAt: null,
+      departsAt: null,
+    };
+    expect(applyStayForm(stay, { ...form, portCalls: [call] })).toMatch(/arrival or departure/);
+    expect(
+      applyStayForm(stay, {
+        ...form,
+        portCalls: [{ ...call, arrivesAt: '2027-07-21T16:00', departsAt: '2027-07-21T07:00' }],
+      }),
+    ).toMatch(/after the ship arrives/);
+    expect(
+      applyStayForm(stay, { ...form, portCalls: [{ ...call, arrivesAt: '2027-08-01T06:00' }] }),
+    ).toMatch(/between check-in and check-out/);
   });
 });

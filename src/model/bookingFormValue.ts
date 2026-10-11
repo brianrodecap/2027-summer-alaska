@@ -1,8 +1,8 @@
 import { bookingCost, bookingFares, bookingFixedCharges } from './bookings';
-import type { Booking, BookingStatus, FixedCharge, Money, PassengerFare } from './types';
+import type { Booking, BookingStatus, FixedCharge, Money, PassengerFare, Payable } from './types';
 
 // Shared by any "amount" text input that commits straight to a Money field
-// (readBookingFormValue below, StayPackagesField's per-fee cost input) — ''
+// (readBookingFormValue below, PackagesField's per-fee cost input) — ''
 // means "no cost", otherwise the existing currency carries over rather than
 // resetting to a hardcoded default on every edit.
 export function moneyFromAmountInput(
@@ -32,16 +32,48 @@ export interface BookingFormValue {
   confirmationNumber: string;
   perPersonAmount: string;
   fixedAmount: string;
+  // When the price is paid (see Payable) — one choice for every fare and
+  // fixed charge on the booking, unless they already differ (see
+  // hasMixedPayables), in which case each keeps its own.
+  payable: Payable | undefined;
   bookedThrough: string;
+}
+
+// A payable as stored: a due or paid date never picked reads as paid.
+function storedPayable(payable: Payable | undefined): Payable | undefined {
+  if (!payable || payable === 'atProperty') return payable;
+  const date = 'dueBy' in payable ? payable.dueBy : payable.paidAt;
+  return date ? payable : undefined;
+}
+
+// `line` with `payable` stored as storedPayable says — left off when paid.
+export function withPayable<T extends { payable?: Payable }>(
+  line: T,
+  payable: Payable | undefined,
+): T {
+  const { payable: _old, ...rest } = line;
+  const stored = storedPayable(payable);
+  return (stored ? { ...rest, payable: stored } : rest) as T;
 }
 
 // Booking.bookedThrough can be a plain string or a {name, confirmationNumber}
 // object, but this form only ever reads/writes the name — the confirmation
 // number already has its own field on Booking itself, so repeating it inside
 // bookedThrough here would just be the same fact stored twice.
-function bookedThroughName(bookedThrough: Booking['bookedThrough']): string {
+export function bookedThroughName(bookedThrough: Booking['bookedThrough']): string {
   if (!bookedThrough) return '';
   return typeof bookedThrough === 'string' ? bookedThrough : bookedThrough.name;
+}
+
+const payableKey = (p: Payable | undefined) => JSON.stringify(p ?? null);
+
+// The one Payment choice every line shares; none when they differ, so it
+// never depends on which line happens to be listed first.
+function commonPayable(lines: { payable?: Payable }[]): Payable | undefined {
+  const [first] = lines;
+  return first && lines.every((l) => payableKey(l.payable) === payableKey(first.payable))
+    ? first.payable
+    : undefined;
 }
 
 export function bookingFormValueFrom(
@@ -58,20 +90,43 @@ export function bookingFormValueFrom(
     confirmationNumber: booking?.confirmationNumber ?? '',
     perPersonAmount: uniformFare(fares) ? String(fares[0].fare.amount) : '',
     fixedAmount: fixed.length === 1 ? String(fixed[0].amount.amount) : '',
+    payable: commonPayable([...fares, ...fixed]),
     bookedThrough: bookedThroughName(booking?.bookedThrough),
   };
 }
 
-function uniformFare(fares: PassengerFare[]): boolean {
-  return fares.length > 0 && fares.every((f) => f.fare.amount === fares[0].fare.amount);
+// A fare split into payment lines (a deposit paid, the balance due by a
+// date) has several lines for one traveler.
+function splitFares(fares: PassengerFare[]): boolean {
+  return new Set(fares.map((f) => f.travelerId)).size < fares.length;
 }
 
-// Fares that differ by traveler (a cruise's adult and child fares) can't be
-// one per-person number, so BookingFields shows them read-only and Save
-// keeps them as they are; likewise several itemized fixed charges.
+function uniformFare(fares: PassengerFare[]): boolean {
+  return (
+    fares.length > 0 &&
+    !splitFares(fares) &&
+    fares.every((f) => f.fare.amount === fares[0].fare.amount)
+  );
+}
+
+export function hasSplitFares(value: BookingFormValue): boolean {
+  return splitFares(bookingFares(value.base) ?? []);
+}
+
+// Fares that differ by traveler (a cruise's adult and child fares), or are
+// split into payment lines, can't be one per-person number, so BookingFields
+// shows them read-only and Save keeps them as they are; likewise several
+// itemized fixed charges.
 export function hasVaryingFares(value: BookingFormValue): boolean {
   const fares = bookingFares(value.base) ?? [];
   return fares.length > 0 && !uniformFare(fares);
+}
+
+// Lines paid at different times (a fare paid now, a fee at the property)
+// can't share one Payment choice, so the form leaves each as it is.
+export function hasMixedPayables(value: BookingFormValue): boolean {
+  const lines = [...(bookingFares(value.base) ?? []), ...(bookingFixedCharges(value.base) ?? [])];
+  return lines.some((l) => payableKey(l.payable) !== payableKey(lines[0].payable));
 }
 
 export function hasItemizedFixedCharges(value: BookingFormValue): boolean {
@@ -97,7 +152,7 @@ export function readBookingFormValue(
   const baseFares = bookingFares(base) ?? [];
   const baseFixed = bookingFixedCharges(base) ?? [];
   const perPerson = moneyFromAmountInput(value.perPersonAmount, currency);
-  const perTraveler: PassengerFare[] = hasVaryingFares(value)
+  const fares: PassengerFare[] = hasVaryingFares(value)
     ? baseFares
     : perPerson
       ? (baseFares.length ? baseFares.map((f) => f.travelerId) : travelerIds).map((travelerId) => ({
@@ -107,11 +162,15 @@ export function readBookingFormValue(
         }))
       : [];
   const fixedMoney = moneyFromAmountInput(value.fixedAmount, currency);
-  const fixed: FixedCharge[] = hasItemizedFixedCharges(value)
+  const charges: FixedCharge[] = hasItemizedFixedCharges(value)
     ? baseFixed
     : fixedMoney
-      ? [{ label: baseFixed[0]?.label ?? 'Fixed', amount: fixedMoney }]
+      ? [{ ...baseFixed[0], label: baseFixed[0]?.label ?? 'Fixed', amount: fixedMoney }]
       : [];
+  // One Payment choice covers every line, unless they already differed.
+  const mixed = hasMixedPayables(value);
+  const perTraveler = mixed ? fares : fares.map((f) => withPayable(f, value.payable));
+  const fixed = mixed ? charges : charges.map((c) => withPayable(c, value.payable));
   const pricing: Booking['pricing'] =
     perTraveler.length || fixed.length ? { perTraveler, fixed } : null;
   const booking: Booking = {

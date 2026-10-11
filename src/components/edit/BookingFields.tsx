@@ -5,15 +5,24 @@ import TextField from '@mui/material/TextField';
 import {
   type BookingFormValue,
   hasItemizedFixedCharges,
+  hasMixedPayables,
+  hasSplitFares,
   hasVaryingFares,
 } from '../../model/bookingFormValue';
-import { bookingFares, bookingFixedCharges } from '../../model/bookings';
+import {
+  bookingFares,
+  bookingFixedCharges,
+  fixedCost,
+  perTravelerCost,
+} from '../../model/bookings';
 import { bookingNoun } from '../../model/formatting';
 import type { BookingStatus } from '../../model/types';
+import { PayableField } from './PayableField';
 
 const BOOKING_STATUS_OPTIONS: { value: BookingStatus | ''; label: string }[] = [
   { value: '', label: 'None' },
   { value: 'planning', label: 'Planning' },
+  { value: 'requested', label: 'Requested' },
   { value: 'booked', label: 'Booked' },
   { value: 'cancelled', label: 'Cancelled' },
 ];
@@ -78,34 +87,47 @@ export function BookingFields({
           />
           <Stack direction="row" spacing={2}>
             <TextField
-              label="Per person"
+              // Varying fares have no one per-person rate: the field shows what
+              // every traveler's fare adds up to, so it says so.
+              label={varyingFares ? 'Total fares' : 'Per person'}
               type="number"
-              value={varyingFares ? '' : value.perPersonAmount}
+              value={
+                varyingFares ? (perTravelerCost(value.base)?.amount ?? '') : value.perPersonAmount
+              }
               onChange={(e) => onChange({ ...value, perPersonAmount: e.target.value })}
               disabled={varyingFares}
               helperText={
-                varyingFares
-                  ? 'Varies by traveler'
-                  : fareCount
-                    ? `× ${fareCount} travelers`
-                    : 'Grows with each traveler'
+                hasSplitFares(value)
+                  ? `${fareCount} fare lines, paid in parts`
+                  : varyingFares
+                    ? `${fareCount} fares, varying by traveler`
+                    : fareCount
+                      ? `× ${fareCount} travelers`
+                      : 'Grows with each traveler'
               }
               fullWidth
             />
             <TextField
-              label="Fixed"
+              label={itemizedFixed ? 'Fixed (all charges)' : 'Fixed'}
               type="number"
-              value={itemizedFixed ? '' : value.fixedAmount}
+              value={itemizedFixed ? (fixedCost(value.base)?.amount ?? '') : value.fixedAmount}
               onChange={(e) => onChange({ ...value, fixedAmount: e.target.value })}
               disabled={itemizedFixed}
               helperText={
                 itemizedFixed
-                  ? (bookingFixedCharges(value.base) ?? []).map((c) => c.label).join(', ')
+                  ? (bookingFixedCharges(value.base) ?? []).map((c) => c.label).join(' + ')
                   : 'Room, fees — same for any party size'
               }
               fullWidth
             />
           </Stack>
+          {(value.perPersonAmount || value.fixedAmount || varyingFares || itemizedFixed) &&
+            !hasMixedPayables(value) && (
+              <PayableField
+                value={value.payable}
+                onChange={(payable) => onChange({ ...value, payable })}
+              />
+            )}
           <TextField
             label="Booked through"
             placeholder="e.g. Capital One Travel"

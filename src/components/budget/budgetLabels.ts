@@ -18,7 +18,7 @@ export const BUDGET_BUCKET_ICON: Record<BudgetBucket, string> = {
 export const BUDGET_BUCKETS: BudgetBucket[] = ['spent', 'pending', 'estimated', 'unplanned'];
 
 // 'unplanned' has no dollar amount at all (that's the point of the bucket —
-// see tripModel.ts's bookingBucket) so it renders as a count instead of a
+// see tripModel.ts's rowBucket) so it renders as a count instead of a
 // currency figure.
 export function formatBudgetBucketAmount(
   totals: BudgetTotals,

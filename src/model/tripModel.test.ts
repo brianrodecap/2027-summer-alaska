@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import { buildLiveDays } from './liveDays';
-import { liveOverlapWarnings } from './mealOptions';
+import { liveWarnings } from './mealOptions';
 import {
   buildTripView,
   diffMinutesIso,
+  portCallsOn,
+  portCallWarningFor,
   splitOutStayBoundaries,
   tripDateRange,
   tripDayCount,
 } from './tripModel';
-import type { BoxRow, StayRow, TripData } from './types';
+import type { BoxRow, MealOption, StayRow, TripData } from './types';
 
 // A bare-minimum, synthetic TripData — one Trip and one Leg, nothing else —
 // for tests to extend with only the specific entities/fields they exercise.
@@ -451,7 +453,7 @@ describe('buildTripView', () => {
   });
 });
 
-describe('transitOverlapWarning', () => {
+describe('activity warnings: overlapping a transit', () => {
   it('flags a Transit that departs partway through an Activity, not just the reverse', () => {
     const data = minimalTripData();
     pushMinimalActivity(data, {
@@ -462,7 +464,7 @@ describe('transitOverlapWarning', () => {
     });
     pushMinimalTransit(data, { departsAt: '2027-06-28T23:15', arrivesAt: '2027-06-28T23:45' });
     const view = buildTripView(data);
-    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBe(
+    expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBe(
       'A departs before this ends.',
     );
   });
@@ -476,7 +478,7 @@ describe('transitOverlapWarning', () => {
       diningFormat: 'drivethru',
     });
     const view = buildTripView(data);
-    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBeNull();
+    expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBeNull();
   });
 
   it('still flags a non-meal Activity that starts mid-drive', () => {
@@ -484,7 +486,7 @@ describe('transitOverlapWarning', () => {
     pushMinimalTransit(data, { departsAt: '2027-06-28T23:00', arrivesAt: '2027-06-28T23:30' });
     pushMinimalActivity(data, { startAt: '2027-06-28T23:10' });
     const view = buildTripView(data);
-    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBe(
+    expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBe(
       'During transit: A → B',
     );
   });
@@ -551,7 +553,7 @@ describe('a routed drive and the Activities along it', () => {
     const view = buildTripView(data);
     // 10:15 leave View, drive 15 min, stop 20 min at 10:30, 15 min to the Fork.
     expect(view.transitsById.get('test_transit')!.arrivesAt).toBe('2027-06-01T12:05');
-    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBe(
+    expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBe(
       'During transit: A → B',
     );
   });
@@ -565,7 +567,7 @@ describe('a routed drive and the Activities along it', () => {
     });
     const view = buildTripView(data);
     expect(view.transitsById.get('test_transit')!.arrivesAt).toBe('2027-06-01T12:45');
-    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBeNull();
+    expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBeNull();
   });
 
   it('places an Activity at the exact departure time before the drive, not inside it', () => {
@@ -573,7 +575,7 @@ describe('a routed drive and the Activities along it', () => {
     pushMinimalActivity(data, { startAt: '2027-06-01T09:00' });
     const view = buildTripView(data);
     expect(view.transitsById.get('test_transit')!.arrivesAt).toBe('2027-06-01T11:45');
-    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBeNull();
+    expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBeNull();
     const rows = liveDay(data, '2027-06-01')!.rows.map((r) =>
       r.type === 'transit' ? `transit:${r.phase}` : r.type,
     );
@@ -585,7 +587,7 @@ describe('a routed drive and the Activities along it', () => {
     pushMinimalActivity(data, { startAt: '2027-06-01T11:45', durationMinutes: 60 });
     const view = buildTripView(data);
     expect(view.transitsById.get('test_transit')!.arrivesAt).toBe('2027-06-01T11:45');
-    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBeNull();
+    expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBeNull();
   });
 });
 
@@ -656,7 +658,7 @@ describe('the direct route variant', () => {
       });
       const day = days.find((d) => d.date === '2027-06-01')!;
       const activity = buildTripView(data).activitiesById.get('test_activity')!;
-      return liveOverlapWarnings(activity, day).transitOverlapWarning;
+      return liveWarnings(activity, day)[0] ?? null;
     };
     expect(warningFor('direct')).toBeNull();
     expect(warningFor('scenic')).toBe('During transit: A → B');
@@ -679,7 +681,7 @@ describe('the direct route variant', () => {
   });
 });
 
-describe('activityOverlapWarning', () => {
+describe('activity warnings: overlapping another activity', () => {
   it('flags two Activities on the same leg/scenario whose timed spans overlap', () => {
     const data = minimalTripData();
     pushMinimalActivity(data, {
@@ -694,7 +696,7 @@ describe('activityOverlapWarning', () => {
       diningFormat: 'self-catered',
     });
     const view = buildTripView(data);
-    expect(view.activitiesById.get('test_activity')?.activityOverlapWarning).toBe(
+    expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBe(
       'Overlaps with "Root Glacier guided half-day hike".',
     );
   });
@@ -714,7 +716,7 @@ describe('activityOverlapWarning', () => {
       includedIn: { entity: 'activity', id: 'test_container' },
     });
     const view = buildTripView(data);
-    expect(view.activitiesById.get('test_activity')?.activityOverlapWarning).toBeNull();
+    expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBeNull();
   });
 });
 
@@ -734,8 +736,8 @@ describe('overlap warnings are scoped to one leg + scenario branch', () => {
       scenarioId: 'scenario_two',
     });
     const view = buildTripView(data);
-    expect(view.activitiesById.get('test_a')?.activityOverlapWarning).toBeNull();
-    expect(view.activitiesById.get('test_b')?.activityOverlapWarning).toBeNull();
+    expect(view.activitiesById.get('test_a')?.warnings[0] ?? null).toBeNull();
+    expect(view.activitiesById.get('test_b')?.warnings[0] ?? null).toBeNull();
   });
 
   it("flags a point-in-time Activity landing inside another's span, and vice versa", () => {
@@ -752,10 +754,10 @@ describe('overlap warnings are scoped to one leg + scenario branch', () => {
       startAt: '2027-06-28T10:00',
     });
     const view = buildTripView(data);
-    expect(view.activitiesById.get('test_point')?.activityOverlapWarning).toBe(
+    expect(view.activitiesById.get('test_point')?.warnings[0] ?? null).toBe(
       'Overlaps with "Long hike".',
     );
-    expect(view.activitiesById.get('test_span')?.activityOverlapWarning).toBe(
+    expect(view.activitiesById.get('test_span')?.warnings[0] ?? null).toBe(
       'Overlaps with "Photo stop".',
     );
   });
@@ -774,7 +776,7 @@ describe('overlap warnings are scoped to one leg + scenario branch', () => {
       arrivesAt: '2027-06-28T23:45',
     });
     const view = buildTripView(data);
-    expect(view.activitiesById.get('test_activity')?.transitOverlapWarning).toBeNull();
+    expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBeNull();
   });
 });
 
@@ -1003,6 +1005,35 @@ describe('budget: Stay packages', () => {
     expect(view.budget.totals.spent).toBe(120);
   });
 
+  it('charges a nightly rate once per night, following the stay’s dates', () => {
+    const data = minimalTripData();
+    data.stays.push(
+      minimalStay({
+        checkInAt: '2027-06-01T15:00',
+        checkOutAt: '2027-06-04T11:00',
+        packages: [
+          {
+            _id: 'pkg_parking',
+            name: 'Parking',
+            status: 'booked',
+            cost: { amount: 9.95, currency: 'USD' },
+            confirmationNumber: null,
+            benefits: null,
+            travelers: null,
+            per: 'night',
+          },
+        ],
+      }),
+    );
+    const view = buildTripView(data);
+    expect(view.budget.totals.spent).toBeCloseTo(29.85);
+    const labels = view.budget.byLeg.flatMap((g) => g.rows.map((r) => r.label));
+    expect(labels).toContain('Parking (3 nights × $9.95)');
+
+    data.stays[0] = { ...data.stays[0], checkOutAt: '2027-06-02T11:00' };
+    expect(buildTripView(data).budget.totals.spent).toBeCloseTo(9.95);
+  });
+
   // A 'booked' package with no separately-broken-out cost (a perk bundled
   // into the room rate, say) used to crash the by-traveler split, which
   // assumed every booked row it saw had a real cost to divide up.
@@ -1030,5 +1061,333 @@ describe('budget: Stay packages', () => {
     expect(() => buildTripView(data)).not.toThrow();
     const alex = buildTripView(data).budget.byTraveler.find((t) => t.name === 'Alex');
     expect(alex?.totals.spent).toBe(0);
+  });
+});
+
+describe('budget: when each price line is paid', () => {
+  const usd = (amount: number) => ({ amount, currency: 'USD' });
+  const lineView = (date: string, booking: TripData['bookings'][number]) => {
+    const data = minimalTripData();
+    data.trip.travelers = [{ id: 't1', name: 'Alex' }];
+    data.bookings.push(booking);
+    data.stays.push({
+      _id: 'test_stay',
+      legId: 'leg_test',
+      scenarioId: null,
+      checkInAt: `${date}T15:00`,
+      checkOutAt: `${date}T23:00`,
+      status: 'planning',
+      lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } },
+      bookingId: booking._id,
+      images: [],
+    });
+    return buildTripView(data).budget;
+  };
+  const booked = (fixed: TripData['bookings'][number]['pricing']) => ({
+    _id: 'booking_room',
+    status: 'booked' as const,
+    pricing: fixed,
+    confirmationNumber: null,
+  });
+
+  it('counts a leg’s at-the-property charge as spent once the leg has started', () => {
+    const budgetFor = (date: string) => {
+      const data = minimalTripData();
+      data.legs[0] = { ...data.legs[0], bookingId: 'bk_leg' };
+      data.bookings.push({
+        _id: 'bk_leg',
+        status: 'booked',
+        confirmationNumber: null,
+        pricing: {
+          perTraveler: [],
+          fixed: [{ label: 'Gratuities', amount: usd(100), payable: 'atProperty' }],
+        },
+      });
+      data.stays.push({
+        _id: 'test_stay',
+        legId: 'leg_test',
+        scenarioId: null,
+        checkInAt: `${date}T15:00`,
+        checkOutAt: `${date}T23:00`,
+        status: 'planning',
+        lodging: { place: { id: 'place_ship', label: 'Ship' } },
+        bookingId: null,
+        images: [],
+      });
+      return buildTripView(data).budget.totals;
+    };
+    expect(budgetFor('2020-01-01')).toMatchObject({ spent: 100, pending: 0 });
+    expect(budgetFor('2099-01-01')).toMatchObject({ spent: 0, pending: 100 });
+  });
+
+  it('counts a requested booking as pending, whatever its lines say', () => {
+    const budget = lineView('2020-01-01', {
+      ...booked({ perTraveler: [], fixed: [{ label: 'Tour', amount: usd(300) }] }),
+      status: 'requested',
+    });
+    expect(budget.totals.pending).toBe(300);
+    expect(budget.totals.spent).toBe(0);
+  });
+
+  it('keeps an at-the-property charge pending until its day, and spent after', () => {
+    const pricing = {
+      perTraveler: [{ travelerId: 't1', fare: usd(30) }],
+      fixed: [{ label: 'Room', amount: usd(100), payable: 'atProperty' as const }],
+    };
+    const ahead = lineView('2999-06-01', booked(pricing));
+    expect(ahead.totals.pending).toBe(100);
+    expect(ahead.totals.spent).toBe(30);
+    expect(ahead.byLeg[0].rows[0].bucket).toBe('pending');
+    const past = lineView('2000-06-01', booked(pricing));
+    expect(past.totals.spent).toBe(130);
+  });
+
+  it('counts an at-the-property charge as spent from check-in day on any live booking', () => {
+    const pricing = {
+      perTraveler: [],
+      fixed: [{ label: 'Room', amount: usd(100), payable: 'atProperty' as const }],
+    };
+    for (const status of ['requested', 'planning'] as const) {
+      const past = lineView('2000-06-01', { ...booked(pricing), status });
+      expect(past.totals.spent).toBe(100);
+    }
+    const ahead = lineView('2999-06-01', { ...booked(pricing), status: 'requested' });
+    expect(ahead.totals.pending).toBe(100);
+  });
+
+  it('reads a due date per line', () => {
+    const pricing = {
+      perTraveler: [],
+      fixed: [
+        { label: 'Deposit', amount: usd(50) },
+        { label: 'Balance', amount: usd(70), payable: { dueBy: '2999-01-01' } },
+      ],
+    };
+    const budget = lineView('2999-06-01', booked(pricing));
+    expect(budget.totals.spent).toBe(50);
+    expect(budget.totals.pending).toBe(70);
+  });
+
+  it('counts a payment made on a date as spent, beside a balance still due', () => {
+    const pricing = {
+      perTraveler: [],
+      fixed: [
+        { label: 'Deposit', amount: usd(50), payable: { paidAt: '2026-08-06' } },
+        { label: 'Balance', amount: usd(70), payable: { dueBy: '2999-01-01' } },
+      ],
+    };
+    const budget = lineView('2999-06-01', booked(pricing));
+    expect(budget.totals.spent).toBe(50);
+    expect(budget.totals.pending).toBe(70);
+  });
+
+  it('counts a package on a transit in the totals and in booking progress', () => {
+    const data = minimalTripData();
+    data.transits.push({
+      _id: 'test_transit',
+      legId: 'leg_test',
+      journeyId: null,
+      scenarioId: null,
+      status: 'planning',
+      mode: 'flight',
+      travelers: null,
+      from: { id: null, label: 'Float Base' },
+      to: { id: null, label: 'Remote Lodge' },
+      departsAt: '2999-07-01T08:00',
+      arrivesAt: '2999-07-01T09:00',
+      routeId: null,
+      routeVariant: null,
+      bookingId: null,
+      packages: [
+        {
+          _id: 'pkg_tour',
+          name: 'Bear guide',
+          status: 'planning',
+          cost: usd(40),
+          confirmationNumber: null,
+          benefits: null,
+          travelers: null,
+        },
+      ],
+      images: [],
+    });
+    const view = buildTripView(data);
+    expect(view.budget.totals.estimated).toBe(40);
+    expect(view.budget.byBasis.fixed.estimated).toBe(40);
+    expect(view.legSummaries[0].bookingProgress).toBe('unplanned');
+  });
+});
+
+describe('port calls', () => {
+  const cruise = {
+    checkInAt: '2027-07-17T15:00',
+    checkOutAt: '2027-07-24T07:30',
+    portCalls: [
+      {
+        kind: 'port' as const,
+        place: { id: 'place_juneau', label: 'Juneau' },
+        arrivesAt: '2027-07-21T06:30',
+        departsAt: '2027-07-21T16:15',
+      },
+      {
+        kind: 'scenic' as const,
+        place: { id: 'place_glacier', label: 'Hubbard Glacier' },
+        arrivesAt: '2027-07-18T15:00',
+        departsAt: '2027-07-18T20:00',
+      },
+    ],
+  };
+  const ashore = (startAt: string, durationMinutes: number, placeId = 'place_tram') => ({
+    _id: 'a',
+    startAt,
+    durationMinutes,
+    place: { id: placeId, label: 'Somewhere' },
+    mealType: null,
+    diningFormat: null,
+    options: null,
+  });
+
+  it('lists the stops a cruise makes on a day', () => {
+    expect(portCallsOn([cruise], '2027-07-21').map((c) => c.place.label)).toEqual(['Juneau']);
+    expect(portCallsOn([cruise], '2027-07-19')).toEqual([]);
+  });
+
+  it('lists an overnight stop on the day between its arrival and departure', () => {
+    const overnight = {
+      portCalls: [
+        {
+          kind: 'port' as const,
+          place: { id: null, label: 'Overnight' },
+          arrivesAt: '2027-07-20T18:00',
+          departsAt: '2027-07-22T08:00',
+        },
+      ],
+    };
+    expect(portCallsOn([overnight], '2027-07-21')).toHaveLength(1);
+    expect(portCallsOn([overnight], '2027-07-23')).toEqual([]);
+  });
+
+  it('flags an activity ashore outside the ship’s time in port', () => {
+    expect(portCallWarningFor(ashore('2027-07-21T13:00', 120), [cruise])).toBeNull();
+    expect(portCallWarningFor(ashore('2027-07-21T15:00', 120), [cruise])).toBe(
+      'Ends after all aboard in Juneau at 4:15pm.',
+    );
+    expect(portCallWarningFor(ashore('2027-07-21T06:00', 60), [cruise])).toBe(
+      'Starts before the ship arrives in Juneau at 6:30am.',
+    );
+    expect(portCallWarningFor(ashore('2027-07-18T16:00', 60), [cruise])).toBe(
+      'The ship is cruising past Hubbard Glacier — no going ashore.',
+    );
+  });
+
+  it('stops calling the ship "cruising past" a scenic stop once it is over', () => {
+    expect(portCallWarningFor(ashore('2027-07-18T21:00', 60), [cruise])).toBeNull();
+  });
+
+  it('doesn’t let a later scenic stop make an earlier activity wrong', () => {
+    const scenicFirst = { ...cruise, portCalls: [cruise.portCalls[1]] };
+    expect(portCallWarningFor(ashore('2027-07-18T08:00', 60), [scenicFirst])).toBeNull();
+  });
+
+  it('says nothing for an activity while the ship is at sea between two stops', () => {
+    const twoStops = {
+      ...cruise,
+      portCalls: [
+        {
+          kind: 'port' as const,
+          place: { id: 'place_icy', label: 'Icy Strait Point' },
+          arrivesAt: '2027-07-20T06:00',
+          departsAt: '2027-07-20T10:00',
+        },
+        {
+          kind: 'port' as const,
+          place: { id: 'place_juneau', label: 'Juneau' },
+          arrivesAt: '2027-07-20T14:00',
+          departsAt: '2027-07-20T20:00',
+        },
+      ],
+    };
+    expect(portCallWarningFor(ashore('2027-07-20T11:30', 60), [twoStops])).toBeNull();
+    expect(portCallWarningFor(ashore('2027-07-20T21:00', 60), [twoStops])).toBe(
+      'Starts after all aboard in Juneau at 8:00pm.',
+    );
+  });
+
+  it('checks an activity at the port’s own place, but not at a scenic stop’s', () => {
+    expect(portCallWarningFor(ashore('2027-07-21T15:30', 60, 'place_juneau'), [cruise])).toBe(
+      'Ends after all aboard in Juneau at 4:15pm.',
+    );
+    expect(
+      portCallWarningFor(ashore('2027-07-18T16:00', 60, 'place_glacier'), [cruise]),
+    ).toBeNull();
+  });
+
+  it('skips a venue aboard the ship, but flags a place ashore after the ship has sailed', () => {
+    const diningRoom = {
+      ...ashore('2027-07-21T06:00', 60),
+      place: { id: 'place_dining', label: 'Dining Room', onboard: true },
+    };
+    expect(portCallWarningFor(diningRoom, [cruise])).toBeNull();
+    expect(portCallWarningFor({ ...diningRoom, startAt: '2027-07-21T19:00' }, [cruise])).toBeNull();
+    expect(portCallWarningFor(ashore('2027-07-21T19:00', 60), [cruise])).toBe(
+      'Starts after all aboard in Juneau at 4:15pm.',
+    );
+  });
+
+  it('checks a meal still choosing by its selected candidate’s place', () => {
+    const lunch = { ...ashore('2027-07-21T15:30', 60), place: null };
+    expect(portCallWarningFor(lunch, [cruise])).toBeNull();
+    const crabShack: MealOption = {
+      _id: 'opt_crab',
+      diningFormat: 'sit-down',
+      place: { id: 'place_crab', label: 'Crab Shack' },
+      includedIn: null,
+      bookingId: null,
+    };
+    expect(portCallWarningFor(lunch, [cruise], new Map([[lunch._id, crabShack]]))).toBe(
+      'Ends after all aboard in Juneau at 4:15pm.',
+    );
+  });
+
+  it('judges an activity by the stop it happens during, on a day with two', () => {
+    const twoStops = {
+      ...cruise,
+      portCalls: [
+        {
+          kind: 'scenic' as const,
+          place: { id: 'place_glacier', label: 'Glacier' },
+          arrivesAt: '2027-07-21T06:00',
+          departsAt: '2027-07-21T09:00',
+        },
+        {
+          kind: 'port' as const,
+          place: { id: 'place_port', label: 'Port' },
+          arrivesAt: '2027-07-21T12:00',
+          departsAt: '2027-07-21T18:00',
+        },
+      ],
+    };
+    expect(portCallWarningFor(ashore('2027-07-21T13:00', 120), [twoStops])).toBeNull();
+    expect(portCallWarningFor(ashore('2027-07-21T07:00', 60), [twoStops])).toBe(
+      'The ship is cruising past Glacier — no going ashore.',
+    );
+  });
+
+  it('leaves alone an activity ashore before boarding', () => {
+    const boardingDay = {
+      ...cruise,
+      portCalls: [
+        { ...cruise.portCalls[1], arrivesAt: '2027-07-17T19:00', departsAt: '2027-07-17T22:00' },
+      ],
+    };
+    expect(portCallWarningFor(ashore('2027-07-17T10:00', 60), [boardingDay])).toBeNull();
+  });
+
+  it('leaves alone an activity aboard, or at the stop itself', () => {
+    const aboard = { ...ashore('2027-07-21T19:30', 90), place: null };
+    expect(portCallWarningFor(aboard, [cruise])).toBeNull();
+    expect(
+      portCallWarningFor(ashore('2027-07-18T16:00', 60, 'place_glacier'), [cruise]),
+    ).toBeNull();
   });
 });

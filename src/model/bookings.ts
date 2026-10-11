@@ -12,7 +12,7 @@ import type {
   MealOption,
   Money,
   PassengerFare,
-  Pricing,
+  Payable,
   Stay,
   Transit,
   TripData,
@@ -68,50 +68,74 @@ export function fixedCost(booking: Booking | null | undefined): Money | null {
   return sumMoney((booking?.pricing?.fixed ?? []).map((c) => c.amount));
 }
 
-// A price saved before Pricing split into per-traveler and fixed parts —
-// one total, or fares alone — still sits in some browsers' saved edits (see
-// TripDataContext's replay). A lone total was a room or similar flat price,
-// so it reads as one fixed charge.
-type LegacyPricing =
-  { kind: 'total'; cost: Money } | { kind: 'perTraveler'; fares: PassengerFare[] };
-
-export function withCurrentPricing(booking: Booking): Booking {
-  const pricing = booking.pricing as Pricing | LegacyPricing | null;
-  if (!pricing || !('kind' in pricing)) return booking;
-  return {
-    ...booking,
-    pricing:
-      pricing.kind === 'total'
-        ? { perTraveler: [], fixed: [{ label: 'Total', amount: pricing.cost }] }
-        : { perTraveler: pricing.fares, fixed: [] },
-  };
-}
-
-// Two amounts the same to the cent, in the same currency.
-export function sameMoney(a: Money | null | undefined, b: Money | null | undefined): boolean {
-  return (
-    !!a &&
-    !!b &&
-    a.currency === b.currency &&
-    Math.round(a.amount * 100) === Math.round(b.amount * 100)
-  );
-}
-
 // The per-traveler fares, or null when the booking has none.
 export function bookingFares(booking: Booking | null | undefined): PassengerFare[] | null {
   const fares = booking?.pricing?.perTraveler;
   return fares?.length ? fares : null;
 }
 
+// One fare per traveler: a fare split into payment lines (a deposit paid, the
+// balance due by a date) is still that traveler's one fare. Summed in the
+// first line's currency like bookingCost: a booking is priced in one currency
+// (a reviewed false positive — mixed-currency lines can't be authored).
+export function faresByTraveler(
+  booking: Booking | null | undefined,
+): { travelerId: string; fare: Money; ticketNumber?: string }[] {
+  const lines = new Map<string, PassengerFare[]>();
+  for (const f of booking?.pricing?.perTraveler ?? []) {
+    lines.set(f.travelerId, [...(lines.get(f.travelerId) ?? []), f]);
+  }
+  return [...lines].map(([travelerId, own]) => ({
+    travelerId,
+    fare: sumMoney(own.map((f) => f.fare))!,
+    ticketNumber: own.find((f) => f.ticketNumber)?.ticketNumber,
+  }));
+}
+
+// The date a payable is still owed by, or null (paid, paid on a date, or due
+// at the property).
+export function payableDueBy(payable: Payable | undefined): string | null {
+  return typeof payable === 'object' && payable !== null && 'dueBy' in payable
+    ? payable.dueBy
+    : null;
+}
+
+export function payableLines(
+  booking: Booking | null | undefined,
+): { amount: Money; payable?: Payable }[] {
+  return [
+    ...(booking?.pricing?.perTraveler ?? []).map((f) => ({ amount: f.fare, payable: f.payable })),
+    ...(booking?.pricing?.fixed ?? []).map((c) => ({ amount: c.amount, payable: c.payable })),
+  ];
+}
+
+// The last date any of a booking's lines is due by — its final payment —
+// or null when nothing is owed by a date.
+export function finalPaymentDue(booking: Booking | null | undefined): string | null {
+  const dates = payableLines(booking)
+    .map((line) => payableDueBy(line.payable))
+    .filter((d): d is string => d !== null);
+  return dates.length ? dates.sort().at(-1)! : null;
+}
+
+// What was paid on a recorded date (a deposit), one entry per date, earliest
+// first. Lines paid at booking carry no date and aren't listed.
+export function paymentsMade(
+  booking: Booking | null | undefined,
+): { paidAt: string; amount: Money }[] {
+  const byDate = new Map<string, Money[]>();
+  for (const { amount, payable } of payableLines(booking)) {
+    if (typeof payable !== 'object' || !('paidAt' in payable)) continue;
+    byDate.set(payable.paidAt, [...(byDate.get(payable.paidAt) ?? []), amount]);
+  }
+  return [...byDate]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([paidAt, amounts]) => ({ paidAt, amount: sumMoney(amounts)! }));
+}
+
 export function bookingFixedCharges(booking: Booking | null | undefined): FixedCharge[] | null {
   const fixed = booking?.pricing?.fixed;
   return fixed?.length ? fixed : null;
-}
-
-// A price that's only fixed charges, or only fares — the shape every writer
-// that knows just one part builds. null when there's nothing to price.
-export function fixedPricing(fixed: FixedCharge[]): Pricing | null {
-  return fixed.length ? { perTraveler: [], fixed } : null;
 }
 
 // Every entity that carries a bookingId — Legs, Stays, Transits, Activities

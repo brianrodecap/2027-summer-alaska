@@ -5,6 +5,7 @@
 // real Day/DayRow data (via filterTagsFor, tripModel.ts) instead of
 // toggling CSS classes on rendered DOM nodes — the React tree here can just
 // not render a filtered-out row in the first place.
+import { liveWarnings } from './mealOptions';
 import { filterTagsFor } from './tripModel';
 import type {
   Day,
@@ -34,6 +35,7 @@ const GROUP_DEFS: FilterGroup[] = [
     options: [
       { token: 'booking:booked', label: 'Booked', icon: 'check_circle' },
       { token: 'booking:needs', label: 'Needs booking', icon: 'schedule' },
+      { token: 'booking:requested', label: 'Awaiting confirmation', icon: 'hourglass_empty' },
     ],
   },
   {
@@ -77,10 +79,16 @@ export function rowMatches(tags: string[], activeTokens: Set<string>): boolean {
   return true;
 }
 
+// An activity row's tags, with the warnings the row itself shows — computed
+// for the meal candidates selected right now, not the page-load default.
+function activityTags(activity: EnrichedActivity, day: Day): string[] {
+  return filterTagsFor({ ...activity, warnings: liveWarnings(activity, day) });
+}
+
 // Narrows a day's rows to the ones that still match every active filter. One
 // row per event, each tagged from its own entity; a scenario box passes
 // through unfiltered (its tabs are choices, not content).
-export function filterRows(rows: DayRow[], activeTokens: Set<string>): DayRow[] {
+export function filterRows(rows: DayRow[], day: Day, activeTokens: Set<string>): DayRow[] {
   if (!activeTokens.size) return rows;
   return rows.filter((row) => {
     switch (row.type) {
@@ -89,7 +97,7 @@ export function filterRows(rows: DayRow[], activeTokens: Set<string>): DayRow[] 
       case 'transit':
         return rowMatches(filterTagsFor(row.transit), activeTokens);
       case 'activity':
-        return rowMatches(filterTagsFor(row.activity), activeTokens);
+        return rowMatches(activityTags(row.activity, day), activeTokens);
       case 'box':
         return true;
     }
@@ -105,7 +113,7 @@ export interface EntityLookup {
 
 function trackHasVisibleContent(
   track: ScenarioTrack,
-  day: Pick<Day, 'stays'>,
+  day: Day,
   activeTokens: Set<string>,
   lookup: EntityLookup,
 ): boolean {
@@ -113,6 +121,11 @@ function trackHasVisibleContent(
   // An alternate the reader hasn't selected still counts: a day whose only
   // match is behind another tab must stay in the list so the reader can switch
   // to it.
+  // Their tags come from the warnings built with the view, not liveWarnings:
+  // those are checked against the day's active rows, and an unselected
+  // branch's rows aren't among them, so the build-time verdict is the one made
+  // against its own branch. That verdict has no selected meal candidate, so a
+  // still-open meal's port-call warning only shows once its tab is selected.
   const { activityIds, transitIds, stayIds } = track.members;
   const matches = (entity: Parameters<typeof filterTagsFor>[0] | undefined) =>
     entity !== undefined && rowMatches(filterTagsFor(entity), activeTokens);
@@ -125,7 +138,7 @@ function trackHasVisibleContent(
 
 function rowsHaveVisibleContent(
   rows: DayRow[],
-  day: Pick<Day, 'stays'>,
+  day: Day,
   activeTokens: Set<string>,
   lookup: EntityLookup,
 ): boolean {
@@ -138,7 +151,7 @@ function rowsHaveVisibleContent(
         // Depart/Arrive rows carry the same tags.
         return row.phase !== 'stage' && rowMatches(filterTagsFor(row.transit), activeTokens);
       case 'activity':
-        return rowMatches(filterTagsFor(row.activity), activeTokens);
+        return rowMatches(activityTags(row.activity, day), activeTokens);
       case 'box':
         return row.tracks.some((t) => trackHasVisibleContent(t, day, activeTokens, lookup));
     }

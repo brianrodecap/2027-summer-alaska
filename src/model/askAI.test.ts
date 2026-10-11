@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  applyDayPlan,
   type AskAIConversation,
   buildTripContext,
+  describeDayPlan,
+  type ProposedDayPlan,
   type ProposedEdit,
   resolveProposalDraft,
   runAskAITurn,
@@ -220,7 +223,7 @@ describe('runAskAITurn', () => {
             input: {
               kind: 'activity',
               entityId: 'act_1',
-              startAt: '2027-07-14T10:00',
+              changes: { startAt: '2027-07-14T10:00' },
               summary: 'Later kayak',
             },
           },
@@ -238,8 +241,7 @@ describe('runAskAITurn', () => {
         id: 'tu_1',
         type: 'edit',
         edit: expect.objectContaining({
-          kind: 'activity',
-          entityId: 'act_1',
+          change: expect.objectContaining({ kind: 'activity', entityId: 'act_1' }),
           summary: 'Later kayak',
         }),
       },
@@ -258,13 +260,17 @@ describe('runAskAITurn', () => {
               date: '2027-07-14',
               legId: 'leg_a',
               summary: 'Dinner choices',
-              ops: [
+              changes: [
                 {
-                  op: 'add',
-                  text: 'Dinner',
-                  startAt: '2027-07-14T18:30',
-                  mealType: 'dinner',
-                  mealOptions: [{ placeLabel: 'Orso' }, { placeLabel: "Crow's Nest" }],
+                  changes: {
+                    text: 'Dinner',
+                    startAt: '2027-07-14T18:30',
+                    mealType: 'dinner',
+                    mealOptions: [
+                      { place: { label: 'Orso' } },
+                      { place: { label: "Crow's Nest" } },
+                    ],
+                  },
                 },
               ],
             },
@@ -280,7 +286,7 @@ describe('runAskAITurn', () => {
               label: 'Grounded',
               idealLabel: 'Flight goes',
               idealEntityIds: ['act_1'],
-              activities: [{ text: 'Anchorage Museum', startAt: '2027-07-14T13:00' }],
+              entries: [{ text: 'Anchorage Museum', startAt: '2027-07-14T13:00' }],
             },
           },
         ],
@@ -293,9 +299,11 @@ describe('runAskAITurn', () => {
     // One list, in the order the assistant proposed them, each keyed by its tool call.
     const [plan, alternative] = reply.proposals ?? [];
     expect(plan).toMatchObject({ id: 'tu_1', type: 'dayPlan' });
-    expect(plan.type === 'dayPlan' && plan.plan.ops[0]).toMatchObject({
-      op: 'add',
-      mealType: 'dinner',
+    expect(plan.type === 'dayPlan' && plan.plan.changes[0]).toMatchObject({
+      kind: 'activity',
+      legId: 'leg_a',
+      date: '2027-07-14',
+      changes: { mealType: 'dinner' },
     });
     expect(alternative).toMatchObject({
       id: 'tu_2',
@@ -406,11 +414,12 @@ describe('propose_edit with a route', () => {
     images: [],
   };
   const data = { ...tripData(), transits: [drive], routes: [route] };
-  const edit = (extra: Partial<ProposedEdit>): ProposedEdit => ({
-    kind: 'transit',
-    entityId: 'tr_1',
+  const edit = (
+    extra: Partial<Omit<ProposedEdit, 'change'>>,
+    changes: ProposedEdit['change']['changes'] = {},
+  ): ProposedEdit => ({
+    change: { kind: 'transit', entityId: 'tr_1', changes, why: 's' },
     summary: 's',
-    fields: { kind: 'transit' },
     ...extra,
   });
 
@@ -437,7 +446,7 @@ describe('propose_edit with a route', () => {
   it('takes a drive off its route with an empty routeId', () => {
     const routed = { ...drive, routeId: 'route_a', routeVariant: 'scenic', arrivesAt: null };
     const resolved = resolveProposalDraft(
-      edit({ routeId: '', fields: { kind: 'transit', endAt: '2027-07-14T11:30' } }),
+      edit({ routeId: '' }, { arrivesAt: '2027-07-14T11:30' }),
       { ...data, transits: [routed] },
     );
     expect(resolved).toMatchObject({
@@ -445,13 +454,13 @@ describe('propose_edit with a route', () => {
     });
   });
 
-  it('never stores an arrival on a drive that stays on its route', () => {
+  it('turns down an arrival on a drive that stays on its route', () => {
     const routed = { ...drive, routeId: 'route_a', routeVariant: 'scenic', arrivesAt: null };
-    const resolved = resolveProposalDraft(
-      edit({ fields: { kind: 'transit', endAt: '2027-07-14T12:00' } }),
-      { ...data, transits: [routed] },
-    );
-    expect(resolved).toMatchObject({ draft: { routeId: 'route_a', arrivesAt: null } });
+    const resolved = resolveProposalDraft(edit({}, { arrivesAt: '2027-07-14T12:00' }), {
+      ...data,
+      transits: [routed],
+    });
+    expect('error' in resolved && resolved.error).toMatch(/routed drive/);
   });
 
   it('drops a renamed endpoint’s old place id, and keeps an unrenamed one', () => {
@@ -461,7 +470,7 @@ describe('propose_edit with a route', () => {
       to: { id: 'place_sew', label: 'Seward' },
     };
     const resolved = resolveProposalDraft(
-      edit({ fields: { kind: 'transit', fromLabel: 'Anchorage', toLabel: 'Whittier' } }),
+      edit({}, { from: { label: 'Anchorage' }, to: { label: 'Whittier' } }),
       { ...data, transits: [resolvedEnds] },
     );
     expect(resolved).toMatchObject({
@@ -483,12 +492,16 @@ describe('propose_edit with a route', () => {
   it("gives a new routed drive the route's endpoints and the drive mode", () => {
     const resolved = resolveProposalDraft(
       {
-        kind: 'transit',
-        legId: 'leg_a',
-        date: '2027-07-14',
+        change: {
+          kind: 'transit',
+          key: 'new',
+          legId: 'leg_a',
+          date: '2027-07-14',
+          changes: { departsAt: '2027-07-14T08:00' },
+          why: 's',
+        },
         routeId: 'route_a',
         summary: 's',
-        fields: { kind: 'transit', startAt: '2027-07-14T08:00' },
       },
       data,
     );
@@ -538,33 +551,385 @@ describe('propose_edit naming travelers', () => {
     transits: [flight],
   };
 
-  it('adds an unrecognized passenger as a new traveler instead of resetting to the whole party', () => {
+  const travelersEdit = (travelers: string[], newTravelers?: ProposedEdit['newTravelers']) => ({
+    change: { kind: 'transit' as const, entityId: 'tr_fl', changes: { travelers }, why: 's' },
+    newTravelers,
+    summary: 's',
+  });
+
+  it('adds a passenger the trip doesn’t have as a new traveler', () => {
     const resolved = resolveProposalDraft(
-      {
-        kind: 'transit',
-        entityId: 'tr_fl',
-        summary: 's',
-        fields: { kind: 'transit', travelerNames: ['STRANGER/PAT MS'] },
-      },
+      travelersEdit(['t_a', 'trav_pat_stranger'], [{ name: 'Pat Stranger' }]),
       data,
     );
     if ('error' in resolved) throw new Error(resolved.error);
-    expect(resolved.travelers).toEqual([{ id: expect.any(String), name: 'Pat Stranger' }]);
-    expect((resolved.draft as Transit).travelers).toEqual([resolved.travelers[0].id]);
+    expect(resolved.travelers).toEqual([{ id: 'trav_pat_stranger', name: 'Pat Stranger' }]);
+    expect((resolved.draft as Transit).travelers).toEqual(['t_a', 'trav_pat_stranger']);
   });
 
-  it('matches a manifest-style name to the traveler it already is', () => {
-    const resolved = resolveProposalDraft(
-      {
-        kind: 'transit',
-        entityId: 'tr_fl',
-        summary: 's',
-        fields: { kind: 'transit', travelerNames: ['TESTER/KIM MRS'] },
+  it('points a new traveler the trip already has, in any case, at who’s there', () => {
+    const withPat = {
+      ...data,
+      trip: {
+        ...data.trip,
+        travelers: [...data.trip.travelers, { id: 't_pat', name: 'pat guest' }],
       },
-      data,
+    };
+    const resolved = resolveProposalDraft(
+      travelersEdit(['t_a', 'trav_pat_guest'], [{ name: 'Pat Guest' }]),
+      withPat,
     );
     if ('error' in resolved) throw new Error(resolved.error);
     expect(resolved.travelers).toEqual([]);
-    expect((resolved.draft as Transit).travelers).toEqual(['t_c']);
+    expect((resolved.draft as Transit).travelers).toEqual(['t_a', 't_pat']);
+  });
+
+  it('turns down a traveler id the trip doesn’t have, saying which', () => {
+    expect(resolveProposalDraft(travelersEdit(['t_zzz']), data)).toEqual({
+      error: "The AI's suggestion no longer fits the trip: No traveler t_zzz on the trip.",
+    });
+  });
+});
+
+describe('place ids from earlier turns', () => {
+  it('accepts a place a search in an earlier turn found', async () => {
+    const earlier: AskAIConversation = {
+      ...startConversation(tripData()),
+      apiMessages: [
+        { role: 'user', content: 'Where could we eat?' },
+        {
+          role: 'assistant',
+          content: [
+            { type: 'tool_use', id: 'tu_0', name: 'search_places', input: { query: 'cafe' } },
+          ],
+        },
+        {
+          role: 'user',
+          content: [
+            {
+              type: 'tool_result',
+              tool_use_id: 'tu_0',
+              content: 'Found Café — 1 Main St (placeId p_found)',
+            },
+          ],
+        },
+        { role: 'assistant', content: [{ type: 'text', text: 'Found Café is close.' }] },
+      ],
+    };
+    stubTurns(
+      sse(
+        [
+          {
+            type: 'tool_use',
+            id: 'tu_1',
+            name: 'propose_edit',
+            input: {
+              kind: 'activity',
+              entityId: 'act_1',
+              changes: { place: { placeId: 'p_found', label: 'Found Café' } },
+              summary: 'Kayak at the café instead',
+            },
+          },
+        ],
+        'tool_use',
+      ),
+      sse([{ type: 'text', text: 'Proposed.' }], 'end_turn'),
+    );
+    const after = await turn(earlier, 'Use that café');
+    expect(after.messages.at(-1)?.proposals).toHaveLength(1);
+  });
+});
+
+describe('add_traveler in the chat', () => {
+  it('adds someone new and hands a proposal naming them their real id', async () => {
+    stubTurns(
+      sse(
+        [
+          { type: 'tool_use', id: 'tu_1', name: 'add_traveler', input: { name: 'Pat Guest' } },
+          {
+            type: 'tool_use',
+            id: 'tu_2',
+            name: 'propose_edit',
+            input: {
+              kind: 'activity',
+              entityId: 'act_1',
+              changes: { travelers: ['trav_pat_guest'] },
+              summary: 'Pat joins the kayak tour',
+            },
+          },
+        ],
+        'tool_use',
+      ),
+      sse([{ type: 'text', text: 'Proposed.' }], 'end_turn'),
+    );
+    const after = await turn(startConversation(tripData()), 'Pat Guest is coming kayaking');
+    const [proposal] = after.messages.at(-1)?.proposals ?? [];
+    expect(proposal).toMatchObject({
+      type: 'edit',
+      edit: { newTravelers: [{ id: 'trav_pat_guest', name: 'Pat Guest' }] },
+    });
+    if (proposal?.type !== 'edit') throw new Error('expected an edit');
+    const resolved = resolveProposalDraft(proposal.edit, tripData());
+    if ('error' in resolved) throw new Error(resolved.error);
+    expect(resolved.travelers).toEqual([{ id: 'trav_pat_guest', name: 'Pat Guest' }]);
+  });
+});
+
+describe('a day plan', () => {
+  it('turns down a place id no search found, so the model can look it up', async () => {
+    const bodies = stubTurns(
+      sse(
+        [
+          {
+            type: 'tool_use',
+            id: 'tu_1',
+            name: 'propose_day_plan',
+            input: {
+              date: '2027-07-14',
+              legId: 'leg_a',
+              summary: 'Lunch',
+              changes: [
+                {
+                  changes: {
+                    text: 'Lunch',
+                    startAt: '2027-07-14T12:00',
+                    place: { label: 'Made up', placeId: 'p_invented' },
+                  },
+                },
+              ],
+            },
+          },
+        ],
+        'tool_use',
+      ),
+      sse([{ type: 'text', text: 'Let me search.' }], 'end_turn'),
+    );
+    const after = await turn(startConversation(tripData()), 'Add lunch');
+    expect(after.messages.at(-1)?.proposals ?? []).toEqual([]);
+    const result = (
+      bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
+    ).at(-1)!.content[0];
+    expect(result.is_error).toBe(true);
+    expect(result.content).toMatch(/placeId p_invented/);
+  });
+
+  it('turns down a plan that both changes and removes one activity', async () => {
+    const bodies = stubTurns(
+      sse(
+        [
+          {
+            type: 'tool_use',
+            id: 'tu_1',
+            name: 'propose_day_plan',
+            input: {
+              date: '2027-07-14',
+              legId: 'leg_a',
+              summary: 'Shuffle',
+              changes: [{ entityId: 'act_1', changes: { startAt: '2027-07-14T15:00' } }],
+              remove: ['act_1'],
+            },
+          },
+        ],
+        'tool_use',
+      ),
+      sse([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+    );
+    await turn(startConversation(tripData()), 'Shuffle');
+    const result = (
+      bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
+    ).at(-1)!.content[0];
+    expect(result.is_error).toBe(true);
+    expect(result.content).toMatch(/act_1 is both changed and removed/);
+  });
+
+  it('turns down removing an activity that is on another day', async () => {
+    const bodies = stubTurns(
+      sse(
+        [
+          {
+            type: 'tool_use',
+            id: 'tu_1',
+            name: 'propose_day_plan',
+            input: { date: '2027-07-15', legId: 'leg_a', summary: 'Clear', remove: ['act_1'] },
+          },
+        ],
+        'tool_use',
+      ),
+      sse([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+    );
+    await turn(startConversation(tripData()), 'Clear');
+    const result = (
+      bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
+    ).at(-1)!.content[0];
+    expect(result.is_error).toBe(true);
+    expect(result.content).toMatch(/act_1 isn't on 2027-07-15/);
+  });
+
+  it('turns down changing an activity that is on another day', async () => {
+    const bodies = stubTurns(
+      sse(
+        [
+          {
+            type: 'tool_use',
+            id: 'tu_1',
+            name: 'propose_day_plan',
+            input: {
+              date: '2027-07-15',
+              legId: 'leg_a',
+              summary: 'Shuffle',
+              changes: [{ entityId: 'act_1', changes: { startAt: '2027-07-15T15:00' } }],
+            },
+          },
+        ],
+        'tool_use',
+      ),
+      sse([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+    );
+    await turn(startConversation(tripData()), 'Shuffle');
+    const result = (
+      bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
+    ).at(-1)!.content[0];
+    expect(result.is_error).toBe(true);
+    expect(result.content).toMatch(/act_1 isn't on 2027-07-15/);
+  });
+
+  it('turns down an alternative whose ideal entries are on another day', async () => {
+    const bodies = stubTurns(
+      sse(
+        [
+          {
+            type: 'tool_use',
+            id: 'tu_1',
+            name: 'propose_alternative',
+            input: {
+              date: '2027-07-15',
+              legId: 'leg_a',
+              summary: 'Rainy',
+              label: 'Grounded',
+              idealLabel: 'As planned',
+              idealEntityIds: ['act_1'],
+              entries: [{ text: 'Museum' }],
+            },
+          },
+        ],
+        'tool_use',
+      ),
+      sse([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+    );
+    await turn(startConversation(tripData()), 'Rainy day');
+    const result = (
+      bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
+    ).at(-1)!.content[0];
+    expect(result.is_error).toBe(true);
+    expect(result.content).toMatch(/act_1 isn't an activity or drive on 2027-07-15/);
+  });
+
+  it('turns down a new plan entry dated on another day', async () => {
+    const bodies = stubTurns(
+      sse(
+        [
+          {
+            type: 'tool_use',
+            id: 'tu_1',
+            name: 'propose_day_plan',
+            input: {
+              date: '2027-07-14',
+              legId: 'leg_a',
+              summary: 'Add',
+              changes: [{ date: '2027-07-20', changes: { text: 'Dinner' } }],
+            },
+          },
+        ],
+        'tool_use',
+      ),
+      sse([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+    );
+    await turn(startConversation(tripData()), 'Add dinner');
+    const result = (
+      bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
+    ).at(-1)!.content[0];
+    expect(result.is_error).toBe(true);
+    expect(result.content).toMatch(/must be on that date and leg/);
+  });
+
+  it('turns down removing an activity another one is covered by', async () => {
+    const data = tripData();
+    data.activities.push({
+      ...data.activities[0],
+      _id: 'act_meal',
+      includedIn: { entity: 'activity', id: 'act_1' },
+    });
+    const bodies = stubTurns(
+      sse(
+        [
+          {
+            type: 'tool_use',
+            id: 'tu_1',
+            name: 'propose_day_plan',
+            input: { date: '2027-07-14', legId: 'leg_a', summary: 'Clear', remove: ['act_1'] },
+          },
+        ],
+        'tool_use',
+      ),
+      sse([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+    );
+    await turn(startConversation(data), 'Clear', data);
+    const result = (
+      bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
+    ).at(-1)!.content[0];
+    expect(result.is_error).toBe(true);
+    expect(result.content).toMatch(/act_1 covers act_meal/);
+  });
+
+  it('applies only the items left checked: a move, an addition, a removal', () => {
+    const data = tripData();
+    const plan: ProposedDayPlan = {
+      date: '2027-07-14',
+      legId: 'leg_a',
+      summary: 'Shuffle',
+      changes: [
+        { kind: 'activity', entityId: 'act_1', changes: { startAt: '2027-07-14T15:00' }, why: 's' },
+        {
+          kind: 'activity',
+          legId: 'leg_a',
+          date: '2027-07-14',
+          changes: { text: 'Coffee', startAt: '2027-07-14T08:00' },
+          why: 's',
+        },
+      ],
+      remove: ['act_1'],
+    };
+    expect(describeDayPlan(plan, data)[0]).toMatch(/^Move /);
+    expect(describeDayPlan(plan, data)[1]).toBe('+ Add "Coffee" at 8:00am');
+    const applied = applyDayPlan(plan, data, new Set([0, 1]));
+    if ('error' in applied) throw new Error(applied.error);
+    expect(applied.data.activities.find((a) => a._id === 'act_1')?.startAt).toBe(
+      '2027-07-14T15:00',
+    );
+    expect(applied.data.activities.some((a) => a.text === 'Coffee')).toBe(true);
+    const removed = applyDayPlan(plan, data, new Set([2]));
+    if ('error' in removed) throw new Error(removed.error);
+    expect(removed.data.activities.some((a) => a._id === 'act_1')).toBe(false);
+  });
+
+  it('refuses a removal that leaves a kept meal pointing at it', () => {
+    const data = tripData();
+    data.activities.push({
+      ...data.activities[0],
+      _id: 'act_meal',
+      includedIn: { entity: 'activity', id: 'act_1' },
+    });
+    const plan: ProposedDayPlan = {
+      date: '2027-07-14',
+      legId: 'leg_a',
+      summary: 'Clear',
+      changes: [{ kind: 'activity', entityId: 'act_meal', changes: { text: 'Lunch' }, why: 's' }],
+      remove: ['act_1'],
+    };
+    // Only the removal is left checked, so the meal keeps its cover reference.
+    expect('error' in applyDayPlan(plan, data, new Set([1]))).toBe(true);
+    // Removing the covered meal too leaves nothing pointing at it.
+    const both = { ...plan, changes: [], remove: ['act_1', 'act_meal'] };
+    expect('error' in applyDayPlan(both, data, new Set([0, 1]))).toBe(false);
   });
 });

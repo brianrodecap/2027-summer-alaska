@@ -134,9 +134,42 @@ describe('filters', () => {
     expect(dayHasVisibleContent(live, new Set(['attr:attention']), entities)).toBe(false);
   });
 
+  it('flags a meal for attention by the candidate selected right now', () => {
+    const trip = twoLegTrip();
+    const option = (id: string, diningFormat: 'grab-and-go' | 'sit-down') => ({
+      _id: id,
+      diningFormat,
+      place: { id: `place_${id}`, label: id },
+      includedIn: null,
+      bookingId: null,
+    });
+    trip.activities = [
+      activity('lunch', 'leg_parks', '2027-06-01T12:00', {
+        mealType: 'lunch',
+        options: [option('quick', 'grab-and-go'), option('slow', 'sit-down')],
+      }),
+      activity('tour', 'leg_parks', '2027-06-01T12:30'),
+    ];
+    const tripView = buildTripView(trip);
+    const lunchFlagged = (index: number) => {
+      const day = buildLiveDays(tripView, trip, {
+        scenarioPicks: new Map(),
+        routeTones: new Map(),
+        mealOptionIndex: new Map([['lunch', index]]),
+      }).days.find((d) => d.date === '2027-06-01')!;
+      return filterRows(day.rows, day, new Set(['attr:attention'])).some(
+        (r) => r.type === 'activity' && r.activity._id === 'lunch',
+      );
+    };
+    // A 15-minute grab-and-go lunch is done before the 12:30 tour; a sit-down
+    // one runs into it.
+    expect(lunchFlagged(0)).toBe(false);
+    expect(lunchFlagged(1)).toBe(true);
+  });
+
   it('filterRows keeps every row when nothing is active', () => {
     const day = days[0];
-    expect(filterRows(day.rows, new Set())).toBe(day.rows); // identity short-circuit
+    expect(filterRows(day.rows, day, new Set())).toBe(day.rows); // identity short-circuit
   });
 
   it('filterRows drops the rows that no longer match, one row per event', () => {
@@ -144,7 +177,11 @@ describe('filters', () => {
       d.rows.some((r) => r.type === 'activity' && r.activity.priority),
     );
     expect(dayWithHighlight).toBeDefined();
-    const filtered = filterRows(dayWithHighlight!.rows, new Set(['attr:highlight']));
+    const filtered = filterRows(
+      dayWithHighlight!.rows,
+      dayWithHighlight!,
+      new Set(['attr:highlight']),
+    );
     expect(filtered.flatMap((r) => (r.type === 'activity' ? [r.activity._id] : []))).toEqual([
       'park_hike',
     ]);

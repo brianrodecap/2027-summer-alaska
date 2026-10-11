@@ -10,6 +10,7 @@
     "icons": "node scripts/generate-icons.mjs",
     "wordmark": "node scripts/generate-wordmark.mjs",
     "test": "vitest run",
+    "check:import": "vitest run --config vitest.importcheck.config.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",

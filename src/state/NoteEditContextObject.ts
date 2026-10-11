@@ -51,8 +51,8 @@ export interface NoteEditContextValue {
   openNoteEdit: (note: Note) => void;
   // Reviews a batch of already-drafted notes one at a time, each through the
   // same NoteEditDialog a manual "Add alert/info/footnote" opens — used by
-  // the AI document-import flow (see documentImport.ts's noteworthy
-  // callouts) once its own primary Stay/Activity/Transit draft has saved.
+  // the AI document-import flow (see proposals.ts's validateNote and
+  // proposalImport.ts's add_note) once its own primary Stay/Activity/Transit draft has saved.
   // Skipping or cancelling a step never loses the rest of the queue's
   // ability to run — see NoteEditDialog's own Skip vs. Cancel-all split —
   // but a "Cancel all" does abandon whatever notes are still left. Either

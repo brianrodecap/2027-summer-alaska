@@ -16,11 +16,14 @@ export function PlaceConditionsTogglesFor({
   onPlaceChange,
   weatherLabel = 'Show weather',
   elevationLabel = 'Show elevation',
+  showOnboard = false,
 }: {
   place: Place | null;
   onPlaceChange: (place: Place) => void;
   weatherLabel?: string;
   elevationLabel?: string;
+  // Offers the cruise "aboard the ship" checkbox (activities only).
+  showOnboard?: boolean;
 }) {
   if (!place?.label) return null;
   return (
@@ -53,6 +56,41 @@ export function PlaceConditionsTogglesFor({
           />
         }
       />
+      {showOnboard && <OnboardToggle place={place} onPlaceChange={onPlaceChange} />}
     </Stack>
+  );
+}
+
+// The cruise "aboard the ship" checkbox: port-call timing warnings skip a
+// venue on the ship itself. Offered for an activity's place and for each
+// candidate of a meal still being decided.
+export function OnboardToggle({
+  place,
+  onPlaceChange,
+}: {
+  place: Place | null;
+  onPlaceChange: (place: Place) => void;
+}) {
+  if (!place?.label) return null;
+  return (
+    <FormControlLabel
+      control={
+        <Checkbox
+          checked={Boolean(place.onboard)}
+          onChange={(e) => {
+            // Off is the default, so unchecking removes the key rather than
+            // storing `onboard: false`.
+            const { onboard: _drop, ...rest } = place;
+            onPlaceChange(e.target.checked ? { ...rest, onboard: true } : rest);
+          }}
+        />
+      }
+      label={
+        <LabelWithTip
+          text="Aboard the ship"
+          tip="A venue on the ship itself. Port-call timing warnings skip it. Off by default."
+        />
+      }
+    />
   );
 }

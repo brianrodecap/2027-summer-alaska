@@ -1,5 +1,5 @@
 import type { CollectionName } from './changeLog';
-import type { StagedTripEntities } from './documentImport';
+import type { StagedTripEntities } from './proposalImport';
 import { loadTripData } from './tripModel';
 import type {
   Activity,
@@ -73,9 +73,9 @@ export function exportEdits(data: TripData, dirty: Set<CollectionName>): void {
 // unconditionally, so a brand-new trip needs its default Leg's legs.json and
 // (when Add trip was started from a document) whatever Stays/Transits/
 // Activities that document produced, alongside its trip.json, plus the
-// trips.json manifest with this trip's slug added. scenarios/notes/
-// travelModeOverrides are always empty — nothing creates those at
-// trip-creation time.
+// trips.json manifest with this trip's slug added. Notes are the ones that
+// document's import proposed (staged.notes); scenarios and travelModeOverrides
+// are always empty — nothing creates those at trip-creation time.
 export function exportNewTrip(
   trip: Trip,
   legs: Leg[],
@@ -90,7 +90,7 @@ export function exportNewTrip(
     activities: staged.activities,
     bookings: staged.bookings,
     scenarios: [],
-    notes: [],
+    notes: staged.notes,
     // A brand-new trip has no viewer-chosen travel-mode overrides yet.
     travelModeOverrides: [],
   });

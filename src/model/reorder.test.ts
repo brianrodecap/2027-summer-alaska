@@ -165,8 +165,7 @@ function activity(overrides: Partial<EnrichedActivity>): EnrichedActivity {
     images: [],
     notes: [],
     hasWarningNote: false,
-    transitOverlapWarning: null,
-    activityOverlapWarning: null,
+    warnings: [],
     ...overrides,
   };
 }

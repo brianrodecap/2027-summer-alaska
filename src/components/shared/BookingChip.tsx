@@ -6,8 +6,9 @@ import { bookingCost } from '../../model/bookings';
 import { formatMoney } from '../../model/tripModel';
 import type { Booking, BookingStatus } from '../../model/types';
 
-const STATUS_COLOR: Record<BookingStatus, 'success' | 'default' | 'error'> = {
+const STATUS_COLOR: Record<BookingStatus, 'success' | 'default' | 'error' | 'warning'> = {
   booked: 'success',
+  requested: 'warning',
   planning: 'default',
   cancelled: 'error',
 };

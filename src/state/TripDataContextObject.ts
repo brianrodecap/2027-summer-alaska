@@ -21,7 +21,8 @@ export interface TripDataContextValue {
   saveError: Error | null;
   // `source` records who produced the edit, so AI-made changes stay distinguishable
   // in the change log.
-  setData: (updater: (prev: TripData) => TripData, source?: ChangeSource) => void;
+  // False when the trip wasn't loaded to write to, so the updater never ran.
+  setData: (updater: (prev: TripData) => TripData, source?: ChangeSource) => boolean;
   undoLast: () => void;
 }
 

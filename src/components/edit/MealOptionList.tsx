@@ -21,6 +21,7 @@ import { DINING_FORMAT_LABEL } from '../../model/formatting';
 import type { Activity, DiningFormat, Stay, Transit } from '../../model/types';
 import { BookingFields } from './BookingFields';
 import { IncludedInField } from './IncludedInField';
+import { OnboardToggle } from './PlaceConditionsToggles';
 import { PlacePickerField } from './PlacePickerField';
 
 // A meal candidate is always committed to one format (unlike the single-
@@ -81,6 +82,10 @@ function MealOptionRow({
           <DeleteIcon fontSize="small" />
         </IconButton>
       </Stack>
+      <OnboardToggle
+        place={option.place}
+        onPlaceChange={(place) => onChange({ ...option, place })}
+      />
       <Stack spacing={1.5}>
         <TextField
           select

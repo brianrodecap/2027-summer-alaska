@@ -1,9 +1,9 @@
 // Conversational "Ask AI" assistant for the day list — same browser-direct
-// Anthropic call as documentImport.ts (same key, same model), but a multi-turn agent
-// instead of a single structured-output extraction. Within one turn the model can
-// look things up on its own (askAITools.ts's read-only tools) as many times as it
-// needs, answer in prose, and propose changes through propose_edit /
-// propose_day_plan. Nothing is ever applied automatically — a proposal only opens
+// Anthropic call as the document import (proposalImport.ts: same key, same model).
+// Within one turn the model can look things up on its own (askAITools.ts's
+// read-only tools) as many times as it needs, answer in prose, and propose changes
+// through propose_edit / propose_day_plan. propose_edit is the import's proposal
+// shape, checked the same way (proposals.ts). Nothing is ever applied automatically — a proposal only opens
 // the existing EditDialog (via EditContext's openFromDraft), pre-filled, or shows a
 // reviewable list, for a human to accept exactly like a manual add/edit.
 import type {
@@ -16,97 +16,83 @@ import type {
 
 import { RequestAbortedError, responseText, streamMessage } from './anthropicClient';
 import {
-  applyMealOptions,
-  buildNewActivity,
-  NEW_ACTIVITY_PROPERTIES,
-  type NewActivitySpec,
+  alternativeEntry,
+  applyBatch,
+  idealEntityError,
+  noLongerFits,
   parseAlternative,
-  parseMealOptions,
-  parseNewActivity,
   parseNote,
   parseRoute,
   PROPOSE_ALTERNATIVE_PROPERTIES,
   PROPOSE_NOTE_PROPERTIES,
   PROPOSE_ROUTE_PROPERTIES,
   type ProposedAlternative,
-  type ProposedMealOption,
   type ProposedNote,
   type ProposedRoute,
 } from './askAIDrafts';
 import {
   type AskAIToolContext,
+  placeIdsIn,
   READ_TOOL_NAMES,
   READ_TOOLS,
   readToolLabel,
   runReadTool,
   ToolInputError,
 } from './askAITools';
-import { bookingOf } from './bookings';
 import { hashDoc } from './changeLog';
+import { EDIT_KINDS, type EditKind, findByKind } from './editForms';
 import {
-  draftEntityFromExtraction,
-  ENTITY_SCHEMA,
-  entryRoster,
-  type ExtractedFields,
-  mergeBooking,
-  mergeDraftIntoExisting,
-} from './documentImport';
-import { type EditKind, entityDateOnly, findByKind } from './editForms';
-import { activityHeadline, formatTime, transitRouteLabel } from './tripModel';
-import type { Activity, Booking, Place, Route, Stay, Transit, Traveler, TripData } from './types';
+  ADD_TRAVELER_TOOL,
+  addTraveler,
+  type ChangeProposal,
+  checkedChanges,
+  IMPORT_CONVENTIONS,
+  isDateTime,
+  PROPOSAL_PROPERTIES,
+  type ProposalState,
+  proposalState,
+  proposedTravelerIds,
+  queueFromProposals,
+  shapeErrors,
+} from './proposals';
+import { activityHeadline, formatTime, resolveActivityDate, transitRouteLabel } from './tripModel';
+import type { Activity, Booking, Route, Stay, Transit, Traveler, TripData } from './types';
 
 export class AskAIError extends Error {}
 
 export interface ProposedEdit {
-  kind: EditKind;
-  entityId?: string;
-  legId?: string;
-  date?: string;
-  // Which ideal/alternate Scenario branch a brand-new activity belongs to — never set
-  // when editing an existing entity, which keeps whatever scenarioId it already has.
-  // Not part of ExtractedFields/ENTITY_SCHEMA (documentImport.ts's shared shape) since
-  // a scanned booking document never describes a weather-branch day; this is purely a
-  // chat-time concept, so it's threaded through as its own sibling field instead.
-  scenarioId?: string;
-  // A real Google place id for an activity's place, from one of the lookup tools —
-  // never invented. Lets a proposal name a resolved place instead of a bare label.
-  placeId?: string;
-  // An activity's meal candidates — see askAIDrafts.ts's applyMealOptions.
-  mealOptions?: ProposedMealOption[];
+  // The change itself, in the same shape (and checked the same way, see
+  // proposals.ts) as a document import's: an entityId to update, or a legId
+  // and date (and scenarioId) to add, the fields it changes, and its booking.
+  change: ChangeProposal;
+  // People the change names who aren't on the trip yet — the ones add_traveler
+  // added this turn, with their ids (a suggestion saved before add_traveler
+  // existed has names only) — joining the trip on Save.
+  newTravelers?: { id?: string; name: string; age?: number }[];
   // Transits only: the Route a drive follows ('' takes it off its route) and the tone
   // of the variant it defaults to — see withRoute.
   routeId?: string;
   routeVariant?: string;
   summary: string;
-  fields: ExtractedFields;
 }
 
 // A batch of Activity-only changes for a single date — the "re-plan this day" /
-// "move things around" shape, as opposed to propose_edit's one-entity-at-a-time
-// shape. Deliberately narrower than ProposedEdit: no Stay/Transit ops (those carry
-// day-boundary/leg-span implications a plain time-shuffle doesn't, so they still go
-// through the single-entity review path), and 'move' only touches timing — a wording
-// or place change still goes through propose_edit too.
-export type DayPlanOp =
-  | { op: 'move'; entityId: string; startAt?: string; durationMinutes?: number }
-  | { op: 'remove'; entityId: string }
-  | ({
-      op: 'add';
-      // Set when this date has ideal/alternate Scenario branches and the new activity
-      // belongs to only one of them — see buildTripContext's own Scenario listing.
-      scenarioId?: string;
-    } & NewActivitySpec);
-
+// "move things around" shape, reviewed as one list rather than one entry at a
+// time. Each change is a ChangeProposal, checked like a single edit's; no
+// Stay/Transit (those carry day-boundary/leg-span implications a re-plan
+// doesn't, so they still go through the single-entry review).
 export interface ProposedDayPlan {
   date: string;
-  legId: string; // needed to place any 'add' ops
+  legId: string; // where new activities go
   summary: string;
-  ops: DayPlanOp[];
+  changes: ChangeProposal[]; // activities to add or update, in review order
+  remove: string[]; // activity ids, listed after the changes
+  newTravelers?: Traveler[]; // added this turn (add_traveler) and named by the changes
 }
 
 // One change the assistant proposed for the human to review, whichever propose_* tool
 // made it. `id` is that tool call's own id — unique and stable, so what's been applied
-// can be tracked by it outside the append-only conversation (see ChatStore).
+// can be tracked by it outside the append-only conversation.
 type ProposalBody =
   | { type: 'edit'; edit: ProposedEdit }
   | { type: 'dayPlan'; plan: ProposedDayPlan }
@@ -125,8 +111,7 @@ export interface AskAIMessage {
   proposals?: AskAIProposal[];
 }
 
-// A whole chat, persisted per trip (see src/state/store/chatStore.ts) so it survives
-// a reload. `apiMessages` is the exact history sent to the API, thinking blocks
+// A whole chat. `apiMessages` is the exact history sent to the API, thinking blocks
 // included, and is only ever appended to: the API binds each thinking block to the
 // conversation before it, so rewriting earlier turns — or rebuilding `system` — would
 // invalidate them. That's also why `system` freezes the itinerary as it was when the
@@ -213,8 +198,15 @@ export function buildTripContext(data: TripData): string {
     for (const a of activities) {
       const when = a.startAt ?? `${a.date ?? '?'} (${a.timeLabel ?? 'unspecified time'})`;
       const place = a.place ? ` at ${a.place.label}` : '';
+      // A meal still choosing between candidates says so, since a booking or
+      // an offer can add to or settle that choice.
+      const meal = a.mealType
+        ? a.options?.length
+          ? ` — ${a.mealType}, choosing between ${a.options.map((o) => o.place?.label ?? o.diningFormat).join(' / ')}`
+          : ` — ${a.mealType}${a.diningFormat ? ` (${a.diningFormat})` : ''}`
+        : '';
       lines.push(
-        `  Activity ${a._id}: ${activityHeadline(a) || '(untitled)'} — ${when}${place} [${a.status}]${scenarioTag(a.scenarioId)}`,
+        `  Activity ${a._id}: ${activityHeadline(a) || '(untitled)'} — ${when}${place}${meal} [${a.status}]${scenarioTag(a.scenarioId)}`,
       );
     }
   }
@@ -239,7 +231,7 @@ const ASK_AI_SYSTEM_PROMPT =
   'get_travel_time between two place ids, search_places to find a real place and its id, get_budget for money. ' +
   'Answer concisely, in plain prose — no markdown headings or bullet lists. ' +
   'You cannot change the itinerary yourself; you propose changes, which the user reviews. To re-plan a day, or ' +
-  'to move/add/remove several activities on one date, use propose_day_plan with one op per change. For one ' +
+  'to move/add/remove several activities on one date, use propose_day_plan with one entry in changes per activity to add or update and one id in remove per activity to drop. For one ' +
   "change to one entity — retiming or rewording an activity, or any change to a Stay's or Transit's own " +
   'fields — use propose_edit. Notes (warnings, info, footnotes on an entry or a date) are their own ' +
   "entities: add, reword or remove one with propose_note, never by editing an entry's text. A routed " +
@@ -267,51 +259,26 @@ const ASK_AI_SYSTEM_PROMPT =
   'to give a day with no options its first alternative (naming the existing entries that only happen in the ' +
   'plan as idealEntityIds). Never invent booking confirmation numbers, costs, place ' +
   'ids, or scenarioIds — a placeId must come from get_day, get_entity or search_places. If you are not ' +
-  'confident a change is warranted, just answer in text.';
+  "confident a change is warranted, just answer in text. Someone a change names who isn't on the trip " +
+  'yet is added with add_traveler first; use the id it returns. How this trip is modeled: ' +
+  IMPORT_CONVENTIONS.join(' ');
 
 const PROPOSE_EDIT_TOOL: BetaTool = {
   name: 'propose_edit',
   description:
-    'Propose a single change to the itinerary — creating a new activity/stay/transit, or editing an existing ' +
-    'one by its id. The user reviews and must explicitly save it; nothing is applied automatically.',
+    'Propose a single change to the itinerary — a new activity/stay/transit, or an edit to an existing one by ' +
+    "its id — giving only the fields it changes, in the trip's own field names. It's checked when you propose " +
+    'it, and an error says what to fix. The user reviews it and must explicitly save it.',
   input_schema: {
     type: 'object',
     properties: {
-      ...ENTITY_SCHEMA.properties,
-      entityId: {
-        type: 'string',
-        description:
-          'The _id of an existing activity/stay/transit to modify. Omit when proposing a brand-new entry.',
-      },
-      legId: {
-        type: 'string',
-        description:
-          'Required when entityId is omitted — the _id of the Leg this new entry belongs to.',
-      },
-      date: {
-        type: 'string',
-        description:
-          'Required when entityId is omitted — the ISO date (YYYY-MM-DD) this new entry falls on.',
-      },
-      scenarioId: {
-        type: 'string',
-        description:
-          'Only when entityId is omitted and this new activity belongs to one specific ideal/alternate ' +
-          "Scenario branch of `date` — an existing Scenario's _id from that Leg's own listing. Omit for a " +
-          'date with no Scenarios, or an entry that applies regardless of branch.',
-      },
-      placeId: {
-        type: 'string',
-        description:
-          "Activities only — the Google place id (from get_day, get_entity or search_places) of the activity's place, alongside placeLabel.",
-      },
-      mealOptions: NEW_ACTIVITY_PROPERTIES.mealOptions,
+      ...PROPOSAL_PROPERTIES,
       routeId: {
         type: 'string',
         description:
           'Transits only — the _id of the Route (from the Routes listing) this drive follows; its arrival ' +
-          'is then computed from the route, so omit endAt. An empty string takes the drive off its route ' +
-          '(then give endAt).',
+          'is then computed from the route, so leave out arrivesAt. An empty string takes the drive off its ' +
+          'route (then give arrivesAt).',
       },
       routeVariant: {
         type: 'string',
@@ -324,80 +291,239 @@ const PROPOSE_EDIT_TOOL: BetaTool = {
         description: 'One short sentence describing this change, shown to the user for review.',
       },
     },
-    required: ['kind', 'summary'],
+    required: ['kind', 'changes', 'summary'],
   },
 };
 
-const EDIT_KINDS: EditKind[] = ['activity', 'stay', 'transit'];
+// The place ids the conversation's earlier lookups returned, read back from
+// their tool results.
+function placeIdsFromHistory(messages: BetaMessageParam[]): string[] {
+  return messages.flatMap((message) =>
+    typeof message.content === 'string'
+      ? []
+      : message.content.flatMap((block) => {
+          if (block.type !== 'tool_result') return [];
+          if (typeof block.content === 'string') return placeIdsIn(block.content);
+          return (block.content ?? []).flatMap((part) =>
+            part.type === 'text' ? placeIdsIn(part.text) : [],
+          );
+        }),
+  );
+}
 
-// Tool input arrives unvalidated (eager input streaming), so check what the review UI
-// relies on before queueing it; a ToolInputError goes back to the model to correct.
-function parseProposal(input: unknown): ProposedEdit {
-  const raw = (input ?? {}) as ExtractedFields & {
-    entityId?: string;
-    legId?: string;
-    date?: string;
-    scenarioId?: string;
-    placeId?: string;
-    mealOptions?: unknown;
+// What a proposal is checked against when the assistant makes it: the trip
+// as it is now, the place ids this conversation's searches found, and the
+// travelers add_traveler added this turn.
+interface ProposalContext {
+  data: TripData;
+  searchedPlaceIds: ReadonlySet<string>;
+  addedTravelers: Traveler[];
+}
+
+// The proposal checks (proposals.ts) for one chat edit, as a batch of one.
+// `placeIds` are the ones searches found, or left out when checking it again
+// as it's applied.
+// A drive coming off its route (routeId '') gets its arrival from withRoute
+// below, not the change, so the change is checked without it.
+function checkedEdit(
+  edit: Pick<ProposedEdit, 'change' | 'newTravelers' | 'routeId' | 'routeVariant'>,
+  data: TripData,
+  placeIds?: Iterable<string>,
+): { state: ProposalState; change: ChangeProposal } | { errors: string[] } {
+  // Before anything reads `changes` as an object.
+  const malformed = shapeErrors(edit.change);
+  if (malformed.length) return { errors: malformed };
+  const { arrivesAt, ...offRoute } = edit.change.changes;
+  const change = {
+    ...(edit.routeId === '' ? { ...edit.change, changes: offRoute } : edit.change),
+    ...(edit.routeId ? { onRoute: true } : {}),
+  };
+  const checked = checkedChanges([change], data, { placeIds, travelers: edit.newTravelers });
+  const problems = 'errors' in checked ? [...checked.errors] : [];
+  // A route pick is itself a change, with nothing else in `changes`.
+  const picksRoute = edit.routeId !== undefined || edit.routeVariant !== undefined;
+  if (!picksRoute) problems.push(...emptyUpdates([change]));
+  // The stripped arrival is stored as given (withRoute), so check it here.
+  if (edit.routeId === '') {
+    const existing = edit.change.entityId
+      ? (findByKind('transit', edit.change.entityId, data) as Transit | undefined)
+      : undefined;
+    if (arrivesAt === undefined) {
+      // A drive coming off its route has no computed arrival to fall back on.
+      if (!existing?.arrivesAt) {
+        problems.push(
+          'Taking a drive off its route needs arrivesAt, since the route no longer gives one.',
+        );
+      }
+    } else {
+      const departsAt = edit.change.changes.departsAt ?? existing?.departsAt;
+      if (!isDateTime(arrivesAt)) {
+        problems.push('arrivesAt must be a local date-time like 2027-07-11T08:00.');
+      } else if (departsAt && arrivesAt <= departsAt) {
+        problems.push(`Arrives ${arrivesAt}, not after it departs ${departsAt}.`);
+      }
+    }
+  }
+  if (problems.length || 'errors' in checked) return { errors: problems };
+  return { state: checked.state, change: checked.changes[0] };
+}
+
+// An update that changes nothing (no fields, booking or added option) is
+// turned down by id, so it isn't reviewed as a change.
+function emptyUpdates(changes: ChangeProposal[]): string[] {
+  return changes
+    .filter((c) => c.entityId && !Object.keys(c.changes ?? {}).length && !c.booking && !c.addOption)
+    .map((c) => `Say what changes on ${c.entityId}: changes is empty.`);
+}
+
+// The travelers add_traveler added this turn whom `changes` name.
+function travelersNamedIn(changes: ChangeProposal[], ctx: ProposalContext): Traveler[] {
+  const named = new Set(changes.flatMap((change) => [...proposedTravelerIds(change)]));
+  return ctx.addedTravelers.filter((t) => named.has(t.id));
+}
+
+// Tool input arrives unvalidated (eager input streaming), so check it before queueing
+// it; a ToolInputError goes back to the model to correct in the same turn.
+function parseProposal(input: unknown, ctx: ProposalContext): ProposedEdit {
+  const raw = (input ?? {}) as Partial<ChangeProposal> & {
     routeId?: string;
     routeVariant?: string;
-    summary: string;
+    summary?: string;
   };
-  const {
-    entityId,
-    legId,
-    date,
-    scenarioId,
-    placeId,
-    mealOptions,
-    routeId,
-    routeVariant,
-    summary,
-    ...fields
-  } = raw;
-  if (!EDIT_KINDS.includes(fields.kind)) {
+  const { routeId, routeVariant, summary, ...rest } = raw;
+  if (!rest.kind || !EDIT_KINDS.includes(rest.kind)) {
     throw new ToolInputError('"kind" must be activity, stay or transit.');
   }
   if (typeof summary !== 'string' || !summary) throw new ToolInputError('"summary" is required.');
-  if (!entityId && !(legId && date)) {
+  if (!rest.entityId && !(rest.legId && rest.date)) {
     throw new ToolInputError('Give entityId to edit an entry, or legId and date to add one.');
   }
-  if ((routeId !== undefined || routeVariant !== undefined) && fields.kind !== 'transit') {
+  if ((routeId !== undefined || routeVariant !== undefined) && rest.kind !== 'transit') {
     throw new ToolInputError('routeId and routeVariant only apply to a transit.');
   }
   if (routeId === '' && routeVariant) {
     throw new ToolInputError("routeVariant can't be set while taking a drive off its route.");
   }
-  return {
-    kind: fields.kind,
-    entityId,
-    legId,
-    date,
-    scenarioId,
-    placeId,
-    mealOptions: parseMealOptions(mealOptions),
+  // A routed drive's arrival comes from the route walk (withRoute drops one given here).
+  if (routeId && rest.changes?.arrivesAt !== undefined) {
+    throw new ToolInputError(
+      "A drive on a route gets its arrival from the route walk, so arrivesAt can't be set. Leave it out.",
+    );
+  }
+  const change: ChangeProposal = {
+    ...rest,
+    kind: rest.kind,
+    changes: rest.changes ?? {},
+    why: summary,
+  };
+  const newTravelers = travelersNamedIn([change], ctx);
+  const edit: ProposedEdit = {
+    change,
+    newTravelers: newTravelers.length ? newTravelers : undefined,
     routeId,
     routeVariant,
     summary,
-    fields: fields as ExtractedFields,
   };
+  const checked = checkedEdit(edit, ctx.data, ctx.searchedPlaceIds);
+  if ('errors' in checked) throw new ToolInputError(checked.errors.join('\n'));
+  return edit;
 }
 
-function parseDayPlan(input: unknown): ProposedDayPlan {
-  const plan = (input ?? {}) as ProposedDayPlan;
-  if (typeof plan.date !== 'string' || typeof plan.legId !== 'string') {
+// Checks a batch's changes together (proposals.ts's checkedChanges) — a
+// ToolInputError naming which one goes back to the model to fix. Returns the
+// travelers add_traveler added this turn whom the batch names.
+function checkChanges(changes: ChangeProposal[], ctx: ProposalContext): Traveler[] | undefined {
+  const empty = emptyUpdates(changes);
+  if (empty.length) throw new ToolInputError(empty.join('\n'));
+  const travelers = travelersNamedIn(changes, ctx);
+  const checked = checkedChanges(changes, ctx.data, {
+    placeIds: ctx.searchedPlaceIds,
+    travelers,
+  });
+  if ('errors' in checked) throw new ToolInputError(checked.errors.join('\n'));
+  return travelers.length ? travelers : undefined;
+}
+
+function parseDayPlan(input: unknown, ctx: ProposalContext): ProposedDayPlan {
+  const raw = (input ?? {}) as Partial<Omit<ProposedDayPlan, 'changes'>> & {
+    changes?: Partial<ChangeProposal>[];
+  };
+  if (typeof raw.date !== 'string' || typeof raw.legId !== 'string') {
     throw new ToolInputError('"date" and "legId" are required.');
   }
-  if (typeof plan.summary !== 'string' || !Array.isArray(plan.ops) || !plan.ops.length) {
-    throw new ToolInputError('"summary" and a non-empty "ops" list are required.');
+  if (typeof raw.summary !== 'string' || !raw.summary) {
+    throw new ToolInputError('"summary" is required.');
   }
-  const ops = plan.ops.map((op): DayPlanOp => {
-    if (op.op === 'add') return { ...parseNewActivity(op), op: 'add', scenarioId: op.scenarioId };
-    if (!op.entityId) throw new ToolInputError('move/remove ops need entityId.');
-    return op;
+  const remove = raw.remove ?? [];
+  if (!Array.isArray(raw.changes ?? []) || !Array.isArray(remove)) {
+    throw new ToolInputError('"changes" and "remove" must be lists.');
+  }
+  if (!raw.changes?.length && !remove.length) {
+    throw new ToolInputError('Give at least one change or removal.');
+  }
+  if (!(raw.changes ?? []).every((c) => c && typeof c === 'object' && !Array.isArray(c))) {
+    throw new ToolInputError('Every change must be an object.');
+  }
+  // A new entry stays on the plan's own leg and date: an override would add
+  // it to another day under this day's heading.
+  const stray = (raw.changes ?? []).filter(
+    (c) =>
+      !c.entityId && ((c.legId ?? raw.legId) !== raw.legId || (c.date ?? raw.date) !== raw.date),
+  );
+  if (stray.length) {
+    throw new ToolInputError(
+      `A new entry in a plan for ${raw.date} (leg ${raw.legId}) must be on that date and leg; leave its date and legId out.`,
+    );
+  }
+  const changes = (raw.changes ?? []).map((c): ChangeProposal => ({
+    ...c,
+    kind: 'activity',
+    // A new activity lands on the plan's leg and date unless it says otherwise.
+    legId: c.entityId ? undefined : (c.legId ?? raw.legId),
+    date: c.entityId ? undefined : (c.date ?? raw.date),
+    changes: c.changes ?? {},
+    why: raw.summary!,
+  }));
+  const newTravelers = checkChanges(changes, ctx);
+  if (!remove.every((id) => typeof id === 'string')) {
+    throw new ToolInputError('"remove" must list activity ids.');
+  }
+  const missing = remove.filter((id) => !ctx.data.activities.some((a) => a._id === id));
+  if (missing.length) throw new ToolInputError(`No activity ${missing.join(', ')} to remove.`);
+  // A removal is for this plan's day: Apply all would otherwise delete an
+  // activity from another day (or leg) under a "Re-plan <date>" heading.
+  // Updates are held to the same rule: an entry to change is on this day now
+  // (it may be moved off it, or another day's moved here as a new entry).
+  const elsewhere = [...remove, ...changes.flatMap((c) => (c.entityId ? [c.entityId] : []))].filter(
+    (id) => {
+      const a = ctx.data.activities.find((x) => x._id === id);
+      return a && (a.legId !== raw.legId || resolveActivityDate(a) !== raw.date);
+    },
+  );
+  if (elsewhere.length) {
+    throw new ToolInputError(
+      `${elsewhere.join(', ')} isn't on ${raw.date} in leg ${raw.legId}; a day plan changes and removes only that day's activities.`,
+    );
+  }
+  // Something still pointing at a removed activity (a meal it covers) would be
+  // left with a reference to nothing.
+  const dangling = ctx.data.activities.flatMap((x) => {
+    const ref = x.includedIn;
+    const covers = ref && 'entity' in ref && ref.entity === 'activity' ? ref.id : null;
+    return covers && remove.includes(covers) && !remove.includes(x._id)
+      ? [`${covers} covers ${x._id}`]
+      : [];
   });
-  return { ...plan, ops };
+  if (dangling.length) {
+    throw new ToolInputError(`${dangling.join('; ')}: change or remove that too.`);
+  }
+  const changedAndRemoved = remove.filter((id) => changes.some((c) => c.entityId === id));
+  if (changedAndRemoved.length) {
+    throw new ToolInputError(
+      `${changedAndRemoved.join(', ')} is both changed and removed; do one or the other.`,
+    );
+  }
+  return { date: raw.date, legId: raw.legId, summary: raw.summary, changes, remove, newTravelers };
 }
 
 const PROPOSE_DAY_PLAN_TOOL: BetaTool = {
@@ -415,34 +541,34 @@ const PROPOSE_DAY_PLAN_TOOL: BetaTool = {
         description:
           'One short sentence describing the overall plan, shown to the user for review.',
       },
-      ops: {
+      changes: {
         type: 'array',
+        description:
+          'Activities to add (no entityId; they land on this date and leg unless given their own) or ' +
+          "update (entityId), each in propose_edit's shape — only the fields that change. Moving one is " +
+          'a new startAt.',
         items: {
           type: 'object',
           properties: {
-            op: { type: 'string', enum: ['move', 'remove', 'add'] },
-            entityId: {
-              type: 'string',
-              description: 'Required for move/remove — the existing activity _id.',
-            },
-            ...NEW_ACTIVITY_PROPERTIES,
-            startAt: {
-              type: 'string',
-              description:
-                'ISO 8601 local date-time. Required for add; for move, the new start time.',
-            },
+            entityId: PROPOSAL_PROPERTIES.entityId,
             scenarioId: {
               type: 'string',
               description:
-                "add only — set when this date has ideal/alternate Scenario branches (see the Leg's own " +
-                'Scenario listing) and this new activity belongs to only one of them. Omit otherwise.',
+                "New activities only — set when this date has ideal/alternate Scenario branches (see the Leg's " +
+                'own Scenario listing) and it belongs to only one of them. Omit otherwise.',
             },
+            changes: PROPOSAL_PROPERTIES.changes,
           },
-          required: ['op'],
+          required: ['changes'],
         },
       },
+      remove: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Ids of activities to remove.',
+      },
     },
-    required: ['date', 'legId', 'summary', 'ops'],
+    required: ['date', 'legId', 'summary'],
   },
 };
 
@@ -454,7 +580,7 @@ const PROPOSE_ALTERNATIVE_TOOL: BetaTool = {
   input_schema: {
     type: 'object',
     properties: PROPOSE_ALTERNATIVE_PROPERTIES,
-    required: ['date', 'legId', 'summary', 'label', 'activities'],
+    required: ['date', 'legId', 'summary', 'label', 'entries'],
   },
 };
 
@@ -486,6 +612,7 @@ const PROPOSE_ROUTE_TOOL: BetaTool = {
 };
 
 const PROPOSE_TOOLS: BetaTool[] = [
+  ADD_TRAVELER_TOOL,
   PROPOSE_EDIT_TOOL,
   PROPOSE_DAY_PLAN_TOOL,
   PROPOSE_ALTERNATIVE_TOOL,
@@ -509,13 +636,25 @@ const MAX_REQUESTS_PER_TURN = 8;
 
 // Each propose_* tool only parses its input into a proposal queued for the human to
 // review — nothing is applied.
-const PROPOSAL_PARSERS: Record<string, (input: unknown) => ProposalBody> = {
-  [PROPOSE_EDIT_TOOL.name]: (input) => ({ type: 'edit', edit: parseProposal(input) }),
-  [PROPOSE_DAY_PLAN_TOOL.name]: (input) => ({ type: 'dayPlan', plan: parseDayPlan(input) }),
-  [PROPOSE_ALTERNATIVE_TOOL.name]: (input) => ({
-    type: 'alternative',
-    alternative: parseAlternative(input),
+const PROPOSAL_PARSERS: Record<string, (input: unknown, ctx: ProposalContext) => ProposalBody> = {
+  [PROPOSE_EDIT_TOOL.name]: (input, ctx) => ({ type: 'edit', edit: parseProposal(input, ctx) }),
+  [PROPOSE_DAY_PLAN_TOOL.name]: (input, ctx) => ({
+    type: 'dayPlan',
+    plan: parseDayPlan(input, ctx),
   }),
+  [PROPOSE_ALTERNATIVE_TOOL.name]: (input, ctx) => {
+    const alternative = parseAlternative(input);
+    const badIdeal = idealEntityError(alternative, ctx.data);
+    if (badIdeal) throw new ToolInputError(badIdeal);
+    // Its branch doesn't exist until it's applied, so it's checked without one.
+    const newTravelers = checkChanges(
+      alternative.entries.map((changes) =>
+        alternativeEntry(alternative, changes, alternative.legId, null),
+      ),
+      ctx,
+    );
+    return { type: 'alternative', alternative: { ...alternative, newTravelers } };
+  },
   [PROPOSE_NOTE_TOOL.name]: (input) => ({ type: 'note', note: parseNote(input) }),
   [PROPOSE_ROUTE_TOOL.name]: (input) => ({ type: 'route', route: parseRoute(input) }),
 };
@@ -564,6 +703,27 @@ export interface AskAITurnInput {
   signal?: AbortSignal;
 }
 
+// The people earlier turns' proposals carry as new travelers, by id, leaving
+// out anyone the trip already has.
+function travelersFromHistory(messages: AskAIMessage[], data: TripData): Traveler[] {
+  const known = new Set(data.trip.travelers.map((t) => t.id));
+  const found = new Map<string, Traveler>();
+  for (const proposal of messages.flatMap((m) => m.proposals ?? [])) {
+    const people =
+      proposal.type === 'edit'
+        ? proposal.edit.newTravelers
+        : proposal.type === 'dayPlan'
+          ? proposal.plan.newTravelers
+          : proposal.type === 'alternative'
+            ? proposal.alternative.newTravelers
+            : undefined;
+    for (const t of people ?? []) {
+      if (t.id && !known.has(t.id)) found.set(t.id, t as Traveler);
+    }
+  }
+  return [...found.values()];
+}
+
 // One question and everything the assistant does to answer it: stream a reply, run
 // any lookups it asks for, feed the results back, and repeat until it answers. Returns
 // the conversation with the whole turn appended; a turn that fails or is stopped
@@ -597,6 +757,13 @@ export async function runAskAITurn(
 
   const proposals: AskAIProposal[] = [];
   const lookups: string[] = [];
+  // Place ids this conversation's lookups have returned, in earlier turns too —
+  // the ones a proposal may use beyond those already on the trip (see
+  // proposals.ts's validateProposal).
+  const searchedPlaceIds = new Set(placeIdsFromHistory(conversation.apiMessages));
+  // People add_traveler added — this turn, or an earlier one whose proposal is
+  // still pending — for proposals to name. Anyone since saved is on the trip.
+  const addedTravelers: Traveler[] = travelersFromHistory(conversation.messages, data);
   const replyParts: string[] = [];
 
   const runTool = async (use: BetaToolUseBlock): Promise<BetaToolResultBlockParam> => {
@@ -607,15 +774,31 @@ export async function runAskAITurn(
       ...(isError ? { is_error: true } : {}),
     });
     try {
+      if (use.name === ADD_TRAVELER_TOOL.name) {
+        const state = proposalState(data);
+        state.newTravelers.push(...addedTravelers);
+        // No duplicate can reach addedTravelers: addTraveler refuses a name the
+        // trip or these pending travelers already have, whatever their ids
+        // (a reviewed false positive — don't add a second check here).
+        const added = addTraveler(use.input as { name?: string; age?: number }, state);
+        if ('errors' in added) return result(added.errors.join('\n'), true);
+        addedTravelers.push(added.traveler);
+        return result(`Added as ${added.traveler.id}.`);
+      }
       if (Object.hasOwn(PROPOSAL_PARSERS, use.name)) {
-        proposals.push({ id: use.id, ...PROPOSAL_PARSERS[use.name](use.input) });
+        proposals.push({
+          id: use.id,
+          ...PROPOSAL_PARSERS[use.name](use.input, { data, searchedPlaceIds, addedTravelers }),
+        });
         return result(QUEUED_FOR_REVIEW);
       }
       if (READ_TOOL_NAMES.has(use.name)) {
         const label = readToolLabel(use.name, use.input);
         lookups.push(label);
         events.onLookup?.(label);
-        return result(await runReadTool(use.name, use.input, tools));
+        const text = await runReadTool(use.name, use.input, tools);
+        for (const id of placeIdsIn(text)) searchedPlaceIds.add(id);
+        return result(text);
       }
       return result(`Unknown tool ${use.name}.`, true);
     } catch (err) {
@@ -663,8 +846,16 @@ export async function runAskAITurn(
     }
     if (message.stop_reason !== 'tool_use' || !toolUses.length || lastRequest) break;
 
-    // Every result goes back in one user message, in call order.
-    const results = await Promise.all(toolUses.map(runTool));
+    // Every result goes back in one user message, in call order. Lookups and
+    // add_traveler run before the proposals, so a proposal can use the person
+    // or place id found in the same message, whatever order they were sent in.
+    const proposesLast = (use: BetaToolUseBlock) => Object.hasOwn(PROPOSAL_PARSERS, use.name);
+    const byId = new Map<string, BetaToolResultBlockParam>();
+    for (const group of [toolUses.filter((u) => !proposesLast(u)), toolUses.filter(proposesLast)]) {
+      for (const result of await Promise.all(group.map(runTool)))
+        byId.set(result.tool_use_id, result);
+    }
+    const results = toolUses.map((use) => byId.get(use.id) as BetaToolResultBlockParam);
     if (signal?.aborted) throw new RequestAbortedError();
     apiMessages = [...apiMessages, { role: 'user', content: results }];
   }
@@ -691,131 +882,69 @@ export async function runAskAITurn(
 //
 // Unlike a single propose_edit, this never opens EditDialog — the batch itself, shown as
 // a reviewed list in the assistant panel, is the human checkpoint. Applying it is one setData
-// call over the whole ops list, so it's one undo-able step (one change-log batch), not N.
-export function applyDayPlan(plan: ProposedDayPlan, data: TripData): TripData {
-  let activities = data.activities;
-  for (const op of plan.ops) {
-    if (op.op === 'move') {
-      activities = activities.map((a) =>
-        a._id === op.entityId
-          ? {
-              ...a,
-              startAt: op.startAt ?? a.startAt,
-              durationMinutes: op.durationMinutes ?? a.durationMinutes,
-            }
-          : a,
-      );
-    } else if (op.op === 'remove') {
-      activities = activities.filter((a) => a._id !== op.entityId);
-    } else {
-      activities = [...activities, buildNewActivity(op, plan.legId, op.scenarioId ?? null)];
-    }
-  }
-  return { ...data, activities };
+// call over the whole list, so it's one undo-able step (one change-log batch), not N.
+
+// Applies the plan's items whose indexes are in `keep` — its changes, then its
+// removals, in review order.
+export function applyDayPlan(
+  plan: ProposedDayPlan,
+  data: TripData,
+  keep: ReadonlySet<number> = new Set(
+    Array.from({ length: plan.changes.length + plan.remove.length }, (_, i) => i),
+  ),
+): { data: TripData } | { error: string } {
+  return applyBatch(
+    data,
+    plan.changes.filter((_, i) => keep.has(i)),
+    plan.newTravelers,
+    new Set(plan.remove.filter((_, i) => keep.has(plan.changes.length + i))),
+  );
 }
 
-// One line per op, shown in the review list before Apply all. Entity ids (act_lc_d4_...)
-// mean nothing to a reader, so every move/remove looks the existing activity's own text
-// up out of `data` rather than showing raw ids; a move shows before → after time only
-// when the time is actually changing, to avoid noise on a same-time reorder.
 // One line for a new activity in a review list, naming its candidates when it's a
 // meal still being decided.
-export function describeNewActivity(spec: NewActivitySpec): string {
-  const when = spec.startAt ? ` at ${formatTime(spec.startAt)}` : '';
+export function describeNewActivity(c: ChangeProposal['changes']): string {
+  const what = c.text ?? c.place?.label ?? c.mealType ?? 'activity';
+  const when = c.startAt ? ` at ${formatTime(c.startAt)}` : '';
   const choices =
-    spec.mealOptions && spec.mealOptions.length > 1
-      ? ` — choosing between ${spec.mealOptions.map((o) => o.placeLabel).join(', ')}`
+    c.mealOptions && c.mealOptions.length > 1
+      ? ` — choosing between ${c.mealOptions.map((o) => o.place.label).join(', ')}`
       : '';
-  return `+ Add "${spec.text}"${when}${choices}`;
+  return `+ Add "${what}"${when}${choices}`;
 }
 
-export function describeDayPlanOp(op: DayPlanOp, data: TripData): string {
-  if (op.op === 'add') return describeNewActivity(op);
-  const existing = data.activities.find((a) => a._id === op.entityId);
-  const label = existing ? `"${activityHeadline(existing)}"` : 'that activity';
-  if (op.op === 'remove') return `− Remove ${label}`;
-  const from = existing?.startAt ? formatTime(existing.startAt) : null;
-  const to = op.startAt ? formatTime(op.startAt) : null;
-  if (from && to && from !== to) return `Move ${label} ${from} → ${to}`;
-  if (to) return `Move ${label} to ${to}`;
-  return `Move ${label}`;
+// One line per item, shown in the review list before Apply all. Entity ids
+// (act_lc_d4_...) mean nothing to a reader, so a change or removal names the
+// existing activity; a change that only retimes it shows before → after.
+export function describeDayPlan(plan: ProposedDayPlan, data: TripData): string[] {
+  const find = (id: string) => data.activities.find((a) => a._id === id);
+  const labelOf = (existing: Activity | undefined) =>
+    existing ? `"${activityHeadline(existing)}"` : 'that activity';
+  const changeLine = (change: ChangeProposal): string => {
+    if (!change.entityId) return describeNewActivity(change.changes);
+    const existing = find(change.entityId);
+    const label = labelOf(existing);
+    const fields = Object.keys(change.changes);
+    if (!fields.length) return `Update ${label}`;
+    const to = change.changes.startAt ? formatTime(change.changes.startAt) : null;
+    if (fields.every((f) => f === 'startAt' || f === 'durationMinutes')) {
+      const from = existing?.startAt ? formatTime(existing.startAt) : null;
+      if (from && to && from !== to) return `Move ${label} ${from} → ${to}`;
+      return to ? `Move ${label} to ${to}` : `Change ${label}'s length`;
+    }
+    return `Change ${label}${to ? ` (at ${to})` : ''}`;
+  };
+  return [
+    ...plan.changes.map(changeLine),
+    ...plan.remove.map((id) => `− Remove ${labelOf(find(id))}`),
+  ];
 }
 
 // ---------- turning a proposal into a real draft entity ----------
 
-// The create case (no entityId) reuses draftEntityFromExtraction verbatim —
-// same "start from blank" shape as a document import. The edit case drafts
-// the same way and lays that over the real entity with the import's own
-// mergeDraftIntoExisting, so a field the AI left out (an existing booking,
-// images, a routed drive's walked arrival) survives untouched. Returns the
-// Booking documents the draft writes alongside it — the entity's own, merged
-// over whatever it already pointed at (keeping that id, so a shared booking
-// stays shared) — and any travelers it names whom the trip doesn't have yet,
-// added when the draft is saved (see withDocumentTravelers).
-export function draftEntityFromProposal(
-  kind: EditKind,
-  fields: ExtractedFields,
-  base: Activity | Stay | Transit,
-  data: Pick<TripData, 'bookings' | 'trip'>,
-): DraftedProposal {
-  const roster = entryRoster(fields, data.trip.travelers);
-  const current = bookingOf(data, base);
-  const booking = mergeBooking(fields, current);
-  const bookings = booking && booking !== current ? [booking] : [];
-  const draft = draftEntityFromExtraction(
-    { ...fields, kind },
-    base.legId,
-    entityDateOnly(kind, base),
-    {},
-    roster.travelers,
-    booking,
-  );
-  const entity = mergeDraftIntoExisting({ ...fields, kind }, base, draft);
-  entity.bookingId = booking?._id ?? null;
-  applyStatedChanges(kind, fields, entity);
-  return { entity, bookings, travelers: kind === 'transit' ? roster.added : [] };
-}
-
-// A document restates what's already known, so the import's merge keeps a
-// resolved place and an existing description. An AI edit is an instruction:
-// a place label or description it states replaces the old one. A renamed place
-// drops its id rather than pairing the old place's id with the new name (a
-// proposal's placeId, applied after this by withPlaceId, resolves it again).
-function applyStatedChanges(
-  kind: EditKind,
-  fields: ExtractedFields,
-  entity: Activity | Stay | Transit,
-): void {
-  const renamed = (place: Place, label: string | null | undefined): Place =>
-    label && label !== place.label ? { id: null, label } : place;
-  if (kind === 'stay') {
-    const stay = entity as Stay;
-    if (stay.lodging) stay.lodging.place = renamed(stay.lodging.place, fields.lodgingName);
-  } else if (kind === 'transit') {
-    const transit = entity as Transit;
-    transit.from = renamed(transit.from, fields.fromLabel);
-    transit.to = renamed(transit.to, fields.toLabel);
-    if (fields.mode) transit.mode = fields.mode;
-  } else {
-    const activity = entity as Activity;
-    if (fields.text) activity.text = fields.text;
-    if (fields.placeLabel) {
-      activity.place = activity.place
-        ? renamed(activity.place, fields.placeLabel)
-        : { id: null, label: fields.placeLabel };
-    }
-  }
-}
-
-interface DraftedProposal {
-  entity: Activity | Stay | Transit;
-  bookings: Booking[];
-  travelers: Traveler[];
-}
-
 // `bookings` are the Booking documents the draft writes and `travelers` the
-// new travelers it names (see draftEntityFromProposal) — handed to
-// openFromDraft with it, so the review form opens on them and Save commits them.
+// new travelers it names — handed to openFromDraft with it, so the review form
+// opens on them and Save commits them.
 export type ResolvedProposal =
   | {
       kind: EditKind;
@@ -826,28 +955,9 @@ export type ResolvedProposal =
     }
   | { error: string };
 
-// Turns a ProposedEdit into what EditContext's openFromDraft needs — the edit-vs-create
-// branch a proposal always carries (an existing entityId to overlay onto, or a
-// legId+date to start blank from) plus the entity lookup that decides it, kept here
-// rather than in the assistant panel so the resolution logic is unit-testable business logic,
-// not view code.
-// An activity proposal that came with a real place id (looked up via a tool) resolves
-// its place to it, keeping the label the draft already has.
-function withPlaceId<E extends Activity | Stay | Transit>(draft: E, proposal: ProposedEdit): E {
-  if (proposal.kind !== 'activity') return draft;
-  const activity = draft as Activity;
-  if (proposal.placeId) {
-    const label = activity.place?.label ?? proposal.fields.placeLabel ?? '';
-    activity.place = { ...activity.place, id: proposal.placeId, label };
-  }
-  // Candidates replace any single place: a meal with options has none of its own.
-  if (proposal.mealOptions) applyMealOptions(activity, proposal.mealOptions);
-  return draft;
-}
-
 // A transit proposal that names a route points the drive at it. A routed drive's
 // arrival is never stored — it's walked from the selected variant's drive times — so
-// arrivesAt is cleared whatever endAt said. Returns an error message when the route or
+// arrivesAt is cleared whatever the change said. Returns an error message when the route or
 // variant doesn't exist. Mutates `transit` (a fresh draft).
 function withRoute(transit: Transit, proposal: ProposedEdit, data: TripData): string | null {
   const { routeId, routeVariant } = proposal;
@@ -856,9 +966,9 @@ function withRoute(transit: Transit, proposal: ProposedEdit, data: TripData): st
     transit.routeId = null;
     transit.routeVariant = null;
     delete transit.showEndpointsOnMap;
-    // Off its route it needs a stored arrival again — the merge skipped endAt
-    // while the drive was still routed.
-    if (proposal.fields.endAt) transit.arrivesAt = proposal.fields.endAt;
+    // Off its route it needs a stored arrival again — the change's arrivesAt,
+    // which drafting skipped while the drive was still routed.
+    if (proposal.change.changes.arrivesAt) transit.arrivesAt = proposal.change.changes.arrivesAt;
     return null;
   }
   const id = routeId ?? transit.routeId;
@@ -881,66 +991,37 @@ function withRoute(transit: Transit, proposal: ProposedEdit, data: TripData): st
   // A new drive with no endpoints or mode of its own takes the route's.
   if (!transit.from.label) transit.from = { ...route.from };
   if (!transit.to.label) transit.to = { ...route.to };
-  if (!proposal.entityId && !proposal.fields.mode) transit.mode = 'drive';
+  if (!proposal.change.entityId && !proposal.change.changes.mode) transit.mode = 'drive';
   return null;
 }
 
-function finishDraft(
-  { entity: draft, bookings, travelers }: DraftedProposal,
-  proposal: ProposedEdit,
-  data: TripData,
-  overrideId?: string,
-): ResolvedProposal {
-  if (proposal.kind === 'transit') {
+// Turns a ProposedEdit into what EditContext's openFromDraft needs, through the
+// same checks and drafting as a document import (proposals.ts): an update laid
+// over the existing entry (so whatever the change leaves out survives), or a new
+// entry on the given leg and date. The trip may have changed since the proposal
+// was made, so it's checked again here; a change that no longer fits says why.
+// Kept here rather than in the assistant panel so it's unit-testable business
+// logic, not view code.
+export function resolveProposalDraft(proposal: ProposedEdit, data: TripData): ResolvedProposal {
+  if (
+    proposal.change.entityId &&
+    !findByKind(proposal.change.kind, proposal.change.entityId, data)
+  ) {
+    return { error: "Couldn't find the entry the AI was referring to — try asking again." };
+  }
+  const checked = checkedEdit(proposal, data);
+  if ('errors' in checked) return { error: noLongerFits(checked.errors) };
+  const [queued] = queueFromProposals(checked.state);
+  const draft = queued.entity;
+  if (proposal.change.kind === 'transit') {
     const error = withRoute(draft as Transit, proposal, data);
     if (error) return { error };
   }
   return {
-    kind: proposal.kind,
-    draft: withPlaceId(draft, proposal),
-    bookings,
-    travelers,
-    overrideId,
+    kind: proposal.change.kind,
+    draft,
+    bookings: queued.bookings,
+    travelers: queued.travelers,
+    overrideId: queued.overrideId,
   };
-}
-
-export function resolveProposalDraft(proposal: ProposedEdit, data: TripData): ResolvedProposal {
-  if (proposal.entityId) {
-    const existing = findByKind(proposal.kind, proposal.entityId, data);
-    if (!existing) {
-      return { error: "Couldn't find the entry the AI was referring to — try asking again." };
-    }
-    return finishDraft(
-      draftEntityFromProposal(proposal.kind, proposal.fields, existing, data),
-      proposal,
-      data,
-      proposal.entityId,
-    );
-  }
-  if (proposal.legId && proposal.date) {
-    const booking = mergeBooking(proposal.fields);
-    const roster = entryRoster(proposal.fields, data.trip.travelers);
-    const draft = draftEntityFromExtraction(
-      proposal.fields,
-      proposal.legId,
-      proposal.date,
-      {},
-      roster.travelers,
-      booking,
-    );
-    // Stay has no scenarioId field at all (see types.ts) — only Activity/Transit branch.
-    if (proposal.scenarioId && proposal.kind !== 'stay') {
-      (draft as Activity | Transit).scenarioId = proposal.scenarioId;
-    }
-    return finishDraft(
-      {
-        entity: draft,
-        bookings: booking ? [booking] : [],
-        travelers: proposal.kind === 'transit' ? roster.added : [],
-      },
-      proposal,
-      data,
-    );
-  }
-  return { error: "The AI's suggestion was missing where to place it — try asking again." };
 }

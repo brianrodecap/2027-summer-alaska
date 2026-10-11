@@ -1,3 +1,4 @@
+import { allPackages } from './packages';
 import type { Note, Ref, RefEntityKind, TripData } from './types';
 
 // The collections a Note's entity refs can point into — a write that leaves
@@ -19,10 +20,8 @@ const refKey = (entity: RefEntityKind, id: string) => `${entity}:${id}`;
 function liveEntityKeys(data: NoteTargets): Set<string> {
   const keys = new Set<string>([refKey('trip', data.trip._id)]);
   for (const l of data.legs) keys.add(refKey('leg', l._id));
-  for (const s of data.stays) {
-    keys.add(refKey('stay', s._id));
-    for (const p of s.packages ?? []) keys.add(refKey('package', p._id));
-  }
+  for (const s of data.stays) keys.add(refKey('stay', s._id));
+  for (const p of allPackages(data)) keys.add(refKey('package', p._id));
   for (const t of data.transits) keys.add(refKey('transit', t._id));
   for (const r of data.routes) keys.add(refKey('route', r._id));
   for (const a of data.activities) {

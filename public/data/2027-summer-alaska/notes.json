@@ -1652,5 +1652,17 @@
       }
     ],
     "images": []
+  },
+  {
+    "_id": "7d6c7b39-9cf5-4ce2-88c6-6aa3855ed622",
+    "kind": "info",
+    "text": "Deposit non-refundable. Cancellation fee $99 per person from Aug 6, 2026; 25% of total charges from Apr 19, 2027; 50% from May 4, 2027; 75% from May 18, 2027; 100% from Jun 17, 2027.",
+    "concerns": [
+      {
+        "entity": "stay",
+        "id": "stay_cruise"
+      }
+    ],
+    "images": []
   }
 ]

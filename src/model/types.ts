@@ -5,7 +5,10 @@ import type { DayVisits } from './dayMap';
 import type { TimelineEvent } from './timeline';
 
 export type PlanStatus = 'planning' | 'active' | 'completed' | 'cancelled';
-export type BookingStatus = 'planning' | 'booked' | 'cancelled';
+// 'requested': the seller has the order but hasn't confirmed it yet ("booking
+// request received, payment to be processed") — committed money, not a
+// confirmed booking.
+export type BookingStatus = 'planning' | 'requested' | 'booked' | 'cancelled';
 
 // Trip and Leg carry no status of their own — it's computed by rolling up
 // the booking.status (and Package.status) of every leaf entity underneath
@@ -27,6 +30,14 @@ export interface Money {
   currency: string;
 }
 
+// When a price line is paid: at the property (a hotel that charges on
+// arrival, a resort fee due at check-in), by a due date (a balance owed
+// before departure), or on a date it already was (a deposit paid on the day
+// the cruise was booked). Absent means paid when booked, with no date worth
+// recording — the common case. { paidAt } is the same "paid", plus the date,
+// for a payment made apart from the booking itself.
+export type Payable = 'atProperty' | { dueBy: string } | { paidAt: string };
+
 // One traveler's share of a booking that the document itemizes per person
 // (an airline ticket, a cruise fare). Seats aren't here: a seat belongs to one
 // flight, not to the whole booking, so it lives on Transit.seats instead.
@@ -34,6 +45,7 @@ export interface PassengerFare {
   travelerId: string; // Trip.travelers[].id
   fare: Money;
   ticketNumber?: string;
+  payable?: Payable;
 }
 
 // A charge that doesn't change with how many travelers come along — a room
@@ -42,6 +54,7 @@ export interface PassengerFare {
 export interface FixedCharge {
   label: string;
   amount: Money;
+  payable?: Payable;
 }
 
 // A booking's price, split by what it scales with: the per-traveler fares
@@ -70,8 +83,6 @@ export interface Booking {
   pricing: Pricing | null;
   confirmationNumber: string | null;
   bookedThrough?: string | BookedThrough;
-  depositPaidAt?: string;
-  finalPaymentDueAt?: string;
 }
 
 export interface Traveler {
@@ -85,6 +96,9 @@ export interface Trip {
   name: string;
   summary?: string | null;
   travelers: Traveler[];
+  // Whether the party brings pets along — absent means no. Decides whether a
+  // booking's pet policies (a ban, a cleaning fee) matter to this trip.
+  pets?: boolean;
   images: Image[];
 }
 
@@ -126,6 +140,9 @@ export interface Place {
   images?: Image[];
   showWeather?: boolean;
   showElevation?: boolean;
+  // On a cruise, a venue aboard the ship (dining room, theater) that has a real
+  // place id: it's never ashore, so the port-call warnings skip it.
+  onboard?: boolean;
   // Fallback contact details for a place that hasn't been resolved to a real
   // Google Place id yet (or never will be) — once a real id exists, the
   // Places API lookup is the live source of truth for phone/website (see
@@ -179,6 +196,11 @@ export interface Package {
   confirmationNumber: string | null;
   benefits: string[] | null;
   travelers: string[] | null; // Trip.travelers[].id; null = whole party
+  payable?: Payable;
+  // 'night': cost is a nightly rate (a hotel's parking per day) on a Stay, and
+  // the total is cost × the Stay's nights — computed, never stored, so it
+  // follows the Stay's dates. Absent: cost is charged once.
+  per?: 'night';
 }
 
 export interface Stay {
@@ -191,7 +213,21 @@ export interface Stay {
   lodging: Lodging | null;
   bookingId: string | null;
   packages?: Package[] | null;
+  // A cruise cabin's stops between embarking (checkInAt) and disembarking
+  // (checkOutAt): each port, or a glacier the ship cruises past, with when
+  // the ship arrives and when it leaves — all aboard. Shore plans have to fit
+  // inside a port's window (see portCallWarningFor in tripModel.ts).
+  portCalls?: PortCall[] | null;
   images: Image[];
+}
+
+export interface PortCall {
+  // 'port': the ship docks or anchors and guests go ashore; 'scenic': it
+  // cruises past (Hubbard Glacier) and nobody leaves the ship.
+  kind: 'port' | 'scenic';
+  place: Place;
+  arrivesAt: string | null; // local date-time; null when not printed
+  departsAt: string | null; // all aboard; null when not printed
 }
 
 export type TransitMode = 'drive' | 'flight' | 'ferry' | (string & {});
@@ -220,6 +256,7 @@ export interface Transit {
   // this is set — e.g. a loop that starts and ends at one specific depot.
   showEndpointsOnMap?: boolean;
   bookingId: string | null;
+  packages?: Package[] | null; // what the fare includes or adds (see Package)
   images: Image[];
 }
 
@@ -388,6 +425,7 @@ export interface Activity {
   includedIn: Ref | null;
   options: MealOption[] | null;
   travelers: string[] | null; // Trip.travelers[].id — excursions only
+  packages?: Package[] | null; // what the booking includes or adds (see Package)
   images: Image[];
 }
 
@@ -453,8 +491,7 @@ export interface EnrichedActivity extends Omit<Activity, 'options' | 'travelers'
   booking: Booking | null;
   notes: Note[];
   hasWarningNote: boolean;
-  transitOverlapWarning: string | null;
-  activityOverlapWarning: string | null;
+  warnings: string[]; // what its row flags (tripModel.ts's activityWarnings)
   travelers: string[] | null; // resolved display names, not ids
   options: EnrichedMealOption[] | null;
 }
@@ -606,10 +643,15 @@ export interface Day extends DayFrame {
   // The places the day touches, which the map/route/travel queries (dayMap.ts)
   // read instead of walking the rows.
   visits: DayVisits;
-  // Each still-open meal's selected diningFormat (the timeline's own
-  // formatOverrides), which the rows' live overlap warnings read so they
-  // agree with the route walk's timing.
-  mealFormats: ReadonlyMap<string, DiningFormat>;
+  // Each still-open meal's selected candidate (the timeline's own
+  // selectedMeals): its diningFormat, which the rows' live overlap warnings
+  // read so they agree with the route walk's timing, and its place, so the
+  // live port-call check knows when the meal is ashore.
+  selectedMeals: ReadonlyMap<string, MealOption>;
+  // The Transits/Activities in the live scenario scope that hold Packages on
+  // this date (the timeline's own carriersOn), so a meal row lists the same
+  // active candidates the timeline picked its selection from.
+  mealCarriers: { packages?: Package[] | null; startsAt: string }[];
   summary: string;
   title: string;
 }
@@ -648,11 +690,27 @@ export interface BudgetLineItem {
   legId: string;
   label: string;
   date: string | null;
+  // When an at-the-property charge falls due, when that isn't `date`: a Leg's
+  // row has no date of its own (it groups under the Leg), but its onboard
+  // charges are due once the Leg starts.
+  dueOn?: string | null;
   booking: Booking;
 }
 
+// One priced part of a row's booking — a fare or a fixed charge — in the
+// bucket its own payment timing puts it in (see Payable).
+export interface BudgetLine {
+  bucket: Exclude<BudgetBucket, 'unplanned'>;
+  amount: Money;
+  basis: 'perTraveler' | 'fixed';
+  travelerId?: string; // a fare's traveler
+}
+
+// `bucket` is the row's overall state: 'pending' while any of its lines is
+// still owed, 'unplanned' when it has no price at all.
 export interface BudgetRow extends BudgetLineItem {
   bucket: BudgetBucket;
+  lines: BudgetLine[];
 }
 
 export interface BudgetLegGroup {
@@ -707,6 +765,6 @@ export interface TripView {
 // picks that shape a whole day). ----------
 
 export interface LiveRouteOverrides {
-  formatOverrides?: ReadonlyMap<string, DiningFormat>;
+  selectedMeals?: ReadonlyMap<string, MealOption>;
   routeVariant?: string;
 }

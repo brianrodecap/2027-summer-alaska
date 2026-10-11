@@ -924,7 +924,10 @@ export const DayTimeline = memo(function DayTimeline({
   trailingTravelFooter?: ReactNode;
 }) {
   const { activeFilterTokens } = useFilterSelection();
-  const filtered = useMemo(() => filterRows(rows, activeFilterTokens), [rows, activeFilterTokens]);
+  const filtered = useMemo(
+    () => filterRows(rows, day, activeFilterTokens),
+    [rows, day, activeFilterTokens],
+  );
   const { selection, toggleRowSelection } = useRowSelection();
   // Safe to run unconditionally at every level — a scenario track whose own
   // branch carries no scenario-scoped Stay has nothing for this to touch, so

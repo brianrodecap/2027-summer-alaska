@@ -7,7 +7,7 @@ import Typography from '@mui/material/Typography';
 import { DINING_FORMAT_LABEL, firstImage, timeAndMealTypeLabel } from '../../model/formatting';
 import {
   activeMealOptions,
-  liveOverlapWarnings,
+  liveWarnings,
   mealOptionLabel,
   mealOptionTimeLabel,
   selectedMealOptionIndex,
@@ -125,7 +125,7 @@ export function MealRow({
               <BookingChip booking={selected.booking} />
             </Box>
           )}
-          <OverlapWarnings activity={liveOverlapWarnings(activity, day)} />
+          <OverlapWarnings warnings={liveWarnings(activity, day)} />
         </Box>
       </ButtonBase>
       {options.length > 1 && (

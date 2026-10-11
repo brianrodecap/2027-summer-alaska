@@ -348,7 +348,8 @@ export function routeUrls(visits: DayVisits): string[] {
 }
 
 // Every drivable hop between two consecutive stops with different place ids
-// (every RouteStop already has a resolved id — see `resolved`).
+// (every RouteStop already has a resolved id — see `resolved`). The day-list rows' own
+// travel footers pair stops a different way, via tripModel's `findNextResolvableStop`.
 export function travelSegments(visits: DayVisits): DayTravelSegment[] {
   return routeStops(visits).flatMap((stops) =>
     stops.slice(0, -1).flatMap((stop, i): DayTravelSegment[] => {

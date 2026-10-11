@@ -39,7 +39,10 @@ function TestHarness({ children }: { children: ReactNode }) {
         dirtyCollections: new Set(),
         canUndo: false,
         saveError: null,
-        setData: (updater) => setDataState((prev) => updater(prev)),
+        setData: (updater) => {
+          setDataState((prev) => updater(prev));
+          return true;
+        },
         undoLast: () => {},
       }}
     >

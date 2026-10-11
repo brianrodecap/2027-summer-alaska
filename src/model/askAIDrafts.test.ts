@@ -2,8 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   applyAlternative,
-  applyMealOptions,
-  buildNewActivity,
+  applyBatch,
   changedActivities,
   parseAlternative,
   parseNote,
@@ -15,6 +14,7 @@ import {
   withPlaceImages,
 } from './askAIDrafts';
 import { blankActivity } from './editForms';
+import { applyMealOptions, type ChangeProposal } from './proposals';
 import type { Activity, Image, Note, Route, Scenario, TripData } from './types';
 
 const DATE = '2027-07-13';
@@ -45,7 +45,9 @@ function scenario(id: string, tone: Scenario['tone'], overrides: Partial<Scenari
 function trip(activities: Activity[], scenarios: Scenario[] = []): TripData {
   return {
     trip: { _id: 't', name: 'T', travelers: [], images: [] },
-    legs: [],
+    legs: [
+      { _id: 'leg_a', name: 'A', dateRange: { startDate: '2027-07-10', endDate: '2027-07-16' } },
+    ],
     stays: [],
     transits: [],
     activities,
@@ -66,8 +68,8 @@ describe('applyMealOptions', () => {
       bookingId: 'booking_simon',
     });
     applyMealOptions(dinner, [
-      { placeLabel: "Simon & Seafort's", placeId: 'p_simon' },
-      { placeLabel: 'Orso', placeId: 'p_orso' },
+      { place: { label: "Simon & Seafort's", placeId: 'p_simon' } },
+      { place: { label: 'Orso', placeId: 'p_orso' } },
     ]);
     expect(dinner.place).toBeNull();
     expect(dinner.bookingId).toBeNull();
@@ -79,42 +81,23 @@ describe('applyMealOptions', () => {
 
   it('keeps an existing candidate’s id when the list is revised', () => {
     const dinner = activity('dinner', { mealType: 'dinner' });
-    applyMealOptions(dinner, [{ placeLabel: 'Orso' }, { placeLabel: "Crow's Nest" }]);
+    applyMealOptions(dinner, [{ place: { label: 'Orso' } }, { place: { label: "Crow's Nest" } }]);
     const orsoId = dinner.options?.[0]._id;
-    applyMealOptions(dinner, [{ placeLabel: 'orso' }, { placeLabel: 'Marx Bros. Cafe' }]);
+    applyMealOptions(dinner, [
+      { place: { label: 'orso' } },
+      { place: { label: 'Marx Bros. Cafe' } },
+    ]);
     expect(dinner.options?.[0]._id).toBe(orsoId);
   });
 
   it('treats a single candidate as a decision', () => {
     const dinner = activity('dinner', { mealType: 'dinner' });
-    applyMealOptions(dinner, [{ placeLabel: 'Orso', placeId: 'p_orso', diningFormat: 'sit-down' }]);
+    applyMealOptions(dinner, [
+      { place: { label: 'Orso', placeId: 'p_orso' }, diningFormat: 'sit-down' },
+    ]);
     expect(dinner.options).toBeNull();
     expect(dinner.place).toEqual({ id: 'p_orso', label: 'Orso' });
     expect(dinner.diningFormat).toBe('sit-down');
-  });
-});
-
-describe('buildNewActivity', () => {
-  it('builds a timed activity in the given branch, with meal candidates', () => {
-    const a = buildNewActivity(
-      {
-        text: 'Dinner',
-        startAt: `${DATE}T18:30`,
-        mealType: 'dinner',
-        mealOptions: [{ placeLabel: 'Orso' }, { placeLabel: "Crow's Nest" }],
-      },
-      'leg_a',
-      'sc_grounded',
-    );
-    expect(a).toMatchObject({
-      legId: 'leg_a',
-      scenarioId: 'sc_grounded',
-      startAt: `${DATE}T18:30`,
-      date: null,
-      mealType: 'dinner',
-      place: null,
-    });
-    expect(a.options).toHaveLength(2);
   });
 });
 
@@ -143,7 +126,7 @@ describe('applyAlternative', () => {
       summary: 'A rainy-day plan',
       label: 'Rain',
       siblingOf: 'sc_grounded',
-      activities: [museum, creek],
+      entries: [museum, creek],
     };
     const result = applyAlternative(alt, data);
     if ('error' in result) throw new Error(result.error);
@@ -165,7 +148,7 @@ describe('applyAlternative', () => {
         summary: 's',
         label: 'Rain',
         siblingOf: 'sc_go',
-        activities: [museum, creek],
+        entries: [museum, creek],
       },
       data,
       new Set([1]),
@@ -185,7 +168,7 @@ describe('applyAlternative', () => {
         label: 'Grounded',
         idealLabel: 'Flight goes',
         idealEntityIds: ['flight', 'hike'],
-        activities: [museum],
+        entries: [museum],
       },
       data,
     );
@@ -214,7 +197,7 @@ describe('applyAlternative', () => {
         label: 'Rain',
         idealLabel: 'Dry',
         idealEntityIds: ['fly'],
-        activities: [museum],
+        entries: [museum],
       },
       data,
     );
@@ -238,7 +221,7 @@ describe('applyAlternative', () => {
         label: 'Rain',
         idealLabel: 'Dry',
         idealEntityIds: ['lunch'],
-        activities: [museum],
+        entries: [museum],
       },
       data,
     );
@@ -255,7 +238,7 @@ describe('applyAlternative', () => {
         summary: 's',
         label: 'Rain',
         siblingOf: 'gone',
-        activities: [museum],
+        entries: [museum],
       },
       trip([]),
     );
@@ -271,12 +254,12 @@ describe('parseAlternative', () => {
         legId: 'l',
         summary: 's',
         label: 'Rain',
-        activities: [museumSpec()],
+        entries: [museumSpec()],
       }),
     ).toThrow('siblingOf');
   });
 
-  it('validates each activity', () => {
+  it('needs at least one entry', () => {
     expect(() =>
       parseAlternative({
         date: DATE,
@@ -284,9 +267,25 @@ describe('parseAlternative', () => {
         summary: 's',
         label: 'Rain',
         siblingOf: 'x',
-        activities: [{ text: 'No time' }],
+        entries: [],
       }),
-    ).toThrow('startAt');
+    ).toThrow('entries');
+  });
+
+  it('checks each entry again when applied', () => {
+    const data = trip([activity('fly', { scenarioId: 'sc_go' })], [scenario('sc_go', 'ideal')]);
+    const outside = applyAlternative(
+      {
+        date: DATE,
+        legId: 'leg_a',
+        summary: 's',
+        label: 'Rain',
+        siblingOf: 'sc_go',
+        entries: [{ text: 'Museum', startAt: `${DATE}T13:00`, travelers: ['trav_gone'] }],
+      },
+      data,
+    );
+    expect('error' in outside && outside.error).toMatch(/no longer fits/);
   });
 });
 
@@ -300,7 +299,10 @@ describe('place images', () => {
 
   it('collects imageless place ids from a place and its meal candidates', () => {
     const meal = activity('a');
-    applyMealOptions(meal, [{ placeLabel: 'One', placeId: 'p1' }, { placeLabel: 'Two' }]);
+    applyMealOptions(meal, [
+      { place: { label: 'One', placeId: 'p1' } },
+      { place: { label: 'Two' } },
+    ]);
     const own: Image = { uri: 'https://example.test/own.jpg', credit: null, caption: null };
     const pictured = activity('b', { place: { id: 'p2', label: 'Two', images: [own] } });
     const plain = activity('c', { place: { id: 'p3', label: 'Three' } });
@@ -322,8 +324,8 @@ describe('place images', () => {
 
     const meal = activity('m');
     applyMealOptions(meal, [
-      { placeLabel: 'One', placeId: 'p1' },
-      { placeLabel: 'Two', placeId: 'p9' },
+      { place: { label: 'One', placeId: 'p1' } },
+      { place: { label: 'Two', placeId: 'p9' } },
     ]);
     const filled = withPlaceImages(meal, images);
     expect(filled.options?.map((o) => o.place?.images)).toEqual([[photo], undefined]);
@@ -567,5 +569,71 @@ describe('routes', () => {
       from: { label: 'A', placeId: 'a' },
     });
     expect(resolveRouteProposal(proposal, data)).toHaveProperty('error');
+  });
+});
+
+describe('a batch of changes', () => {
+  const add = (text: string, booking?: object): ChangeProposal => ({
+    kind: 'activity' as const,
+    legId: 'leg_a',
+    date: DATE,
+    changes: { text, startAt: `${DATE}T13:00` },
+    ...(booking ? { booking: booking as ChangeProposal['booking'] } : {}),
+    why: 's',
+  });
+
+  it('gives changes that share a booking ref one booking', () => {
+    const tour = {
+      ref: 'tour',
+      status: 'booked',
+      fixed: [{ label: 'Tour', amount: 400, payable: 'paid' }],
+    };
+    const applied = applyBatch(trip([]), [
+      add('Pickup', tour),
+      add('Return', { ref: 'tour', status: 'booked' }),
+    ]);
+    if ('error' in applied) throw new Error(applied.error);
+    expect(applied.data.bookings).toHaveLength(1);
+    expect(new Set(applied.data.activities.map((a) => a.bookingId))).toEqual(
+      new Set([applied.data.bookings[0]._id]),
+    );
+  });
+
+  it('turns down two changes to the same activity', () => {
+    const move = (startAt: string) => ({
+      kind: 'activity' as const,
+      entityId: 'a',
+      changes: { startAt },
+      why: 's',
+    });
+    const applied = applyBatch(trip([activity('a')]), [
+      move(`${DATE}T10:00`),
+      move(`${DATE}T11:00`),
+    ]);
+    expect('error' in applied && applied.error).toMatch(/Change 2: a is already updated/);
+  });
+
+  it('leaves an activity removed even when the batch also changes it', () => {
+    const applied = applyBatch(
+      trip([activity('a')]),
+      [{ kind: 'activity', entityId: 'a', changes: { startAt: `${DATE}T10:00` }, why: 's' }],
+      [],
+      new Set(['a']),
+    );
+    if ('error' in applied) throw new Error(applied.error);
+    expect(applied.data.activities.map((a) => a._id)).toEqual([]);
+  });
+
+  it('brings a traveler added for it onto the trip', () => {
+    const pat = { id: 'trav_pat', name: 'Pat' };
+    const change = {
+      ...add('Kayak'),
+      changes: { ...add('Kayak').changes, travelers: ['trav_pat'] },
+    };
+    const data = trip([]);
+    expect('error' in applyBatch(data, [change])).toBe(true);
+    const applied = applyBatch(data, [change], [pat]);
+    if ('error' in applied) throw new Error(applied.error);
+    expect(applied.data.trip.travelers).toEqual([pat]);
   });
 });

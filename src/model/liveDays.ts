@@ -100,21 +100,33 @@ export function buildLiveDays(
     const tones = events
       .filter((e) => e.source.kind === 'transit')
       .map((e) => `${e.source.id}=${selections.routeTones.get(e.source.id) ?? ''}`);
-    // The dining format each of the day's still-open meals resolved to — a
-    // candidate switch can change it without moving any event's place.
-    const formats = events
+    // Each still-open meal's chosen dining format, place and onboard flag — a
+    // candidate switch can change any of them without moving an event's place.
+    // Part of the signature below, so a new selected-meal field goes here.
+    const selectedMealKeys = events
       .filter((e) => e.source.kind === 'activity')
-      .map((e) => `${e.source.id}=${timeline.formatOverrides.get(e.source.id) ?? ''}`);
+      .map((e) => {
+        const meal = timeline.selectedMeals.get(e.source.id);
+        const place = meal?.place;
+        return `${e.source.id}=${meal?.diningFormat ?? ''}/${place?.id ?? place?.label ?? ''}/${place?.onboard ? 'aboard' : ''}`;
+      });
     // Everything a day's rows and visits are built from: its events (with the
     // place each resolved to — a meal's chosen candidate, a route variant's
     // stage), the route variant picked per Transit, and each scenario group's
-    // active branch, anchor and members, and each open meal's dining format.
-    // The stays are fixed by the frame.
+    // active branch, anchor and members, and each open meal's dining format and place.
+    // The stays are fixed by the frame; the packages carried onto the date by
+    // in-scope Transits/Activities move with the scenario picks, and decide
+    // which meal candidates are active.
+    const carriers = timeline.carriersOn(day.date);
+    const carrierKeys = carriers.map(
+      (c) => `${c.startsAt}:${(c.packages ?? []).map((p) => p._id).join('+')}`,
+    );
     const signature = [
       events.map((e) => `${e.id}@${e.at}@${e.place?.id ?? e.place?.label ?? ''}`).join(','),
       tones.join(','),
       groupsSignature(groups, day.date),
-      formats.join(','),
+      selectedMealKeys.join(','),
+      carrierKeys.join(','),
     ].join('|');
 
     const hit = previous?.get(day.date);
@@ -148,14 +160,15 @@ export function buildLiveDays(
     const base: Day = {
       ...day,
       // The live Transits, so everything reading day.transits — the rows'
-      // live "during transit" check (liveOverlapWarnings) above all —
+      // live "during transit" check (liveWarnings) above all —
       // rechecks when the route tab or a meal along the drive changes.
       transits: day.transits.map((t) => transitsById.get(t._id) ?? t),
       ...header,
       rows: layout.rows,
       scenarioTracks: layout.scenarioTracks,
       visits: buildDayVisits({ date: day.date, rows: layout.rows, index }),
-      mealFormats: timeline.formatOverrides,
+      selectedMeals: timeline.selectedMeals,
+      mealCarriers: carriers,
       title: '', // filled in by pass 2
     };
     return { day, base, signature };

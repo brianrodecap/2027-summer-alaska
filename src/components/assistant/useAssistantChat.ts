@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { RequestAbortedError } from '../../model/anthropicClient';
 import { type AskAIConversation, AskAIError, runAskAITurn } from '../../model/askAI';
-import { createLocalStorageChatStore } from '../../state/store/chatStore';
 import { useLiveDays } from '../../state/useLiveDays';
 import { useTripData } from '../../state/useTripData';
 
@@ -20,20 +19,19 @@ export interface PendingTurn {
   progress: string;
 }
 
-const store = createLocalStorageChatStore();
-
-// The trip's Ask AI conversation: loaded when the trip opens, saved after every
-// finished turn, cleared by New conversation. Hosted by AssistantChatProvider, so the
+// The trip's Ask AI conversation, kept in memory only: it starts empty when the trip
+// opens and is dropped by New conversation or a reload. Hosted by AssistantChatProvider, so the
 // panel can unmount (switching the sidebar to Map, closing the phone sheet) without
 // losing a turn that's still running.
 export function useAssistantChat() {
   const { slug, data, view } = useTripData();
   // Read only inside send(): the live days are built on first read.
   const live = useLiveDays();
+  // A conversation lasts as long as the page and trip it started on. Applied
+  // proposals are saved as trip edits, so nothing is lost when it ends.
   const [conversation, setConversation] = useState<AskAIConversation | null>(null);
-  // Ids of the proposals already applied, so each stays an "Applied" chip after a
-  // reload. Kept apart from the conversation (see ChatStore); the ref is the latest
-  // value, since an Apply can finish while a turn is still streaming.
+  // Ids of the proposals already applied, so each stays an "Applied" chip. Kept
+  // apart from the conversation, which is append-only; the ref is the latest value, since an Apply can finish while a turn is still streaming.
   const [applied, setApplied] = useState<readonly string[]>(NO_APPLIED);
   const appliedRef = useRef<readonly string[]>(NO_APPLIED);
   const [pending, setPending] = useState<PendingTurn | null>(null);
@@ -45,20 +43,16 @@ export function useAssistantChat() {
     setApplied(next);
   }, []);
 
+  // A different trip starts a fresh conversation; leaving one stops its running turn.
   useEffect(() => {
-    let cancelled = false;
-    void store.load(slug).then((loaded) => {
-      if (cancelled) return;
-      setConversation(loaded?.conversation ?? null);
-      replaceApplied(loaded?.applied ?? NO_APPLIED);
-    });
     return () => {
-      cancelled = true;
       abortRef.current?.abort();
+      setConversation(null);
+      replaceApplied(NO_APPLIED);
     };
   }, [slug, replaceApplied]);
 
-  // Resolves true once the turn is answered and saved; false if it failed or was
+  // Resolves true once the turn is answered; false if it failed or was
   // stopped, so the caller can hand the question back for another try.
   const send = useCallback(
     async (question: string, apiKey: string, focusDate: string | null): Promise<boolean> => {
@@ -84,7 +78,6 @@ export function useAssistantChat() {
           },
         });
         setConversation(next);
-        void store.save(slug, next);
         return true;
       } catch (err) {
         if (!(err instanceof RequestAbortedError)) {
@@ -96,7 +89,7 @@ export function useAssistantChat() {
         setPending(null);
       }
     },
-    [slug, conversation, data, view, live],
+    [conversation, data, view, live],
   );
 
   const stop = useCallback(() => abortRef.current?.abort(), []);
@@ -106,8 +99,7 @@ export function useAssistantChat() {
     setConversation(null);
     replaceApplied(NO_APPLIED);
     setError(null);
-    void store.clear(slug);
-  }, [slug, replaceApplied]);
+  }, [replaceApplied]);
 
   // `id` is the applied proposal's AskAIProposal id.
   const markApplied = useCallback(
@@ -115,9 +107,8 @@ export function useAssistantChat() {
       if (appliedRef.current.includes(id)) return;
       const next = [...appliedRef.current, id];
       replaceApplied(next);
-      void store.saveApplied(slug, next);
     },
-    [slug, replaceApplied],
+    [replaceApplied],
   );
 
   const clearError = useCallback(() => setError(null), []);

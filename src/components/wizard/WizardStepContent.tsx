@@ -282,6 +282,7 @@ export function DetailsStep({
       <PlaceConditionsTogglesFor
         place={form.place}
         onPlaceChange={(place) => onChange({ ...form, place })}
+        showOnboard
       />
       <TextField
         select

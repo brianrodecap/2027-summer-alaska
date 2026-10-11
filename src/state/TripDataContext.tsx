@@ -1,6 +1,6 @@
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { withCurrentPricing, withoutOrphanBookings } from '../model/bookings';
+import { withoutOrphanBookings } from '../model/bookings';
 import {
   type Change,
   changedCollections,
@@ -112,12 +112,13 @@ export function TripDataProvider({
         const changes = [...shared, ...own].sort((a, b) =>
           a.at < b.at ? -1 : a.at > b.at ? 1 : 0,
         );
+        // Deliberately no migration of old saved shapes (e.g. pre-split booking pricing):
+        // nothing outside the author's own browser holds saved edits, and none remain there.
         const replayed = replayChanges(baseline, changes);
         const { kept } = replayed;
-        const data = { ...replayed.data, bookings: replayed.data.bookings.map(withCurrentPricing) };
         // The shipped JSON moved under some local edits, which drops them — compact them out.
         if (kept.length !== changes.length) trackSave(persist(store, slug, kept, 'replace'));
-        commit({ slug, baseline, data, changes: kept, error: null });
+        commit({ slug, baseline, data: replayed.data, changes: kept, error: null });
       })
       .catch((err: unknown) => {
         if (cancelled) return;
@@ -144,9 +145,9 @@ export function TripDataProvider({
   const setData = useCallback(
     (updater: (prev: TripData) => TripData, source: ChangeSource = 'manual') => {
       const current = latest.current;
-      if (current.slug !== slug || !current.data || !current.baseline) return;
+      if (current.slug !== slug || !current.data || !current.baseline) return false;
       const updated = updater(current.data);
-      if (updated === current.data) return;
+      if (updated === current.data) return true;
       // Pruned here, at the one place every write meets, so bookings.json
       // never collects a booking nothing points at — skipped when the write
       // left bookings and every collection that can hold one untouched.
@@ -162,6 +163,7 @@ export function TripDataProvider({
       });
       commit({ ...current, data: next, changes: [...current.changes, ...added] });
       if (added.length) trackSave(persist(store, slug, added, 'append'));
+      return true;
     },
     [slug, store, commit, trackSave],
   );

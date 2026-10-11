@@ -17,7 +17,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { type ReactNode, useMemo } from 'react';
 
-import { bookingFares } from '../../model/bookings';
+import { faresByTraveler, finalPaymentDue, paymentsMade } from '../../model/bookings';
 import { firstImage } from '../../model/formatting';
 import {
   formatDateRangeLabel,
@@ -103,19 +103,20 @@ function LegDayList({ days, onSelectDay }: { days: Day[]; onSelectDay: (date: st
 
 function LegBooking({ booking }: { booking: Booking }) {
   const { data } = useTripData();
-  const fares = bookingFares(booking);
+  const fares = faresByTraveler(booking);
+  const finalDue = finalPaymentDue(booking);
   const names = travelersById(data?.trip.travelers ?? []);
   const travelerName = (id: string) => names.get(id) ?? id;
   return (
     <Stack spacing={0.5} sx={{ my: 1, alignItems: 'flex-start' }}>
       <BookingChip booking={booking} />
-      {booking.depositPaidAt && (
-        <Typography variant="body2">Deposit paid {booking.depositPaidAt}</Typography>
-      )}
-      {booking.finalPaymentDueAt && (
-        <Typography variant="body2">Final payment due {booking.finalPaymentDueAt}</Typography>
-      )}
-      {fares?.length ? (
+      {paymentsMade(booking).map((p) => (
+        <Typography variant="body2" key={p.paidAt}>
+          Paid {p.paidAt}: {formatMoney(p.amount)}
+        </Typography>
+      ))}
+      {finalDue && <Typography variant="body2">Final payment due {finalDue}</Typography>}
+      {fares.length ? (
         <Box component="ul" sx={{ pl: 2, m: 0 }}>
           {fares.map((f) => (
             <Typography component="li" variant="body2" key={f.travelerId}>

@@ -3,7 +3,8 @@ import Stack from '@mui/material/Stack';
 
 import type { StayFormState } from '../../model/editForms';
 import { BookingFields } from './BookingFields';
-import { StayPackagesField } from './StayPackagesField';
+import { PackagesField } from './PackagesField';
+import { PortCallsField } from './PortCallsField';
 import { LodgingField, StayWhenFields } from './StayTransitFields';
 
 export function StayEditForm({
@@ -20,9 +21,14 @@ export function StayEditForm({
       <Divider />
       <BookingFields value={form.booking} onChange={(booking) => onChange({ ...form, booking })} />
       <Divider />
-      <StayPackagesField
+      <PackagesField
         packages={form.packages}
         onChange={(packages) => onChange({ ...form, packages })}
+        nightly
+      />
+      <PortCallsField
+        portCalls={form.portCalls}
+        onChange={(portCalls) => onChange({ ...form, portCalls })}
       />
     </Stack>
   );

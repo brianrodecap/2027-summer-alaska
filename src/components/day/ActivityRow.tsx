@@ -3,7 +3,7 @@ import ButtonBase from '@mui/material/ButtonBase';
 import Typography from '@mui/material/Typography';
 
 import { firstImage, timeAndMealTypeLabel } from '../../model/formatting';
-import { liveOverlapWarnings } from '../../model/mealOptions';
+import { liveWarnings } from '../../model/mealOptions';
 import { activityHeadline } from '../../model/tripModel';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
 import { BookingChip } from '../shared/BookingChip';
@@ -78,7 +78,7 @@ export function ActivityRow({
             <BookingChip booking={activity.booking} />
           </Box>
         )}
-        <OverlapWarnings activity={liveOverlapWarnings(activity, day)} />
+        <OverlapWarnings warnings={liveWarnings(activity, day)} />
       </Box>
     </ButtonBase>
   );

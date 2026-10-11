@@ -11,7 +11,12 @@
 // (resolveTransitRoute/stageTimesForVariant) and sort keys (activitySortKey)
 // rather than re-deriving them, so it agrees with buildTripView wherever the
 // two overlap.
-import { mealFormatOverrides, resolveActivityPlace } from './mealOptions';
+import {
+  isMealActivity,
+  type PackageCarrier,
+  packageCarriersOn,
+  selectedMealOptions,
+} from './mealOptions';
 import {
   activityHeadline,
   activityTimelineKey,
@@ -22,7 +27,7 @@ import {
   stayOverlapsDay,
 } from './tripModel';
 import type {
-  DiningFormat,
+  MealOption,
   Place,
   ResolvedRouteInfo,
   RouteStage,
@@ -63,10 +68,12 @@ export interface Timeline {
   // transitId -> the route walk for these selections (selectedTone = the
   // picked tone, stages timed with the meals actually picked along it).
   routeInfoOf: ReadonlyMap<string, ResolvedRouteInfo>;
-  // activityId -> the selected candidate's diningFormat, per still-open meal
-  // (mealFormatOverrides) — the same answer the route walk above used, so a
-  // day's overlap warnings can't disagree with the drive's timing.
-  formatOverrides: ReadonlyMap<string, DiningFormat>;
+  // activityId -> the selected candidate, per still-open meal — the same
+  // answer the route walk above used, so a day's overlap and port-call
+  // warnings can't disagree with the drive's timing.
+  selectedMeals: ReadonlyMap<string, MealOption>;
+  // date -> the in-scope Transits/Activities holding Packages that day.
+  carriersOn: (date: string) => PackageCarrier[];
 }
 
 type TimelineData = Pick<TripData, 'stays' | 'transits' | 'activities' | 'routes'>;
@@ -147,10 +154,23 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
     return list;
   };
 
-  // The selected candidate's diningFormat for every still-open meal, so a
-  // lunch stop folded into a drive runs as long as the meal actually picked
-  // (a sit-down lunch vs. a drive-thru), not the first candidate's estimate.
-  const formatOverrides = mealFormatOverrides(activities, staysForDate, mealOptionIndex);
+  // The selected candidate for every still-open meal, so a lunch stop folded
+  // into a drive runs as long as the meal actually picked (a sit-down lunch
+  // vs. a drive-thru), not the first candidate's estimate, and sits where
+  // that candidate is.
+  // Only what's in scope carries a package, as in the day view, and each
+  // date's carriers are built once however many meals fall on it.
+  const scopedTransits = data.transits.filter((t) => inScope(t.scenarioId));
+  const carriersByDate = new Map<string, PackageCarrier[]>();
+  const carriersOn = (date: string) => {
+    let list = carriersByDate.get(date);
+    if (!list) {
+      list = packageCarriersOn(scopedTransits, activities, date);
+      carriersByDate.set(date, list);
+    }
+    return list;
+  };
+  const selectedMeals = selectedMealOptions(activities, staysForDate, carriersOn, mealOptionIndex);
 
   for (const transit of data.transits as Transit[]) {
     if (!inScope(transit.scenarioId)) continue;
@@ -168,7 +188,7 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
     // variant) applies when the reader hasn't picked a tone for this Transit.
     const info = resolveTransitRoute(transit, routesById, activities, {
       routeVariant: routeTones.get(transit._id),
-      formatOverrides,
+      selectedMeals,
     });
     if (info) routeInfoOf.set(transit._id, info);
     const variant = info?.variants.find((v) => v.tone === info.selectedTone);
@@ -199,7 +219,7 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
   for (const a of activities) {
     const key = activityTimelineKey(a);
     if (!key) continue; // undated: not on the timeline yet
-    const { date, at } = key;
+    const { at } = key;
     push(
       {
         id: `activity:${a._id}`,
@@ -207,7 +227,9 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
         at,
         endAt: a.startAt && a.durationMinutes ? addMinutesIso(a.startAt, a.durationMinutes) : null,
         source: { kind: 'activity', id: a._id },
-        place: resolveActivityPlace(a, staysForDate(date), date, at, mealOptionIndex),
+        // A still-open meal is wherever its selected candidate is, so the map,
+        // route URLs, travel totals and the row footers all read that answer.
+        place: isMealActivity(a) ? (selectedMeals.get(a._id)?.place ?? null) : a.place,
         scenarioId: a.scenarioId,
         fuzzy: !a.startAt,
       },
@@ -223,5 +245,5 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
       return tieBreak(a, b);
     })
     .map((p) => p.event);
-  return { events, arrivalOf, routeInfoOf, formatOverrides };
+  return { events, arrivalOf, routeInfoOf, selectedMeals, carriersOn };
 }

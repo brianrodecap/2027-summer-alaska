@@ -11,25 +11,20 @@
 // `Date`/`dayjs` object and hand it to a caller, or accept one as an input —
 // picker components convert to/from plain strings at their own edge instead.
 
-import {
-  bookingById,
-  bookingCost,
-  bookingFares,
-  bookingIdsInLeg,
-  bookingOf,
-  fixedCost,
-  perTravelerCost,
-} from './bookings';
+import { bookingById, bookingIdsInLeg, bookingOf, payableDueBy } from './bookings';
 import type { EditKind, Entity } from './editForms';
 import { firstImage } from './formatting';
+import { allPackages, packageHolders } from './packages';
 import type {
   Activity,
   Booking,
   BookingProgress,
   BookingStatus,
   BoxRow,
+  BudgetBucket,
   BudgetDayGroup,
   BudgetLegGroup,
+  BudgetLine,
   BudgetLineItem,
   BudgetRow,
   BudgetTotals,
@@ -39,7 +34,6 @@ import type {
   Day,
   DayFrame,
   DayRow,
-  DiningFormat,
   EnrichedActivity,
   EnrichedMealOption,
   EnrichedStay,
@@ -51,7 +45,9 @@ import type {
   Money,
   Note,
   Package,
+  Payable,
   Place,
+  PortCall,
   Pricing,
   Ref,
   RefEntityKind,
@@ -74,24 +70,27 @@ import type {
   TripView,
 } from './types';
 
+// The files in a trip's own directory (public/data/<slug>/), in the order
+// loadTripData reads them; routes.json is shared across trips, beside them.
+export const TRIP_FILES = [
+  'trip',
+  'legs',
+  'stays',
+  'transits',
+  'activities',
+  'bookings',
+  'scenarios',
+  'notes',
+  'travelModeOverrides',
+] as const;
+
 export async function loadTripData(slug: string): Promise<TripData> {
   const base = `${import.meta.env.BASE_URL}data/${slug}/`;
-  const files = [
-    'trip',
-    'legs',
-    'stays',
-    'transits',
-    'activities',
-    'bookings',
-    'scenarios',
-    'notes',
-    'travelModeOverrides',
-  ] as const;
   const [
     [trip, legs, stays, transits, activities, bookings, scenarios, notes, travelModeOverrides],
     routes,
   ] = await Promise.all([
-    Promise.all(files.map((f) => fetch(`${base}${f}.json`).then((r) => r.json()))),
+    Promise.all(TRIP_FILES.map((f) => fetch(`${base}${f}.json`).then((r) => r.json()))),
     fetch(`${import.meta.env.BASE_URL}data/routes.json`).then((r) => r.json()),
   ]);
   return {
@@ -168,6 +167,21 @@ function dateRangeArray(start: string, end: string): string[] {
   const out: string[] = [];
   for (let cur = start; cur <= end; cur = addDaysStr(cur, 1)) out.push(cur);
   return out;
+}
+
+function stayNights(stay: Pick<Stay, 'checkInAt' | 'checkOutAt'>): number {
+  const days = diffMinutesIso(
+    `${dateOnly(stay.checkInAt)}T00:00`,
+    `${dateOnly(stay.checkOutAt)}T00:00`,
+  );
+  return Math.max(Math.round(days / 1440), 0);
+}
+
+// How many times a Package's cost is charged on its holder: a nightly rate
+// once per night of the Stay holding it (see Package.per), anything else once.
+// A same-day stay has no nights, but a priced fee is still charged once.
+function packageUnits(pkg: Pick<Package, 'per'>, nights: number | null): number {
+  return pkg.per === 'night' && nights != null ? Math.max(nights, 1) : 1;
 }
 
 export function formatDateLabel(dateStr: string): string {
@@ -414,7 +428,7 @@ export function tripDayCount(range: DateRange): number {
 //
 // Trip and Leg carry no status field of their own (see BookingProgress in
 // types.ts) — it's rolled up from whatever leaf entities (Stay/Transit/
-// Activity, plus Stay.packages) actually carry a booking. A Leg bought as
+// Activity, plus their packages) actually carry a booking. A Leg bought as
 // one bundle (skeletonAuthority: 'operator', e.g. a cruise fare) is judged
 // on its own booking alone, rather than diluted by the unbooked odds and
 // ends (shore excursions, included meals) underneath it.
@@ -428,18 +442,23 @@ export type BookingSources = Pick<TripData, 'stays' | 'transits' | 'activities' 
 // booking underneath it — one per distinct booking document a Stay/Transit/
 // Activity/meal candidate points at (a round-trip ticket covering two flights
 // counts once),
-// plus one per Stay Package. Entities with no booking (nothing to reserve — a
+// plus one per Package on any of them. Entities with no booking (nothing to reserve — a
 // free morning, an included meal) aren't counted: they're neither "needs
 // booking" nor "booked".
+// Per leg, scanning every entity (as bookingIdsInLeg does): a trip has a
+// handful of legs, so grouping by leg first isn't worth its code (a reviewed
+// false positive).
 function legBookingStatuses(leg: Leg, sources: BookingSources): BookingStatus[] {
   const own = bookingById(sources.bookings, leg.bookingId);
   if (own) return [own.status];
-  const legStays = sources.stays.filter((s) => s.legId === leg._id);
+  const legPackages = [...packageHolders(sources)]
+    .filter((h) => h.entity.legId === leg._id)
+    .flatMap((h) => h.entity.packages ?? []);
   return [
     ...[...bookingIdsInLeg(sources, leg._id)].map(
       (id) => bookingById(sources.bookings, id)?.status,
     ),
-    ...legStays.flatMap((s) => s.packages?.map((p) => p.status) ?? []),
+    ...legPackages.map((p) => p.status),
   ].filter((s): s is BookingStatus => s != null);
 }
 
@@ -447,7 +466,9 @@ function summarizeBookingStatuses(statuses: BookingStatus[]): BookingProgress {
   if (!statuses.length) return 'unplanned';
   const bookedCount = statuses.filter((s) => s === 'booked').length;
   if (bookedCount === statuses.length) return 'booked';
-  if (bookedCount === 0) return 'unplanned';
+  // A requested booking is in motion (awaiting the seller's confirmation), so
+  // it makes the leg partial even before anything is confirmed.
+  if (bookedCount === 0 && !statuses.includes('requested')) return 'unplanned';
   return 'partial';
 }
 
@@ -496,7 +517,7 @@ export function transitRouteLabel(endpoints: {
   return `${endpoints.from.label || '?'} → ${endpoints.to.label || '?'}`;
 }
 
-// formatOverrides threads through to activityDurationMinutes for a still-
+// selectedMeals threads through to activityDurationMinutes for a still-
 // open meal recomputing its span against a specific candidate's diningFormat
 // rather than the Activity's own stored one — see mealOptions.ts's
 // mealOptionTimeLabel, the only caller that ever passes it.
@@ -505,10 +526,10 @@ export function activityTimeLabel(
     Activity,
     '_id' | 'startAt' | 'durationMinutes' | 'timeLabel' | 'mealType' | 'diningFormat' | 'options'
   >,
-  formatOverrides?: ReadonlyMap<string, DiningFormat>,
+  selectedMeals?: ReadonlyMap<string, MealOption>,
 ): string {
   if (activity.startAt) {
-    const minutes = activityDurationMinutes(activity, formatOverrides);
+    const minutes = activityDurationMinutes(activity, selectedMeals);
     const end = minutes != null ? addMinutesIso(activity.startAt, minutes) : null;
     return formatTime(activity.startAt) + (end ? `–${formatTime(end)}` : '');
   }
@@ -687,6 +708,7 @@ function resolveBookingTags(entity: {
   const tags: string[] = [];
   if (statuses.has('booked')) tags.push('booking:booked');
   if (statuses.has('planning')) tags.push('booking:needs');
+  if (statuses.has('requested')) tags.push('booking:requested');
   return tags;
 }
 
@@ -699,11 +721,15 @@ export function filterTagsFor(entity: {
   options?: { booking: Booking | null }[] | null;
   priority?: string | null;
   hasWarningNote?: boolean;
-  transitOverlapWarning?: string | null;
+  warnings?: string[];
 }): string[] {
   const tags = [`leg:${entity.legId}`, ...resolveBookingTags(entity)];
   if (entity.priority) tags.push('attr:highlight');
-  if (entity.hasWarningNote || entity.transitOverlapWarning) tags.push('attr:attention');
+  // 'Needs attention' is exactly the warnings a row shows (transit overlaps,
+  // activity overlaps, port-call timing), so the filter and the row agree.
+  if (entity.hasWarningNote || entity.warnings?.length) {
+    tags.push('attr:attention');
+  }
   return tags;
 }
 
@@ -923,8 +949,8 @@ const FALLBACK_MEAL_DURATION_MINUTES = 30;
 // endAt now reads this instead: the drive-time walk below, reorder.ts's
 // drag-and-drop anchor/shift math, and the transit-overlap check.
 //
-// formatOverrides (activityId -> diningFormat) lets a caller stand in
-// whichever MealOption candidate is actually live-selected in the day view
+// selectedMeals (activityId -> the selected MealOption) lets a caller stand in
+// whichever candidate's diningFormat is actually live-selected in the day view
 // right now — the meal row's own tabs — in place of the model's own stored
 // default (activity.diningFormat, or its first still-open option). Empty for
 // the one-time build at page load (buildTripView), when nothing's been
@@ -936,12 +962,12 @@ const FALLBACK_MEAL_DURATION_MINUTES = 30;
 // duration recalculation, working straight off TripData — can call this too.
 export function activityDurationMinutes(
   activity: Pick<Activity, '_id' | 'durationMinutes' | 'mealType' | 'diningFormat' | 'options'>,
-  formatOverrides?: ReadonlyMap<string, DiningFormat>,
+  selectedMeals?: ReadonlyMap<string, MealOption>,
 ): number | null {
   if (activity.durationMinutes != null) return activity.durationMinutes;
   if (!activity.mealType) return null;
   const format =
-    formatOverrides?.get(activity._id) ??
+    selectedMeals?.get(activity._id)?.diningFormat ??
     activity.diningFormat ??
     activity.options?.[0]?.diningFormat ??
     null;
@@ -984,7 +1010,7 @@ function stageTimesForVariant(
   variant: Pick<RouteVariant, 'places' | 'finalTravel'>,
   transit: Transit,
   candidateActivities: Activity[],
-  formatOverrides?: ReadonlyMap<string, DiningFormat>,
+  selectedMeals?: ReadonlyMap<string, MealOption>,
 ): { stages: RouteStage[]; arrivesAt: string } {
   let clockMs = wallClockMs(transit.departsAt);
   const queue = [...candidateActivities];
@@ -1001,7 +1027,7 @@ function stageTimesForVariant(
         remainingMs -= startMs - clockMs;
         clockMs = startMs;
       }
-      const endMs = startMs + (activityDurationMinutes(next, formatOverrides) ?? 0) * 60000;
+      const endMs = startMs + (activityDurationMinutes(next, selectedMeals) ?? 0) * 60000;
       clockMs = Math.max(clockMs, endMs);
     }
     clockMs += remainingMs;
@@ -1623,12 +1649,12 @@ function transitOverlapFor(
   activity: Activity,
   transits: Transit[],
   exemptMealFromMidDrive: boolean,
-  formatOverrides?: ReadonlyMap<string, DiningFormat>,
+  selectedMeals?: ReadonlyMap<string, MealOption>,
 ): { transit: Transit; departsMidActivity: boolean } | null {
   // The Activity's own end is the same for every Transit compared against
   // it, so it's worked out once here rather than per pair. No startAt or no
   // duration means there's no span for a departure to land inside.
-  const minutes = activity.startAt ? activityDurationMinutes(activity, formatOverrides) : null;
+  const minutes = activity.startAt ? activityDurationMinutes(activity, selectedMeals) : null;
   const endsAt =
     activity.startAt && minutes != null ? addMinutesIso(activity.startAt, minutes) : null;
   const departing = endsAt
@@ -1650,13 +1676,14 @@ function transitOverlapFor(
 // own "point-in-time" case) is treated as zero-width, so it still flags
 // landing inside the other's span without needing a made-up length of its own.
 // spanEnd is that "startAt plus its own (possibly zero) length" moment, shared
-// by both sides of every comparison in activityOverlapFor below.
+// by both sides of every comparison in activityOverlapFor below, and by the
+// port-call check's all-aboard test.
 function spanEnd(
   startAt: string,
-  activity: Activity,
-  formatOverrides?: ReadonlyMap<string, DiningFormat>,
+  activity: Pick<Activity, '_id' | 'durationMinutes' | 'mealType' | 'diningFormat' | 'options'>,
+  selectedMeals?: ReadonlyMap<string, MealOption>,
 ): string {
-  return addMinutesIso(startAt, activityDurationMinutes(activity, formatOverrides) ?? 0);
+  return addMinutesIso(startAt, activityDurationMinutes(activity, selectedMeals) ?? 0);
 }
 
 // diningFormat 'included-with-activity' is the explicit "this overlap is
@@ -1676,13 +1703,13 @@ function isIncludedWithActivity(activity: Activity, other: Activity): boolean {
 function activityOverlapFor(
   activity: Activity,
   activities: Activity[],
-  formatOverrides?: ReadonlyMap<string, DiningFormat>,
+  selectedMeals?: ReadonlyMap<string, MealOption>,
 ): Activity | null {
   if (!activity.startAt) return null;
   const startAt = activity.startAt;
   // Worked out once for `activity` rather than per candidate, and only for a
   // candidate that's actually comparable (timed, same leg/scenario branch).
-  const endsAt = spanEnd(startAt, activity, formatOverrides);
+  const endsAt = spanEnd(startAt, activity, selectedMeals);
   return (
     activities.find(
       (other) =>
@@ -1690,7 +1717,7 @@ function activityOverlapFor(
         !!other.startAt &&
         other.legId === activity.legId &&
         other.scenarioId === activity.scenarioId &&
-        startAt < spanEnd(other.startAt, other, formatOverrides) &&
+        startAt < spanEnd(other.startAt, other, selectedMeals) &&
         other.startAt < endsAt &&
         !isIncludedWithActivity(activity, other) &&
         !isIncludedWithActivity(other, activity),
@@ -1732,25 +1759,143 @@ export function overlapWarningsFor(
   activity: Activity,
   activities: Activity[],
   transits: Transit[],
-  formatOverrides?: ReadonlyMap<string, DiningFormat>,
-): { transitOverlapWarning: string | null; activityOverlapWarning: string | null } {
+  selectedMeals?: ReadonlyMap<string, MealOption>,
+): string[] {
   const overlappingTransit = transitOverlapFor(
     activity,
     transits,
     Boolean(activity.mealType),
-    formatOverrides,
+    selectedMeals,
   );
-  const overlappingActivity = activityOverlapFor(activity, activities, formatOverrides);
-  return {
-    transitOverlapWarning: overlappingTransit
+  const overlappingActivity = activityOverlapFor(activity, activities, selectedMeals);
+  return [
+    overlappingTransit
       ? overlappingTransit.departsMidActivity
         ? `${overlappingTransit.transit.from.label} departs before this ends.`
         : `During transit: ${transitRouteLabel(overlappingTransit.transit)}`
       : null,
-    activityOverlapWarning: overlappingActivity
-      ? `Overlaps with "${activityHeadline(overlappingActivity)}".`
-      : null,
-  };
+    overlappingActivity ? `Overlaps with "${activityHeadline(overlappingActivity)}".` : null,
+  ].filter((warning): warning is string => warning !== null);
+}
+
+// Everything an Activity's row warns about: overlapping a transit or another
+// activity, or being ashore outside the ship's time in port. One list, so a
+// new kind of warning is added here once and every reader (the row, the
+// "needs attention" filter) picks it up.
+export function activityWarnings(
+  activity: Activity,
+  activities: Activity[],
+  transits: Transit[],
+  stays: Pick<Stay, 'portCalls' | 'checkInAt' | 'checkOutAt'>[],
+  selectedMeals?: ReadonlyMap<string, MealOption>,
+): string[] {
+  const portCall = portCallWarningFor(activity, stays, selectedMeals);
+  return [
+    ...overlapWarningsFor(activity, activities, transits, selectedMeals),
+    ...(portCall ? [portCall] : []),
+  ];
+}
+
+const portCallAt = (call: PortCall) => call.arrivesAt ?? call.departsAt ?? '';
+
+// The stops a cruise makes on `date`: any port call that arrives or leaves
+// that day — or is under way across it (an overnight stop) — from whichever
+// stay holds it, in the order the ship reaches them.
+// The stays an activity can be judged against: a stay that belongs to another
+// scenario branch isn't where it happens.
+export function staysInScope<S extends Pick<Stay, 'scenarioId'>>(
+  stays: S[],
+  activity: Pick<Activity, 'scenarioId'>,
+): S[] {
+  return stays.filter(
+    (s) => !activity.scenarioId || !s.scenarioId || s.scenarioId === activity.scenarioId,
+  );
+}
+
+export function portCallsOn(stays: Pick<Stay, 'portCalls'>[], date: string): PortCall[] {
+  return stays
+    .flatMap((s) => s.portCalls ?? [])
+    .filter((call) => {
+      const days = [call.arrivesAt, call.departsAt].flatMap((at) => (at ? [dateOnly(at)] : []));
+      return days.includes(date) || (days.length === 2 && days[0] < date && date < days[1]);
+    })
+    .sort((a, b) => portCallAt(a).localeCompare(portCallAt(b)));
+}
+
+// An activity ashore — one at a real, resolved place — has to fit the ship's
+// time at the stop it happens during: not before the ship arrives, not past
+// all aboard, and not at all at a stop the ship only cruises past. The stop
+// is the one under way when the activity starts, else the last to arrive
+// before it, else the day's first one ashore is possible at (before the ship gets anywhere).
+// Only while aboard: ashore before boarding or after leaving the ship is the
+// day's own. An activity with no place is aboard (dinner onboard), and one at
+// a scenic stop's own place is seen from the deck (glacier viewing), so
+// neither is checked; one at a port's own place is ashore at that port. A
+// meal still choosing is where, and as long as, its selected candidate is.
+// A ship venue that has a real place id must set `onboard` on its Place to be
+// skipped — a place id alone means ashore, by design (no trip data has one yet).
+// Likewise a resolved place that isn't the day's stop is judged against the
+// stop it happens during, not matched to a port by place: an activity ashore
+// during a call is in that port, so naming it is deliberate, not a mix-up.
+export function portCallWarningFor(
+  activity: Pick<
+    Activity,
+    '_id' | 'startAt' | 'place' | 'durationMinutes' | 'mealType' | 'diningFormat' | 'options'
+  >,
+  stays: Pick<Stay, 'portCalls' | 'checkInAt' | 'checkOutAt'>[],
+  selectedMeals?: ReadonlyMap<string, MealOption>,
+): string | null {
+  const start = activity.startAt;
+  const place = activity.place ?? selectedMeals?.get(activity._id)?.place;
+  if (!start || !place?.id || place.onboard) return null;
+  const placeId = place.id;
+  for (const stay of stays) {
+    if (!stay.portCalls?.length || start < stay.checkInAt || start > stay.checkOutAt) continue;
+    const calls = portCallsOn([stay], dateOnly(start));
+    if (!calls.length) continue;
+    // Of several calls at this place on the day, the one the activity falls in,
+    // else the latest to have arrived, else the earliest.
+    const here = calls.filter((c) => c.place.id === placeId);
+    const atStop =
+      here.find(
+        (c) => (!c.arrivesAt || c.arrivesAt <= start) && (!c.departsAt || start < c.departsAt),
+      ) ??
+      here.filter((c) => portCallAt(c) <= start).at(-1) ??
+      here[0];
+    if (atStop?.kind === 'scenic') continue;
+    // Before the ship reaches any stop, the first one it can be ashore at —
+    // a scenic first stop isn't, so it can't make an earlier activity wrong.
+    const call =
+      atStop ??
+      calls.filter((c) => portCallAt(c) <= start).at(-1) ??
+      calls.find((c) => c.kind !== 'scenic');
+    if (!call) continue;
+    // Past this stop's all-aboard with another still to come, the ship is at
+    // sea between the two: nothing says where this activity is, so say nothing.
+    if (
+      !atStop &&
+      call.departsAt &&
+      start >= call.departsAt &&
+      calls.some((c) => portCallAt(c) > start)
+    ) {
+      continue;
+    }
+    const where = call.place.label;
+    // A scenic stop that's already over (and the last of the day) leaves the
+    // ship somewhere unnamed at sea: it isn't "cruising past" it any more.
+    if (call.kind === 'scenic' && call.departsAt && start >= call.departsAt) continue;
+    if (call.kind === 'scenic') return `The ship is cruising past ${where} — no going ashore.`;
+    if (call.arrivesAt && start < call.arrivesAt) {
+      return `Starts before the ship arrives in ${where} at ${formatTime(call.arrivesAt)}.`;
+    }
+    if (call.departsAt && start >= call.departsAt) {
+      return `Starts after all aboard in ${where} at ${formatTime(call.departsAt)}.`;
+    }
+    if (call.departsAt && spanEnd(start, activity, selectedMeals) > call.departsAt) {
+      return `Ends after all aboard in ${where} at ${formatTime(call.departsAt)}.`;
+    }
+  }
+  return null;
 }
 
 // Every place entry must carry a kind of 'waypoint' or 'via' (never a bare
@@ -1871,12 +2016,7 @@ export function resolveTransitRoute(
   if (!route) return null;
   const candidates = routeWalkCandidates(transit, activities);
   const variants: ResolvedRouteVariant[] = route.variants.map((v) => {
-    const { stages, arrivesAt } = stageTimesForVariant(
-      v,
-      transit,
-      candidates,
-      live.formatOverrides,
-    );
+    const { stages, arrivesAt } = stageTimesForVariant(v, transit, candidates, live.selectedMeals);
     return {
       tone: v.tone,
       label: `${v.tone[0].toUpperCase()}${v.tone.slice(1)}`,
@@ -1900,10 +2040,8 @@ export function resolveTransitRoute(
 // ---------- Budget — a computed view over every booking already in the
 // model (Leg/Stay/Transit/Activity), sliced by Leg, Day, and Traveler.
 // Nothing new is stored: every number below is derived from booking.status/
-// pricing plus, for the spent/pending split, the same depositPaidAt/
-// finalPaymentDueAt pair leg_cruise's own booking already carries (see
-// data-model.html) — the only booking on this trip with a real payment
-// schedule today, but the rule holds for any future one that gets it too.
+// pricing plus, for the spent/pending split, each price line's own payable
+// (see data-model.html).
 
 export function todayDateStr(): string {
   const d = new Date();
@@ -1911,49 +2049,76 @@ export function todayDateStr(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-// A booking sorts into exactly one bucket, or none at all:
-//  - 'spent'     — booked, and either has no payment schedule (the common
-//                  case — a campsite fee, a ferry ticket, paid in full at
-//                  booking) or its finalPaymentDueAt has already passed.
-//  - 'pending'   — booked, but a deposit/final-payment schedule says a
-//                  balance is still owed (finalPaymentDueAt hasn't arrived).
-//  - 'estimated' — not booked yet, but already carries a real cost guess
-//                  (e.g. a still-planning activity with a known price).
-//  - 'unplanned' — not booked, no cost guess either — nothing to sum, just
-//                  a count of "still needs a number."
-// A cancelled booking, or no booking at all, contributes nothing (null).
-export function bookingBucket(
-  booking: Booking | null | undefined,
+// Each priced line of a booking sorts into one bucket:
+//  - 'spent'     — booked and paid: no payable (paid when booked — a
+//                  campsite fee, a ferry ticket), a due date that's passed,
+//                  or an at-the-property charge whose day has come (even on
+//                  a requested or planning booking, unless cancelled).
+//  - 'pending'   — booked, but still owed: due at the property on a day
+//                  still ahead, or by a date still ahead.
+//  - 'estimated' — not booked yet, but carries a real cost guess.
+// A requested booking (sent, not yet confirmed) is all 'pending': the money
+// is committed, but nothing is settled until the confirmation arrives.
+// A booking with no price is 'unplanned' — nothing to sum, just a count of
+// "still needs a number" — and a cancelled one contributes nothing.
+function lineBucket(
+  payable: Payable | undefined,
+  booking: Booking,
+  date: string | null,
   today: string,
-): BudgetRow['bucket'] | null {
-  if (!booking || booking.status === 'cancelled') return null;
-  if (booking.status === 'booked') {
-    return booking.finalPaymentDueAt && booking.finalPaymentDueAt > today ? 'pending' : 'spent';
+): BudgetLine['bucket'] {
+  // Charged at the property: once check-in day has come it has been paid,
+  // whatever the booking's status (a cancelled one never gets this far). This
+  // is deliberate even for a 'planning' booking: the fee is settled in person
+  // on arrival, so being unreserved doesn't make it any less spent by then.
+  if (payable === 'atProperty' && date && date <= today) return 'spent';
+  // A payment the booking records as received (a deposit) is spent whatever
+  // the booking's status: the money has already left, even if the rest of the
+  // booking is still only planned or requested.
+  if (typeof payable === 'object' && 'paidAt' in payable) return 'spent';
+  if (booking.status === 'requested') return 'pending';
+  if (booking.status !== 'booked') return 'estimated';
+  if (payable === 'atProperty') return 'pending';
+  // Paid (with or without a recorded date) or due by a date already gone by.
+  const dueBy = payableDueBy(payable);
+  return dueBy && dueBy > today ? 'pending' : 'spent';
+}
+
+function budgetLines(booking: Booking, date: string | null, today: string): BudgetLine[] {
+  if (booking.status === 'cancelled' || !booking.pricing) return [];
+  const { perTraveler, fixed } = booking.pricing;
+  return [
+    ...perTraveler.map((f) => ({
+      bucket: lineBucket(f.payable, booking, date, today),
+      amount: f.fare,
+      basis: 'perTraveler' as const,
+      travelerId: f.travelerId,
+    })),
+    ...fixed.map((c) => ({
+      bucket: lineBucket(c.payable, booking, date, today),
+      amount: c.amount,
+      basis: 'fixed' as const,
+    })),
+  ];
+}
+
+function rowBucket(booking: Booking, lines: BudgetLine[]): BudgetBucket {
+  if (!lines.length) return booking.status === 'booked' ? 'spent' : 'unplanned';
+  // By precedence, never line order: anything still owed makes the row
+  // pending, else anything unbooked makes it estimated, else it's spent.
+  for (const bucket of ['pending', 'estimated'] as const) {
+    if (lines.some((l) => l.bucket === bucket)) return bucket;
   }
-  return bookingCost(booking) ? 'estimated' : 'unplanned';
+  return 'spent';
 }
 
 function emptyBudgetTotals(): BudgetTotals {
   return { spent: 0, pending: 0, estimated: 0, unplannedCount: 0, currency: null };
 }
 
-// A 'spent'/'pending' bucket normally carries a cost — but data-model.html
-// itself documents booking: { status: 'booked', pricing: null, ... } as valid
-// (stay_talkeetna): a confirmed reservation whose price isn't tracked. There's
-// no dollar figure to add — the reservation still shows up as its
-// own row, just contributing nothing to the money totals.
-function addToBudgetTotals(
-  totals: BudgetTotals,
-  bucket: BudgetRow['bucket'],
-  cost: Money | null,
-): void {
-  if (bucket === 'unplanned') {
-    totals.unplannedCount += 1;
-    return;
-  }
-  if (!cost) return;
-  totals[bucket] += cost.amount;
-  totals.currency = totals.currency ?? cost.currency;
+function addLine(totals: BudgetTotals, line: BudgetLine): void {
+  totals[line.bucket] += line.amount.amount;
+  totals.currency = totals.currency ?? line.amount.currency;
 }
 
 // Every Leg/Stay/Transit/Activity that carries a booking, flattened to one
@@ -1982,7 +2147,50 @@ function bookingLineItems(
   ) => {
     if (booking) items.push({ entity, id, legId, label, date, booking });
   };
-  for (const { leg, booking } of legs) push('leg', leg._id, leg._id, leg.name, null, booking);
+  // A Package (a resort fee, a meal plan, a tour's add-on) is its own cost on
+  // top of its holder's booking — every one gets its own row here so it's
+  // counted in the Budget view's totals, not just visible on its holder.
+  // `nights` is the holding Stay's, for a nightly rate (Package.per); null on
+  // a Transit or Activity, where every package is charged once.
+  const pushPackages = (
+    packages: Package[] | null | undefined,
+    legId: string,
+    date: string | null,
+    nights: number | null = null,
+  ) => {
+    for (const pkg of packages ?? []) {
+      const units = packageUnits(pkg, nights);
+      items.push({
+        entity: 'package',
+        id: pkg._id,
+        legId,
+        label:
+          units > 1 && pkg.cost
+            ? `${pkg.name} (${units} nights × ${formatMoney(pkg.cost)})`
+            : pkg.name,
+        date,
+        booking: {
+          _id: pkg._id,
+          status: pkg.status,
+          pricing: packagePricing(pkg, units),
+          confirmationNumber: pkg.confirmationNumber,
+        },
+      });
+    }
+  };
+  for (const { leg, booking, dateRange } of legs) {
+    if (booking) {
+      items.push({
+        entity: 'leg',
+        id: leg._id,
+        legId: leg._id,
+        label: leg.name,
+        date: null,
+        dueOn: dateRange?.startDate ?? null,
+        booking,
+      });
+    }
+  }
   for (const stay of stays) {
     push(
       'stay',
@@ -1992,24 +2200,7 @@ function bookingLineItems(
       dateOnly(stay.checkInAt),
       stay.booking,
     );
-    // A Package (a resort fee, a meal plan, ...) is its own cost on top of
-    // the room rate above — every one gets its own row here so it's counted
-    // in the Budget view's totals, not just visible on the Stay itself.
-    for (const pkg of stay.packages ?? []) {
-      items.push({
-        entity: 'package',
-        id: pkg._id,
-        legId: stay.legId,
-        label: pkg.name,
-        date: dateOnly(stay.checkInAt),
-        booking: {
-          _id: pkg._id,
-          status: pkg.status,
-          pricing: packagePricing(pkg),
-          confirmationNumber: pkg.confirmationNumber,
-        },
-      });
-    }
+    pushPackages(stay.packages, stay.legId, dateOnly(stay.checkInAt), stayNights(stay));
   }
   for (const transit of transits) {
     push(
@@ -2020,6 +2211,7 @@ function bookingLineItems(
       dateOnly(transit.departsAt),
       transit.booking,
     );
+    pushPackages(transit.packages, transit.legId, dateOnly(transit.departsAt));
   }
   for (const activity of activities) {
     push(
@@ -2027,9 +2219,13 @@ function bookingLineItems(
       activity._id,
       activity.legId,
       entityLabel('activity', activity),
+      // The enriched activity's date is already resolved from startAt (see
+      // resolveActivityDate in buildTripView), so a timed activity is never
+      // undated here (a reviewed false positive).
       activity.date,
       activity.booking,
     );
+    pushPackages(activity.packages, activity.legId, activity.date);
     // A still-open meal's own candidates can each carry their own
     // reservation (see resolveBookingTags above) — every priced/booked one
     // gets its own row here too, rather than being silently dropped once
@@ -2051,19 +2247,22 @@ function bookingLineItems(
 // A Package bought for named travelers (a dining add-on for two of the four)
 // is a per-traveler cost, split evenly among them; one for the whole stay (a
 // resort fee, parking) is a fixed charge.
-function packagePricing(pkg: Package): Pricing | null {
+function packagePricing(pkg: Package, units: number): Pricing | null {
   if (!pkg.cost) return null;
   const travelers = pkg.travelers ?? [];
-  if (!travelers.length) return { perTraveler: [], fixed: [{ label: pkg.name, amount: pkg.cost }] };
-  const cents = Math.round(pkg.cost.amount * 100);
+  const payable = pkg.payable ? { payable: pkg.payable } : {};
+  const { currency } = pkg.cost;
+  const cents = Math.round(pkg.cost.amount * 100) * units;
+  if (!travelers.length) {
+    const amount = { amount: cents / 100, currency };
+    return { perTraveler: [], fixed: [{ label: pkg.name, amount, ...payable }] };
+  }
   const share = Math.floor(cents / travelers.length);
   return {
     perTraveler: travelers.map((travelerId, i) => ({
       travelerId,
-      fare: {
-        amount: (share + (i < cents % travelers.length ? 1 : 0)) / 100,
-        currency: pkg.cost!.currency,
-      },
+      fare: { amount: (share + (i < cents % travelers.length ? 1 : 0)) / 100, currency },
+      ...payable,
     })),
     fixed: [],
   };
@@ -2092,18 +2291,31 @@ function onePerBooking(items: BudgetLineItem[]): BudgetLineItem[] {
   });
 }
 
-function bucketedRows(items: BudgetLineItem[], today: string): BudgetRow[] {
-  const rows: BudgetRow[] = [];
-  for (const item of items) {
-    const bucket = bookingBucket(item.booking, today);
-    if (bucket) rows.push({ ...item, bucket });
-  }
-  return rows;
+// A booked row with no price (data-model.html documents booking: { status:
+// 'booked', pricing: null } as valid — a confirmed reservation whose price
+// isn't tracked) still shows as its own row, adding nothing to the totals.
+// An item with no date at all (a Leg without a dateRange, an undated Activity
+// package) falls back to `lastDay`, the trip's last day, so an at-the-property
+// charge on it counts as spent once the trip is over rather than staying
+// pending forever.
+function bucketedRows(items: BudgetLineItem[], today: string, lastDay: string | null): BudgetRow[] {
+  return items
+    .filter((item) => item.booking.status !== 'cancelled')
+    .map((item) => {
+      const lines = budgetLines(item.booking, item.date ?? item.dueOn ?? lastDay, today);
+      return { ...item, lines, bucket: rowBucket(item.booking, lines) };
+    });
 }
 
-function totalsFor(rows: BudgetRow[], costOf = bookingCost): BudgetTotals {
+function totalsFor(
+  rows: BudgetRow[],
+  keep: (line: BudgetLine) => boolean = () => true,
+): BudgetTotals {
   const totals = emptyBudgetTotals();
-  for (const row of rows) addToBudgetTotals(totals, row.bucket, costOf(row.booking));
+  for (const row of rows) {
+    if (row.bucket === 'unplanned') totals.unplannedCount += 1;
+    for (const line of row.lines) if (keep(line)) addLine(totals, line);
+  }
   return totals;
 }
 
@@ -2112,7 +2324,10 @@ function totalsFor(rows: BudgetRow[], costOf = bookingCost): BudgetTotals {
 // neither, so they're counted only in the overall totals.
 function totalsByBasis(rows: BudgetRow[]): BudgetView['byBasis'] {
   const costed = rows.filter((r) => r.bucket !== 'unplanned');
-  return { perTraveler: totalsFor(costed, perTravelerCost), fixed: totalsFor(costed, fixedCost) };
+  return {
+    perTraveler: totalsFor(costed, (l) => l.basis === 'perTraveler'),
+    fixed: totalsFor(costed, (l) => l.basis === 'fixed'),
+  };
 }
 
 function groupRowsBy<K>(rows: BudgetRow[], keyOf: (row: BudgetRow) => K): Map<K, BudgetRow[]> {
@@ -2165,9 +2380,9 @@ function groupBudgetByTraveler(travelers: Traveler[], rows: BudgetRow[]): Budget
     return totals;
   };
   for (const row of rows) {
-    if (row.bucket === 'unplanned') continue;
-    for (const f of bookingFares(row.booking) ?? [])
-      addToBudgetTotals(totalsFor(nameById.get(f.travelerId) ?? f.travelerId), row.bucket, f.fare);
+    for (const line of row.lines)
+      if (line.travelerId)
+        addLine(totalsFor(nameById.get(line.travelerId) ?? line.travelerId), line);
   }
   return [...totalsByName.entries()].map(([name, totals]) => ({ name, totals }));
 }
@@ -2181,7 +2396,8 @@ export function buildBudgetView(
   activities: EnrichedActivity[],
 ): BudgetView {
   const today = todayDateStr();
-  const rows = bucketedRows(bookingLineItems(legs, stays, transits, activities), today);
+  const lastDay = days.reduce<string | null>((l, d) => (l && l > d.date ? l : d.date), null);
+  const rows = bucketedRows(bookingLineItems(legs, stays, transits, activities), today, lastDay);
   return {
     today,
     totals: totalsFor(rows),
@@ -2257,7 +2473,7 @@ export function buildTripView(data: TripData): TripView {
   validateRoutes(routes);
   const scenariosById = new Map(scenarios.map((s) => [s._id, s]));
   const routesById = new Map((routes ?? []).map((r) => [r._id, r]));
-  const packagesById = new Map(stays.flatMap((s) => s.packages ?? []).map((p) => [p._id, p]));
+  const packagesById = new Map(allPackages(data).map((p) => [p._id, p]));
   const travelerNameById = travelersById(trip.travelers);
   const noteIndex = buildNoteIndex(notes);
 
@@ -2288,19 +2504,14 @@ export function buildTripView(data: TripData): TripView {
     // above for why that's normal, not a modeling mistake. A departure
     // scheduled mid-meal still isn't exempt (transitOverlapFor's own note).
     const pool = overlapPool(a);
-    const { transitOverlapWarning, activityOverlapWarning } = overlapWarningsFor(
-      a,
-      pool.activities,
-      pool.transits,
-    );
+    const warnings = activityWarnings(a, pool.activities, pool.transits, staysInScope(stays, a));
     return {
       ...a,
       booking: bookingOf(data, a),
       date: resolveActivityDate(a),
       notes: notesForEntity(noteIndex, 'activity', a._id),
       hasWarningNote: entityHasWarning(noteIndex, 'activity', a._id),
-      transitOverlapWarning,
-      activityOverlapWarning,
+      warnings,
       travelers: a.mealType
         ? resolveMealTravelers(trip.travelers, travelerNameById, a.includedIn, packagesById)
         : resolveExcursionTravelers(travelerNameById, a.travelers),

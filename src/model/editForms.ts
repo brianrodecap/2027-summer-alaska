@@ -9,9 +9,10 @@ import {
   bookingFormValueFrom,
   bookingIdFromForm,
   readBookingFormValue,
+  withPayable,
 } from './bookingFormValue';
 import { bookingById, bookingReferrers } from './bookings';
-import { placeFromLodging } from './formatting';
+import { DINING_FORMAT_LABEL, placeFromLodging } from './formatting';
 import { resolveScenarioToneChange } from './scenarioGroups';
 import {
   activityHeadline,
@@ -38,6 +39,7 @@ import type {
   Package,
   Place,
   PlanStatus,
+  PortCall,
   Priority,
   Ref,
   Route,
@@ -139,6 +141,8 @@ export const COLLECTION_FOR_KIND: Record<EditKind, 'activities' | 'stays' | 'tra
   stay: 'stays',
   transit: 'transits',
 };
+
+export const EDIT_KINDS = Object.keys(COLLECTION_FOR_KIND) as EditKind[];
 
 // Capitalized display name for each EditKind — shared by the document-import
 // panels' "Detected: ..." summaries rather than each re-spelling the table.
@@ -375,10 +379,20 @@ export function blankMealOption(): MealOptionForm {
   };
 }
 
+// When an entity starts: check-in, departure, or an Activity's own startAt
+// (undefined for an untimed one).
+export function entityStartAt(
+  kind: EditKind,
+  entity: Activity | Stay | Transit,
+): string | null | undefined {
+  if (kind === 'stay') return (entity as Stay).checkInAt;
+  if (kind === 'transit') return (entity as Transit).departsAt;
+  return (entity as Activity).startAt;
+}
+
 // The one real date any Activity/Stay/Transit resolves to, whatever kind it
 // actually is — used by EditEventWizard to seed the *other* two kinds'
-// otherwise-unused blank forms, and by an AI edit to draft over an entity
-// (see askAI.ts's draftEntityFromProposal); every entity always carries a real date,
+// otherwise-unused blank forms; every entity always carries a real date,
 // unlike '' — which addDaysStr's Date math can't parse and throws on; see
 // blankStay's checkOutAt).
 export function entityDateOnly(kind: EditKind, entity: Entity): string {
@@ -507,8 +521,19 @@ export const DINING_FORMATS_WITH_INCLUDED_IN: DiningFormat[] = [
   'included-with-transit',
 ];
 
+// The DiningFormat values a meal candidate can take on its own — the ones
+// that don't need an includedIn Ref pointing at a specific Stay/Package/
+// Activity/Transit (an included meal names what includes it separately, see
+// proposals.ts's includedWith). Derived
+// from DINING_FORMATS_WITH_INCLUDED_IN above, the same partition
+// ActivityEditForm and MealOptionList already gate on, rather than a second
+// hand-maintained list that could drift if a DiningFormat value is ever added.
+export const EXTRACTABLE_DINING_FORMATS: DiningFormat[] = (
+  Object.keys(DINING_FORMAT_LABEL) as DiningFormat[]
+).filter((format) => !DINING_FORMATS_WITH_INCLUDED_IN.includes(format));
+
 // The candidate list depends on which diningFormat is selected — 'included'
-// only offers stays, 'package' only offers packages, and so on — so callers
+// only offers stays, 'package' only offers the packages Stays, Transits and Activities hold, and so on — so callers
 // must pass the current diningFormat to keep the dropdown from mixing
 // unrelated entity kinds together. Labels are bare names (no "Included
 // with"/"Package:" prefix) — the date grouping disambiguates instead.
@@ -531,14 +556,17 @@ export function includedInOptions(
       });
     }
   } else if (diningFormat === 'package') {
-    for (const stay of stays) {
-      for (const pkg of stay.packages ?? []) {
-        options.push({
-          value: `package:${pkg._id}`,
-          label: pkg.name,
-          date: dateOnly(stay.checkInAt),
-          sortKey: stay.checkInAt,
-        });
+    const holders: { packages?: Package[] | null; date: string; sortKey: string }[] = [
+      ...stays.map((s) => ({ ...s, date: dateOnly(s.checkInAt), sortKey: s.checkInAt })),
+      ...transits.map((t) => ({ ...t, date: dateOnly(t.departsAt), sortKey: t.departsAt })),
+      ...activities.flatMap((a) => {
+        const date = resolveActivityDate(a);
+        return date == null ? [] : [{ ...a, date, sortKey: a.startAt ?? `${date}T00:00` }];
+      }),
+    ];
+    for (const { packages, date, sortKey } of holders) {
+      for (const pkg of packages ?? []) {
+        options.push({ value: `package:${pkg._id}`, label: pkg.name, date, sortKey });
       }
     }
   } else if (diningFormat === 'included-with-activity') {
@@ -596,6 +624,7 @@ export interface ActivityFormState {
   options: MealOptionForm[];
   travelerIds: string[];
   booking: BookingFormValue;
+  packages: Package[];
 }
 
 // Starts' date field carries activity.date when there's no startAt — the
@@ -618,6 +647,7 @@ export function activityFormFrom(activity: Activity, source: BookingSource): Act
     options: (activity.options ?? []).map((o) => mealOptionFormFrom(o, source)),
     travelerIds: activity.travelers ?? [],
     booking: bookingFormFor(source, activity.bookingId),
+    packages: structuredClone(activity.packages ?? []),
   };
 }
 
@@ -702,6 +732,7 @@ export function applyActivityForm(activity: Activity, form: ActivityFormState): 
     });
   }
   activity.travelers = form.travelerIds.length ? form.travelerIds : null;
+  setPackages(activity, form.packages);
   return null;
 }
 
@@ -799,7 +830,7 @@ export function withTransitPlaceImage(
 // A bare extra-cost line item (a resort fee, a parking fee — anything due
 // separately from the room rate) — the same Package shape a richer,
 // hand-authored one (e.g. a meal package with benefits/travelers) already
-// uses, just with only name+cost ever touched by StayPackagesField's minimal
+// uses, just with only name+cost ever touched by PackagesField's minimal
 // editor. status defaults to 'booked' rather than 'planning': an extra fee a
 // document names is a certain, unavoidable charge, not a still-undecided
 // add-on.
@@ -828,6 +859,7 @@ export interface StayFormState {
   email: string;
   website: string;
   packages: Package[];
+  portCalls: PortCall[];
 }
 
 export function stayFormFrom(stay: Stay, source: BookingSource): StayFormState {
@@ -844,6 +876,7 @@ export function stayFormFrom(stay: Stay, source: BookingSource): StayFormState {
     email: stay.lodging?.place.email ?? '',
     website: stay.lodging?.place.website ?? '',
     packages: structuredClone(stay.packages ?? []),
+    portCalls: structuredClone(stay.portCalls ?? []),
   };
 }
 
@@ -853,6 +886,23 @@ export function applyStayForm(stay: Stay, form: StayFormState): string | null {
   const checkOutAt =
     form.checkOutDate && form.checkOutTime ? `${form.checkOutDate}T${form.checkOutTime}` : null;
   if (!checkInAt || !checkOutAt) return 'Needs both check-in and check-out times.';
+  // A port call with no place and no times is an unfinished row, not a stop; one
+  // with times but no place would lose them silently, so it's an error. A named
+  // one needs a time, inside the stay, or no day would ever show it.
+  if (form.portCalls.some((c) => !c.place.label.trim() && (c.arrivesAt || c.departsAt))) {
+    return 'A port of call has times but no port — pick the port or clear its times.';
+  }
+  const portCalls = form.portCalls.filter((call) => call.place.label.trim());
+  for (const call of portCalls) {
+    const times = [call.arrivesAt, call.departsAt].filter((at): at is string => !!at);
+    if (!times.length) return `${call.place.label}: give an arrival or departure time.`;
+    if (call.arrivesAt && call.departsAt && call.departsAt <= call.arrivesAt) {
+      return `${call.place.label}: all aboard must be after the ship arrives.`;
+    }
+    if (times.some((at) => at < checkInAt || at > checkOutAt)) {
+      return `${call.place.label}: times must fall between check-in and check-out.`;
+    }
+  }
   stay.checkInAt = checkInAt;
   stay.checkOutAt = checkOutAt;
   const label = form.place?.label.trim();
@@ -870,9 +920,27 @@ export function applyStayForm(stay: Stay, form: StayFormState): string | null {
     };
   }
   stay.bookingId = bookingIdFromForm(form.booking);
-  const packages = form.packages.filter((p) => p.name.trim());
-  stay.packages = packages.length ? packages : null;
+  stay.packages = packagesFromForm(form.packages);
+  // Most stays have no port calls, so the key is left off rather than stored empty.
+  if (portCalls.length) stay.portCalls = portCalls;
+  else delete stay.portCalls;
   return null;
+}
+
+// A form's package rows as stored: unnamed rows dropped, a due date never
+// picked read as paid, a fee charged once without a `per` at all, and no
+// list at all when none are left.
+// A package with no cost keeps no `per` or `payable` — they describe a charge.
+export function packagesFromForm(rows: Package[]): Package[] | null {
+  const packages = rows
+    .filter((p) => p.name.trim())
+    .map(({ per, ...rest }) =>
+      withPayable(
+        { ...rest, ...(per && rest.cost ? { per } : {}) },
+        rest.cost ? rest.payable : undefined,
+      ),
+    );
+  return packages.length ? packages : null;
 }
 
 // ---------- Transit ----------
@@ -894,6 +962,7 @@ export interface TransitFormState {
   travelerIds: string[]; // empty = whole party
   seats: SeatAssignment[];
   booking: BookingFormValue;
+  packages: Package[];
 }
 
 // A Transit's optional carrier/flight text fields — one list for the form's
@@ -925,6 +994,7 @@ export function transitFormFrom(transit: Transit, source: BookingSource): Transi
     travelerIds: transit.travelers ?? [],
     seats: structuredClone(transit.seats ?? []),
     booking: bookingFormFor(source, transit.bookingId),
+    packages: structuredClone(transit.packages ?? []),
   };
 }
 
@@ -962,7 +1032,17 @@ export function applyTransitForm(transit: Transit, form: TransitFormState): stri
   if (seats.length) transit.seats = seats.map((s) => ({ ...s, seat: s.seat.trim() }));
   else delete transit.seats;
   transit.bookingId = bookingIdFromForm(form.booking);
+  setPackages(transit, form.packages);
   return null;
+}
+
+// A Transit's or Activity's packages are optional — dropped rather than
+// stored as null, so an entry without any doesn't grow an empty field.
+function setPackages(entity: Transit | Activity, rows: Package[]): void {
+  // A nightly rate only means something on a Stay, so it's never kept here.
+  const packages = packagesFromForm(rows)?.map(({ per: _per, ...pkg }) => pkg) ?? null;
+  if (packages) entity.packages = packages;
+  else delete entity.packages;
 }
 
 // An optional text field is dropped rather than stored as '' — the data only
@@ -1240,14 +1320,15 @@ export interface TripFormState {
   name: string;
   slug: string;
   summary: string;
+  pets: boolean;
 }
 
 export function blankTripForm(): TripFormState {
-  return { name: '', slug: '', summary: '' };
+  return { name: '', slug: '', summary: '', pets: false };
 }
 
 export function tripFormFrom(trip: Trip, slug: string): TripFormState {
-  return { name: trip.name, slug, summary: trip.summary ?? '' };
+  return { name: trip.name, slug, summary: trip.summary ?? '', pets: trip.pets ?? false };
 }
 
 export function applyTripForm(
@@ -1260,13 +1341,16 @@ export function applyTripForm(
   const slug = form.slug.trim();
   if (!slug) return 'Needs a slug.';
   if (existingSlugs.includes(slug)) return 'That slug is already used by another trip.';
+  const { pets: _pets, ...kept } = base ?? ({} as Partial<Trip>);
   const trip: Trip = {
+    travelers: [],
+    images: [],
+    ...kept,
     _id: base?._id ?? crypto.randomUUID(),
     name,
     summary: form.summary.trim() || null,
-    travelers: base?.travelers ?? [],
-    images: base?.images ?? [],
   };
+  if (form.pets) trip.pets = true;
   return { slug, trip };
 }
 

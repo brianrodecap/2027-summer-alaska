@@ -14,26 +14,29 @@
 // Pure: no React, no storage. Applying any of this still goes through a human review
 // in the assistant panel first.
 import { findEntity, ToolInputError } from './askAITools';
-import { EXTRACTABLE_DINING_FORMATS } from './documentImport';
 import {
   applyScenarioSave,
-  blankActivity,
   blankScenario,
-  decideMeal,
   nextRouteId,
-  optionFromDecided,
-  setMealOptions,
+  upsertById,
+  withTripTravelers,
 } from './editForms';
-import { MEAL_TYPES, NOTE_KINDS } from './formatting';
+import { NOTE_KINDS } from './formatting';
 import { isIsoDate } from './isoDate';
 import { fetchPlaceImages } from './places';
-import { DEFAULT_ROUTE_TONE } from './tripModel';
+import {
+  type ChangeProposal,
+  checkedChanges,
+  PROPOSAL_PROPERTIES,
+  type ProposedChanges,
+  proposedTravelerIds,
+  queueFromProposals,
+} from './proposals';
+import { dateOnly, DEFAULT_ROUTE_TONE, resolveActivityDate } from './tripModel';
 import type {
   Activity,
-  DiningFormat,
+  Booking,
   Image,
-  MealOption,
-  MealType,
   Note,
   NoteKind,
   Place,
@@ -44,81 +47,9 @@ import type {
   RoutePlaceKind,
   RouteVariant,
   Scenario,
+  Traveler,
   TripData,
 } from './types';
-
-// ---------- meal options ----------
-
-export interface ProposedMealOption {
-  placeLabel: string;
-  placeId?: string;
-  diningFormat?: DiningFormat;
-}
-
-export const MEAL_OPTIONS_SCHEMA = {
-  type: 'array',
-  description:
-    'For a meal that is still being decided between several places: one entry per candidate (two or more), in ' +
-    'order of preference. Never list alternatives in the text instead. In an edit, give the full list — include ' +
-    'the existing candidates that should stay. A single entry means the meal is decided on that place.',
-  items: {
-    type: 'object',
-    properties: {
-      placeLabel: { type: 'string', description: 'The restaurant or place name.' },
-      placeId: {
-        type: 'string',
-        description: 'Its Google place id, from search_places, get_day or get_entity.',
-      },
-      diningFormat: { type: 'string', enum: EXTRACTABLE_DINING_FORMATS },
-    },
-    required: ['placeLabel'],
-  },
-} as const;
-
-// Deliberately stricter than documentImport.ts's placesShare (any shared
-// distinctive word): the AI can look up a real place id, so a name-only match
-// must be exact — "Salmon Bake" and "Salmon Smokehouse" are two candidates.
-function sameCandidate(option: MealOption, proposed: ProposedMealOption): boolean {
-  if (proposed.placeId && option.place?.id) return proposed.placeId === option.place.id;
-  return option.place?.label.trim().toLowerCase() === proposed.placeLabel.trim().toLowerCase();
-}
-
-// Sets an activity's candidates. A candidate that matches one the meal already has
-// (by place id, else by name) keeps its id, booking and includedIn, so revising the
-// list never drops a reservation already made. Mutates `activity` (a fresh clone).
-export function applyMealOptions(activity: Activity, proposed: ProposedMealOption[]): void {
-  const existing: MealOption[] =
-    activity.options ?? (activity.place ? [optionFromDecided(activity)] : []);
-  const options = proposed.map((p): MealOption => {
-    const match = existing.find((o) => sameCandidate(o, p));
-    return {
-      _id: match?._id ?? crypto.randomUUID(),
-      diningFormat: p.diningFormat ?? match?.diningFormat ?? 'sit-down',
-      place: { ...match?.place, id: p.placeId ?? match?.place?.id ?? null, label: p.placeLabel },
-      includedIn: match?.includedIn ?? null,
-      bookingId: match?.bookingId ?? null,
-    };
-  });
-  // One candidate is a decision: the meal takes that place directly.
-  if (options.length === 1) decideMeal(activity, options[0]);
-  else setMealOptions(activity, options);
-}
-
-export function parseMealOptions(value: unknown): ProposedMealOption[] | undefined {
-  if (value === undefined) return undefined;
-  if (!Array.isArray(value) || !value.length) {
-    throw new ToolInputError('"mealOptions" must be a non-empty list.');
-  }
-  return value.map((o: Partial<ProposedMealOption>) => {
-    if (typeof o?.placeLabel !== 'string' || !o.placeLabel) {
-      throw new ToolInputError('Each meal option needs a placeLabel.');
-    }
-    if (o.diningFormat && !EXTRACTABLE_DINING_FORMATS.includes(o.diningFormat)) {
-      throw new ToolInputError(`Unsupported diningFormat ${o.diningFormat}.`);
-    }
-    return { placeLabel: o.placeLabel, placeId: o.placeId, diningFormat: o.diningFormat };
-  });
-}
 
 // ---------- place images ----------
 //
@@ -175,71 +106,55 @@ export function withPlaceImagesInData(
   return { ...data, activities: data.activities.map((a) => withPlaceImages(a, images)) };
 }
 
-// ---------- new activities ----------
+// ---------- batches of changes ----------
+//
+// A day plan and an alternative are lists of the same ChangeProposals a single
+// edit is (proposals.ts), so every entry in them is checked the same way, place
+// ids included, and drafted by the same code.
 
-// One brand-new activity the assistant wants added — the shape both a day plan's
-// 'add' op and an alternative's activities use.
-export interface NewActivitySpec {
-  text: string;
-  startAt: string;
-  durationMinutes?: number;
-  placeLabel?: string;
-  placeId?: string;
-  mealType?: MealType;
-  mealOptions?: ProposedMealOption[];
+// What a suggestion that no longer fits the trip says, naming its first problem.
+export function noLongerFits(errors: string[]): string {
+  return `The AI's suggestion no longer fits the trip: ${errors[0]}`;
 }
 
-export const NEW_ACTIVITY_PROPERTIES = {
-  text: { type: 'string', description: 'Short description.' },
-  startAt: { type: 'string', description: 'ISO 8601 local date-time, e.g. 2027-07-13T19:00.' },
-  durationMinutes: {
-    type: 'number',
-    description:
-      "Omit for a meal — its length is estimated from the candidate's diningFormat — unless a booking states one.",
-  },
-  placeLabel: { type: 'string', description: 'Plain text, never an id.' },
-  placeId: {
-    type: 'string',
-    description: 'A Google place id from get_day, get_entity or search_places.',
-  },
-  mealType: {
-    type: 'string',
-    enum: MEAL_TYPES,
-    description:
-      'Required whenever this activity is eating (a restaurant, cafe or snack stop), decided or not — ' +
-      'without it the entry shows as a plain activity instead of a meal.',
-  },
-  mealOptions: MEAL_OPTIONS_SCHEMA,
-} as const;
-
-export function buildNewActivity(
-  spec: NewActivitySpec,
-  legId: string,
-  scenarioId: string | null,
-): Activity {
-  const activity: Activity = {
-    ...blankActivity(legId, spec.startAt.slice(0, 10), scenarioId),
-    text: spec.text,
-    startAt: spec.startAt,
-    // `date` is only for entries with no real start time.
-    date: null,
-    durationMinutes: spec.durationMinutes ?? null,
-    place: spec.placeLabel ? { id: spec.placeId ?? null, label: spec.placeLabel } : null,
-    mealType: spec.mealType ?? null,
+// `data` with a batch of activity changes applied — checked again together
+// (proposals.ts's checkedChanges, since the trip may have changed since they
+// were proposed), drafted, and written with their bookings and the new
+// travelers they name — and the `removed` activity ids gone.
+export function applyBatch(
+  data: TripData,
+  changes: ChangeProposal[],
+  travelers: Traveler[] = [],
+  removed: ReadonlySet<string> = new Set(),
+): { data: TripData } | { error: string } {
+  // Only people the kept changes name join the trip; an unchecked item's don't.
+  const named = new Set(changes.flatMap((change) => [...proposedTravelerIds(change)]));
+  const checked = checkedChanges(changes, data, {
+    travelers: travelers.filter((t) => named.has(t.id)),
+  });
+  if ('errors' in checked) return { error: noLongerFits(checked.errors) };
+  const queued = queueFromProposals(checked.state);
+  // Removed last, so an activity both changed and removed stays removed.
+  const activities = queued
+    .reduce((list, q) => upsertById(list, q.entity as Activity), data.activities)
+    .filter((a) => !removed.has(a._id));
+  // The checked items may leave an activity's cover removed with the thing it
+  // covers kept; nothing may point at one that's gone.
+  const dangling = activities.find((a) => {
+    const ref = a.includedIn;
+    return ref && 'entity' in ref && ref.entity === 'activity' && removed.has(ref.id);
+  });
+  if (dangling) {
+    return {
+      error: `${dangling._id} is covered by an activity this plan removes; change or remove it too.`,
+    };
+  }
+  const bookings = queued
+    .flatMap((q) => q.bookings)
+    .reduce((list: Booking[], b) => upsertById(list, b), data.bookings);
+  return {
+    data: withTripTravelers({ ...data, activities, bookings }, checked.state.newTravelers),
   };
-  if (spec.mealOptions?.length) applyMealOptions(activity, spec.mealOptions);
-  return activity;
-}
-
-export function parseNewActivity(value: unknown): NewActivitySpec {
-  const spec = (value ?? {}) as NewActivitySpec;
-  if (typeof spec.text !== 'string' || !spec.text || typeof spec.startAt !== 'string') {
-    throw new ToolInputError('Each new activity needs text and startAt.');
-  }
-  if (spec.mealType && !MEAL_TYPES.includes(spec.mealType)) {
-    throw new ToolInputError(`Unknown mealType ${spec.mealType}.`);
-  }
-  return { ...spec, mealOptions: parseMealOptions(spec.mealOptions) };
 }
 
 // ---------- alternatives (scenarios) ----------
@@ -247,7 +162,7 @@ export function parseNewActivity(value: unknown): NewActivitySpec {
 // A new branch of a day. Either it joins an existing group of options as another
 // alternate (`siblingOf`), or — on a day with no options yet — it creates the group:
 // the entries in `idealEntityIds` become the ideal (planned) branch and the new
-// activities make up the alternate.
+// activities (`entries`, each one's fields) make up the alternate.
 export interface ProposedAlternative {
   date: string;
   legId: string;
@@ -258,7 +173,28 @@ export interface ProposedAlternative {
   idealLabel?: string;
   idealIcon?: string;
   idealEntityIds?: string[];
-  activities: NewActivitySpec[];
+  entries: ProposedChanges[];
+  // People add_traveler added this turn whom the entries name; they join the
+  // trip when it's applied.
+  newTravelers?: Traveler[];
+}
+
+// One of an alternative's activities as a new-entry proposal on its date, in
+// the branch `scenarioId` (none yet while it's only being checked).
+export function alternativeEntry(
+  proposal: ProposedAlternative,
+  changes: ProposedChanges,
+  legId: string,
+  scenarioId: string | null,
+): ChangeProposal {
+  return {
+    kind: 'activity',
+    legId,
+    date: proposal.date,
+    scenarioId,
+    changes,
+    why: proposal.summary,
+  };
 }
 
 export function parseAlternative(input: unknown): ProposedAlternative {
@@ -273,22 +209,40 @@ export function parseAlternative(input: unknown): ProposedAlternative {
       'Give siblingOf to add to an existing group of options, or idealLabel and idealEntityIds to start one.',
     );
   }
-  if (!Array.isArray(raw.activities) || !raw.activities.length) {
-    throw new ToolInputError('"activities" must list what happens in the alternative.');
+  if (!Array.isArray(raw.entries) || !raw.entries.length) {
+    throw new ToolInputError('"entries" must list what happens in the alternative.');
   }
-  return { ...raw, activities: raw.activities.map(parseNewActivity) };
+  return raw;
+}
+
+// The entries a new group's "as planned" option takes in must exist, on the
+// alternative's own date and leg — or null when they do (or it joins a group).
+export function idealEntityError(proposal: ProposedAlternative, data: TripData): string | null {
+  if (proposal.siblingOf) return null;
+  const ids = Array.isArray(proposal.idealEntityIds) ? proposal.idealEntityIds : [];
+  if (!ids.every((id) => typeof id === 'string')) return '"idealEntityIds" must list entry ids.';
+  const entries = [...data.activities, ...data.transits];
+  const elsewhere = ids.filter((id) => {
+    const e = entries.find((x) => x._id === id);
+    if (!e) return true;
+    const on = 'startAt' in e ? resolveActivityDate(e) : dateOnly(e.departsAt);
+    return e.legId !== proposal.legId || on !== proposal.date;
+  });
+  return elsewhere.length
+    ? `${elsewhere.join(', ')} isn't an activity or drive on ${proposal.date} in leg ${proposal.legId}; idealEntityIds are the entries already planned for that day.`
+    : null;
 }
 
 type AlternativeResult = { data: TripData } | { error: string };
 
-// Applies an alternative, adding only the activities whose indexes are in `keep`
+// Applies an alternative, adding only the entries whose indexes are in `keep`
 // (the ones the user left checked in review). Scenario saves go through
 // applyScenarioSave, the same write path the scenario dialogs use, so the
 // one-ideal-per-group rule holds.
 export function applyAlternative(
   proposal: ProposedAlternative,
   data: TripData,
-  keep: ReadonlySet<number> = new Set(proposal.activities.map((_, i) => i)),
+  keep: ReadonlySet<number> = new Set(proposal.entries.map((_, i) => i)),
 ): AlternativeResult {
   let next = data;
   const save = (scenario: Scenario): string | null => {
@@ -314,6 +268,8 @@ export function applyAlternative(
     alternate.followsScenarioId = sibling.followsScenarioId;
     alternate.parentScenarioId = sibling.parentScenarioId;
   } else {
+    const wrong = idealEntityError(proposal, data);
+    if (wrong) return { error: wrong };
     const ids = new Set(proposal.idealEntityIds);
     const taken = [...data.activities, ...data.transits].filter(
       (e) => ids.has(e._id) && e.scenarioId,
@@ -344,10 +300,13 @@ export function applyAlternative(
 
   const error = save(alternate);
   if (error) return { error };
-  const added = proposal.activities
-    .filter((_, i) => keep.has(i))
-    .map((spec) => buildNewActivity(spec, alternate.legId, alternate._id));
-  return { data: { ...next, activities: [...next.activities, ...added] } };
+  return applyBatch(
+    next,
+    proposal.entries
+      .filter((_, i) => keep.has(i))
+      .map((changes) => alternativeEntry(proposal, changes, alternate.legId, alternate._id)),
+    proposal.newTravelers,
+  );
 }
 
 export const PROPOSE_ALTERNATIVE_PROPERTIES = {
@@ -379,14 +338,11 @@ export const PROPOSE_ALTERNATIVE_PROPERTIES = {
     description:
       'Only when the day has no options yet: the ids of the existing activities/transits that only happen in the existing plan (they become its branch). Entries that happen either way stay out.',
   },
-  activities: {
+  entries: {
     type: 'array',
-    description: 'What happens in the new option.',
-    items: {
-      type: 'object',
-      properties: NEW_ACTIVITY_PROPERTIES,
-      required: ['text', 'startAt'],
-    },
+    description:
+      "What happens in the new option: each activity's fields, as in propose_edit's changes (startAt, text, place, mealType, mealOptions…).",
+    items: PROPOSAL_PROPERTIES.changes,
   },
 } as const;
 

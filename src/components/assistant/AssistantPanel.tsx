@@ -22,7 +22,7 @@ import {
   applyDayPlan,
   type AskAIMessage,
   type AskAIProposal,
-  describeDayPlanOp,
+  describeDayPlan,
   describeNewActivity,
   type ProposedEdit,
   resolveProposalDraft,
@@ -55,10 +55,11 @@ import { useChat } from './useChat';
 import { useFitToViewport } from './useFitToViewport';
 
 function proposalLabel(proposal: ProposedEdit, data: TripData): string {
-  if (!proposal.entityId) return proposal.summary;
-  const existing = findByKind(proposal.kind, proposal.entityId, data);
+  const { entityId, kind } = proposal.change;
+  if (!entityId || !kind) return proposal.summary;
+  const existing = findByKind(kind, entityId, data);
   if (!existing) return proposal.summary;
-  return `${proposal.summary} (${entityLabel(proposal.kind, existing)})`;
+  return `${proposal.summary} (${entityLabel(kind, existing)})`;
 }
 
 function Bubble({ role, children }: { role: AskAIMessage['role']; children: ReactNode }) {
@@ -195,7 +196,7 @@ function reviewSummary(proposal: AskAIProposal, data: TripData): ReviewSummary {
     case 'edit':
       return {
         title: proposalLabel(proposal.edit, data),
-        chip: proposal.edit.entityId ? 'Edit' : 'New',
+        chip: proposal.edit.change.entityId ? 'Edit' : 'New',
       };
     case 'note':
       return { title: proposal.note.summary, chip: noteChip(proposal.note) };
@@ -205,14 +206,11 @@ function reviewSummary(proposal: AskAIProposal, data: TripData): ReviewSummary {
         chip: proposal.route.routeId ? 'Edit route' : 'New route',
       };
     case 'dayPlan':
-      return {
-        title: proposal.plan.summary,
-        items: proposal.plan.ops.map((op) => describeDayPlanOp(op, data)),
-      };
+      return { title: proposal.plan.summary, items: describeDayPlan(proposal.plan, data) };
     case 'alternative':
       return {
         title: alternativeTitle(proposal.alternative, data),
-        items: proposal.alternative.activities.map(describeNewActivity),
+        items: proposal.alternative.entries.map(describeNewActivity),
       };
   }
 }
@@ -377,17 +375,18 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
     [data, reviewEdit, reviewRoute, openNoteEdit, openNoteDraftSequence],
   );
 
-  // Applies a batch with the checked items only. `apply` runs once against the current
+  // Applies a batch with the checked items only. It runs once against the current
   // trip to find the activities it adds or changes and look up their places' photos
   // (the item shows busy meanwhile), then again against the latest data — the trip may
-  // have changed during the lookup — with the photos filled in.
+  // have changed during the lookup — with the photos filled in. (Two runs, not
+  // three, and the photos are keyed by place id, so the new activities' fresh
+  // ids differ between runs harmlessly — a reviewed false positive.)
   const handleApply = useCallback(
     async (proposal: AskAIProposal, kept: ReadonlySet<number>) => {
       if (!data) return;
-      let apply: (prev: TripData) => TripData;
+      let run: (prev: TripData) => { data: TripData } | { error: string };
       if (proposal.type === 'dayPlan') {
-        const plan = { ...proposal.plan, ops: proposal.plan.ops.filter((_, i) => kept.has(i)) };
-        apply = (prev) => applyDayPlan(plan, prev);
+        run = (prev) => applyDayPlan(proposal.plan, prev, kept);
       } else if (proposal.type === 'alternative') {
         const alt = proposal.alternative;
         const withIcons = {
@@ -395,22 +394,32 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
           icon: knownIcon(alt.icon),
           idealIcon: knownIcon(alt.idealIcon),
         };
-        const check = applyAlternative(withIcons, data, kept);
-        if ('error' in check) {
-          setLocalError(check.error);
-          return;
-        }
-        apply = (prev) => {
-          const result = applyAlternative(withIcons, prev, kept);
-          return 'error' in result ? prev : result.data;
-        };
+        run = (prev) => applyAlternative(withIcons, prev, kept);
       } else {
         return;
       }
+      const check = run(data);
+      if ('error' in check) {
+        setLocalError(check.error);
+        return;
+      }
       setBusyId(proposal.id);
-      const images = await fetchMissingPlaceImages(changedActivities(data, apply(data)));
+      const images = await fetchMissingPlaceImages(changedActivities(data, check.data));
       setBusyId(null);
-      setData((prev) => withPlaceImagesInData(apply(prev), images), 'ai-chat');
+      // setData runs the updater synchronously, so a failure is known right after.
+      let failure: string | null = null;
+      const ran = setData((prev) => {
+        const result = run(prev);
+        if ('error' in result) {
+          failure = result.error;
+          return prev;
+        }
+        return withPlaceImagesInData(result.data, images);
+      }, 'ai-chat');
+      if (failure || !ran) {
+        setLocalError(failure ?? "The trip isn't loaded, so nothing was applied.");
+        return;
+      }
       markApplied(proposal.id);
     },
     [data, setData, markApplied],

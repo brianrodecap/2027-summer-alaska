@@ -8,10 +8,29 @@ import type { ReactNode } from 'react';
 
 import { bookingCost } from '../../model/bookings';
 import { formatMoney } from '../../model/tripModel';
-import type { BudgetRow, BudgetTotals } from '../../model/types';
+import type { BudgetRow, BudgetTotals, Money } from '../../model/types';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { BUDGET_BUCKET_ICON, BUDGET_BUCKET_LABEL } from './budgetLabels';
 import { BudgetStats } from './BudgetStats';
+
+// A row whose lines sit in different buckets (a room paid now, its fees
+// due at the property) says how much is in each, rather than one label.
+function bucketSummary(row: BudgetRow): string {
+  // Summed per currency too, so a fee in another currency isn't read as dollars.
+  const sums = new Map<string, { bucket: BudgetRow['bucket']; money: Money }>();
+  for (const { bucket, amount } of row.lines) {
+    const key = `${bucket}/${amount.currency}`;
+    const sum = sums.get(key) ?? { bucket, money: { amount: 0, currency: amount.currency } };
+    sum.money.amount += amount.amount;
+    sums.set(key, sum);
+  }
+  if (new Set([...sums.values()].map((s) => s.bucket)).size < 2) {
+    return BUDGET_BUCKET_LABEL[row.bucket];
+  }
+  return [...sums.values()]
+    .map(({ bucket, money }) => `${BUDGET_BUCKET_LABEL[bucket]} ${formatMoney(money)}`)
+    .join(' · ');
+}
 
 function BudgetRowItem({ row }: { row: BudgetRow }) {
   const amount =
@@ -27,7 +46,7 @@ function BudgetRowItem({ row }: { row: BudgetRow }) {
       <ListItemIcon sx={{ minWidth: 36 }}>
         {renderMaterialIcon(BUDGET_BUCKET_ICON[row.bucket], { fontSize: 'small' })}
       </ListItemIcon>
-      <ListItemText primary={row.label} secondary={BUDGET_BUCKET_LABEL[row.bucket]} />
+      <ListItemText primary={row.label} secondary={bucketSummary(row)} />
     </ListItem>
   );
 }

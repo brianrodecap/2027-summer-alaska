@@ -1,7 +1,7 @@
 // Merging two Trip.travelers entries that turn out to be one person — most
-// often a traveler a document import added (see documentImport.ts's
-// withDocumentTravelers) because the document spelled an existing traveler's
-// name differently. Pure, like tripModel.ts: the caller commits the result
+// often a traveler an import or the trip chat added (see proposals.ts's
+// addTraveler) because a document spelled an existing traveler's name
+// differently. Pure, like tripModel.ts: the caller commits the result
 // through TripDataContext's setData, so the merge is one undoable change.
 //
 // A traveler id is referenced from five places — TRAVELER_SLOTS below, which
@@ -9,6 +9,7 @@
 // without also being repointed, or the reverse.
 
 import { bookingFares } from './bookings';
+import { allPackages, mapPackages } from './packages';
 import type { PassengerFare, SeatAssignment, Traveler, TripData } from './types';
 
 type TravelerData = Pick<TripData, 'trip' | 'transits' | 'activities' | 'stays' | 'bookings'>;
@@ -60,18 +61,13 @@ const TRAVELER_SLOTS: Record<keyof TravelerUsage, TravelerSlot> = {
     }),
   },
   packages: {
-    count: (data, id) =>
-      data.stays.flatMap((s) => s.packages ?? []).filter((p) => named(p.travelers, id)).length,
-    repoint: (data, ids) => ({
-      ...data,
-      stays: data.stays.map((s) => {
-        if (!s.packages?.some((p) => named(p.travelers, ids.mergeId))) return s;
-        return {
-          ...s,
-          packages: s.packages.map((p) => ({ ...p, travelers: repointList(p.travelers, ids) })),
-        };
-      }),
-    }),
+    count: (data, id) => allPackages(data).filter((p) => named(p.travelers, id)).length,
+    repoint: (data, ids) =>
+      mapPackages(data, (packages) =>
+        packages.some((p) => named(p.travelers, ids.mergeId))
+          ? packages.map((p) => ({ ...p, travelers: repointList(p.travelers, ids) }))
+          : packages,
+      ),
   },
   seats: {
     count: (data, id) =>
@@ -147,19 +143,27 @@ function repointList(list: string[] | null, { keepId, mergeId }: MergeIds): stri
     : list;
 }
 
-// Folds `mergeId`'s entry into `keepId`'s in a per-traveler list (seats on
-// one flight, fares on one booking), resolving a clash when both have one.
+// Folds `mergeId`'s entries into `keepId`'s in a per-traveler list (seats on
+// one flight, fares on one booking). A traveler with no entry takes over the
+// merged one's. When both have exactly one (a seat), `resolve` decides what
+// the merged entry adds. When either has several (a fare's deposit and its
+// balance), the kept traveler's entries all stand and the merged one's all go,
+// whichever of them has the several: the duplicate's fares were the mistake
+// (resolveFareConflict), so the booking's total drops by them.
 function combine<E extends { travelerId: string }>(
   entries: E[],
   { keepId, mergeId }: MergeIds,
   resolve: (kept: E, merged: E) => E,
 ): E[] {
-  const theirs = entries.find((e) => e.travelerId === mergeId);
-  if (!theirs) return entries;
-  const ours = entries.find((e) => e.travelerId === keepId);
+  const theirs = entries.filter((e) => e.travelerId === mergeId);
+  if (theirs.length === 0) return entries;
+  const ours = entries.filter((e) => e.travelerId === keepId);
+  // A clash is resolved only for a single entry each; with several, the kept
+  // traveler's all stand as they are, whatever order the list is in.
+  const pair = ours.length === 1 && theirs.length === 1;
   return entries.flatMap((e) => {
-    if (e === theirs) return ours ? [] : [{ ...theirs, travelerId: keepId }];
-    if (e === ours) return [resolve(ours, theirs)];
+    if (e.travelerId === mergeId) return ours.length ? [] : [{ ...e, travelerId: keepId }];
+    if (pair && e === ours[0]) return [resolve(e, theirs[0])];
     return [e];
   });
 }

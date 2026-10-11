@@ -6,6 +6,7 @@ import type { TransitFormState } from '../../model/editForms';
 import type { Route, Traveler } from '../../model/types';
 import { BookingFields } from './BookingFields';
 import { DateTimeFieldPair } from './DateTimeFieldPair';
+import { PackagesField } from './PackagesField';
 import { TransitEndpointFields } from './StayTransitFields';
 import { TransitRouteFields } from './TransitRouteFields';
 import { TransitTravelFields } from './TransitTravelFields';
@@ -55,6 +56,11 @@ export function TransitEditForm({
       <TransitTravelFields form={form} onChange={onChange} tripTravelers={tripTravelers} />
       <Divider />
       <BookingFields value={form.booking} onChange={(booking) => onChange({ ...form, booking })} />
+      <Divider />
+      <PackagesField
+        packages={form.packages}
+        onChange={(packages) => onChange({ ...form, packages })}
+      />
     </Stack>
   );
 }

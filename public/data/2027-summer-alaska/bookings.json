@@ -7,37 +7,87 @@
         {
           "travelerId": "trav_brian",
           "fare": {
-            "amount": 3319,
+            "amount": 49.5,
             "currency": "USD"
+          },
+          "payable": {
+            "paidAt": "2026-08-06"
+          }
+        },
+        {
+          "travelerId": "trav_brian",
+          "fare": {
+            "amount": 3269.5,
+            "currency": "USD"
+          },
+          "payable": {
+            "dueBy": "2027-04-18"
           }
         },
         {
           "travelerId": "trav_stacy",
           "fare": {
-            "amount": 3319,
+            "amount": 49.5,
             "currency": "USD"
+          },
+          "payable": {
+            "paidAt": "2026-08-06"
+          }
+        },
+        {
+          "travelerId": "trav_stacy",
+          "fare": {
+            "amount": 3269.5,
+            "currency": "USD"
+          },
+          "payable": {
+            "dueBy": "2027-04-18"
           }
         },
         {
           "travelerId": "trav_lorelei",
           "fare": {
-            "amount": 1349,
+            "amount": 49.5,
             "currency": "USD"
+          },
+          "payable": {
+            "paidAt": "2026-08-06"
+          }
+        },
+        {
+          "travelerId": "trav_lorelei",
+          "fare": {
+            "amount": 1299.5,
+            "currency": "USD"
+          },
+          "payable": {
+            "dueBy": "2027-04-18"
           }
         },
         {
           "travelerId": "trav_redding",
           "fare": {
-            "amount": 1349,
+            "amount": 49.5,
             "currency": "USD"
+          },
+          "payable": {
+            "paidAt": "2026-08-06"
+          }
+        },
+        {
+          "travelerId": "trav_redding",
+          "fare": {
+            "amount": 1299.5,
+            "currency": "USD"
+          },
+          "payable": {
+            "dueBy": "2027-04-18"
           }
         }
       ],
       "fixed": []
     },
-    "confirmationNumber": "MWVV6Q",
-    "depositPaidAt": "2026-08-06",
-    "finalPaymentDueAt": "2027-04-18"
+    "confirmationNumber": "MWVV6Q"
   },
   {
     "_id": "booking_stay_coldfoot",

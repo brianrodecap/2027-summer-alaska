@@ -705,6 +705,7 @@
   name: 'Alaska National Parks Vacation + Cruise',
   summary: 'A road-and-fly trip through interior and Arctic Alaska — Denali, …',
   travelers: [ { id: 'trav_brian', name: 'Brian Rodecap', age: 51 } ],
+  pets: undefined,        // optional: true when the party brings pets
   images: [],             // hero image, per Guiding principle 06
 }</code></pre>
         <ul class="rationale">
@@ -753,6 +754,11 @@
             <strong><code>summary</code> is optional</strong>, one paragraph, rendered as-is on the
             trip's Overview tab — added once a second trip made it clear this couldn't stay
             hardcoded page copy.
+          </li>
+          <li>
+            <strong><code>pets</code> is optional</strong>, absent meaning no. It's a fact about the
+            whole party, so it lives on Trip rather than on each booking: document import reads a
+            booking's pet ban or pet fee as relevant only when it's set.
           </li>
         </ul>
       </article>
@@ -886,14 +892,37 @@
                                  // cabin's standard, non-Premier fare
     },
   ],
+  portCalls: [                   // PortCall[] — a cruise cabin's stops between
+    { kind: 'scenic',            // embarking (checkInAt) and disembarking
+      place: { id: 'ChIJg_jo6m9VrFYRPcarxgmpnks', label: 'Hubbard Glacier' },
+      arrivesAt: '2027-07-18T15:00', departsAt: '2027-07-18T20:00' },
+    { kind: 'port',              // (checkOutAt); omitted on any other stay
+      place: { id: 'ChIJ5VsxfHjfAFQR_2_Vuu0fQpc', label: 'Juneau' },
+      arrivesAt: '2027-07-21T06:30', departsAt: '2027-07-21T16:15' },
+    // … one per stop
+  ],
   images: [],
 }</code></pre>
-        <p class="schema-label">The Package shape, used by Stay.packages</p>
+        <p class="schema-label">The PortCall shape, used by Stay.portCalls</p>
+        <pre class="schema"><code>type PortCall = {
+  kind: 'port' | 'scenic',  // 'port': guests go ashore; 'scenic': the ship
+                              // cruises past (a glacier) and nobody leaves it
+  place: Place,
+  arrivesAt: string | null,   // local date-time; null when not printed
+  departsAt: string | null,   // all aboard — the end of the time ashore
+}
+// Derived, never stored: the day header shows each day's stop, and an
+// activity ashore (one at a resolved place other than the stop itself) that
+// starts before arrival or ends after all aboard — or any on a scenic day —
+// gets a warning on its row.</code></pre>
+        <p class="schema-label">
+          The Package shape, used by Stay.packages, Transit.packages and Activity.packages
+        </p>
         <pre class="schema"><code>type Package = {
   _id: string,
   name: string,                                 // 'Princess Premier', 'Kennicott
                                                    // Glacier Lodge meal package'
-  status: 'planning' | 'booked' | 'cancelled',  // same ladder as Booking.status
+  status: 'planning' | 'requested' | 'booked' | 'cancelled',  // as Booking.status
   cost: { amount, currency } | null,
   confirmationNumber: string | null,
   benefits: string[] | null,   // itemized perks, e.g. one line per inclusion —
@@ -908,6 +937,11 @@
                                  // 4 travelers) means every other traveler is
                                  // on the Stay's own standard, non-package
                                  // inclusions instead
+  payable?: Payable,           // when it's paid, if not when booked — see Booking
+  per?: 'night',               // on a Stay: cost is a nightly rate (parking
+                                 // per day) and the total is cost × the Stay's
+                                 // nights, computed so it follows the Stay's
+                                 // dates; absent means charged once
 }</code></pre>
         <p class="schema-label">Still open — nowhere chosen yet</p>
         <pre class="schema"><code>{
@@ -1336,7 +1370,10 @@
         </div>
         <pre class="schema"><code>{
   _id: 'booking_scycup',
-  status: 'booked',                  // planning | booked | cancelled
+  status: 'booked',                  // planning | requested | booked | cancelled —
+                                     // requested: the seller has the order but
+                                     // hasn't confirmed it ("booking request
+                                     // received"); its money counts as Pending
   confirmationNumber: 'SCYCUP',
   pricing: {                         // null when unpriced; otherwise both parts,
     perTraveler: [                   // either of which may be empty:
@@ -1349,9 +1386,11 @@
     fixed: [],                       // charges that don't change with headcount, e.g.
                                      //   { label: 'Room (1 night)', amount: Money }
   },                                 // total ($1,520.76) = fares + fixed, never stored
+                                     // Each fare and fixed charge may carry
+                                     //   payable?: 'atProperty' | { dueBy: 'YYYY-MM-DD' }
+                                     //           | { paidAt: 'YYYY-MM-DD' }
+                                     // — absent means paid when booked
   bookedThrough: undefined,          // optional: string | { name, confirmationNumber }
-  depositPaidAt: undefined,          // optional: a payment schedule, when the
-  finalPaymentDueAt: undefined,      // booking has one (the cruise fare does)
 }
 // Both flights of that round trip point at it:
 // transit_flight_anc_otz.bookingId === transit_flight_otz_anc.bookingId === 'booking_scycup'</code></pre>
@@ -1393,9 +1432,25 @@
             booking still referenced by another entity (the other flight) is kept.
           </li>
           <li>
-            <strong>Stay.packages are not Bookings.</strong> A Package (a resort fee, a meal plan)
-            is a line item inside one Stay with its own status and cost, not a reservation other
-            entities could share, so it keeps its own fields.
+            <strong>Packages are not Bookings.</strong> A Package (a resort fee, a meal plan, a
+            tour's included shuttle) is a line item inside one Stay, Transit or Activity with its
+            own status and cost, not a reservation other entities could share, so it keeps its own
+            fields. Transits and Activities gained <code>packages</code> once a tour confirmation
+            (Rust's Flying Service: window seat and headset, a shuttle from ANC and hotels) listed
+            inclusions with nowhere to go but free text.
+          </li>
+          <li>
+            <strong>Each price line says when it's paid.</strong> A fare, fixed charge or Package
+            may carry <code>payable</code>: <code>'atProperty'</code> (Denali Cabins' resort fee and
+            city tax are due at check-in) <code>{ dueBy }</code> (a balance owed before a date), or
+            <code>{ paidAt }</code> (a payment already made on that date). Absent means paid when
+            booked with no date worth recording — the common case. The budget reads it per line: a
+            booked line is Pending until its property day or due date arrives, then Spent. A
+            booking's final payment is its last line's <code>dueBy</code>; a deposit plus balance is
+            two lines for the same traveler — the deposit <code>{ paidAt }</code>, the balance
+            <code>{ dueBy }</code> — still shown as that traveler's one fare. (The cruise's $198
+            deposit, paid 2026-08-06, is split evenly across its four fares; the document doesn't
+            say who it covers.)
           </li>
         </ul>
       </article>
@@ -1617,6 +1672,12 @@
             way a Place gets one at all. It's independent of whatever <code>images</code> an
             Activity or Stay that references this Place carries on itself — a restaurant's
             storefront photo and a specific dish photo for a meal there are different pictures.
+          </li>
+          <li>
+            <strong>onboard</strong> (optional) — a venue aboard a cruise ship that nonetheless has
+            a real <code>id</code>. Such a place is never ashore, so the port-call warnings (before
+            arrival, after all aboard, scenic cruising) skip it. Set per occurrence, like
+            <code>showWeather</code>.
           </li>
           <li>
             <strong>id can be null</strong> — the same allowance

@@ -114,6 +114,26 @@ describe('mergeTravelers', () => {
     });
   });
 
+  it('repoints every fare line of the merged traveler, such as a deposit and a balance', () => {
+    const before = tripWithDuplicate();
+    const money = (amount: number) => ({ amount, currency: 'USD' });
+    before.bookings[0] = {
+      ...before.bookings[0],
+      pricing: {
+        perTraveler: [
+          { travelerId: 't_guest', fare: money(100), payable: { paidAt: '2027-01-01' } },
+          { travelerId: 't_guest', fare: money(400), payable: { dueBy: '2027-05-01' } },
+        ],
+        fixed: [],
+      },
+    };
+    const after = mergeTravelers(before, 't_pat', 't_guest');
+    expect(after.bookings[0].pricing?.perTraveler.map((f) => f.travelerId)).toEqual([
+      't_pat',
+      't_pat',
+    ]);
+  });
+
   it('keeps the kept traveler’s seat when both had one on the same flight', () => {
     const after = mergeTravelers(tripWithDuplicate(), 't_pat', 't_guest');
     expect(after.transits[1].travelers).toEqual(['t_pat']);
@@ -130,5 +150,28 @@ describe('mergeTravelers', () => {
     const before = tripWithDuplicate();
     expect(mergeTravelers(before, 't_pat', 't_nobody')).toBe(before);
     expect(mergeTravelers(before, 't_pat', 't_pat')).toBe(before);
+  });
+});
+
+describe('mergeTravelers: packages beyond stays', () => {
+  it('repoints a traveler named on a flight package', () => {
+    const before = tripWithDuplicate();
+    before.transits[0] = {
+      ...before.transits[0],
+      packages: [
+        {
+          _id: 'pkg_flight',
+          name: 'Lounge pass',
+          status: 'booked',
+          cost: null,
+          confirmationNumber: null,
+          benefits: null,
+          travelers: ['t_guest'],
+        },
+      ],
+    };
+    expect(travelerUsage(before, 't_guest').packages).toBeGreaterThan(0);
+    const after = mergeTravelers(before, 't_pat', 't_guest');
+    expect(after.transits[0].packages?.[0].travelers).toEqual(['t_pat']);
   });
 });

@@ -9,27 +9,18 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
+import FormControlLabel from '@mui/material/FormControlLabel';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Stack from '@mui/material/Stack';
+import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 import { getStoredApiKey, setStoredApiKey } from '../../config/aiKey';
-import {
-  bookingWarnings,
-  dateRangeFromExtractedEntities,
-  type DocumentExtraction,
-  draftTripEntities,
-  type ExtractedFields,
-  extractTripEntitiesFromDocument,
-  importErrorMessage,
-  type StagedTripEntities,
-  travelerNamesIn,
-  withDocumentTravelers,
-} from '../../model/documentImport';
+import { DOCUMENT_ACCEPT, importErrorMessage } from '../../model/documentImport';
 import {
   applyLegForm,
   applyTripForm,
@@ -40,23 +31,36 @@ import {
   type LegFormState,
   tripFormFrom,
 } from '../../model/editForms';
+import {
+  draftTripData,
+  importByProposals,
+  type ProposalImport,
+  stagedFromProposals,
+  type StagedTripEntities,
+} from '../../model/proposalImport';
 import { slugify } from '../../model/slug';
-import { todayDateStr } from '../../model/tripModel';
+import { buildTripView } from '../../model/tripModel';
 import type { Leg, Trip } from '../../model/types';
 import { LegFormFields } from '../legs/LegFormFields';
 import { ApiKeyField } from '../shared/ApiKeyField';
 
-function summarizeExtraction(entities: ExtractedFields[]): string {
-  const counts = new Map<string, number>();
-  for (const e of entities) counts.set(e.kind, (counts.get(e.kind) ?? 0) + 1);
+function summarizeImport(result: ProposalImport): string {
+  const counts = new Map<EditKind, number>();
+  for (const { kind } of result.queue) counts.set(kind, (counts.get(kind) ?? 0) + 1);
   return [...counts.entries()]
-    .map(([kind, n]) => `${n} ${EDIT_KIND_LABEL[kind as EditKind]}${n > 1 ? 's' : ''}`)
+    .map(([kind, n]) => `${n} ${EDIT_KIND_LABEL[kind]}${n > 1 ? 's' : ''}`)
     .join(', ');
 }
 
 type ImportStatus = 'idle' | 'loading' | 'error' | 'success';
 
-const EMPTY_STAGED: StagedTripEntities = { activities: [], stays: [], transits: [], bookings: [] };
+const EMPTY_STAGED: StagedTripEntities = {
+  activities: [],
+  stays: [],
+  transits: [],
+  bookings: [],
+  notes: [],
+};
 
 // The trips list's own Add/Edit trip — mirrors EditDialog/RouteEditDialog's
 // Save/Cancel shape, but (like RouteEditDialog) stands apart from
@@ -75,13 +79,11 @@ const EMPTY_STAGED: StagedTripEntities = { activities: [], stays: [], transits: 
 // pointing at it, staged or otherwise — it just reuses the trip's own name.
 //
 // Add trip also offers starting from a document (a cruise or round-trip
-// flight confirmation) instead of a blank form — extractTripEntitiesFromDocument
-// (documentImport.ts) reads the whole document at once rather than one entity
-// at a time like the day list's own "From a document…" does, since here the
-// document itself is what determines the trip's shape: its suggested name
-// seeds Name, and every entity it found rides along to be created alongside
-// the trip on Save, anchored to whichever date the document's own entries
-// span (dateRangeFromExtractedEntities) for any that only got a fuzzy time.
+// flight confirmation) instead of a blank form: the same proposals import as
+// the assistant's (proposalImport.ts), read against an empty draft of the
+// new trip. Its suggested name and summary seed the form, the travelers it
+// names join the trip, and every entry it proposes (with its notes) is
+// created alongside the trip on Save.
 export function TripEditDialog({
   trip,
   slug,
@@ -126,25 +128,11 @@ export function TripEditDialog({
   const [apiKey, setApiKey] = useState(() => getStoredApiKey() ?? '');
   const [importStatus, setImportStatus] = useState<ImportStatus>('idle');
   const [importError, setImportError] = useState<string | null>(null);
-  const [imported, setImported] = useState<DocumentExtraction | null>(null);
-  // Pricing problems draftTripEntities can't fix on its own (fares that don't
-  // add up), shown before Save rather than dropped. Names the trip doesn't
-  // have yet aren't a problem: they become its travelers (see handleSave).
-  const importWarnings = useMemo(
-    () =>
-      imported
-        ? bookingWarnings(
-            imported,
-            withDocumentTravelers(travelerNamesIn(imported), trip?.travelers ?? []).travelers,
-          )
-        : [],
-    [imported, trip],
-  );
+  const [imported, setImported] = useState<ProposalImport | null>(null);
 
   // The slug is never hand-typed — it's derived from the name (public/data/
-  // directory name and #/<slug> route both follow from it), same as
-  // draftEntityFromExtraction leaves place resolution to a human but never
-  // asks one to type an id. Renaming an existing trip's name here recomputes
+  // directory name and #/<slug> route both follow from it) — nobody is asked
+  // to type an id. Renaming an existing trip's name here recomputes
   // its slug too — handleSave below treats that as a move (exportTripRename).
   const handleNameChange = (name: string) => {
     setForm((prev) => ({ ...prev, name, slug: slugify(name, existingSlugs) }));
@@ -156,7 +144,12 @@ export function TripEditDialog({
     setImportError(null);
     try {
       setStoredApiKey(apiKey.trim());
-      const result = await extractTripEntitiesFromDocument(file, apiKey.trim());
+      // A new trip has nothing on it yet; the document is read against an
+      // empty draft of it — the travelers entered so far and the pets setting.
+      const draft = draftTripData(trip?.travelers ?? [], form.pets);
+      const result = await importByProposals(file, apiKey.trim(), draft, buildTripView(draft), {
+        newTrip: true,
+      });
       if (!form.name.trim() && result.tripName) handleNameChange(result.tripName);
       setForm((prev) =>
         prev.summary.trim() ? prev : { ...prev, summary: result.tripSummary ?? prev.summary },
@@ -185,22 +178,13 @@ export function TripEditDialog({
       return;
     }
     // Everyone the document names joins the new trip's travelers, so their
-    // seats, fares and flights carry over (see withDocumentTravelers).
+    // seats and fares carry over (add_traveler, in proposalImport.ts). No
+    // de-duplication needed (a reviewed false positive): a new trip's form has
+    // no travelers of its own, and add_traveler refuses a name already added.
     const newTrip = imported
-      ? {
-          ...result.trip,
-          travelers: withDocumentTravelers(travelerNamesIn(imported), result.trip.travelers)
-            .travelers,
-        }
+      ? { ...result.trip, travelers: [...result.trip.travelers, ...imported.newTravelers] }
       : result.trip;
-    const staged = imported
-      ? draftTripEntities(
-          imported,
-          legResult.leg._id,
-          dateRangeFromExtractedEntities(imported.entities)?.startDate ?? todayDateStr(),
-          newTrip.travelers,
-        )
-      : EMPTY_STAGED;
+    const staged = imported ? stagedFromProposals(imported, legResult.leg._id) : EMPTY_STAGED;
     onSave(result.slug, newTrip, [legResult.leg], staged);
   };
 
@@ -238,7 +222,7 @@ export function TripEditDialog({
                 <input
                   type="file"
                   hidden
-                  accept=".pdf,image/*"
+                  accept={DOCUMENT_ACCEPT}
                   onChange={(e) => {
                     setFile(e.target.files?.[0] ?? null);
                     setImportStatus('idle');
@@ -254,21 +238,15 @@ export function TripEditDialog({
                   disabled={!file || !apiKey.trim() || importStatus === 'loading'}
                   sx={{ alignSelf: 'flex-start' }}
                 >
-                  {importStatus === 'loading' ? <CircularProgress size={20} /> : 'Extract'}
+                  {importStatus === 'loading' ? <CircularProgress size={20} /> : 'Read it'}
                 </Button>
               )}
               {importStatus === 'success' && imported && (
                 <Alert severity="success">
-                  Detected {summarizeExtraction(imported.entities)} — Name is filled in above, and
-                  these entries ride along on Save. Review everything before saving.
+                  Detected {summarizeImport(imported)} — Name is filled in above, and these entries
+                  ride along on Save. Review everything before saving.
                 </Alert>
               )}
-              {importStatus === 'success' &&
-                importWarnings.map((note, i) => (
-                  <Alert key={i} severity={note.kind === 'warning' ? 'warning' : 'info'}>
-                    {note.text}
-                  </Alert>
-                ))}
             </Stack>
             <Divider sx={{ mt: 3 }} />
           </Box>
@@ -294,6 +272,30 @@ export function TripEditDialog({
             minRows={2}
             fullWidth
           />
+          <Box>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={form.pets}
+                  // A read in flight would finish after the reset and overwrite it.
+                  disabled={importStatus === 'loading'}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, pets: e.target.checked }));
+                    // The document was read against the old setting, so it is read again.
+                    if (imported) {
+                      setImported(null);
+                      setImportStatus('idle');
+                    }
+                  }}
+                />
+              }
+              label="Traveling with pets"
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+              Imported bookings flag pet bans and fees only when this is on. Changing it after
+              importing clears the import.
+            </Typography>
+          </Box>
         </Stack>
         {!isNew && (
           <Box sx={{ mt: 3 }}>

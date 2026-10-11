@@ -14,8 +14,8 @@ export interface DraftReview {
   // import's new booking, an AI-proposed one) — the review form opens on
   // these, layered over the trip's saved bookings, and Save commits them.
   bookings?: Booking[];
-  // People the draft names whom the trip doesn't have yet (see
-  // documentImport.ts's withDocumentTravelers) — offered in the review form's
+  // People the draft names whom the trip doesn't have yet (see proposals.ts's
+  // addTraveler) — offered in the review form's
   // traveler lists, and added to the trip when this draft is saved.
   travelers?: Traveler[];
   overrideId?: string;
@@ -54,7 +54,7 @@ export interface EditContextValue {
   // the same flat EditDialog openFromDraft uses — the document-import
   // flow's own way of following up a primary Stay with sibling entities its
   // own document also implied (a bundled lodge shuttle's two Transit legs,
-  // see documentImport.ts's draftIncludedTransfers) without cramming them
+  // see proposals.ts, which proposes a bundled shuttle's legs as their own entries) without cramming them
   // all into one dialog. Each item can carry its own `onSaved`, so e.g. only
   // the primary Stay's own save needs to chain into its noteworthy Notes.
   // Cancelling any step abandons the rest of the queue rather than skipping

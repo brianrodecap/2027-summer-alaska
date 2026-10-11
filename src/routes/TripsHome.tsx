@@ -19,9 +19,9 @@ import { BookingProgressBar } from '../components/shared/BookingProgressBar';
 import { SettingsButton } from '../components/shared/SettingsButton';
 import { Wordmark } from '../components/shared/Wordmark';
 import { TripEditDialog } from '../components/trips/TripEditDialog';
-import type { StagedTripEntities } from '../model/documentImport';
 import { exportNewTrip, exportTripEdit, exportTripRename } from '../model/exportEdits';
 import { firstImage } from '../model/formatting';
+import type { StagedTripEntities } from '../model/proposalImport';
 import {
   formatTripDateChip,
   loadTripsIndex,
