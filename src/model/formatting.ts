@@ -111,6 +111,25 @@ export function stayDetailBits(lodging: Lodging | null | undefined): string[] {
   ].filter((bit): bit is string => Boolean(bit));
 }
 
+// The lodging fields the day row leaves out, for the detail sheet beside
+// stayDetailBits: "Upper deck · Mid-Forward · Party of 4 · Tent · 1 vehicle".
+export function lodgingExtraBits(lodging: Lodging | null | undefined): string[] {
+  if (!lodging) return [];
+  const { deckGroup, shipZone, partySize, equipment, vehicleCount } = lodging;
+  return [
+    deckGroup && `${deckGroup} deck`,
+    shipZone,
+    partySize != null && `Party of ${partySize}`,
+    equipment,
+    vehicleCount != null && countLabel(vehicleCount, 'vehicle'),
+  ].filter((bit): bit is string => Boolean(bit));
+}
+
+// "1 night", "7 nights".
+export function countLabel(count: number, singular: string): string {
+  return `${count} ${count === 1 ? singular : `${singular}s`}`;
+}
+
 // ---------- dining-format / meal-slot vocabulary ----------
 
 export const DINING_FORMAT_LABEL: Record<DiningFormat, string> = {

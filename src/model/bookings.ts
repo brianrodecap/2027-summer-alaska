@@ -41,7 +41,7 @@ export function bookingOf(
 }
 
 // Sums Money values to the cent, in the first one's currency. null for none.
-function sumMoney(amounts: Money[]): Money | null {
+export function sumMoney(amounts: Money[]): Money | null {
   if (!amounts.length) return null;
   const cents = amounts.reduce((sum, m) => sum + Math.round(m.amount * 100), 0);
   return { amount: cents / 100, currency: amounts[0].currency };
@@ -74,6 +74,26 @@ export function bookingFares(booking: Booking | null | undefined): PassengerFare
   return fares?.length ? fares : null;
 }
 
+export interface TravelerPrice {
+  travelerId: string;
+  ticketNumber?: string;
+  lines: { amount: Money; payable?: Payable }[];
+}
+
+// One entry per traveler, each with every payment line of their fare (a
+// deposit paid, the balance due), in the order the booking lists them; the
+// ticket number is whichever line carries one.
+export function travelerPrices(booking: Booking | null | undefined): TravelerPrice[] {
+  const byTraveler = new Map<string, TravelerPrice>();
+  for (const f of booking?.pricing?.perTraveler ?? []) {
+    const entry = byTraveler.get(f.travelerId) ?? { travelerId: f.travelerId, lines: [] };
+    entry.lines.push({ amount: f.fare, payable: f.payable });
+    entry.ticketNumber ??= f.ticketNumber;
+    byTraveler.set(f.travelerId, entry);
+  }
+  return [...byTraveler.values()];
+}
+
 // One fare per traveler: a fare split into payment lines (a deposit paid, the
 // balance due by a date) is still that traveler's one fare. Summed in the
 // first line's currency like bookingCost: a booking is priced in one currency
@@ -81,14 +101,10 @@ export function bookingFares(booking: Booking | null | undefined): PassengerFare
 export function faresByTraveler(
   booking: Booking | null | undefined,
 ): { travelerId: string; fare: Money; ticketNumber?: string }[] {
-  const lines = new Map<string, PassengerFare[]>();
-  for (const f of booking?.pricing?.perTraveler ?? []) {
-    lines.set(f.travelerId, [...(lines.get(f.travelerId) ?? []), f]);
-  }
-  return [...lines].map(([travelerId, own]) => ({
+  return travelerPrices(booking).map(({ travelerId, ticketNumber, lines }) => ({
     travelerId,
-    fare: sumMoney(own.map((f) => f.fare))!,
-    ticketNumber: own.find((f) => f.ticketNumber)?.ticketNumber,
+    fare: sumMoney(lines.map((l) => l.amount))!,
+    ticketNumber,
   }));
 }
 
@@ -116,21 +132,6 @@ export function finalPaymentDue(booking: Booking | null | undefined): string | n
     .map((line) => payableDueBy(line.payable))
     .filter((d): d is string => d !== null);
   return dates.length ? dates.sort().at(-1)! : null;
-}
-
-// What was paid on a recorded date (a deposit), one entry per date, earliest
-// first. Lines paid at booking carry no date and aren't listed.
-export function paymentsMade(
-  booking: Booking | null | undefined,
-): { paidAt: string; amount: Money }[] {
-  const byDate = new Map<string, Money[]>();
-  for (const { amount, payable } of payableLines(booking)) {
-    if (typeof payable !== 'object' || !('paidAt' in payable)) continue;
-    byDate.set(payable.paidAt, [...(byDate.get(payable.paidAt) ?? []), amount]);
-  }
-  return [...byDate]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([paidAt, amounts]) => ({ paidAt, amount: sumMoney(amounts)! }));
 }
 
 export function bookingFixedCharges(booking: Booking | null | undefined): FixedCharge[] | null {

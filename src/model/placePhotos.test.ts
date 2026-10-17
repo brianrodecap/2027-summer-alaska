@@ -12,9 +12,11 @@ import type { PlacePhoto } from './places';
 import type { Image } from './types';
 
 const fetchPlaceFields = vi.fn();
+const placeAlreadyRequested = vi.fn();
 vi.mock('./places', async (importOriginal) => ({
   ...(await importOriginal<typeof import('./places')>()),
   fetchPlaceFields: (...args: unknown[]) => fetchPlaceFields(...args) as unknown,
+  placeAlreadyRequested: (...args: unknown[]) => placeAlreadyRequested(...args) as unknown,
   isPlacesApiKeyConfigured: () => true,
 }));
 
@@ -99,7 +101,10 @@ describe('withHeroImage', () => {
 });
 
 describe('resolveImage', () => {
-  beforeEach(() => fetchPlaceFields.mockReset());
+  beforeEach(() => {
+    fetchPlaceFields.mockReset();
+    placeAlreadyRequested.mockReset();
+  });
 
   it('draws a web image as is, without a lookup', async () => {
     const web: Image = { uri: 'https://example.test/a.jpg', credit: 'Cy', caption: null };
@@ -142,6 +147,33 @@ describe('resolveImage', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('reads a full lookup started right after it in the same commit, instead of its own', async () => {
+    // A side sheet's hero asks for the photos first; its PlacePanel's full
+    // lookup starts later in the same synchronous pass.
+    const image = placePrimaryImage('place_sheet');
+    const pending = resolveImage(image, 'photo');
+    placeAlreadyRequested.mockImplementation((id: string) =>
+      id === 'place_sheet' ? Promise.resolve({ photos: PHOTOS }) : undefined,
+    );
+    expect((await pending)?.credit).toBe('Ann');
+    expect(fetchPlaceFields).not.toHaveBeenCalled();
+  });
+
+  it('asks for the photos on their own when no full lookup starts', async () => {
+    fetchPlaceFields.mockResolvedValue({ photos: PHOTOS });
+    expect((await resolveImage(placePrimaryImage('place_row'), 'photo'))?.credit).toBe('Ann');
+    expect(fetchPlaceFields).toHaveBeenCalledWith('place_row', 'photos');
+  });
+
+  it('asks for the photos on their own when the full lookup it would read has failed', async () => {
+    placeAlreadyRequested.mockReturnValue(Promise.reject(new Error('blip')));
+    fetchPlaceFields.mockResolvedValue({ photos: PHOTOS });
+    expect((await resolveImage(placePrimaryImage('place_failed_full'), 'photo'))?.credit).toBe(
+      'Ann',
+    );
+    expect(fetchPlaceFields).toHaveBeenCalledWith('place_failed_full', 'photos');
   });
 
   it('draws nothing for a place Google has no photos for', async () => {

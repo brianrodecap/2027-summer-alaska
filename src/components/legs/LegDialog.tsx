@@ -13,22 +13,14 @@ import IconButton from '@mui/material/IconButton';
 import List from '@mui/material/List';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
-import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { type ReactNode, useMemo } from 'react';
 
-import { faresByTraveler, finalPaymentDue, paymentsMade } from '../../model/bookings';
 import { firstImage } from '../../model/formatting';
-import {
-  formatDateRangeLabel,
-  formatMoney,
-  travelersById,
-  tripDayCount,
-} from '../../model/tripModel';
-import type { Booking, Day, LegSummary } from '../../model/types';
+import { formatDateRangeLabel, tripDayCount } from '../../model/tripModel';
+import type { Day, LegSummary } from '../../model/types';
 import { useLiveDays } from '../../state/useLiveDays';
-import { useTripData } from '../../state/useTripData';
-import { BookingChip } from '../shared/BookingChip';
+import { BookingSection } from '../shared/BookingChip';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
 import { NotesCluster } from '../shared/Notes';
 import { groupDaysByLocation } from './legDayGroups';
@@ -101,34 +93,6 @@ function LegDayList({ days, onSelectDay }: { days: Day[]; onSelectDay: (date: st
   return <>{blocks}</>;
 }
 
-function LegBooking({ booking }: { booking: Booking }) {
-  const { data } = useTripData();
-  const fares = faresByTraveler(booking);
-  const finalDue = finalPaymentDue(booking);
-  const names = travelersById(data?.trip.travelers ?? []);
-  const travelerName = (id: string) => names.get(id) ?? id;
-  return (
-    <Stack spacing={0.5} sx={{ my: 1, alignItems: 'flex-start' }}>
-      <BookingChip booking={booking} />
-      {paymentsMade(booking).map((p) => (
-        <Typography variant="body2" key={p.paidAt}>
-          Paid {p.paidAt}: {formatMoney(p.amount)}
-        </Typography>
-      ))}
-      {finalDue && <Typography variant="body2">Final payment due {finalDue}</Typography>}
-      {fares.length ? (
-        <Box component="ul" sx={{ pl: 2, m: 0 }}>
-          {fares.map((f) => (
-            <Typography component="li" variant="body2" key={f.travelerId}>
-              {travelerName(f.travelerId)}: {formatMoney(f.fare)}
-            </Typography>
-          ))}
-        </Box>
-      ) : null}
-    </Stack>
-  );
-}
-
 export function LegDialog({
   summary,
   open,
@@ -164,7 +128,12 @@ export function LegDialog({
           {dayCount} days
         </Typography>
         {booking ? (
-          <LegBooking booking={booking} />
+          <BookingSection
+            booking={booking}
+            date={dateRange?.startDate ?? null}
+            entityId={leg._id}
+            sx={{ my: 1 }}
+          />
         ) : (
           <Typography variant="body2" color="text.secondary" sx={{ my: 1 }}>
             No single reservation for this leg — booked piece by piece as its

@@ -115,17 +115,28 @@ const lookups = new Map<string, Lookup>();
 const RETRY_AFTER_MS = 30_000;
 
 // Looks up a place's current photos once per page load (again only after a
-// failure, see RETRY_AFTER_MS) — from the full lookup when a side sheet
-// already started one, else on their own.
+// failure, see RETRY_AFTER_MS) — from a full lookup when one was started,
+// else on their own. A first lookup decides a microtask later: a side sheet's
+// hero image mounts before its PlacePanel, so the hero's effect asks first
+// and the panel's full lookup starts later in the same commit. Waiting until
+// that commit's effects have all run lets the hero read the panel's lookup
+// instead of paying for a second, photos-only one. It saves nothing when the
+// photos-only lookup came first (a day row's avatar, before its sheet opened):
+// the panel's full lookup asks for more than photos and still goes out.
 function lookUpPhotos(placeId: string): Promise<void> {
   const known = lookups.get(placeId);
   const retry = known?.failedAt !== undefined && Date.now() - known.failedAt > RETRY_AFTER_MS;
   if (known && !retry) return known.promise;
+  const photosOnly = () => fetchPlaceFields<{ photos?: PlacePhoto[] }>(placeId, 'photos');
+  // A full lookup that failed (getPlace keeps its rejection for the page
+  // load) is no reason to go without photos: they're asked for on their own.
+  const lookup = retry
+    ? photosOnly()
+    : Promise.resolve().then(
+        () => placeAlreadyRequested(placeId)?.catch(photosOnly) ?? photosOnly(),
+      );
   const entry: Lookup = {
-    promise: (
-      (!retry && placeAlreadyRequested(placeId)) ||
-      fetchPlaceFields<{ photos?: PlacePhoto[] }>(placeId, 'photos')
-    )
+    promise: lookup
       .then((details) => {
         entry.photos = details.photos ?? [];
       })

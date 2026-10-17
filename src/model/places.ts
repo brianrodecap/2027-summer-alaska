@@ -93,8 +93,10 @@ export function getPlace(id: string): Promise<PlaceDetails> {
 }
 
 // The full lookup for `id` if this page load has already started one — so a
-// photo lookup (placePhotos.ts) for a place whose side sheet is open reads its
-// photos from there instead of asking Google a second time.
+// photo lookup (placePhotos.ts) reads its photos from there instead of asking
+// Google a second time. placePhotos.ts checks a microtask after it's asked,
+// so a full lookup started later in the same React commit (a side sheet's
+// PlacePanel, mounted after its hero image) counts too.
 export function placeAlreadyRequested(id: string): Promise<PlaceDetails> | undefined {
   return cache.get(id);
 }

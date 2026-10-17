@@ -1,11 +1,13 @@
 import Typography from '@mui/material/Typography';
 
-import { DINING_FORMAT_LABEL, firstImage } from '../../model/formatting';
-import { mealOptionLabel } from '../../model/mealOptions';
-import { activityHeadline } from '../../model/tripModel';
+import { includedInLabel, PRIORITY_LABEL } from '../../model/entityDetails';
+import { DINING_FORMAT_LABEL, firstImage, timeAndMealTypeLabel } from '../../model/formatting';
+import { mealOptionLabel, mealOptionTimeLabel } from '../../model/mealOptions';
+import { activityHeadline, resolveActivityDate } from '../../model/tripModel';
 import type { Booking, EnrichedActivity, EnrichedMealOption, Place } from '../../model/types';
 import { useHeroImageSelect } from '../../state/useHeroImageSelect';
 import { useActivityPlaceImagePersist } from '../../state/usePlaceImagePersist';
+import { useTripData } from '../../state/useTripData';
 import { BookingSection } from '../shared/BookingChip';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
@@ -13,6 +15,7 @@ import { LinkifiedText } from '../shared/LinkifiedText';
 import { DEFAULT_PLACE_ICON, DINING_FORMAT_ICON, renderMaterialIcon } from '../shared/materialIcon';
 import { splitNotes } from '../shared/noteKind';
 import { NotesCluster } from '../shared/Notes';
+import { PackagesSection, StatusLine, TravelersSection } from './DetailSections';
 import { PlacePanel } from './PlacePanel';
 
 function selectedPlace(
@@ -22,26 +25,39 @@ function selectedPlace(
   return selectedOption ? selectedOption.place : activity.place;
 }
 
+// The booking this sheet shows, and the id of the entity that holds it — the
+// selected candidate's own reservation, else the Activity's. The holder is
+// what "also covers" leaves out, so the sheet never lists itself.
 function selectedBooking(
   activity: EnrichedActivity,
   selectedOption?: EnrichedMealOption,
-): Booking | null {
-  return selectedOption?.booking ?? activity.booking;
+): { booking: Booking | null; holderId: string } {
+  return selectedOption?.booking
+    ? { booking: selectedOption.booking, holderId: selectedOption._id }
+    : { booking: activity.booking, holderId: activity._id };
 }
 
 // A meal Activity's own place is never on activity.place (only options are)
 // — the side sheet needs whichever candidate is currently selected in the
 // row instead.
-function SelectedMealOptionBody({ option }: { option: EnrichedMealOption }) {
+// `includedIn` is the option's "Included in …" line, which says what the
+// dining format would, more precisely, so it takes the format line's place.
+function SelectedMealOptionBody({
+  option,
+  includedIn,
+}: {
+  option: EnrichedMealOption;
+  includedIn: string | null;
+}) {
   // option.place's own label is already shown as the side sheet's header
   // title — only repeat it here when there's no place, i.e. the label being
   // shown is the dining format itself.
   return (
     <>
       {!option.place && <Typography variant="subtitle1">{mealOptionLabel(option)}</Typography>}
-      {option.place && (
+      {(option.place || includedIn) && (
         <Typography variant="body2" color="text.secondary">
-          {DINING_FORMAT_LABEL[option.diningFormat]}
+          {includedIn ?? DINING_FORMAT_LABEL[option.diningFormat]}
         </Typography>
       )}
     </>
@@ -67,12 +83,17 @@ export function ActivityDetailPanel({
 }) {
   const onSelectImage = useHeroImageSelect('activity', activity?._id);
   const onAutoImage = useActivityPlaceImagePersist(activity, selectedOption);
+  const { data } = useTripData();
 
   if (!activity) return null;
 
   const place = selectedPlace(activity, selectedOption);
-  const booking = selectedBooking(activity, selectedOption);
+  const { booking, holderId } = selectedBooking(activity, selectedOption);
   const image = firstImage(activity, place);
+  const date = resolveActivityDate(activity);
+  const includedIn = data
+    ? includedInLabel(data, selectedOption ? selectedOption.includedIn : activity.includedIn)
+    : null;
   const titleIconName = selectedOption
     ? DINING_FORMAT_ICON[selectedOption.diningFormat]
     : DEFAULT_PLACE_ICON;
@@ -98,8 +119,20 @@ export function ActivityDetailPanel({
       titleIcon={place ? renderMaterialIcon(titleIconName, { color: 'primary' }) : undefined}
     >
       <EntityHeroImage image={image} />
+      <Typography variant="body1">
+        {timeAndMealTypeLabel(
+          activity,
+          selectedOption ? mealOptionTimeLabel(activity, selectedOption) : undefined,
+        )}
+      </Typography>
+      <StatusLine status={activity.status} />
+      {activity.priority && (
+        <Typography variant="body2" color="text.secondary">
+          {PRIORITY_LABEL[activity.priority]}
+        </Typography>
+      )}
       {selectedOption ? (
-        <SelectedMealOptionBody option={selectedOption} />
+        <SelectedMealOptionBody option={selectedOption} includedIn={includedIn} />
       ) : (
         // null only when a Place already named the title above — nothing
         // left to add here, same as the meal-option body's own
@@ -110,8 +143,15 @@ export function ActivityDetailPanel({
           </Typography>
         )
       )}
-      <BookingSection booking={booking} />
+      {!selectedOption && includedIn && (
+        <Typography variant="body2" color="text.secondary">
+          {includedIn}
+        </Typography>
+      )}
+      <BookingSection booking={booking} date={date} entityId={holderId} />
+      <TravelersSection names={selectedOption ? selectedOption.travelers : activity.travelers} />
       <NotesCluster notes={aboveNotes} expanded />
+      <PackagesSection packages={activity.packages} date={date} />
       {place && (
         <PlacePanel place={place} onSelectImage={onSelectImage} onAutoImage={onAutoImage} />
       )}

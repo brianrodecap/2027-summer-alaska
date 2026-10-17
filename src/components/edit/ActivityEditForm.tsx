@@ -12,6 +12,7 @@ import {
   MEAL_TYPE_VALUES,
   PRIORITY_OPTIONS,
 } from '../../model/editForms';
+import { PLAN_STATUS_LABEL } from '../../model/entityDetails';
 import type {
   Activity,
   DiningFormat,
@@ -31,12 +32,10 @@ import { PlaceConditionsTogglesFor } from './PlaceConditionsToggles';
 import { PlacePickerField } from './PlacePickerField';
 import { TravelerCheckboxList } from './TravelerCheckboxList';
 
-const STATUS_OPTIONS: { value: PlanStatus; label: string }[] = [
-  { value: 'planning', label: 'Planning' },
-  { value: 'active', label: 'Active' },
-  { value: 'completed', label: 'Completed' },
-  { value: 'cancelled', label: 'Cancelled' },
-];
+const STATUS_OPTIONS = (Object.keys(PLAN_STATUS_LABEL) as PlanStatus[]).map((value) => ({
+  value,
+  label: PLAN_STATUS_LABEL[value],
+}));
 
 const MEAL_TYPE_OPTIONS: { value: MealType | ''; label: string }[] = [
   { value: '', label: 'Not a meal' },

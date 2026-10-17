@@ -1,7 +1,13 @@
 import Typography from '@mui/material/Typography';
 
-import { firstImage, placeFromLodging, stayDetailBits } from '../../model/formatting';
-import { formatTime } from '../../model/tripModel';
+import { stayWhenLabel } from '../../model/entityDetails';
+import {
+  firstImage,
+  lodgingExtraBits,
+  placeFromLodging,
+  stayDetailBits,
+} from '../../model/formatting';
+import { dateOnly, stayNights } from '../../model/tripModel';
 import type { EnrichedStay } from '../../model/types';
 import { useHeroImageSelect } from '../../state/useHeroImageSelect';
 import { useStayPlaceImagePersist } from '../../state/usePlaceImagePersist';
@@ -10,12 +16,12 @@ import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
+import { PackagesSection, PortCallsSection, StatusLine } from './DetailSections';
 import { PlacePanel } from './PlacePanel';
 
 // A Stay row's own tap target — mirrors ActivityDetailPanel's side sheet
-// (title/icon, the same detail already visible inline in the timeline row,
-// its own notes, and an edit entry point) so every day-list row kind opens
-// the same way on tap.
+// (title/icon, every field the Stay records, its own notes, and an edit entry
+// point) so every day-list row kind opens the same way on tap.
 export function StayDetailPanel({
   stay,
   open,
@@ -32,7 +38,7 @@ export function StayDetailPanel({
 
   if (!stay) return null;
 
-  const detailBits = stayDetailBits(stay.lodging);
+  const detailBits = [...stayDetailBits(stay.lodging), ...lodgingExtraBits(stay.lodging)];
   const place = placeFromLodging(stay.lodging);
   const image = firstImage(stay, place);
 
@@ -45,16 +51,21 @@ export function StayDetailPanel({
       titleIcon={renderMaterialIcon('hotel', { color: 'primary' })}
     >
       <EntityHeroImage image={image} />
-      <Typography variant="body1">
-        {formatTime(stay.checkInAt)} in · {formatTime(stay.checkOutAt)} out
-      </Typography>
+      <Typography variant="body1">{stayWhenLabel(stay)}</Typography>
+      <StatusLine status={stay.status} />
       {detailBits.length > 0 && (
         <Typography variant="body2" color="text.secondary">
           {detailBits.join(' · ')}
         </Typography>
       )}
-      <BookingSection booking={stay.booking} />
+      <BookingSection booking={stay.booking} date={dateOnly(stay.checkInAt)} entityId={stay._id} />
       <NotesCluster notes={stay.notes} expanded />
+      <PackagesSection
+        packages={stay.packages}
+        nights={stayNights(stay)}
+        date={dateOnly(stay.checkInAt)}
+      />
+      <PortCallsSection calls={stay.portCalls} />
       {place && (
         <PlacePanel place={place} onSelectImage={onSelectImage} onAutoImage={onAutoImage} />
       )}

@@ -15,6 +15,7 @@ import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
 import EventIcon from '@mui/icons-material/Event';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import FlightIcon from '@mui/icons-material/Flight';
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
@@ -67,6 +68,7 @@ type IconComponent = ComponentType<SvgIconProps>;
 
 const ICONS: Record<string, IconComponent> = {
   hotel: HotelIcon,
+  expand_more: ExpandMoreIcon,
   delete: DeleteIcon,
   directions_car: DirectionsCarIcon,
   directions_walk: DirectionsWalkIcon,

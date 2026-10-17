@@ -7,7 +7,6 @@ import {
   faresByTraveler,
   finalPaymentDue,
   fixedCost,
-  paymentsMade,
   perTravelerCost,
   withoutOrphanBookings,
 } from './bookings';
@@ -265,10 +264,8 @@ describe('a deposit paid on a date', () => {
     },
   };
 
-  it('lists what was paid per date and leaves the final payment to the balance lines', () => {
-    expect(paymentsMade(booking)).toEqual([{ paidAt: '2026-08-06', amount: usd(20) }]);
+  it('leaves the final payment to the balance lines', () => {
     expect(finalPaymentDue(booking)).toBe('2027-04-18');
-    expect(paymentsMade({ ...booking, pricing: null })).toEqual([]);
   });
 
   it('is still each traveler’s one fare', () => {

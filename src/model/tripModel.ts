@@ -11,7 +11,14 @@
 // `Date`/`dayjs` object and hand it to a caller, or accept one as an input —
 // picker components convert to/from plain strings at their own edge instead.
 
-import { bookingById, bookingIdsInLeg, bookingOf, payableDueBy } from './bookings';
+import {
+  bookingById,
+  bookingIdsInLeg,
+  bookingOf,
+  payableDueBy,
+  payableLines,
+  sumMoney,
+} from './bookings';
 import type { EditKind, Entity } from './editForms';
 import { firstImage } from './formatting';
 import { allPackages, packageHolders } from './packages';
@@ -169,7 +176,7 @@ function dateRangeArray(start: string, end: string): string[] {
   return out;
 }
 
-function stayNights(stay: Pick<Stay, 'checkInAt' | 'checkOutAt'>): number {
+export function stayNights(stay: Pick<Stay, 'checkInAt' | 'checkOutAt'>): number {
   const days = diffMinutesIso(
     `${dateOnly(stay.checkInAt)}T00:00`,
     `${dateOnly(stay.checkOutAt)}T00:00`,
@@ -180,7 +187,7 @@ function stayNights(stay: Pick<Stay, 'checkInAt' | 'checkOutAt'>): number {
 // How many times a Package's cost is charged on its holder: a nightly rate
 // once per night of the Stay holding it (see Package.per), anything else once.
 // A same-day stay has no nights, but a priced fee is still charged once.
-function packageUnits(pkg: Pick<Package, 'per'>, nights: number | null): number {
+export function packageUnits(pkg: Pick<Package, 'per'>, nights: number | null): number {
   return pkg.per === 'night' && nights != null ? Math.max(nights, 1) : 1;
 }
 
@@ -188,6 +195,13 @@ export function formatDateLabel(dateStr: string): string {
   const [y, m, d] = dateStr.split('-').map(Number);
   const weekday = new Date(Date.UTC(y, m - 1, d)).getUTCDay();
   return `${WEEKDAYS[weekday]} ${MONTHS[m - 1]} ${d}`;
+}
+
+// "Apr 18, 2027" — a date that may fall outside the trip (a payment due
+// months before it), so the year is spelled out.
+export function formatLongDate(dateStr: string): string {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return `${MONTHS[m - 1]} ${d}, ${y}`;
 }
 
 function formatFullDate(dateStr: string): string {
@@ -2063,9 +2077,9 @@ export function todayDateStr(): string {
 // is committed, but nothing is settled until the confirmation arrives.
 // A booking with no price is 'unplanned' — nothing to sum, just a count of
 // "still needs a number" — and a cancelled one contributes nothing.
-function lineBucket(
+export function lineBucket(
   payable: Payable | undefined,
-  booking: Booking,
+  booking: Pick<Booking, 'status'>,
   date: string | null,
   today: string,
 ): BudgetLine['bucket'] {
@@ -2102,6 +2116,57 @@ function budgetLines(booking: Booking, date: string | null, today: string): Budg
       basis: 'fixed' as const,
     })),
   ];
+}
+
+// When a still-owed amount is due: by a date, at the property, or (a
+// requested booking with no schedule) just owed.
+export type DueWhen = { dueBy: string } | 'atProperty' | null;
+
+export interface BookingPaymentSummary {
+  spent: Money | null;
+  estimated: Money | null;
+  // What's still owed, one entry per due date (earliest first), then what's
+  // due at the property, then anything owed with no schedule.
+  due: { when: DueWhen; amount: Money }[];
+}
+
+// A booking's priced lines summed by budget bucket, through the budget's own
+// lineBucket, so a detail sheet's "paid / due" can't disagree with the budget
+// view. `date` is the day the booked entity starts (an at-the-property charge
+// is settled then). A cancelled booking sums to nothing, as in the budget.
+export function bookingPaymentSummary(
+  booking: Booking,
+  date: string | null,
+  today: string,
+): BookingPaymentSummary {
+  if (booking.status === 'cancelled') return { spent: null, estimated: null, due: [] };
+  const spent: Money[] = [];
+  const estimated: Money[] = [];
+  const due = new Map<string, { when: DueWhen; amounts: Money[] }>();
+  for (const { amount, payable } of payableLines(booking)) {
+    const bucket = lineBucket(payable, booking, date, today);
+    if (bucket === 'spent') spent.push(amount);
+    else if (bucket === 'estimated') estimated.push(amount);
+    else {
+      const dueBy = payableDueBy(payable);
+      const when: DueWhen = dueBy ? { dueBy } : payable === 'atProperty' ? 'atProperty' : null;
+      const key = dueBy ?? String(when);
+      const entry = due.get(key) ?? { when, amounts: [] };
+      entry.amounts.push(amount);
+      due.set(key, entry);
+    }
+  }
+  // Dated amounts by date, then at the property, then unscheduled.
+  const rank = ({ when }: { when: DueWhen }) => (when === null ? 2 : when === 'atProperty' ? 1 : 0);
+  const dueByOf = ({ when }: { when: DueWhen }) =>
+    typeof when === 'object' && when ? when.dueBy : '';
+  return {
+    spent: sumMoney(spent),
+    estimated: sumMoney(estimated),
+    due: [...due.values()]
+      .sort((a, b) => rank(a) - rank(b) || dueByOf(a).localeCompare(dueByOf(b)))
+      .map(({ when, amounts }) => ({ when, amount: sumMoney(amounts)! })),
+  };
 }
 
 function rowBucket(booking: Booking, lines: BudgetLine[]): BudgetBucket {
@@ -2246,15 +2311,23 @@ function bookingLineItems(
   return onePerBooking(items);
 }
 
+// A Package's whole cost on its holder: its cost charged `units` times (see
+// packageUnits), to the cent. null when unpriced.
+export function packageTotal(pkg: Pick<Package, 'cost'>, units: number): Money | null {
+  if (!pkg.cost) return null;
+  return { amount: (Math.round(pkg.cost.amount * 100) * units) / 100, currency: pkg.cost.currency };
+}
+
 // A Package bought for named travelers (a dining add-on for two of the four)
 // is a per-traveler cost, split evenly among them; one for the whole stay (a
 // resort fee, parking) is a fixed charge.
 function packagePricing(pkg: Package, units: number): Pricing | null {
-  if (!pkg.cost) return null;
+  const total = packageTotal(pkg, units);
+  if (!total) return null;
   const travelers = pkg.travelers ?? [];
   const payable = pkg.payable ? { payable: pkg.payable } : {};
-  const { currency } = pkg.cost;
-  const cents = Math.round(pkg.cost.amount * 100) * units;
+  const { currency } = total;
+  const cents = Math.round(total.amount * 100);
   if (!travelers.length) {
     const amount = { amount: cents / 100, currency };
     return { perTraveler: [], fixed: [{ label: pkg.name, amount, ...payable }] };
