@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { buildFilterGroups, dayHasVisibleContent, filterRows, rowMatches } from './filters';
 import { buildLiveDays } from './liveDays';
 import { buildTripView } from './tripModel';
-import type { Activity, TripData } from './types';
+import type { Activity, Transit, TripData } from './types';
 
 // Synthetic fixtures only — never the real public/data/*.json content, which is
 // the site's live, actively-edited itinerary rather than a fixed test fixture.
@@ -185,5 +185,63 @@ describe('filters', () => {
     expect(filtered.flatMap((r) => (r.type === 'activity' ? [r.activity._id] : []))).toEqual([
       'park_hike',
     ]);
+  });
+});
+
+describe('filters match what a row shows of a shared booking', () => {
+  // Two connecting flights on one ticket: the booking and the ticket's
+  // warning note (made about the second flight) show on the first Depart.
+  const flight = (id: string, from: string, to: string, departsAt: string, arrivesAt: string) =>
+    ({
+      _id: id,
+      legId: 'leg_parks',
+      journeyId: null,
+      travelers: null,
+      scenarioId: null,
+      status: 'planning',
+      mode: 'flight',
+      from: { id: `p_${from}`, label: from },
+      to: { id: `p_${to}`, label: to },
+      departsAt,
+      arrivesAt,
+      routeId: null,
+      routeVariant: null,
+      bookingId: 'booking_ticket',
+      images: [],
+    }) satisfies Transit;
+  const data = twoLegTrip();
+  data.transits.push(
+    flight('f_out', 'RSW', 'ORD', '2027-06-01T06:15', '2027-06-01T08:37'),
+    flight('f_on', 'ORD', 'ANC', '2027-06-01T09:45', '2027-06-01T13:35'),
+  );
+  data.bookings.push({ _id: 'booking_ticket', status: 'booked' } as never);
+  data.notes.push({
+    _id: 'note_refund',
+    kind: 'warning',
+    text: 'Non-refundable',
+    concerns: [{ entity: 'transit', id: 'f_on' }],
+    images: [],
+  });
+  const view = buildTripView(data);
+  const { days } = buildLiveDays(view, data, {
+    scenarioPicks: new Map(),
+    routeTones: new Map(),
+    mealOptionIndex: new Map(),
+  });
+  const day = days.find((d) => d.date === '2027-06-01')!;
+  const kept = (token: string) =>
+    filterRows(day.rows, day, new Set([token])).flatMap((r) =>
+      r.type === 'transit' ? [`${r.transit._id}:${r.phase}`] : [],
+    );
+
+  it('keeps every row of a booked flight, and the first Depart for the note it carries', () => {
+    expect(kept('booking:booked')).toEqual([
+      'f_out:depart',
+      'f_out:arrive',
+      'f_on:depart',
+      'f_on:arrive',
+    ]);
+    // The note is the second flight's, shown on the first Depart: both match.
+    expect(kept('attr:attention')).toEqual(['f_out:depart', 'f_on:depart', 'f_on:arrive']);
   });
 });

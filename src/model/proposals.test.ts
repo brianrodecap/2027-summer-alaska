@@ -8,6 +8,7 @@ import {
   checkedChanges,
   isDateTime,
   mergePackages,
+  noPlaceSearches,
   proposalState,
   queueFromProposals,
   validateFinish,
@@ -128,7 +129,7 @@ describe('validateProposal', () => {
 
   it('accepts a place id from a search this import made', () => {
     const state = proposalState(trip());
-    state.searchedPlaceIds.add('found');
+    state.placeSearches.placeIds.add('found');
     expect(
       validateProposal(
         { ...flight, changes: { from: { placeId: 'found', label: 'Base' } } },
@@ -181,7 +182,10 @@ describe('validateProposal', () => {
       entityId,
       kind: 'activity',
       changes: {},
-      addOption: { place: { label: 'Test Hotel' }, diningFormat: 'sit-down' },
+      addOption: {
+        place: { label: 'Test Hotel', placeId: 'place_hotel' },
+        diningFormat: 'sit-down',
+      },
       booking: {
         ref: `est_${entityId}`,
         status: 'planning',
@@ -358,7 +362,7 @@ describe('queueFromProposals', () => {
 
   it('writes a cruise’s port calls, turning down one outside the sailing', () => {
     const state = proposalState(trip());
-    state.searchedPlaceIds.add('place_port');
+    state.placeSearches.placeIds.add('place_port');
     const call = (arrivesAt: string, departsAt: string) => ({
       kind: 'port' as const,
       place: { placeId: 'place_port', label: 'Port' },
@@ -380,7 +384,7 @@ describe('queueFromProposals', () => {
     expect((queueFromProposals(state)[0].entity as Stay).portCalls).toEqual([
       {
         kind: 'port',
-        place: { id: 'place_port', label: 'Port', images: [] },
+        place: { id: 'place_port', label: 'Port' },
         arrivesAt: '2027-06-27T18:00',
         departsAt: '2027-06-27T22:00',
       },
@@ -640,14 +644,297 @@ describe('second code-review fixes', () => {
     expect(errors.join()).toMatch(/search_places for "The Remote Lodge"/);
   });
 
-  it('lets a shipboard venue replace a resolved place without a search', () => {
-    const onboard: ChangeProposal = {
+  it('resolves an unresolved place of the same name with the id a proposal gives', () => {
+    const data = trip();
+    data.transits = data.transits.map((t) => ({
+      ...t,
+      to: { id: null, label: 'Remote Lodge', showWeather: true },
+    }));
+    const state = proposalState(data);
+    state.placeSearches.placeIds.add('place_found');
+    const proposal: ChangeProposal = {
       entityId: 'ph_out',
       kind: 'transit',
-      changes: { to: { label: 'Ship Theater', onboard: true } },
+      changes: { to: { placeId: 'place_found', label: 'remote lodge' } },
       why: 's',
     };
-    expect(validateProposal(onboard, proposalState(trip())).join()).not.toMatch(/placeId/);
+    expect(validateProposal(proposal, state)).toEqual([]);
+    state.accepted.push(proposal);
+    // The place it restates keeps its own label and settings, and gains the id.
+    expect((queueFromProposals(state)[0].entity as Transit).to).toEqual({
+      id: 'place_found',
+      label: 'Remote Lodge',
+      showWeather: true,
+    });
+  });
+
+  it('keeps a resolved port call restated by its exact name', () => {
+    const data = trip();
+    data.stays = data.stays.map((s) => ({
+      ...s,
+      checkInAt: '2027-06-27T16:00',
+      checkOutAt: '2027-07-02T08:00',
+      portCalls: [
+        {
+          kind: 'port' as const,
+          place: { id: 'place_port', label: 'Test Port' },
+          arrivesAt: '2027-06-28T07:00',
+          departsAt: '2027-06-28T17:00',
+        },
+      ],
+    }));
+    const state = proposalState(data);
+    const proposal: ChangeProposal = {
+      entityId: 'stay_hotel',
+      kind: 'stay',
+      changes: { portCalls: [{ kind: 'port', place: { label: 'test port' } }] },
+      why: 's',
+    };
+    expect(validateProposal(proposal, state)).toEqual([]);
+    state.accepted.push(proposal);
+    expect((queueFromProposals(state)[0].entity as Stay).portCalls?.[0]).toMatchObject({
+      place: { id: 'place_port', label: 'Test Port' },
+      arrivesAt: '2027-06-28T07:00',
+    });
+  });
+
+  it('never drops the place of a port call named like two resolved calls', () => {
+    const cruise = (ids: [string, string]) => {
+      const data = trip();
+      const call = (day: string, id: string) => ({
+        kind: 'port' as const,
+        place: { id, label: 'Test Port' },
+        arrivesAt: `${day}T07:00`,
+        departsAt: `${day}T17:00`,
+      });
+      data.stays = data.stays.map((s) => ({
+        ...s,
+        checkInAt: '2027-06-27T16:00',
+        checkOutAt: '2027-07-02T08:00',
+        portCalls: [call('2027-06-28', ids[0]), call('2027-07-01', ids[1])],
+      }));
+      return data;
+    };
+    const proposal = (place: { label: string; placeId?: string }): ChangeProposal => ({
+      entityId: 'stay_hotel',
+      kind: 'stay',
+      changes: { portCalls: [{ kind: 'port', place }] },
+      why: 's',
+    });
+    // Two places by that name can't be told apart: its id is the way out.
+    const twoPorts = cruise(['place_port_a', 'place_port_b']);
+    expect(
+      validateProposal(proposal({ label: 'Test Port' }), proposalState(twoPorts)).join(),
+    ).toMatch(
+      /Test Port has no placeId.*Test Port \(placeId place_port_a\), Test Port \(placeId place_port_b\)/,
+    );
+    const state = proposalState(twoPorts);
+    const restated = proposal({ label: 'Test Port', placeId: 'place_port_a' });
+    expect(validateProposal(restated, state)).toEqual([]);
+    state.accepted.push(restated);
+    expect((queueFromProposals(state)[0].entity as Stay).portCalls?.[0].place.id).toBe(
+      'place_port_a',
+    );
+    // Two calls at one place keep that place, even when the call itself can't be told apart.
+    const onePort = proposalState(cruise(['place_port', 'place_port']));
+    const named = proposal({ label: 'Test Port' });
+    expect(validateProposal(named, onePort)).toEqual([]);
+    onePort.accepted.push(named);
+    expect((queueFromProposals(onePort)[0].entity as Stay).portCalls?.[0].place.id).toBe(
+      'place_port',
+    );
+  });
+
+  it('lets a shipboard venue take over from a resolved place only when it names it', () => {
+    const onboard = (place: Record<string, unknown>): ChangeProposal => ({
+      entityId: 'ph_out',
+      kind: 'transit',
+      changes: { to: { label: 'Ship Theater', onboard: true, ...place } },
+      why: 's',
+    });
+    // A respelling marked aboard can't drop the resolved place.
+    expect(validateProposal(onboard({}), proposalState(trip())).join()).toMatch(
+      /Ship Theater is aboard the ship, but it would take over from Remote Lodge \(placeId place_lodge\)/,
+    );
+    expect(
+      validateProposal(onboard({ replaces: 'place_other' }), proposalState(trip())).join(),
+    ).toMatch(/give replaces: that placeId/);
+    // Naming the place it takes over from is the way through, with no search.
+    const state = proposalState(trip());
+    const replacing = onboard({ replaces: 'place_lodge' });
+    expect(validateProposal(replacing, state)).toEqual([]);
+    state.accepted.push(replacing);
+    expect((queueFromProposals(state)[0].entity as Transit).to).toEqual({
+      id: null,
+      label: 'Ship Theater',
+      onboard: true,
+    });
+    // A venue aboard needs no search where nothing resolved is replaced.
+    const meal: ChangeProposal = {
+      entityId: 'act_lunch',
+      kind: 'activity',
+      changes: { place: { label: 'Main Dining Room', onboard: true } },
+      why: 's',
+    };
+    expect(validateProposal(meal, proposalState(trip()))).toEqual([]);
+  });
+
+  it('needs every new place to have a placeId, or a search that found nothing', () => {
+    const data = trip();
+    const newDrive = (to: Record<string, unknown>): ChangeProposal => ({
+      kind: 'transit',
+      legId: 'leg_t',
+      date: '2027-07-11',
+      changes: {
+        departsAt: '2027-07-11T14:00',
+        arrivesAt: '2027-07-11T15:00',
+        from: { label: 'Test Air Base', placeId: 'place_base' },
+        to: { label: 'Glacier Overlook', ...to },
+      },
+      why: 's',
+    });
+    const errors = (to: Record<string, unknown>, empty: string[] = []) => {
+      const state = proposalState(data);
+      for (const q of empty) state.placeSearches.emptyQueries.add(q);
+      return validateProposal(newDrive(to), state).join();
+    };
+    expect(errors({})).toMatch(
+      /to: Glacier Overlook has no placeId\. Give its placeId from search_places \(search for "Glacier Overlook"\), or, when that search finds nothing, notOnGoogle: true\./,
+    );
+    // notOnGoogle holds only after a search for that very name found nothing.
+    expect(errors({ notOnGoogle: true })).toMatch(/Glacier Overlook has no placeId/);
+    expect(errors({ notOnGoogle: true }, ['Glacier'])).toMatch(/Glacier Overlook has no placeId/);
+    expect(errors({ notOnGoogle: true }, ['glacier overlook'])).toBe('');
+    // A searched id is the usual way through.
+    const state = proposalState(data);
+    state.placeSearches.placeIds.add('place_overlook');
+    expect(validateProposal(newDrive({ placeId: 'place_overlook' }), state)).toEqual([]);
+    // A place the trip already has by exactly that name is that place.
+    expect(errors({ label: 'remote lodge' })).toBe('');
+    const named = proposalState(data);
+    named.accepted.push(newDrive({ label: 'remote lodge' }));
+    expect((queueFromProposals(named)[0].entity as Transit).to).toMatchObject({
+      id: 'place_lodge',
+      label: 'Remote Lodge',
+    });
+    // Two resolved places by that name aren't picked between.
+    const twice = trip();
+    twice.stays = twice.stays.map((s) => ({
+      ...s,
+      lodging: { place: { id: 'place_lodge_2', label: 'Remote Lodge' } },
+    }));
+    expect(
+      validateProposal(newDrive({ label: 'Remote Lodge' }), proposalState(twice)).join(),
+    ).toMatch(
+      /Remote Lodge has no placeId\. The trip has more than one place by that name: Remote Lodge \(placeId place_lodge\), Remote Lodge \(placeId place_lodge_2\)/,
+    );
+    // Applying changes already checked doesn't search again.
+    expect('state' in checkedChanges([newDrive({ notOnGoogle: true })], data)).toBe(true);
+    expect('errors' in checkedChanges([newDrive({})], data)).toBe(true);
+  });
+
+  it('lets a place not on Google take over from a resolved one only when it names it', () => {
+    const data = trip();
+    const renamed = (to: Record<string, unknown>) => {
+      const state = proposalState(data);
+      state.placeSearches.emptyQueries.add('Remote Lodge Annex');
+      return validateProposal(
+        {
+          entityId: 'ph_out',
+          kind: 'transit',
+          changes: { to: { label: 'Remote Lodge Annex', notOnGoogle: true, ...to } },
+          why: 's',
+        },
+        state,
+      ).join();
+    };
+    expect(renamed({})).toMatch(
+      /Remote Lodge Annex isn’t on Google, but it would take over from Remote Lodge \(placeId place_lodge\)/,
+    );
+    expect(renamed({ replaces: 'place_lodge' })).toBe('');
+    // A replaces naming nothing it takes over from is turned down, not ignored.
+    const theater: ChangeProposal = {
+      entityId: 'act_lunch',
+      kind: 'activity',
+      changes: { place: { label: 'Theater', onboard: true, replaces: 'place_nowhere' } },
+      why: 's',
+    };
+    expect(validateProposal(theater, proposalState(data)).join()).toMatch(
+      /Theater takes over from no resolved place, so replaces place_nowhere names nothing/,
+    );
+  });
+
+  it('doesn’t take a venue aboard for a place ashore of the same name', () => {
+    const data = trip();
+    data.activities = data.activities.map((a) =>
+      a._id === 'act_lunch'
+        ? { ...a, place: { id: 'place_ship_lounge', label: 'Lounge', onboard: true } }
+        : a,
+    );
+    const ashore: ChangeProposal = {
+      kind: 'activity',
+      legId: 'leg_t',
+      date: '2027-07-11',
+      changes: { text: 'Drinks', startAt: '2027-07-11T20:00', place: { label: 'Lounge' } },
+      why: 's',
+    };
+    expect(validateProposal(ashore, proposalState(data)).join()).toMatch(
+      /place: Lounge has no placeId/,
+    );
+  });
+
+  it('turns down a candidate list that drops a resolved one for a place with no id', () => {
+    const state = proposalState(trip());
+    state.placeSearches.emptyQueries.add('Cafe Bar');
+    const swapped = (place: Record<string, unknown>): ChangeProposal => ({
+      entityId: 'act_breakfast',
+      kind: 'activity',
+      changes: { mealOptions: [{ place: { label: 'Cafe Bar', ...place } }] },
+      why: 's',
+    });
+    expect(validateProposal(swapped({ onboard: true }), state).join()).toMatch(
+      /Cafe Bar is aboard the ship, but it would take over from Café \(placeId place_cafe\)/,
+    );
+    expect(validateProposal(swapped({}), state).join()).toMatch(
+      /mealOptions: Cafe Bar has no placeId, and the meal would drop Café \(placeId place_cafe\)/,
+    );
+    expect(validateProposal(swapped({ onboard: true, replaces: 'place_cafe' }), state)).toEqual([]);
+    expect(validateProposal(swapped({ notOnGoogle: true, replaces: 'place_cafe' }), state)).toEqual(
+      [],
+    );
+  });
+
+  it('needs a placeId on a new meal candidate and an added option too', () => {
+    const state = proposalState(trip());
+    const candidates: ChangeProposal = {
+      entityId: 'act_lunch',
+      kind: 'activity',
+      changes: {
+        mealOptions: [
+          { place: { label: 'Café', placeId: 'place_cafe' } },
+          { place: { label: 'Bakery' } },
+        ],
+      },
+      why: 's',
+    };
+    expect(validateProposal(candidates, state).join()).toMatch(
+      /mealOptions: Bakery has no placeId/,
+    );
+    const added: ChangeProposal = {
+      entityId: 'act_breakfast',
+      kind: 'activity',
+      changes: {},
+      addOption: { place: { label: 'Bakery' }, diningFormat: 'sit-down' },
+      why: 's',
+    };
+    expect(validateProposal(added, state).join()).toMatch(/addOption: Bakery has no placeId/);
+    // Restating a candidate the meal already has needs no id.
+    expect(
+      validateProposal(
+        { ...added, addOption: { place: { label: 'café' }, diningFormat: 'sit-down' } },
+        state,
+      ),
+    ).toEqual([]);
   });
 
   it('puts a new stay on its scenario', () => {
@@ -804,7 +1091,7 @@ describe('second code-review fixes', () => {
       ],
     }));
     const state = proposalState(data);
-    state.searchedPlaceIds.add('place_port');
+    state.placeSearches.placeIds.add('place_port');
     const restate: ChangeProposal = {
       entityId: 'stay_hotel',
       kind: 'stay',
@@ -867,9 +1154,11 @@ describe('second code-review fixes', () => {
     // A timeless scenic passage beside resolved ports is a new stop, not a respelled port.
     const passage = calls(
       { kind: 'port', place: { placeId: 'place_port', label: 'Test Port' } },
-      { kind: 'scenic', place: { label: 'Tracy Arm' } },
+      { kind: 'scenic', place: { label: 'Tracy Arm', notOnGoogle: true } },
     );
-    expect(validateProposal(passage, proposalState(data))).toEqual([]);
+    const searched = proposalState(data);
+    searched.placeSearches.emptyQueries.add('Tracy Arm');
+    expect(validateProposal(passage, searched)).toEqual([]);
     // A timeless port call without an id still can't stand in for a resolved port.
     expect(
       validateProposal(
@@ -1005,10 +1294,13 @@ describe('validation of malformed tool input', () => {
     entityId: 'act_lunch',
     kind: 'activity',
     changes: {
-      mealOptions: [{ place: { label: 'Cafe' }, diningFormat: 'sit-down' }],
+      mealOptions: [{ place: { label: 'Cafe', notOnGoogle: true }, diningFormat: 'sit-down' }],
       travelers: ['t1'],
     },
-    addOption: { place: { label: 'Bistro' }, diningFormat: 'sit-down' },
+    addOption: {
+      place: { label: 'Bistro', onboard: true, replaces: 'place_cafe' },
+      diningFormat: 'sit-down',
+    },
     why: 's',
   };
 
@@ -1048,7 +1340,7 @@ describe('validation of malformed tool input', () => {
           // The entry point the callers use (it remaps travelers first), then
           // what passes is queued at finish, which must hold too.
           const checked = checkedChanges([mutated as ChangeProposal], trip(), {
-            placeIds: ['place_port'],
+            searches: { placeIds: new Set(['place_port']), emptyQueries: new Set() },
             travelers: [{ id: 't1', name: 'Someone New' }],
           });
           if ('state' in checked) queueFromProposals(checked.state);
@@ -1387,6 +1679,8 @@ describe('entry point parity', () => {
     ['packages that are not a list', { text: 'x', packages: { name: 'p' } }],
     ['a start on another day', { text: 'x', startAt: '2027-07-12T19:00' }],
     ['a covered meal with nothing covering it', { text: 'x', diningFormat: 'included' }],
+    ['a new place with no placeId', { text: 'x', place: { label: 'Somewhere' } }],
+    ['a place with a placeId that is not text', { text: 'x', place: { label: 'x', placeId: 5 } }],
     [
       'a package costing less than nothing',
       {
@@ -1398,14 +1692,70 @@ describe('entry point parity', () => {
 
   it.each(hostile)('turns down %s everywhere', (_name, changes) => {
     const proposal = onNewActivity(changes);
-    const checked = checkedChanges([proposal], trip(), { placeIds: [] });
+    const checked = checkedChanges([proposal], trip(), { searches: noPlaceSearches() });
     expect('errors' in checked).toBe(true);
     expect('error' in applyBatch(trip(), [proposal])).toBe(true);
   });
 
+  it('turns down a resolved place renamed without its id everywhere, and takes its id back', () => {
+    const renamed = (to: { label: string; placeId?: string }): ChangeProposal => ({
+      entityId: 'ph_out',
+      kind: 'transit',
+      changes: { to },
+      why: 's',
+    });
+    const hostile = renamed({ label: 'The Remote Lodge' });
+    const checked = checkedChanges([hostile], trip(), { searches: noPlaceSearches() });
+    expect('errors' in checked && checked.errors.join()).toMatch(
+      /Remote Lodge \(placeId place_lodge\)/,
+    );
+    expect('error' in applyBatch(trip(), [hostile])).toBe(true);
+    const restated = renamed({ label: 'The Remote Lodge', placeId: 'place_lodge' });
+    expect('state' in checkedChanges([restated], trip(), { searches: noPlaceSearches() })).toBe(
+      true,
+    );
+    expect('data' in applyBatch(trip(), [restated])).toBe(true);
+  });
+
+  it('takes a new place by its searched id, or as notOnGoogle after an empty search, through both', () => {
+    const at = (place: Record<string, unknown>) =>
+      onNewActivity({ text: 'Walk', startAt: '2027-07-11T10:00', place });
+    const found = at({ label: 'Trailhead', placeId: 'place_trailhead' });
+    const searches = noPlaceSearches();
+    searches.placeIds.add('place_trailhead');
+    expect('state' in checkedChanges([found], trip(), { searches })).toBe(true);
+    expect('data' in applyBatch(trip(), [found])).toBe(true);
+    // Applying it trusts the search checked when it was proposed (placesChecked),
+    // so only the proposing half can show the empty search is needed.
+    const unlisted = at({ label: 'Trailhead', notOnGoogle: true });
+    expect('errors' in checkedChanges([unlisted], trip(), { searches })).toBe(true);
+    searches.emptyQueries.add('Trailhead');
+    expect('state' in checkedChanges([unlisted], trip(), { searches })).toBe(true);
+    expect('data' in applyBatch(trip(), [unlisted])).toBe(true);
+  });
+
+  it('turns down a ship venue taking over from a resolved place unless it names it, through both', () => {
+    const aboard = (place: Record<string, unknown>): ChangeProposal => ({
+      entityId: 'ph_out',
+      kind: 'transit',
+      changes: { to: { label: 'Ship Theater', onboard: true, ...place } },
+      why: 's',
+    });
+    const hostile = aboard({});
+    expect('errors' in checkedChanges([hostile], trip(), { searches: noPlaceSearches() })).toBe(
+      true,
+    );
+    expect('error' in applyBatch(trip(), [hostile])).toBe(true);
+    const named = aboard({ replaces: 'place_lodge' });
+    expect('state' in checkedChanges([named], trip(), { searches: noPlaceSearches() })).toBe(true);
+    expect('data' in applyBatch(trip(), [named])).toBe(true);
+  });
+
   it('accepts a plain new activity through both', () => {
     const proposal = onNewActivity({ text: 'Walk', startAt: '2027-07-11T10:00' });
-    expect('state' in checkedChanges([proposal], trip(), { placeIds: [] })).toBe(true);
+    expect('state' in checkedChanges([proposal], trip(), { searches: noPlaceSearches() })).toBe(
+      true,
+    );
     expect('data' in applyBatch(trip(), [proposal])).toBe(true);
   });
 });

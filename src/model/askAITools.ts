@@ -7,11 +7,12 @@
 // draft for human review.
 import type { BetaTool } from '@anthropic-ai/sdk/resources/beta/messages/messages';
 
-import { bookingById, bookingIdsOf, uniqueBookings } from './bookings';
+import { bookingById, bookingIdsOf } from './bookings';
 import { lookupTravelInfo } from './directions';
-import { TRAVEL_MODES } from './formatting';
+import { TRAVEL_MODES, uniqueById } from './formatting';
 import { isIsoDate } from './isoDate';
 import { searchPlaces } from './places';
+import type { PlaceSearches } from './proposals';
 import { activityHeadline, formatMoney, formatTime } from './tripModel';
 import type { Booking, Day, DayRow, Note, Place, TravelMode, TripData, TripView } from './types';
 import { getDayWeather } from './weather';
@@ -22,10 +23,8 @@ export interface AskAIToolContext {
   data: TripData;
   view: TripView;
   byDate: ReadonlyMap<string, Day>;
-  // Where search_places records the place ids it returns — the proof a
-  // proposal's placeId came from a real lookup (see proposals.ts's
-  // validateProposal). Every other id a lookup shows is the trip's own.
-  searchedPlaceIds: Set<string>;
+  // Where search_places records what it found (see PlaceSearches).
+  placeSearches: PlaceSearches;
 }
 
 export class ToolInputError extends Error {}
@@ -158,7 +157,7 @@ export function findEntity(data: TripData, id: string): { kind: string; entity: 
 // for get_entity — the model can't see cost or confirmation otherwise.
 function bookingsOf(data: TripData, entity: unknown): Booking[] {
   const ids = bookingIdsOf(entity as Parameters<typeof bookingIdsOf>[0]);
-  return uniqueBookings(ids.map((id) => bookingById(data.bookings, id)));
+  return uniqueById(ids.map((id) => bookingById(data.bookings, id)));
 }
 
 function notesConcerning(data: TripData, id: string): Note[] {
@@ -315,9 +314,18 @@ export async function runReadTool(
     }
 
     case 'search_places': {
-      const results = await searchPlaces(stringField(input, 'query', true));
-      for (const p of results) ctx.searchedPlaceIds.add(p.id);
-      if (!results.length) return 'No places found.';
+      const query = stringField(input, 'query', true);
+      // A search that can't run (no Google key, an API error) finds nothing
+      // too, so a place can still be proposed as not on Google.
+      const results = await searchPlaces(query).catch((err: unknown) => {
+        ctx.placeSearches.emptyQueries.add(query);
+        throw err;
+      });
+      for (const p of results) ctx.placeSearches.placeIds.add(p.id);
+      if (!results.length) {
+        ctx.placeSearches.emptyQueries.add(query);
+        return 'No places found.';
+      }
       return results.map((p) => `${p.label} — ${p.address} (placeId ${p.id})`).join('\n');
     }
 

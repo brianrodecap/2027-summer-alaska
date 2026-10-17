@@ -6,14 +6,17 @@
 // toggling CSS classes on rendered DOM nodes — the React tree here can just
 // not render a filtered-out row in the first place.
 import { liveWarnings } from './mealOptions';
-import { filterTagsFor } from './tripModel';
+import { filterTagsFor, rowShows } from './tripModel';
 import type {
+  ActivityRow,
   Day,
   DayRow,
   EnrichedActivity,
   EnrichedTransit,
   LegSummary,
   ScenarioTrack,
+  StayRow,
+  TransitRow,
 } from './types';
 
 export interface FilterOption {
@@ -79,10 +82,24 @@ export function rowMatches(tags: string[], activeTokens: Set<string>): boolean {
   return true;
 }
 
-// An activity row's tags, with the warnings the row itself shows — computed
-// for the meal candidates selected right now, not the page-load default.
-function activityTags(activity: EnrichedActivity, day: Day): string[] {
-  return filterTagsFor({ ...activity, warnings: liveWarnings(activity, day) });
+// A row's tags: its own entry's — with an activity's warnings computed for
+// the meal candidates selected right now, not the page-load default — and,
+// too, those of what the row shows (rowShows): the first entry of a shared
+// booking carries every sharer's notes, so it matches their warnings as well.
+function rowTags(row: ActivityRow | StayRow | TransitRow, day: Day): string[] {
+  const entity =
+    row.type === 'stay' ? row.stay : row.type === 'transit' ? row.transit : row.activity;
+  const own =
+    row.type === 'activity'
+      ? filterTagsFor({ ...row.activity, warnings: liveWarnings(row.activity, day) })
+      : filterTagsFor(entity);
+  const { booking, notes } = rowShows(row);
+  const shown = filterTagsFor({
+    legId: entity.legId,
+    booking,
+    hasWarningNote: notes.some((n) => n.kind === 'warning'),
+  });
+  return [...new Set([...own, ...shown])];
 }
 
 // Narrows a day's rows to the ones that still match every active filter. One
@@ -92,14 +109,10 @@ export function filterRows(rows: DayRow[], day: Day, activeTokens: Set<string>):
   if (!activeTokens.size) return rows;
   return rows.filter((row) => {
     switch (row.type) {
-      case 'stay':
-        return rowMatches(filterTagsFor(row.stay), activeTokens);
-      case 'transit':
-        return rowMatches(filterTagsFor(row.transit), activeTokens);
-      case 'activity':
-        return rowMatches(activityTags(row.activity, day), activeTokens);
       case 'box':
         return true;
+      default:
+        return rowMatches(rowTags(row, day), activeTokens);
     }
   });
 }
@@ -144,14 +157,13 @@ function rowsHaveVisibleContent(
 ): boolean {
   return rows.some((row) => {
     switch (row.type) {
-      case 'stay':
-        return rowMatches(filterTagsFor(row.stay), activeTokens);
       case 'transit':
         // A route stage never makes a day visible on its own — its Transit's
         // Depart/Arrive rows carry the same tags.
-        return row.phase !== 'stage' && rowMatches(filterTagsFor(row.transit), activeTokens);
+        return row.phase !== 'stage' && rowMatches(rowTags(row, day), activeTokens);
+      case 'stay':
       case 'activity':
-        return rowMatches(activityTags(row.activity, day), activeTokens);
+        return rowMatches(rowTags(row, day), activeTokens);
       case 'box':
         return row.tracks.some((t) => trackHasVisibleContent(t, day, activeTokens, lookup));
     }

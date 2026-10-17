@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';
 
 import { firstImage, timeAndMealTypeLabel } from '../../model/formatting';
 import { liveWarnings } from '../../model/mealOptions';
-import { activityHeadline } from '../../model/tripModel';
+import { activityHeadline, rowShows } from '../../model/tripModel';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
 import { BookingChip } from '../shared/BookingChip';
 import { LinkifiedText } from '../shared/LinkifiedText';
@@ -49,6 +49,7 @@ export function ActivityRow({
   buttonRef: (node: HTMLButtonElement | null) => void;
 }) {
   const timeText = useSunAnchoredTime(activity, day, inView);
+  const { booking } = rowShows({ type: 'activity', activity });
 
   return (
     <ButtonBase
@@ -73,9 +74,9 @@ export function ActivityRow({
         <PlaceConditionsLine place={activity.place} date={day.date} />
         <NotesCluster notes={midNotes} />
         <TravelerChips names={activity.travelers} />
-        {activity.booking && (
+        {booking && (
           <Box sx={{ mt: 0.5 }}>
-            <BookingChip booking={activity.booking} />
+            <BookingChip booking={booking} />
           </Box>
         )}
         <OverlapWarnings warnings={liveWarnings(activity, day)} />

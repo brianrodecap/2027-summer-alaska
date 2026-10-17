@@ -48,11 +48,16 @@ import {
   dayPlanErrors,
   IMPORT_CONVENTIONS,
   isDateTime,
+  noPlaceSearches,
+  type PlaceSearches,
+  placeSearchesFrom,
   PROPOSAL_PROPERTIES,
   type ProposalState,
   proposalState,
   proposedTravelerIds,
   queueFromProposals,
+  type SavedPlaceSearches,
+  savedPlaceSearches,
   shapeErrors,
 } from './proposals';
 import { activityHeadline, formatTime, transitRouteLabel } from './tripModel';
@@ -123,9 +128,9 @@ export interface AskAIConversation {
   itineraryHash: string;
   apiMessages: BetaMessageParam[];
   messages: AskAIMessage[];
-  // Every place id this conversation's searches have returned — the ones a
-  // proposal may use beyond those already on the trip.
-  searchedPlaceIds: string[];
+  // What this conversation's place searches have found (proposals.ts's
+  // PlaceSearches), kept as lists.
+  placeSearches: SavedPlaceSearches;
 }
 
 // ---------- trip context, fed to the model as its system prompt ----------
@@ -303,19 +308,19 @@ const PROPOSE_EDIT_TOOL: BetaTool = {
 // travelers add_traveler added this turn.
 interface ProposalContext {
   data: TripData;
-  searchedPlaceIds: ReadonlySet<string>;
+  placeSearches: PlaceSearches;
   addedTravelers: Traveler[];
 }
 
 // The proposal checks (proposals.ts) for one chat edit, as a batch of one.
-// `placeIds` are the ones searches found, or left out when checking it again
-// as it's applied.
+// `searches` are what place searches found, or left out when checking it
+// again as it's applied.
 // A drive coming off its route (routeId '') gets its arrival from withRoute
 // below, not the change, so the change is checked without it.
 function checkedEdit(
   edit: Pick<ProposedEdit, 'change' | 'newTravelers' | 'routeId' | 'routeVariant'>,
   data: TripData,
-  placeIds?: Iterable<string>,
+  searches?: PlaceSearches,
 ): { state: ProposalState; change: ChangeProposal } | { errors: string[] } {
   // Before anything reads `changes` as an object.
   const malformed = shapeErrors(edit.change);
@@ -325,7 +330,7 @@ function checkedEdit(
     ...(edit.routeId === '' ? { ...edit.change, changes: offRoute } : edit.change),
     ...(edit.routeId ? { onRoute: true } : {}),
   };
-  const checked = checkedChanges([change], data, { placeIds, travelers: edit.newTravelers });
+  const checked = checkedChanges([change], data, { searches, travelers: edit.newTravelers });
   const problems = 'errors' in checked ? [...checked.errors] : [];
   // A route pick is itself a change, with nothing else in `changes`.
   const picksRoute = edit.routeId !== undefined || edit.routeVariant !== undefined;
@@ -411,7 +416,7 @@ function parseProposal(input: unknown, ctx: ProposalContext): ProposedEdit {
     routeVariant,
     summary,
   };
-  const checked = checkedEdit(edit, ctx.data, ctx.searchedPlaceIds);
+  const checked = checkedEdit(edit, ctx.data, ctx.placeSearches);
   if ('errors' in checked) throw new ToolInputError(checked.errors.join('\n'));
   return edit;
 }
@@ -424,7 +429,7 @@ function checkChanges(changes: ChangeProposal[], ctx: ProposalContext): Traveler
   if (empty.length) throw new ToolInputError(empty.join('\n'));
   const travelers = travelersNamedIn(changes, ctx);
   const checked = checkedChanges(changes, ctx.data, {
-    placeIds: ctx.searchedPlaceIds,
+    searches: ctx.placeSearches,
     travelers,
   });
   if ('errors' in checked) throw new ToolInputError(checked.errors.join('\n'));
@@ -626,7 +631,7 @@ export function startConversation(data: TripData): AskAIConversation {
     itineraryHash: hashDoc(itinerary),
     apiMessages: [],
     messages: [],
-    searchedPlaceIds: [],
+    placeSearches: savedPlaceSearches(noPlaceSearches()),
   };
 }
 
@@ -655,8 +660,8 @@ export interface AskAITurnInput {
   // The date the reader is looking at, if any — lets "this day" mean something.
   focusDate?: string | null;
   data: TripData;
-  // The turn adds the conversation's own searchedPlaceIds.
-  tools: Omit<AskAIToolContext, 'searchedPlaceIds'>;
+  // The turn adds the conversation's own placeSearches.
+  tools: Omit<AskAIToolContext, 'placeSearches'>;
   events?: AskAITurnEvents;
   signal?: AbortSignal;
 }
@@ -715,10 +720,10 @@ export async function runAskAITurn(
 
   const proposals: AskAIProposal[] = [];
   const lookups: string[] = [];
-  // Place ids this conversation's searches have returned, in earlier turns too;
+  // What this conversation's searches have found, in earlier turns too;
   // search_places adds to it as this turn runs (see proposals.ts's validateProposal).
-  const searchedPlaceIds = new Set(conversation.searchedPlaceIds);
-  const lookupContext = { ...tools, searchedPlaceIds };
+  const placeSearches = placeSearchesFrom(conversation.placeSearches);
+  const lookupContext = { ...tools, placeSearches };
   // People add_traveler added — this turn, or an earlier one whose proposal is
   // still pending — for proposals to name. Anyone since saved is on the trip.
   const addedTravelers: Traveler[] = travelersFromHistory(conversation.messages, data);
@@ -746,7 +751,7 @@ export async function runAskAITurn(
       if (Object.hasOwn(PROPOSAL_PARSERS, use.name)) {
         proposals.push({
           id: use.id,
-          ...PROPOSAL_PARSERS[use.name](use.input, { data, searchedPlaceIds, addedTravelers }),
+          ...PROPOSAL_PARSERS[use.name](use.input, { data, placeSearches, addedTravelers }),
         });
         return result(QUEUED_FOR_REVIEW);
       }
@@ -830,7 +835,7 @@ export async function runAskAITurn(
     itineraryHash: update?.hash ?? conversation.itineraryHash,
     apiMessages,
     messages: [...conversation.messages, { role: 'user', text: question }, reply],
-    searchedPlaceIds: [...searchedPlaceIds],
+    placeSearches: savedPlaceSearches(placeSearches),
   };
 }
 

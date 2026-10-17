@@ -72,6 +72,13 @@ export function sameName(a: string | null | undefined, b: string | null | undefi
   return !!a && !!b && a.trim().toLowerCase() === b.trim().toLowerCase();
 }
 
+// Each document once, by _id, the first copy kept, in first-seen order.
+export function uniqueById<T extends { _id: string }>(items: (T | null)[]): T[] {
+  const seen = new Map<string, T>();
+  for (const item of items) if (item && !seen.has(item._id)) seen.set(item._id, item);
+  return [...seen.values()];
+}
+
 // What makes two images the same one, for de-duplicating a list of them.
 export function imageKey(image: Image): string {
   if ('uri' in image) return image.uri;

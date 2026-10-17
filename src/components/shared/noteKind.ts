@@ -24,8 +24,8 @@ export function sortNotes(notes: Note[]): Note[] {
   return [...notes].sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind]);
 }
 
-// A row-attached entity (a Stay, a Transit's Depart row, an Activity) splits
-// its own notes into three slots — see DayTimeline's node components (and
+// A day-list row splits the notes it shows (tripModel.ts's rowShows — its
+// entry's own, or a shared booking's on its first entry) into three slots — see DayTimeline's node components (and
 // ActivityRow/MealRow, which place `mid` for their own entity): `above`
 // (alert) renders above the whole row, `mid` (info) renders inside the row,
 // after its own text/detail content but before any trailing chips

@@ -947,5 +947,138 @@
     "bookingId": null,
     "images": [],
     "showEndpointsOnMap": true
+  },
+  {
+    "_id": "07a2a5da-2daa-46c4-bd56-6c07ead17aba",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "flight",
+    "travelers": null,
+    "from": {
+      "id": "ChIJgQUlvz8T24gRRk4VTw6fGPw",
+      "label": "Southwest Florida International Airport",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJgQUlvz8T24gRRk4VTw6fGPw"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ],
+      "showWeather": false
+    },
+    "to": {
+      "id": "ChIJ82J3aie0D4gRS61ZAgdHF1E",
+      "label": "Chicago O'Hare International Airport",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ82J3aie0D4gRS61ZAgdHF1E"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ],
+      "showWeather": true
+    },
+    "departsAt": "2027-06-26T06:15",
+    "arrivesAt": "2027-06-26T08:37",
+    "routeId": null,
+    "routeVariant": null,
+    "bookingId": "5b44c508-2fe8-47e3-8d4a-d30d04b7e77a",
+    "images": [],
+    "carrier": "American Airlines",
+    "flightNumber": "AA3274",
+    "seats": [
+      {
+        "travelerId": "trav_brian",
+        "seat": "22A",
+        "cabin": "Main Cabin"
+      },
+      {
+        "travelerId": "trav_stacy",
+        "seat": "22B",
+        "cabin": "Main Cabin"
+      },
+      {
+        "travelerId": "trav_redding",
+        "seat": "22E",
+        "cabin": "Main Cabin"
+      },
+      {
+        "travelerId": "trav_lorelei",
+        "seat": "22F",
+        "cabin": "Main Cabin"
+      }
+    ]
+  },
+  {
+    "_id": "75cce5c1-f644-4fd2-94dd-b72ab5322ceb",
+    "legId": "leg_parks",
+    "journeyId": null,
+    "scenarioId": null,
+    "status": "planning",
+    "mode": "flight",
+    "travelers": null,
+    "from": {
+      "id": "ChIJ82J3aie0D4gRS61ZAgdHF1E",
+      "label": "Chicago O'Hare International Airport",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ82J3aie0D4gRS61ZAgdHF1E"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
+    },
+    "to": {
+      "id": "ChIJERqXa7WiyFYRr2-9pzRat5Y",
+      "label": "Ted Stevens Anchorage International Airport",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJERqXa7WiyFYRr2-9pzRat5Y"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ],
+      "showWeather": true
+    },
+    "departsAt": "2027-06-26T09:45",
+    "arrivesAt": "2027-06-26T13:35",
+    "routeId": null,
+    "routeVariant": null,
+    "bookingId": "5b44c508-2fe8-47e3-8d4a-d30d04b7e77a",
+    "images": [],
+    "carrier": "American Airlines",
+    "flightNumber": "AA1602",
+    "seats": [
+      {
+        "travelerId": "trav_brian",
+        "seat": "20A",
+        "cabin": "Main Cabin"
+      },
+      {
+        "travelerId": "trav_stacy",
+        "seat": "20B",
+        "cabin": "Main Cabin"
+      },
+      {
+        "travelerId": "trav_redding",
+        "seat": "20E",
+        "cabin": "Main Cabin"
+      },
+      {
+        "travelerId": "trav_lorelei",
+        "seat": "20F",
+        "cabin": "Main Cabin"
+      }
+    ]
   }
 ]

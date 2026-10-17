@@ -1,6 +1,5 @@
 import { lazy, type ReactNode, Suspense, useCallback, useMemo, useState } from 'react';
 
-import { uniqueBookings } from '../model/bookings';
 import type { ChangeSource } from '../model/changeLog';
 import {
   commitEntityEdit,
@@ -12,6 +11,7 @@ import {
   upsertById,
   withTripTravelers,
 } from '../model/editForms';
+import { uniqueById } from '../model/formatting';
 import type { Booking, Traveler, TripData } from '../model/types';
 import { type DraftReview, EditContext } from './EditContextObject';
 import { useTripData } from './useTripData';
@@ -110,7 +110,7 @@ export function EditProvider({ children }: { children: ReactNode }) {
   const openDraftSequence = useCallback((drafts: DraftReview[]) => {
     if (!drafts.length) return;
     const [first, ...rest] = drafts;
-    setState(stateFromDraft(first, rest, uniqueBookings(drafts.flatMap((d) => d.bookings ?? []))));
+    setState(stateFromDraft(first, rest, uniqueById(drafts.flatMap((d) => d.bookings ?? []))));
   }, []);
   const openFromDraft = useCallback(
     (draft: DraftReview) => openDraftSequence([draft]),

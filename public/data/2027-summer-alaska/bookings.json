@@ -316,12 +316,6 @@
     "confirmationNumber": null
   },
   {
-    "_id": "booking_act_jun26_1",
-    "status": "planning",
-    "pricing": null,
-    "confirmationNumber": null
-  },
-  {
     "_id": "booking_act_jun26_2",
     "status": "planning",
     "pricing": null,
@@ -533,5 +527,48 @@
     },
     "confirmationNumber": "SCYCUP",
     "bookedThrough": "Capital One Travel"
+  },
+  {
+    "_id": "5b44c508-2fe8-47e3-8d4a-d30d04b7e77a",
+    "status": "booked",
+    "confirmationNumber": "IHJBNF",
+    "pricing": {
+      "perTraveler": [
+        {
+          "travelerId": "trav_brian",
+          "fare": {
+            "amount": 583.9,
+            "currency": "USD"
+          },
+          "ticketNumber": "0017530108052"
+        },
+        {
+          "travelerId": "trav_stacy",
+          "fare": {
+            "amount": 583.9,
+            "currency": "USD"
+          },
+          "ticketNumber": "0017530108053"
+        },
+        {
+          "travelerId": "trav_redding",
+          "fare": {
+            "amount": 583.9,
+            "currency": "USD"
+          },
+          "ticketNumber": "0017530108055"
+        },
+        {
+          "travelerId": "trav_lorelei",
+          "fare": {
+            "amount": 583.9,
+            "currency": "USD"
+          },
+          "ticketNumber": "0017530108058"
+        }
+      ],
+      "fixed": []
+    },
+    "bookedThrough": "Capital One Travel (H-N-LDUYRX)"
   }
 ]

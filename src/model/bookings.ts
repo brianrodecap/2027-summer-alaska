@@ -197,12 +197,6 @@ export function bookingReferrers(data: BookingHolders, bookingId: string): Booki
   return [...bookingHolders(data)].filter((ref) => ref.entity.bookingId === bookingId);
 }
 
-export function uniqueBookings(bookings: (Booking | null)[]): Booking[] {
-  const seen = new Map<string, Booking>();
-  for (const b of bookings) if (b && !seen.has(b._id)) seen.set(b._id, b);
-  return [...seen.values()];
-}
-
 // `data` with every booking no entity references any more dropped — the same
 // object when there are none, so a write that didn't touch bookings stays a
 // no-op for them. TripDataContext.setData runs it on every write, so no edit

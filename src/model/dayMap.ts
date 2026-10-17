@@ -19,12 +19,15 @@
 // Everything else is in the list's own order, so an Activity reached mid-drive
 // on the arrival day of an overnight Transit sits between the Transit's stages
 // and its Arrive, rather than ahead of the whole widened Transit.
+import { sameName } from './formatting';
 import type { Timeline, TimelineEvent } from './timeline';
 import {
   activityNodeKey,
   buildDirectionsUrl,
   type DayMapRouteNode,
   type DayTravelSegment,
+  diffMinutesIso,
+  findNextResolvableStop,
   MAX_ROUTE_WAYPOINTS,
   type RouteStop,
   routeStop,
@@ -43,6 +46,8 @@ import type {
   Place,
   RouteStage,
   StayRelation,
+  Transit,
+  TransitBoundaryRow,
 } from './types';
 
 export type DayVisit =
@@ -202,30 +207,48 @@ export function buildDayVisits({ date, rows, index }: DayVisitsInput): DayVisits
 
 // ---------- drivable runs ----------
 
+// A flight or a ferry: it runs to its own schedule, from its Depart straight
+// to its Arrive, so nothing between those two is driven.
+export const isScheduled = (transit: Pick<Transit, 'mode'>) => transit.mode !== 'drive';
+
 const isNonDriveBoundary = (v: DayVisit): v is Extract<DayVisit, { kind: 'transit' }> =>
-  v.kind === 'transit' && v.transit.mode !== 'drive';
+  v.kind === 'transit' && isScheduled(v.transit);
+
+// Whether two transit endpoints are one place: the same place id when both
+// have one, else exactly the same name.
+function sameEndpoint(a: Place, b: Place): boolean {
+  return a.id && b.id ? a.id === b.id : sameName(a.label, b.label);
+}
 
 // A same-day "there and back" excursion (a floatplane day trip, a shuttle past
-// a private-vehicle closure): an outbound non-drive `depart` whose `to`
-// matches a later `arrive`'s own `from`. Returns each pair's [out, back] span.
+// a private-vehicle closure): an outbound non-drive `depart` from A to B, and
+// a later `arrive` back from B to A. Returns each pair's [out, back] span. A
+// connection (A to B, then B on to C) isn't one: it never comes back. Every
+// depart stays open until an arrive comes back from it, so a connection
+// earlier in the day doesn't hide a later excursion; an arrive closes the
+// latest one it returns from, and any opened after it.
 function excursionPairs(visits: DayVisit[]): Array<[number, number]> {
   const pairs: Array<[number, number]> = [];
-  let outbound: number | null = null;
-  let awaitedReturn: string | null = null;
+  const open: { index: number; transit: EnrichedTransit }[] = [];
   visits.forEach((visit, i) => {
     if (!isNonDriveBoundary(visit)) return;
-    if (outbound === null) {
-      if (visit.phase === 'depart') {
-        outbound = i;
-        awaitedReturn = visit.transit.to.label;
-      }
+    if (visit.phase === 'depart') {
+      open.push({ index: i, transit: visit.transit });
       return;
     }
-    if (visit.phase === 'arrive' && visit.transit.from.label === awaitedReturn) {
-      pairs.push([outbound, i]);
-      outbound = null;
-      awaitedReturn = null;
+    let k = open.length - 1;
+    while (
+      k >= 0 &&
+      !(
+        sameEndpoint(visit.transit.from, open[k].transit.to) &&
+        sameEndpoint(visit.transit.to, open[k].transit.from)
+      )
+    ) {
+      k -= 1;
     }
+    if (k < 0) return;
+    pairs.push([open[k].index, i]);
+    open.splice(k);
   });
   return pairs;
 }
@@ -265,6 +288,79 @@ function bookendedRuns<T>(
   return segments
     .map((stops) => stops.filter((stop, i) => i === 0 || !sameStop(stop, stops[i - 1])))
     .filter((stops) => stops.length > 0);
+}
+
+// ---------- the day list's hops past a scheduled transit ----------
+
+// A Depart or Arrive row, as much of it as scheduledHop reads.
+type BoundaryAt = Pick<TransitBoundaryRow, 'phase'> & {
+  transit: Pick<Transit, 'mode' | 'from' | 'to'>;
+  event: Pick<TimelineEvent, 'at'>;
+};
+
+// What the day list shows between a row and the next one when the first is
+// a scheduled transit's (isScheduled) Depart or Arrive, in place of the
+// drive between them:
+//   - 'aboard': from its Depart, the transit itself carries the party, so
+//     there's no drive to look up;
+//   - 'connection': its Arrive straight into the Depart of another of the
+//     same mode, flying on from where it landed (not back to where it left:
+//     that's an excursion's return), is a layover — the time between them,
+//     not a drive.
+// null when it's an ordinary hop (the travel footer).
+export type ScheduledHop = { kind: 'aboard' } | { kind: 'connection'; minutes: number };
+
+export function scheduledHop(
+  from: BoundaryAt | undefined,
+  to: BoundaryAt | undefined,
+): ScheduledHop | null {
+  if (!from || !isScheduled(from.transit)) return null;
+  if (from.phase === 'depart') return { kind: 'aboard' };
+  if (
+    to?.phase === 'depart' &&
+    to.transit.mode === from.transit.mode &&
+    sameEndpoint(to.transit.from, from.transit.to) &&
+    !sameEndpoint(to.transit.to, from.transit.from)
+  ) {
+    const minutes = diffMinutesIso(from.event.at, to.event.at);
+    // One leaving before the other lands isn't a connection to show.
+    if (minutes > 0) return { kind: 'connection', minutes };
+  }
+  return null;
+}
+
+// A day-list row, as much of it as rowHop reads: the place it's entered and
+// left at, and — for a transit's Depart or Arrive — that row.
+interface HopRow {
+  entryPlace: Place | null;
+  exitPlace: Place | null;
+  boundary?: BoundaryAt;
+}
+
+// What follows `rows[i]` in the day list: its scheduledHop, else a travel
+// footer from its place to `next`'s — the next row with a resolved place, walking past rows that
+// have none so they don't dead-end their real neighbors, but never past a
+// flight's or ferry's own Depart or Arrive (resolved or not), which no drive
+// crosses; drivableRuns splits the day there the same way. null for no
+// footer: nothing reachable, the same place, or the next stop is a scheduled
+// transit's Arrive (the row is mid-flight: a route stage, an activity aboard).
+export function rowHop<R extends HopRow>(
+  rows: R[],
+  i: number,
+): ScheduledHop | { kind: 'travel'; from: Place; to: Place; next: R } | null {
+  const row = rows[i];
+  const next = findNextResolvableStop(
+    rows,
+    i,
+    (r) => !!r.entryPlace?.id || (!!r.boundary && isScheduled(r.boundary.transit)),
+  );
+  const hop = scheduledHop(row.boundary, next?.boundary);
+  if (hop) return hop;
+  if (next?.boundary?.phase === 'arrive' && isScheduled(next.boundary.transit)) return null;
+  const from = row.exitPlace;
+  const to = next?.entryPlace;
+  if (!next || !from?.id || !to?.id || from.id === to.id) return null;
+  return { kind: 'travel', from, to, next };
 }
 
 // ---------- queries ----------

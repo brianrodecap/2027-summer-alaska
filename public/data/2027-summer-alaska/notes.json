@@ -396,24 +396,6 @@
     ]
   },
   {
-    "_id": "note_florida_flight_options",
-    "kind": "footnote",
-    "text": "Flights to Anchorage from Florida: MIA, FLL, TPA, MCO, RSW — exact arrival time depends on which one we book.",
-    "concerns": [
-      {
-        "entity": "activity",
-        "id": "act_jun26_1"
-      }
-    ],
-    "images": [
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Ted_Stevens_Anchorage_International_Airport,_main_lobby_of_South_Terminal.jpg",
-        "credit": "Photo by Wonderlane / CC BY 2.0",
-        "caption": "Main lobby of the South Terminal, Ted Stevens Airport"
-      }
-    ]
-  },
-  {
     "_id": "note_jul1_dual_purpose",
     "kind": "footnote",
     "text": "Jul 1 is a dual-purpose day: if Jun 30's flight was weathered out, this is the backup attempt (still flying during the day and driving back to Fairbanks that same night); otherwise it's just the drive-back day.",
@@ -1709,6 +1691,30 @@
       {
         "entity": "transit",
         "id": "transit_katmai_out"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "f3d1b129-e4a8-4252-a702-38db2bb3c6ac",
+    "kind": "info",
+    "text": "Non-refundable. Free cancellation until 11:59 PM ET the next business day after booking (Oct 15, 2026). After that, airline change/cancel fees apply per passenger, plus any fare difference. Tickets can't be transferred to another traveler.",
+    "concerns": [
+      {
+        "entity": "transit",
+        "id": "75cce5c1-f644-4fd2-94dd-b72ab5322ceb"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "7c4b345b-8dd1-430d-80dd-b92e529de83b",
+    "kind": "info",
+    "text": "Short 1h 8m connection at Chicago O'Hare. The flight now lands in Anchorage at 1:35 PM, not the 9:30 PM in the plan, so the evening (rental car pickup, dinner) can move earlier.",
+    "concerns": [
+      {
+        "entity": "transit",
+        "id": "75cce5c1-f644-4fd2-94dd-b72ab5322ceb"
       }
     ],
     "images": []

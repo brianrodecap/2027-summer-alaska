@@ -503,8 +503,17 @@ export interface EnrichedMealOption extends MealOption {
   notes: Note[]; // this candidate's own notes, not the Activity's — only shown while it's the selected option
 }
 
+// Set on every entry that shares its booking with others — one object per
+// booking — for the day list to show the booking and every sharer's notes
+// once, on the first of them (tripModel.ts's withSharedBookings, rowShows).
+export interface BookingShare {
+  firstId: string;
+  notes: Note[]; // every sharer's notes, each once
+}
+
 export interface EnrichedActivity extends Omit<Activity, 'options' | 'travelers'> {
   booking: Booking | null;
+  bookingShare?: BookingShare;
   notes: Note[];
   hasWarningNote: boolean;
   warnings: string[]; // what its row flags (tripModel.ts's activityWarnings)
@@ -514,6 +523,7 @@ export interface EnrichedActivity extends Omit<Activity, 'options' | 'travelers'
 
 export interface EnrichedStay extends Stay {
   booking: Booking | null;
+  bookingShare?: BookingShare;
   notes: Note[];
   hasWarningNote: boolean;
 }
@@ -540,6 +550,7 @@ export interface ResolvedRouteInfo {
 
 export interface EnrichedTransit extends Omit<Transit, 'arrivesAt'> {
   booking: Booking | null;
+  bookingShare?: BookingShare;
   routeInfo: ResolvedRouteInfo | null;
   arrivesAt: string | null; // overridden with the route walk's resolved arrival, when routed
   notes: Note[];

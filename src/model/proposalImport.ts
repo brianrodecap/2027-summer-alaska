@@ -225,7 +225,7 @@ export async function importByProposals(
             data,
             view,
             byDate: new Map(),
-            searchedPlaceIds: state.searchedPlaceIds,
+            placeSearches: state.placeSearches,
           }).then(
             (text) => ({ text, isError: false }),
             (err: unknown) => ({

@@ -23,11 +23,13 @@ import {
 } from 'react';
 
 import { useKeyedAsync } from '../../hooks/useKeyedAsync';
+import { isScheduled, rowHop } from '../../model/dayMap';
 import { type DriveInfo, lookupTravelInfo } from '../../model/directions';
 import { applyTravelModeSelection, resolveTravelMode } from '../../model/editForms';
 import { filterRows } from '../../model/filters';
 import {
   firstImage,
+  formatMinutes,
   formatTravel,
   placeFromLodging,
   STAGE_KIND_LABEL,
@@ -44,8 +46,8 @@ import {
 } from '../../model/reorder';
 import {
   activeTrackOf,
-  findNextResolvableStop,
   formatTime,
+  rowShows,
   rowTestId,
   segmentKey,
   splitOutStayBoundaries,
@@ -267,7 +269,8 @@ const StayNode = memo(function StayNode({
   const detailBits = stayDetailBits(stay.lodging);
   const image = firstImage(stay, lodgingPlace);
   const { openEdit, deleteEntity } = useEdit();
-  const { above, mid, below } = splitNotes(stay.notes);
+  const { booking, notes } = rowShows(item);
+  const { above, mid, below } = splitNotes(notes);
   return (
     <TimelineRow
       dot={<AvatarOrDot image={image} icon="hotel" />}
@@ -300,9 +303,9 @@ const StayNode = memo(function StayNode({
         )}
         <PlaceConditionsLine place={lodgingPlace} date={date} />
         <NotesCluster notes={mid} />
-        {stay.booking && (
+        {booking && (
           <Box sx={{ mt: 0.5 }}>
-            <BookingChip booking={stay.booking} />
+            <BookingChip booking={booking} />
           </Box>
         )}
       </Box>
@@ -337,9 +340,8 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
   const modeIconName = transitModeIconName(transit);
   const image = firstImage(transit, endpointPlace);
   const { openEdit, deleteEntity } = useEdit();
-  const { above, mid, below } = isDepart
-    ? splitNotes(transit.notes)
-    : { above: [], mid: [], below: [] };
+  const { booking, notes } = rowShows(item);
+  const { above, mid, below } = splitNotes(notes);
 
   const boundaryContent = (
     <Box sx={{ minWidth: 0 }}>
@@ -352,10 +354,10 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
       </Typography>
       <Typography variant="subtitle1">{endpointPlace.label}</Typography>
       <PlaceConditionsLine place={endpointPlace} date={date} />
-      {isDepart && <NotesCluster notes={mid} />}
-      {isDepart && transit.booking && (
+      <NotesCluster notes={mid} />
+      {booking && (
         <Box sx={{ mt: 0.5 }}>
-          <BookingChip booking={transit.booking} />
+          <BookingChip booking={booking} />
         </Box>
       )}
       {isDepart && <RouteVariantTabs transit={transit} />}
@@ -380,7 +382,7 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
         )
       }
     >
-      {isDepart && <NotesCluster notes={above} />}
+      <NotesCluster notes={above} />
       {isDepart ? (
         <Box sx={{ cursor: 'pointer' }} onClick={() => onOpen(transit)}>
           {boundaryContent}
@@ -388,7 +390,7 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
       ) : (
         boundaryContent
       )}
-      {isDepart && <NotesCluster notes={below} />}
+      <NotesCluster notes={below} />
       {travelFooter}
     </TimelineRow>
   );
@@ -440,7 +442,7 @@ const ActivityNode = memo(function ActivityNode({
 }) {
   const { openEdit, deleteEntity } = useEdit();
   const { mealOptionIndex } = useMealOptionSelection();
-  const { above, mid, below } = splitNotes(activity.notes);
+  const { above, mid, below } = splitNotes(rowShows({ type: 'activity', activity }).notes);
   // One observer shared by this node's leading dot and its row text — both
   // sit in the same TimelineItem and cross the same rootMargin together, so
   // there's no need for AvatarOrDot to stand up a second one of its own.
@@ -603,19 +605,38 @@ function TravelModeSummary({
   loading: boolean;
 }) {
   return (
+    <IconCaption icon={TRAVEL_MODE_ICON[mode]}>
+      {loading ? '…' : info ? formatTravel(info) : 'No route'}
+    </IconCaption>
+  );
+}
+
+// A footer's small icon and caption — the drive's, and the layover's in its place.
+function IconCaption({ icon, children }: { icon: string; children: ReactNode }) {
+  return (
     <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-      {renderMaterialIcon(TRAVEL_MODE_ICON[mode], { fontSize: 'small' })}
+      {renderMaterialIcon(icon, { fontSize: 'small' })}
       <Typography variant="caption" color="text.secondary" component="span">
-        {loading ? '…' : info ? formatTravel(info) : 'No route'}
+        {children}
       </Typography>
     </Stack>
   );
 }
 
-// The travel-info footer every event (including a Transit's own waypoints)
+// In place of the travel footer between a flight's Arrive and the next
+// flight's Depart: how long the connection is.
+function LayoverFooter({ minutes }: { minutes: number }) {
+  return (
+    <Box sx={{ mt: 0.5 }}>
+      <IconCaption icon="hourglass_empty">{formatMinutes(minutes)} layover</IconCaption>
+    </Box>
+  );
+}
+
+// The travel-info footer an event (including a Transit's own waypoints)
 // gets at the bottom of its own content when a next row names a different,
-// actually-resolvable Place — see DayTimelineNode's own `place` field and
-// the travelFooters pass below. No dot/connector of its own (the user
+// actually-resolvable Place — never across a flight or ferry; see the
+// travelFooters pass below. No dot/connector of its own (the user
 // explicitly didn't want a timeline icon for this) — it's just inline
 // content inside whichever row's bottom it's attached to. Mode is picked per
 // segment, not once for the whole day — a traveler might walk from the
@@ -836,8 +857,16 @@ const ScenarioSplitDropSpacer = memo(function ScenarioSplitDropSpacer({
 // before/after a scenario split, using whichever single endpoint is
 // actually on screen right now, rather than treating every scenario
 // boundary as unresolvable the way a bare `Place | null` on the split
-// itself would have to.
+// itself would have to. Never past a flight's or ferry's own Depart or
+// Arrive, resolved or not — no drive crosses one (dayMap.ts's rowHop stops
+// there too).
 function edgeRealPlace(rows: DayRow[], fromStart: boolean): Place | null {
+  return edgeStop(rows, fromStart) || null;
+}
+
+// edgeRealPlace's walk: the place, null when the rows have none, false when a
+// scheduled transit's boundary ends the walk first.
+function edgeStop(rows: DayRow[], fromStart: boolean): Place | null | false {
   const { checkOuts, rest, checkIns } = splitOutStayBoundaries(rows);
   const flattened = [...checkOuts, ...rest, ...checkIns];
   const ordered = fromStart ? flattened : [...flattened].reverse();
@@ -848,6 +877,7 @@ function edgeRealPlace(rows: DayRow[], fromStart: boolean): Place | null {
     } else if (item.type === 'transit') {
       const place = transitRowPlace(item);
       if (place?.id) return place;
+      if (isBoundaryRow(item) && isScheduled(item.transit)) return false;
     } else if (item.type === 'activity') {
       // Already resolved for the reader's selections (a still-open meal's
       // currently-selected candidate) when the timeline was built.
@@ -855,8 +885,8 @@ function edgeRealPlace(rows: DayRow[], fromStart: boolean): Place | null {
       if (place?.id) return place;
     } else {
       const active = activeTrackOf(item.tracks);
-      const place = active ? edgeRealPlace(active.rows, fromStart) : null;
-      if (place) return place;
+      const stop = active ? edgeStop(active.rows, fromStart) : null;
+      if (stop !== null) return stop;
     }
   }
   return null;
@@ -884,6 +914,9 @@ interface DayTimelineNode {
   // active — see edgeRealPlace above.
   entryPlace: Place | null;
   exitPlace: Place | null;
+  // A transit's Depart or Arrive row — what the footer pass asks
+  // scheduledHop about, since a flight's own hop is never a drive.
+  boundary?: TransitBoundaryRow;
   render: (props: {
     isLast: boolean;
     dragHandle?: ReactNode;
@@ -1004,6 +1037,7 @@ export const DayTimeline = memo(function DayTimeline({
             droppable: true,
             entryPlace: boundaryPlace,
             exitPlace: boundaryPlace,
+            boundary: item,
             render: ({ isLast, dragHandle, selected, travelFooter }) => (
               <TransitBoundaryNode
                 item={item}
@@ -1167,26 +1201,33 @@ export const DayTimeline = memo(function DayTimeline({
   // neither is specific enough to resolve to one Google Place) can't be
   // BOTH ends of a segment, but it also shouldn't dead-end the pairing for
   // its real, resolvable neighbors on either side. tripModel.ts's
-  // findNextResolvableStop does that skip-forward, so the footers land on
-  // the same pairs of real places that dayMap.ts's travelSegments (the day
-  // header's drive-time/distance total) and the map panel reach by filtering
-  // their stops down to resolved places up front.
+  // findNextResolvableStop does that skip-forward (dayMap.ts's rowHop) —
+  // stopping at a flight's or ferry's own Depart or Arrive, resolved or not,
+  // since no drive crosses one — so the footers land on the same pairs of real places that
+  // dayMap.ts's travelSegments (the day header's drive-time/distance total)
+  // and the map panel reach by splitting the day into drivable runs, then
+  // filtering their stops down to resolved places.
+  //
+  // A scheduled transit's own hops aren't driven (dayMap.ts's scheduledHop):
+  // its Depart gets no footer, and its Arrive straight into the next one's
+  // Depart gets the layover in place of one.
   // Memoized (on allNodes/trailingTravelFooter) so each footer element keeps its
   // identity across unrelated re-renders instead of being recreated every time.
   const travelFooters = useMemo(
     (): (ReactNode | undefined)[] =>
       allNodes.map((node, i) => {
+        const hop = rowHop(allNodes, i);
+        if (hop?.kind === 'aboard') return undefined;
+        if (hop?.kind === 'connection') return <LayoverFooter minutes={hop.minutes} />;
         if (i === allNodes.length - 1) return trailingTravelFooter;
-        if (!node.exitPlace?.id) return undefined;
-        const next = findNextResolvableStop(allNodes, i, (n) => n.entryPlace?.id);
-        if (!next || node.exitPlace.id === next.entryPlace!.id) return undefined;
-        const segKey = segmentKey(node.key, next.key);
+        if (!hop) return undefined;
+        const segKey = segmentKey(node.key, hop.next.key);
         return (
           <TravelInfoControl
             key={segKey}
             segmentKey={segKey}
-            origin={node.exitPlace}
-            destination={next.entryPlace!}
+            origin={hop.from}
+            destination={hop.to}
           />
         );
       }),

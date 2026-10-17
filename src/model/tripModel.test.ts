@@ -7,11 +7,20 @@ import {
   diffMinutesIso,
   portCallsOn,
   portCallWarningFor,
+  rowShows,
   splitOutStayBoundaries,
   tripDateRange,
   tripDayCount,
 } from './tripModel';
-import type { BoxRow, MealOption, StayRow, TripData } from './types';
+import type {
+  BoxRow,
+  EnrichedStay,
+  EnrichedTransit,
+  MealOption,
+  StayRelation,
+  StayRow,
+  TripData,
+} from './types';
 
 // A bare-minimum, synthetic TripData — one Trip and one Leg, nothing else —
 // for tests to extend with only the specific entities/fields they exercise.
@@ -812,6 +821,103 @@ describe('entity notes', () => {
     const without = view.activitiesById.get('test_other');
     expect(without?.notes).toEqual([]);
     expect(without?.hasWarningNote).toBe(false);
+  });
+});
+
+describe('a booking several entries share', () => {
+  // Two connecting flights on one ticket, listed (and named) so that neither
+  // array order nor id order picks the first flight — only its departure does.
+  function connection(): TripData {
+    const data = minimalTripData();
+    data.bookings.push({
+      _id: 'booking_ticket',
+      status: 'booked',
+      pricing: null,
+      confirmation: 'ABC123',
+    } as never);
+    pushMinimalTransit(data, {
+      _id: 'a_second',
+      mode: 'flight',
+      departsAt: '2027-06-26T09:45',
+      arrivesAt: '2027-06-26T13:35',
+      bookingId: 'booking_ticket',
+    });
+    pushMinimalTransit(data, {
+      _id: 'z_first',
+      mode: 'flight',
+      departsAt: '2027-06-26T06:15',
+      arrivesAt: '2027-06-26T08:37',
+      bookingId: 'booking_ticket',
+    });
+    const note = (id: string, concerns: string[]) => ({
+      _id: id,
+      kind: 'info' as const,
+      text: id,
+      concerns: concerns.map((t) => ({ entity: 'transit' as const, id: t })),
+      images: [],
+    });
+    data.notes.push(
+      note('note_refund', ['a_second']),
+      note('note_seat', ['z_first']),
+      note('note_both', ['z_first', 'a_second']),
+    );
+    return data;
+  }
+
+  const depart = (transit: EnrichedTransit) =>
+    rowShows({ type: 'transit', transit, phase: 'depart' });
+
+  it('shows the booking only on the first departure', () => {
+    const view = buildTripView(connection());
+    expect(depart(view.transitsById.get('z_first')!).booking?._id).toBe('booking_ticket');
+    expect(depart(view.transitsById.get('a_second')!).booking).toBeNull();
+    // Never on an Arrive.
+    expect(
+      rowShows({ type: 'transit', transit: view.transitsById.get('z_first')!, phase: 'arrive' }),
+    ).toEqual({ booking: null, notes: [] });
+  });
+
+  it('gathers every sharer’s notes on the first departure, each once', () => {
+    const view = buildTripView(connection());
+    const second = view.transitsById.get('a_second')!;
+    const ids = (t: EnrichedTransit) =>
+      depart(t)
+        .notes.map((n) => n._id)
+        .sort();
+    expect(ids(view.transitsById.get('z_first')!)).toEqual([
+      'note_both',
+      'note_refund',
+      'note_seat',
+    ]);
+    expect(ids(second)).toEqual([]);
+    // The entry's own notes stay its own, for its detail sheet.
+    expect(second.notes.map((n) => n._id).sort()).toEqual(['note_both', 'note_refund']);
+  });
+
+  it('leaves a booking with one entry, and its notes, where they are', () => {
+    const data = connection();
+    data.transits = data.transits.filter((t) => t._id === 'a_second');
+    const only = buildTripView(data).transitsById.get('a_second')!;
+    expect(only.bookingShare).toBeUndefined();
+    expect(depart(only).booking?._id).toBe('booking_ticket');
+    expect(
+      depart(only)
+        .notes.map((n) => n._id)
+        .sort(),
+    ).toEqual(['note_both', 'note_refund']);
+  });
+
+  it('shows a stay’s booking and notes on its Check in or one Overnight only', () => {
+    const stay = {
+      _id: 'stay_cruise',
+      booking: { _id: 'booking_cruise' },
+      notes: [{ _id: 'note_deposit' }],
+    } as unknown as EnrichedStay;
+    const shown = (relation: StayRelation) => rowShows({ type: 'stay', stay, relation });
+    expect(shown('Check in')).toEqual({ booking: stay.booking, notes: stay.notes });
+    expect(shown('Overnight')).toEqual({ booking: stay.booking, notes: stay.notes });
+    expect(shown('Staying')).toEqual({ booking: null, notes: [] });
+    expect(shown('Check out')).toEqual({ booking: null, notes: [] });
   });
 });
 

@@ -1,51 +1,5 @@
 [
   {
-    "_id": "act_jun26_1",
-    "legId": "leg_parks",
-    "scenarioId": null,
-    "status": "planning",
-    "startAt": "2027-06-26T21:30",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": "high",
-    "text": "Arrive Ted Stevens Anchorage Intl (ANC)",
-    "place": {
-      "id": "ChIJERqXa7WiyFYRr2-9pzRat5Y",
-      "label": "Ted Stevens Anchorage International Airport",
-      "images": [
-        {
-          "placePhoto": {
-            "placeId": "ChIJERqXa7WiyFYRr2-9pzRat5Y"
-          },
-          "credit": null,
-          "caption": null
-        }
-      ]
-    },
-    "bookingId": "booking_act_jun26_1",
-    "mealType": null,
-    "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": [
-      {
-        "placePhoto": {
-          "placeId": "ChIJERqXa7WiyFYRr2-9pzRat5Y",
-          "author": "Mandar Pathak"
-        },
-        "credit": null,
-        "caption": null
-      },
-      {
-        "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/Ted_Stevens_Anchorage_International_Airport,_main_lobby_of_South_Terminal.jpg",
-        "credit": "Photo by Wonderlane / CC BY 2.0",
-        "caption": "Main lobby of the South Terminal, Ted Stevens Airport"
-      }
-    ],
-    "date": null
-  },
-  {
     "_id": "act_jun26_2",
     "legId": "leg_parks",
     "scenarioId": null,

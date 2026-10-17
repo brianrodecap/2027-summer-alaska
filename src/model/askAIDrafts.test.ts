@@ -14,7 +14,7 @@ import {
   withPlaceImagesInData,
 } from './askAIDrafts';
 import { blankActivity } from './editForms';
-import { applyMealOptions, type ChangeProposal } from './proposals';
+import { applyMealOptions, type ChangeProposal, proposalState } from './proposals';
 import type { Activity, Image, Note, Route, Scenario, TripData } from './types';
 
 const DATE = '2027-07-13';
@@ -59,6 +59,10 @@ function trip(activities: Activity[], scenarios: Scenario[] = []): TripData {
   } as unknown as TripData;
 }
 
+// Sets a meal's candidates as a draft is built: no checks, on an empty trip.
+const setOptions = (meal: Activity, options: Parameters<typeof applyMealOptions>[1]) =>
+  applyMealOptions(meal, options, { state: proposalState(trip([])), problems: null });
+
 describe('applyMealOptions', () => {
   it('turns a meal into undecided candidates, keeping a booked existing choice', () => {
     const dinner = activity('dinner', {
@@ -67,7 +71,7 @@ describe('applyMealOptions', () => {
       diningFormat: 'sit-down',
       bookingId: 'booking_simon',
     });
-    applyMealOptions(dinner, [
+    setOptions(dinner, [
       { place: { label: "Simon & Seafort's", placeId: 'p_simon' } },
       { place: { label: 'Orso', placeId: 'p_orso' } },
     ]);
@@ -81,20 +85,15 @@ describe('applyMealOptions', () => {
 
   it('keeps an existing candidate’s id when the list is revised', () => {
     const dinner = activity('dinner', { mealType: 'dinner' });
-    applyMealOptions(dinner, [{ place: { label: 'Orso' } }, { place: { label: "Crow's Nest" } }]);
+    setOptions(dinner, [{ place: { label: 'Orso' } }, { place: { label: "Crow's Nest" } }]);
     const orsoId = dinner.options?.[0]._id;
-    applyMealOptions(dinner, [
-      { place: { label: 'orso' } },
-      { place: { label: 'Marx Bros. Cafe' } },
-    ]);
+    setOptions(dinner, [{ place: { label: 'orso' } }, { place: { label: 'Marx Bros. Cafe' } }]);
     expect(dinner.options?.[0]._id).toBe(orsoId);
   });
 
   it('treats a single candidate as a decision', () => {
     const dinner = activity('dinner', { mealType: 'dinner' });
-    applyMealOptions(dinner, [
-      { place: { label: 'Orso', placeId: 'p_orso' }, diningFormat: 'sit-down' },
-    ]);
+    setOptions(dinner, [{ place: { label: 'Orso', placeId: 'p_orso' }, diningFormat: 'sit-down' }]);
     expect(dinner.options).toBeNull();
     expect(dinner.place).toEqual({ id: 'p_orso', label: 'Orso' });
     expect(dinner.diningFormat).toBe('sit-down');
@@ -314,10 +313,7 @@ describe('place images', () => {
     expect(withPlaceImages(a).place?.images).toEqual([primary('p1')]);
 
     const meal = activity('m');
-    applyMealOptions(meal, [
-      { place: { label: 'One', placeId: 'p1' } },
-      { place: { label: 'Two' } },
-    ]);
+    setOptions(meal, [{ place: { label: 'One', placeId: 'p1' } }, { place: { label: 'Two' } }]);
     const filled = withPlaceImages(meal);
     expect(filled.options?.map((o) => o.place?.images)).toEqual([[primary('p1')], undefined]);
   });

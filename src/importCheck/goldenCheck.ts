@@ -10,7 +10,6 @@ import {
   bookingOf,
   faresByTraveler,
   fixedCost,
-  uniqueBookings,
   withoutOrphanBookings,
 } from '../model/bookings';
 import type { QueuedImport } from '../model/documentImport';
@@ -24,6 +23,7 @@ import {
   TRANSIT_DETAIL_KEYS,
   withTripTravelers,
 } from '../model/editForms';
+import { uniqueById } from '../model/formatting';
 import { buildTripView, entityLabel } from '../model/tripModel';
 import type { Booking, BookingStatus, BudgetRow, Payable, TripData } from '../model/types';
 
@@ -306,7 +306,7 @@ export function checkDocument(
       ...Object.keys(golden.entities).map((id) => findEntity(after, id)?.entity),
       ...allAdded.map((a) => a.entity),
     ];
-    const all = uniqueBookings(
+    const all = uniqueById(
       touched.map((entity) => (entity ? bookingOf(after, entity) : null)),
     ).filter((b) => b.status !== 'cancelled');
     const { status } = golden.totals;

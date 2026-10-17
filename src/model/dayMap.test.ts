@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
-import { mapEmbedUrls, mapRouteNodes, mapStopLabels, routeUrls, travelSegments } from './dayMap';
+import {
+  mapEmbedUrls,
+  mapRouteNodes,
+  mapStopLabels,
+  routeUrls,
+  rowHop,
+  scheduledHop,
+  travelSegments,
+} from './dayMap';
 import { buildLiveDays } from './liveDays';
 import { buildTripView } from './tripModel';
 import type { Activity, Scenario, Stay, Transit, TripData } from './types';
@@ -512,6 +520,30 @@ describe('travel segments', () => {
     ]);
   });
 
+  // A connection flies on rather than coming back, so it's no excursion to
+  // drive around: nothing before the first flight drives to anything after the last.
+  it('totals no drive across a connection', () => {
+    const data = tripData();
+    data.activities.push(
+      activity('a_before', '2027-06-01T05:00', 'Home Cafe'),
+      activity('a_after', '2027-06-01T15:00', 'Rental Office'),
+    );
+    data.transits.push(
+      transit('f1', 'Home Airport', 'Hub Airport', {
+        mode: 'flight',
+        departsAt: '2027-06-01T06:15',
+        arrivesAt: '2027-06-01T08:37',
+      }),
+      transit('f2', 'Hub Airport', 'Far Airport', {
+        mode: 'flight',
+        departsAt: '2027-06-01T09:45',
+        arrivesAt: '2027-06-01T13:35',
+      }),
+    );
+    const pairs = live(data, '2027-06-01').segments.map((s) => `${s.originId}>${s.destinationId}`);
+    expect(pairs).toEqual(['p_Home Cafe>p_Home Airport', 'p_Far Airport>p_Rental Office']);
+  });
+
   // segmentKey is what DayTravelChip resolves a travel-mode override against;
   // null means "no override to look up, fall back to DRIVE" — a "Staying"
   // night's stop has no single row of its own to key off.
@@ -522,6 +554,142 @@ describe('travel segments', () => {
     const { segments } = live(data, '2027-06-01');
     expect(segments.length).toBeGreaterThan(0);
     expect(segments.every((s) => s.segmentKey === null)).toBe(true);
+  });
+});
+
+// A flight between two airports named by code, each its own resolved place.
+const leg = (from: string, to: string, mode = 'flight') => ({
+  mode,
+  from: place(`p_${from}`, from),
+  to: place(`p_${to}`, to),
+});
+
+describe('scheduled hops', () => {
+  const row = (transit: ReturnType<typeof leg>, phase: 'depart' | 'arrive', at: string) => ({
+    transit,
+    phase,
+    event: { at },
+  });
+  const first = leg('RSW', 'ORD');
+  const firstOut = row(first, 'depart', '2027-06-26T06:15');
+  const firstIn = row(first, 'arrive', '2027-06-26T08:37');
+  const secondOut = row(leg('ORD', 'ANC'), 'depart', '2027-06-26T09:45');
+
+  it('has no drive from a flight’s own Depart', () => {
+    expect(scheduledHop(firstOut, firstIn)).toEqual({ kind: 'aboard' });
+  });
+
+  it('shows a flight arriving straight into the next one as a connection', () => {
+    expect(scheduledHop(firstIn, secondOut)).toEqual({ kind: 'connection', minutes: 68 });
+  });
+
+  it('keeps the drive from a drive’s own Depart', () => {
+    expect(
+      scheduledHop(row(leg('A', 'B', 'drive'), 'depart', '2027-06-26T06:15'), firstIn),
+    ).toBeNull();
+  });
+
+  it('keeps the drive once a flight lands, unless the next row is another flight', () => {
+    expect(scheduledHop(firstIn, undefined)).toBeNull();
+    expect(
+      scheduledHop(firstIn, row(leg('ORD', 'X', 'ferry'), 'depart', '2027-06-26T12:00')),
+    ).toBeNull();
+  });
+
+  it('is no connection back to the start, from another airport, or leaving before it lands', () => {
+    // An excursion's return: the time out there isn't a layover.
+    expect(scheduledHop(firstIn, row(leg('ORD', 'RSW'), 'depart', '2027-06-26T15:00'))).toBeNull();
+    expect(scheduledHop(firstIn, row(leg('MDW', 'ANC'), 'depart', '2027-06-26T11:00'))).toBeNull();
+    expect(scheduledHop(firstIn, row(leg('ORD', 'ANC'), 'depart', '2027-06-26T08:30'))).toBeNull();
+  });
+});
+
+describe('the day list’s hop from each row', () => {
+  const at = (id: string | null, label = id ?? 'Somewhere') => ({
+    entryPlace: place(id, label),
+    exitPlace: place(id, label),
+  });
+  const boundary = (
+    transit: ReturnType<typeof leg>,
+    phase: 'depart' | 'arrive',
+    time: string,
+    id: string | null = phase === 'depart' ? transit.from.id : transit.to.id,
+  ) => ({ ...at(id), boundary: { transit, phase, event: { at: time } } });
+  const spacer = { entryPlace: null, exitPlace: null };
+  const toAnc = leg('OTZ', 'ANC');
+
+  it('drives no footer across a flight whose Depart has no place id', () => {
+    const rows = [
+      at('p_cafe'),
+      boundary(toAnc, 'depart', '2027-06-26T09:00', null),
+      boundary(toAnc, 'arrive', '2027-06-26T13:00'),
+    ];
+    expect(rowHop(rows, 0)).toBeNull();
+    // Resolved, the flight's Depart is where the drive goes.
+    rows[1] = boundary(toAnc, 'depart', '2027-06-26T09:00');
+    expect(rowHop(rows, 0)).toMatchObject({ kind: 'travel', to: { id: 'p_OTZ' } });
+  });
+
+  it('finds a connection past a row with no place', () => {
+    const rows = [
+      boundary(leg('RSW', 'ORD'), 'arrive', '2027-06-26T08:37'),
+      spacer,
+      boundary(leg('ORD', 'ANC'), 'depart', '2027-06-26T09:45'),
+    ];
+    expect(rowHop(rows, 0)).toEqual({ kind: 'connection', minutes: 68 });
+  });
+
+  it('has no drive from a row aboard to the flight’s Arrive', () => {
+    const rows = [
+      boundary(toAnc, 'depart', '2027-06-26T09:00'),
+      at('p_meal_aboard'),
+      boundary(toAnc, 'arrive', '2027-06-26T13:00'),
+    ];
+    expect(rowHop(rows, 1)).toBeNull();
+  });
+
+  it('walks past a row with no place to the next real one', () => {
+    const rows = [at('p_a'), spacer, at(null, 'Fairbanks'), at('p_b')];
+    expect(rowHop(rows, 0)).toMatchObject({ kind: 'travel', to: { id: 'p_b' } });
+    expect(rowHop([at('p_a'), at('p_a')], 0)).toBeNull();
+  });
+});
+
+describe('travel segments around excursions', () => {
+  // A connection in the morning doesn't hide a floatplane day trip later on.
+  it('still finds an excursion after a connection', () => {
+    const data = tripData();
+    data.activities.push(
+      activity('a_bears', '2027-06-01T15:30', 'Bear Viewing'),
+      activity('a_dinner', '2027-06-01T19:00', 'Dinner Spot'),
+    );
+    data.transits.push(
+      transit('f1', 'Home', 'Hub', {
+        mode: 'flight',
+        departsAt: '2027-06-01T06:00',
+        arrivesAt: '2027-06-01T08:00',
+      }),
+      transit('f2', 'Hub', 'Base', {
+        mode: 'flight',
+        departsAt: '2027-06-01T09:00',
+        arrivesAt: '2027-06-01T12:00',
+      }),
+      transit('out', 'Base', 'Lodge', {
+        mode: 'flight',
+        departsAt: '2027-06-01T14:00',
+        arrivesAt: '2027-06-01T15:00',
+      }),
+      transit('back', 'Lodge', 'Base', {
+        mode: 'flight',
+        departsAt: '2027-06-01T17:00',
+        arrivesAt: '2027-06-01T18:00',
+      }),
+    );
+    const pairs = live(data, '2027-06-01').segments.map((s) => `${s.originId}>${s.destinationId}`);
+    // The trip out is dropped: the day drives from the base back to dinner, and
+    // nothing out at the lodge.
+    expect(pairs).toContain('p_Base>p_Dinner Spot');
+    expect(pairs.some((p) => p.includes('Lodge') || p.includes('Bear'))).toBe(false);
   });
 });
 

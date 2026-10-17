@@ -20,10 +20,11 @@ import {
   sumMoney,
 } from './bookings';
 import type { EditKind, Entity } from './editForms';
-import { firstImage } from './formatting';
+import { firstImage, uniqueById } from './formatting';
 import { allPackages, packageHolders } from './packages';
 import type {
   Activity,
+  ActivityRow,
   Booking,
   BookingProgress,
   BookingStatus,
@@ -68,6 +69,7 @@ import type {
   ScenarioTrack,
   Stay,
   StayRelation,
+  StayRow,
   Transit,
   TransitRow,
   Traveler,
@@ -598,7 +600,7 @@ export function resolveSunPlaceId(
 // field for exactly that case (data-model.html) — set only when startAt is
 // null, alongside timeLabel. ----------
 
-export function resolveActivityDate(activity: Activity): string | null {
+export function resolveActivityDate(activity: Pick<Activity, 'startAt' | 'date'>): string | null {
   if (activity.startAt) return dateOnly(activity.startAt);
   return activity.date ?? null;
 }
@@ -607,7 +609,9 @@ export function resolveActivityDate(activity: Activity): string | null {
 // same key timeline events and scenario-box anchors both sort by), or null
 // while it's still undated. One shared rule so a box's anchor can never drift
 // from the rows it sits among.
-export function activityTimelineKey(activity: Activity): { date: string; at: string } | null {
+export function activityTimelineKey(
+  activity: Pick<Activity, 'startAt' | 'date' | 'timeLabel'>,
+): { date: string; at: string } | null {
   const date = resolveActivityDate(activity);
   if (!date) return null;
   const midnight = `${date}T00:00`;
@@ -1376,16 +1380,17 @@ export interface DayTravelSegment {
 // transitRowPlace leaves out unless the Transit opts in. DayTimeline's
 // per-row travel-info footers walk past rows like that to find the next one
 // that DOES name a real place, so a placeless row never dead-ends the
-// pairing of its real neighbors. (dayMap.ts's travelSegments gets the same
-// effect by filtering its visits down to resolved places up front, then
-// pairing neighbors directly.)
+// pairing of its real neighbors. `isStop` says which rows it stops at: the
+// resolvable ones, and any the walk mustn't pass. (dayMap.ts's
+// travelSegments gets the same effect by filtering its visits down to
+// resolved places up front, then pairing neighbors directly.)
 export function findNextResolvableStop<T>(
   items: T[],
   fromIndex: number,
-  resolvedId: (item: T) => string | null | undefined,
+  isStop: (item: T) => boolean,
 ): T | undefined {
   for (let j = fromIndex + 1; j < items.length; j++) {
-    if (resolvedId(items[j])) return items[j];
+    if (isStop(items[j])) return items[j];
   }
   return undefined;
 }
@@ -2542,6 +2547,62 @@ function resolveExcursionTravelers(
   return names.length ? names : null;
 }
 
+// Entries sharing one booking (connecting flights, a round trip, a cruise
+// cabin and its transfers) show it once in the day list: its chip and every
+// sharer's notes go on the first of them — by `start` (an activity's is its
+// place on the day's timeline), then id, never by array position. Sets
+// bookingShare on the freshly enriched entries in place.
+function withSharedBookings(
+  entries: { entry: EnrichedTransit | EnrichedActivity | EnrichedStay; start: string }[],
+): void {
+  const byBooking = new Map<string, typeof entries>();
+  for (const e of entries) {
+    if (!e.entry.bookingId) continue;
+    const sharers = byBooking.get(e.entry.bookingId);
+    if (sharers) sharers.push(e);
+    else byBooking.set(e.entry.bookingId, [e]);
+  }
+  for (const sharers of byBooking.values()) {
+    if (sharers.length < 2) continue;
+    const [first] = sharers.sort(
+      (a, b) => a.start.localeCompare(b.start) || a.entry._id.localeCompare(b.entry._id),
+    );
+    // One note naming two sharers shows once.
+    const share = {
+      firstId: first.entry._id,
+      notes: uniqueById(sharers.flatMap((e) => e.entry.notes)),
+    };
+    for (const e of sharers) e.entry.bookingShare = share;
+  }
+}
+
+const SHOWS_NOTHING: { booking: Booking | null; notes: Note[] } = { booking: null, notes: [] };
+
+// What a day-list row shows of its entry's booking and notes — the rows and
+// the filters both read it, so a filter matches exactly what a row shows.
+// Each entry shows them once, on its own row for them: a transit's Depart, a
+// stay's Check in or its one Overnight (not every night after), an
+// activity's row. An entry sharing its booking (bookingShare) shows them only
+// if it's the first sharer, and then with every sharer's notes.
+export function rowShows(
+  row:
+    | Pick<ActivityRow, 'type' | 'activity'>
+    | Pick<StayRow, 'type' | 'stay' | 'relation'>
+    | Pick<TransitRow, 'type' | 'transit' | 'phase'>,
+): { booking: Booking | null; notes: Note[] } {
+  const entry =
+    row.type === 'stay' ? row.stay : row.type === 'transit' ? row.transit : row.activity;
+  const own =
+    row.type === 'stay'
+      ? row.relation === 'Check in' || row.relation === 'Overnight'
+      : row.type === 'transit'
+        ? row.phase === 'depart'
+        : true;
+  const share = entry.bookingShare;
+  if (!own || (share && share.firstId !== entry._id)) return SHOWS_NOTHING;
+  return { booking: entry.booking, notes: share?.notes ?? entry.notes };
+}
+
 export function buildTripView(data: TripData): TripView {
   const { trip, legs, stays, transits, activities, scenarios, notes, routes } = data;
   validateActivityTiming(activities);
@@ -2612,6 +2673,13 @@ export function buildTripView(data: TripData): TripView {
     notes: notesForEntity(noteIndex, 'stay', s._id),
     hasWarningNote: entityHasWarning(noteIndex, 'stay', s._id),
   }));
+
+  withSharedBookings([
+    ...routedTransits.map((t) => ({ entry: t, start: t.departsAt })),
+    // Every activity has a date by now: validateActivityTiming refuses one without.
+    ...enrichedActivities.map((a) => ({ entry: a, start: activityTimelineKey(a)!.at })),
+    ...enrichedStays.map((s) => ({ entry: s, start: s.checkInAt })),
+  ]);
 
   const activitiesByDate = new Map<string, EnrichedActivity[]>();
   for (const a of enrichedActivities) {

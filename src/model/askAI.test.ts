@@ -158,7 +158,7 @@ const DAY = {
   notes: [{ _id: 'note_1', kind: 'warning', text: 'Bring rain gear', concerns: [], images: [] }],
 } as unknown as Day;
 
-function tools(data: TripData): Omit<AskAIToolContext, 'searchedPlaceIds'> {
+function tools(data: TripData): Omit<AskAIToolContext, 'placeSearches'> {
   return {
     data,
     view: { dateRange: { startDate: '2027-07-14', endDate: '2027-07-14' } } as TripView,
@@ -270,8 +270,8 @@ describe('runAskAITurn', () => {
                     startAt: '2027-07-14T18:30',
                     mealType: 'dinner',
                     mealOptions: [
-                      { place: { label: 'Orso' } },
-                      { place: { label: "Crow's Nest" } },
+                      { place: { label: 'Orso', placeId: 'p_orso' } },
+                      { place: { label: "Crow's Nest", placeId: 'p_crows_nest' } },
                     ],
                   },
                 },
@@ -297,7 +297,11 @@ describe('runAskAITurn', () => {
       ),
       sse([{ type: 'text', text: 'Proposed both.' }], 'end_turn'),
     );
-    const after = await turn(startConversation(tripData()), 'Plan dinner and a grounded day');
+    const searched = {
+      ...startConversation(tripData()),
+      placeSearches: { placeIds: ['p_orso', 'p_crows_nest'], emptyQueries: [] },
+    };
+    const after = await turn(searched, 'Plan dinner and a grounded day');
     const reply = after.messages.at(-1)!;
     // One list, in the order the assistant proposed them, each keyed by its tool call.
     const [plan, alternative] = reply.proposals ?? [];
@@ -605,7 +609,7 @@ describe('place ids from earlier turns', () => {
   it('accepts a place a search in an earlier turn found', async () => {
     const earlier: AskAIConversation = {
       ...startConversation(tripData()),
-      searchedPlaceIds: ['p_found'],
+      placeSearches: { placeIds: ['p_found'], emptyQueries: [] },
       apiMessages: [
         { role: 'user', content: 'Where could we eat?' },
         {
