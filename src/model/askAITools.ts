@@ -68,6 +68,10 @@ function placeTag(place: Place | null | undefined): string {
   return place.id ? ` @ ${place.label} (placeId ${place.id})` : ` @ ${place.label}`;
 }
 
+function bookingTag(entry: { booking: Booking | null }): string {
+  return entry.booking ? ` [booking ${entry.booking.status}]` : '';
+}
+
 function rowTime(at: string, fuzzy: boolean): string {
   return fuzzy ? `~${formatTime(at)}` : formatTime(at);
 }
@@ -77,10 +81,12 @@ function describeRows(rows: DayRow[], indent: string): string[] {
     switch (row.type) {
       case 'activity': {
         const a = row.activity;
-        const duration = a.durationMinutes ? `, ${a.durationMinutes} min` : '';
-        const booking = a.booking ? `, booking ${a.booking.status}` : '';
-        const meal = a.mealType ? `, ${a.mealType}` : '';
-        const line = `${indent}${rowTime(row.event.at, row.event.fuzzy)} Activity ${a._id}: ${activityHeadline(a) || '(untitled)'}${placeTag(row.event.place ?? a.place)} [${a.status}${meal}${duration}${booking}]`;
+        const tags = [
+          a.mealType,
+          a.durationMinutes ? `${a.durationMinutes} min` : null,
+          a.booking ? `booking ${a.booking.status}` : null,
+        ].filter(Boolean);
+        const line = `${indent}${rowTime(row.event.at, row.event.fuzzy)} Activity ${a._id}: ${activityHeadline(a) || '(untitled)'}${placeTag(row.event.place ?? a.place)}${tags.length ? ` [${tags.join(', ')}]` : ''}`;
         // A meal still being decided lists its candidates (the first is the default).
         const candidates = (a.options ?? []).map(
           (o) => `${indent}  candidate:${placeTag(o.place)} (${o.diningFormat})`,
@@ -91,7 +97,7 @@ function describeRows(rows: DayRow[], indent: string): string[] {
         const s = row.stay;
         const when = row.event ? rowTime(row.event.at, row.event.fuzzy) : 'all day';
         return [
-          `${indent}${when} ${row.relation}: ${s.lodging?.place.label ?? '(unnamed lodging)'} — Stay ${s._id}${placeTag(s.lodging?.place)} [${s.status}]`,
+          `${indent}${when} ${row.relation}: ${s.lodging?.place.label ?? '(unnamed lodging)'} — Stay ${s._id}${placeTag(s.lodging?.place)}${bookingTag(s)}`,
         ];
       }
       case 'transit': {
@@ -105,7 +111,7 @@ function describeRows(rows: DayRow[], indent: string): string[] {
         }
         const verb = row.phase === 'depart' ? 'Depart' : 'Arrive';
         return [
-          `${indent}${when} ${verb}: ${t.from.label} → ${t.to.label} (${t.mode}) — Transit ${t._id} [${t.status}]`,
+          `${indent}${when} ${verb}: ${t.from.label} → ${t.to.label} (${t.mode}) — Transit ${t._id}${bookingTag(t)}`,
         ];
       }
       case 'box':
@@ -172,7 +178,7 @@ const READ_TOOL_DEFINITIONS: BetaTool[] = [
   {
     name: 'get_day',
     description:
-      "One trip day's timeline exactly as the reader currently sees it (their selected scenario options, route variants and meal choices): every activity, stay boundary, transit departure/arrival and route stop with times, ids, place ids and status, the day's options, and its notes.",
+      "One trip day's timeline exactly as the reader currently sees it (their selected scenario options, route variants and meal choices): every activity, stay boundary, transit departure/arrival and route stop with times, ids, place ids and booking status, the day's options, and its notes.",
     input_schema: {
       type: 'object',
       properties: { date: DATE_PROPERTY },

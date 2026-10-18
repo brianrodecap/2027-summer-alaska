@@ -1,5 +1,5 @@
 // The detail sheets' own lines for what an entity records beyond its booking:
-// when it runs, its status, the lodging extras, its packages' costs, a
+// when it runs, the lodging extras, its packages' costs, a
 // cruise's port calls, and what a meal is included in. Pure — the sheets in
 // components/detail render these. Day/location/scenario context stays in the
 // day row the sheet opened from and is never restated here.
@@ -16,23 +16,7 @@ import {
   stayNights,
   transitRouteLabel,
 } from './tripModel';
-import type {
-  Package,
-  PlanStatus,
-  PortCall,
-  Priority,
-  Ref,
-  Stay,
-  Transit,
-  TripData,
-} from './types';
-
-export const PLAN_STATUS_LABEL: Record<PlanStatus, string> = {
-  planning: 'Planning',
-  active: 'Active',
-  completed: 'Completed',
-  cancelled: 'Cancelled',
-};
+import type { Package, PortCall, Priority, Ref, Stay, Transit, TripData } from './types';
 
 export const PRIORITY_LABEL: Record<Priority, string> = {
   high: 'High priority',

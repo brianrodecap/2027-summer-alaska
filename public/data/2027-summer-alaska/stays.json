@@ -5,7 +5,6 @@
     "scenarioId": null,
     "checkInAt": "2027-06-29T15:00",
     "checkOutAt": "2027-07-01T11:00",
-    "status": "planning",
     "lodging": {
       "place": {
         "id": "ChIJKXBYEtzAKFERMTb-h_NwAtE",
@@ -31,7 +30,6 @@
     "scenarioId": null,
     "checkInAt": "2027-07-01T15:00",
     "checkOutAt": "2027-07-02T11:00",
-    "status": "planning",
     "lodging": {
       "place": {
         "id": "ChIJ_aR34k5FMlERqYeOQVWen5I",
@@ -57,7 +55,6 @@
     "scenarioId": null,
     "checkInAt": "2027-07-02T15:00",
     "checkOutAt": "2027-07-03T11:00",
-    "status": "planning",
     "lodging": {
       "place": {
         "id": "ChIJmb_m9FyFtVYRza-EUEqwdfU",
@@ -83,7 +80,6 @@
     "scenarioId": null,
     "checkInAt": "2027-07-07T15:00",
     "checkOutAt": "2027-07-08T11:00",
-    "status": "planning",
     "lodging": {
       "place": {
         "id": "ChIJoUUNNIG9yFYRT1rea_yflgI",
@@ -112,7 +108,6 @@
     "scenarioId": null,
     "checkInAt": "2027-07-08T11:00",
     "checkOutAt": "2027-07-10T11:00",
-    "status": "planning",
     "lodging": {
       "place": {
         "id": "ChIJo6lg1JGXyFYR5CruzmerxY8",
@@ -141,7 +136,6 @@
     "scenarioId": null,
     "checkInAt": "2027-07-10T15:00",
     "checkOutAt": "2027-07-17T11:00",
-    "status": "planning",
     "lodging": {
       "place": {
         "id": "ChIJoUUNNIG9yFYRT1rea_yflgI",
@@ -170,7 +164,6 @@
     "scenarioId": null,
     "checkInAt": "2027-07-17T15:00",
     "checkOutAt": "2027-07-24T07:30",
-    "status": "planning",
     "lodging": {
       "place": {
         "id": null,
@@ -313,7 +306,6 @@
     "scenarioId": null,
     "checkInAt": "2027-06-27T16:00",
     "checkOutAt": "2027-06-28T11:00",
-    "status": "planning",
     "lodging": {
       "place": {
         "id": "ChIJ_______vzVYRkYm_DgC2jnw",
@@ -355,7 +347,6 @@
     "scenarioId": null,
     "checkInAt": "2027-06-28T15:00",
     "checkOutAt": "2027-06-29T11:00",
-    "status": "planning",
     "lodging": {
       "place": {
         "id": "ChIJ_aR34k5FMlERqYeOQVWen5I",
@@ -398,7 +389,6 @@
     "scenarioId": null,
     "checkInAt": "2027-07-03T14:00",
     "checkOutAt": "2027-07-05T11:00",
-    "status": "planning",
     "lodging": {
       "place": {
         "id": "ChIJ2_1lpi2Cs1YRTk9_q-YuUM4",
@@ -426,7 +416,6 @@
     "scenarioId": null,
     "checkInAt": "2027-07-05T15:00",
     "checkOutAt": "2027-07-06T11:00",
-    "status": "planning",
     "lodging": {
       "place": {
         "id": "ChIJD9qRQo5GtlYRvRABJDjj8lE",
@@ -453,7 +442,6 @@
     "scenarioId": null,
     "checkInAt": "2027-07-06T15:00",
     "checkOutAt": "2027-07-07T11:00",
-    "status": "planning",
     "lodging": {
       "place": {
         "id": "ChIJ69kB6Dl1yVYRrWn-KL13EpE",

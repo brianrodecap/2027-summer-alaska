@@ -12,12 +12,10 @@ import {
   MEAL_TYPE_VALUES,
   PRIORITY_OPTIONS,
 } from '../../model/editForms';
-import { PLAN_STATUS_LABEL } from '../../model/entityDetails';
 import type {
   Activity,
   DiningFormat,
   MealType,
-  PlanStatus,
   Priority,
   Stay,
   Transit,
@@ -31,11 +29,6 @@ import { PackagesField } from './PackagesField';
 import { PlaceConditionsTogglesFor } from './PlaceConditionsToggles';
 import { PlacePickerField } from './PlacePickerField';
 import { TravelerCheckboxList } from './TravelerCheckboxList';
-
-const STATUS_OPTIONS = (Object.keys(PLAN_STATUS_LABEL) as PlanStatus[]).map((value) => ({
-  value,
-  label: PLAN_STATUS_LABEL[value],
-}));
 
 const MEAL_TYPE_OPTIONS: { value: MealType | ''; label: string }[] = [
   { value: '', label: 'Not a meal' },
@@ -88,18 +81,6 @@ export function ActivityEditForm({
         onPlaceChange={(place) => onChange({ ...form, place })}
         showOnboard
       />
-      <TextField
-        select
-        label="Status"
-        value={form.status}
-        onChange={(e) => onChange({ ...form, status: e.target.value as PlanStatus })}
-      >
-        {STATUS_OPTIONS.map((o) => (
-          <MenuItem key={o.value} value={o.value}>
-            {o.label}
-          </MenuItem>
-        ))}
-      </TextField>
       <TextField
         select
         label="Priority"

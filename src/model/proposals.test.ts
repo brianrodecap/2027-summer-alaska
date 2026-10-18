@@ -15,7 +15,7 @@ import {
   validateNote,
   validateProposal,
 } from './proposals';
-import type { Activity, Stay, Transit, TripData } from './types';
+import type { Activity, BookingStatus, MealType, Stay, Transit, TripData } from './types';
 
 function trip(): TripData {
   const out: Transit = {
@@ -1749,6 +1749,144 @@ describe('entry point parity', () => {
     const named = aboard({ replaces: 'place_lodge' });
     expect('state' in checkedChanges([named], trip(), { searches: noPlaceSearches() })).toBe(true);
     expect('data' in applyBatch(trip(), [named])).toBe(true);
+  });
+
+  describe('a booking for a held spot updates the placeholder', () => {
+    const hangar = { id: 'place_hangar', label: 'Test Hangar' };
+    // A flight held on the 11th with its booking still to buy, and checking in
+    // at the same hangar, which has no booking.
+    const held = (status: BookingStatus = 'planning'): TripData => {
+      const data = trip();
+      data.activities.push(
+        {
+          ...blankActivity('leg_t', '2027-07-11'),
+          _id: 'act_flight',
+          text: 'Flightseeing',
+          place: hangar,
+          bookingId: 'bk_flight',
+        },
+        {
+          ...blankActivity('leg_t', '2027-07-11'),
+          _id: 'act_checkin',
+          text: 'Check in',
+          place: hangar,
+        },
+      );
+      data.bookings.push({ _id: 'bk_flight', status, pricing: null, confirmationNumber: null });
+      return data;
+    };
+    const booking = { ref: 'deposit', status: 'booked' as const, confirmationNumber: 'D1' };
+    const added = ({
+      date = '2027-07-11',
+      bought = booking as ChangeProposal['booking'] | null,
+      mealType = undefined as MealType | undefined,
+    } = {}): ChangeProposal => ({
+      ...onNewActivity({
+        text: 'Flightseeing window',
+        place: { label: hangar.label, placeId: hangar.id },
+        ...(mealType ? { mealType } : {}),
+      }),
+      date,
+      ...(bought ? { booking: bought } : {}),
+    });
+    const update = (extra: Partial<ChangeProposal>): ChangeProposal => ({
+      entityId: 'act_flight',
+      kind: 'activity',
+      changes: {},
+      why: 's',
+      ...extra,
+    });
+    const both = (changes: ChangeProposal[], data: TripData, removed = new Set<string>()) => ({
+      checked: checkedChanges(changes, data, { searches: noPlaceSearches(), removed }),
+      applied: applyBatch(data, changes, [], removed),
+    });
+    const placeholderError =
+      /act_flight \("Flightseeing"\) on 2027-07-11 at Test Hangar is the placeholder this booking confirms/;
+
+    const hostile: [string, ChangeProposal[], BookingStatus][] = [
+      ['a new booked activity beside a planning one', [added()], 'planning'],
+      ['a new booked activity beside a requested one', [added()], 'requested'],
+      [
+        'a new booked activity after a change that leaves the placeholder unbought',
+        [update({ changes: { text: 'Morning flight' } }), added()],
+        'planning',
+      ],
+    ];
+    it.each(hostile)('turns down %s everywhere', (_name, changes, status) => {
+      const { checked, applied } = both(changes, held(status));
+      expect('errors' in checked && checked.errors.join()).toMatch(placeholderError);
+      expect('error' in applied && applied.error).toMatch(placeholderError);
+    });
+
+    it('turns down one proposed by itself, as the document import checks it', () => {
+      const state = proposalState(held());
+      expect(validateProposal(added(), state).join()).toMatch(placeholderError);
+      state.accepted.push(update({ booking }));
+      expect(validateProposal(added(), state)).toEqual([]);
+    });
+
+    // Each way out, and the activities at the hangar it leaves behind.
+    const waysOut: [string, ChangeProposal[], BookingStatus, string[]][] = [
+      [
+        'updating the placeholder',
+        [update({ booking })],
+        'planning',
+        ['act_flight', 'act_checkin'],
+      ],
+      [
+        'updating it later in the same batch',
+        [added(), update({ booking })],
+        'planning',
+        ['act_flight', 'act_checkin', 'new'],
+      ],
+      ['a placeholder already booked', [added()], 'booked', ['act_flight', 'act_checkin', 'new']],
+      ['a cancelled placeholder', [added()], 'cancelled', ['act_flight', 'act_checkin', 'new']],
+      ['no booking', [added({ bought: null })], 'planning', ['act_flight', 'act_checkin', 'new']],
+      [
+        'an estimate',
+        [added({ bought: { ref: 'est', status: 'planning' } })],
+        'planning',
+        ['act_flight', 'act_checkin', 'new'],
+      ],
+      [
+        'another day',
+        [added({ date: '2027-07-12' })],
+        'planning',
+        ['act_flight', 'act_checkin', 'new'],
+      ],
+      [
+        'a meal there',
+        [added({ mealType: 'lunch' })],
+        'planning',
+        ['act_flight', 'act_checkin', 'new'],
+      ],
+    ];
+    it.each(waysOut)('takes %s through both', (_name, changes, status, left) => {
+      const data = held(status);
+      const { checked, applied } = both(changes, data);
+      expect('state' in checked).toBe(true);
+      if (!('data' in applied)) throw new Error(applied.error);
+      const atHangar = applied.data.activities.filter((a) => a.place?.id === hangar.id);
+      const existing = new Set(data.activities.map((a) => a._id));
+      expect(atHangar.map((a) => (existing.has(a._id) ? a._id : 'new')).sort()).toEqual(
+        [...left].sort(),
+      );
+    });
+
+    it('puts the booking on the placeholder it updates', () => {
+      const applied = applyBatch(held(), [update({ booking })]);
+      if (!('data' in applied)) throw new Error(applied.error);
+      const flight = applied.data.activities.find((a) => a._id === 'act_flight');
+      const own = applied.data.bookings.find((b) => b._id === flight?.bookingId);
+      expect(own).toMatchObject({ status: 'booked', confirmationNumber: 'D1' });
+    });
+
+    it('takes the placeholder removed in the same day plan through both', () => {
+      const { checked, applied } = both([added()], held(), new Set(['act_flight']));
+      expect('state' in checked).toBe(true);
+      if (!('data' in applied)) throw new Error(applied.error);
+      expect(applied.data.activities.some((a) => a._id === 'act_flight')).toBe(false);
+    });
   });
 
   it('accepts a plain new activity through both', () => {

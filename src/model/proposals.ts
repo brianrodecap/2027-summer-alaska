@@ -30,6 +30,7 @@ import { DINING_FORMAT_LABEL, MEAL_TYPES, NOTE_KINDS, sameName } from './formatt
 import { isIsoDate } from './isoDate';
 import { allPackages } from './packages';
 import {
+  activityHeadline,
   activityRefId,
   addDaysStr,
   dateOnly,
@@ -509,7 +510,7 @@ export const IMPORT_CONVENTIONS = [
   'A package bought for some of the party (a cruise perk for two of four guests) lists those travelers; its name is the package’s own, without them.',
   'A meal the document offers for a fee but the party hasn’t bought is an estimate: addOption on each of that day’s meals still being decided, with a planning booking pricing it per traveler at the top of the printed range, the child price only for travelers 12 or younger.',
   'Notes are what a person wants reminding of: reservation requirements, access limits, a timing to confirm (refund terms go in finish, not a note). Stock policy text every booking from the seller carries is not a note, and the room as booked decides capacity (2 queen beds sleep 4). A fee schedule nobody paid is at most a footnote.',
-  'Update the placeholder a booking confirms rather than adding a second entry. Change only what the document says — except that when it gives only one end of a trip (a tour that ends back at base at 2 PM, with no departure from the lodge printed), move the other end with it, keeping the placeholder’s planned duration.',
+  'Update the placeholder a booking confirms rather than adding a second entry. One booking covering several placeholders (flights held for a window of days, the same tour on each alternate plan) updates every one of them with the same booking ref. Change only what the document says — except that when it gives only one end of a trip (a tour that ends back at base at 2 PM, with no departure from the lodge printed), move the other end with it, keeping the placeholder’s planned duration.',
 ];
 
 // ---------- Checking ----------
@@ -572,6 +573,9 @@ export interface ProposalState {
   // checked against the searches when proposed — each placeId's source, and
   // each notOnGoogle's empty search — and places don't change.
   placesChecked: boolean;
+  // Activities the batch being checked removes, or gives a bought booking in
+  // any of its changes (placeholderErrors).
+  handled: Set<string>;
 }
 
 // A booking's refund terms as finish gives them: the policy, which code acts
@@ -619,6 +623,7 @@ export function proposalState(data: TripData): ProposalState {
     refundTerms: null,
     newTravelers: [],
     placesChecked: false,
+    handled: new Set(),
   };
 }
 
@@ -1208,6 +1213,8 @@ function validateAsSaved(
     }
   }
   errors.push(...packageRequirementErrors(p, state, entry, referableOnce));
+  if (p.kind === 'activity' && !base)
+    errors.push(...placeholderErrors(p, state, entry as Activity));
   if (p.addOption) {
     const meal = base as Activity | undefined;
     if (p.kind !== 'activity' || !meal?.mealType) {
@@ -1219,6 +1226,43 @@ function validateAsSaved(
     }
   }
   return errors;
+}
+
+const isBought = (status: BookingStatus | undefined) =>
+  status === 'booked' || status === 'requested';
+
+// The existing entries changes give a bought booking.
+function boughtPlaceholders(changes: ChangeProposal[]): string[] {
+  return changes.flatMap((c) => (c.entityId && isBought(c.booking?.status) ? [c.entityId] : []));
+}
+
+// A new activity with a bought booking is turned down when an activity of the
+// same kind (meal type) on the same leg, day and place still has a booking to
+// buy, unless the batch removes it or gives it a bought booking. A booked one
+// there is a separate purchase.
+function placeholderErrors(p: ChangeProposal, state: ProposalState, entry: Activity): string[] {
+  const place = entry.place;
+  if (!isBought(p.booking?.status) || !place?.id) return [];
+  const date = resolveActivityDate(entry);
+  const handled = new Set([...state.handled, ...boughtPlaceholders(state.accepted)]);
+  const held = state.data.activities.filter((a) => {
+    if (a.legId !== entry.legId || a.place?.id !== place.id || handled.has(a._id)) return false;
+    const status = bookingOf(state.data, a)?.status;
+    return (
+      resolveActivityDate(a) === date &&
+      (a.mealType ?? null) === (entry.mealType ?? null) &&
+      (status === 'planning' || status === 'requested')
+    );
+  });
+  if (!held.length) return [];
+  const named = held.map((a) => `${a._id} ("${activityHeadline(a)}")`).join(', ');
+  const which =
+    held.length > 1
+      ? 'are placeholders held there: update the one this booking buys'
+      : 'is the placeholder this booking confirms: update it';
+  return [
+    `${named} on ${date} at ${place.label} ${which} by entityId instead of adding an entry. A booking covering several placeholders (a window of days, alternate plans) puts the same booking ref on each.`,
+  ];
 }
 
 // Whether the party can use each package: a car-only one needs a drive on the
@@ -1471,9 +1515,11 @@ export function checkedChanges(
   {
     searches,
     travelers = [],
+    removed = new Set(),
   }: {
     searches?: PlaceSearches;
     travelers?: { id?: string; name: string; age?: number }[];
+    removed?: ReadonlySet<string>;
   } = {},
 ): { state: ProposalState; changes: ChangeProposal[] } | { errors: string[] } {
   // Before anything reads the changes' lists (withTravelerIds below).
@@ -1504,6 +1550,7 @@ export function checkedChanges(
     state.newTravelers.push({ ...person, id });
   }
   const remapped = changes.map((change) => withTravelerIds(change, existingIds));
+  state.handled = new Set([...removed, ...boughtPlaceholders(remapped)]);
   const errors: string[] = [];
   remapped.forEach((change, i) => {
     const found = validateProposal(change, state);

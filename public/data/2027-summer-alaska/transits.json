@@ -4,7 +4,6 @@
     "legId": "leg_parks",
     "journeyId": "journey_jun28_to_fairbanks",
     "scenarioId": null,
-    "status": "planning",
     "mode": "drive",
     "travelers": null,
     "from": {
@@ -31,7 +30,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": null,
-    "status": "planning",
     "mode": "drive",
     "travelers": null,
     "from": {
@@ -58,7 +56,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": null,
-    "status": "planning",
     "mode": "drive",
     "travelers": null,
     "from": {
@@ -85,7 +82,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": null,
-    "status": "planning",
     "mode": "flight",
     "travelers": null,
     "from": {
@@ -162,7 +158,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": null,
-    "status": "planning",
     "mode": "flight",
     "travelers": null,
     "from": {
@@ -240,7 +235,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": null,
-    "status": "planning",
     "mode": "drive",
     "travelers": null,
     "from": {
@@ -267,7 +261,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": "scenario_jul1_ideal",
-    "status": "planning",
     "mode": "drive",
     "travelers": null,
     "from": {
@@ -294,7 +287,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": "scenario_jul1_alt_flew",
-    "status": "planning",
     "mode": "drive",
     "travelers": null,
     "from": {
@@ -321,7 +313,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": "scenario_jul1_alt_grounded",
-    "status": "planning",
     "mode": "drive",
     "travelers": null,
     "from": {
@@ -348,7 +339,6 @@
     "legId": "leg_cruise",
     "journeyId": null,
     "scenarioId": null,
-    "status": "planning",
     "mode": "drive",
     "travelers": null,
     "from": {
@@ -395,7 +385,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": "scenario_lc_d3_redoubt_ideal",
-    "status": "planning",
     "mode": "flight",
     "travelers": null,
     "from": {
@@ -454,7 +443,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": "scenario_lc_d3_redoubt_ideal",
-    "status": "planning",
     "mode": "flight",
     "travelers": null,
     "from": {
@@ -495,7 +483,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": "scenario_lc_d1_ideal",
-    "status": "planning",
     "mode": "flight",
     "travelers": null,
     "from": {
@@ -554,7 +541,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": "scenario_lc_d1_ideal",
-    "status": "planning",
     "mode": "flight",
     "travelers": null,
     "from": {
@@ -596,7 +582,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": "scenario_lc_d2_portalsworth_ideal",
-    "status": "planning",
     "mode": "flight",
     "travelers": null,
     "from": {
@@ -637,7 +622,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": "scenario_lc_d2_portalsworth_ideal",
-    "status": "planning",
     "mode": "flight",
     "travelers": null,
     "from": {
@@ -678,7 +662,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": "scenario_jun27_alt",
-    "status": "planning",
     "mode": "drive",
     "travelers": null,
     "from": {
@@ -705,7 +688,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": "scenario_jun27_ideal",
-    "status": "planning",
     "mode": "drive",
     "travelers": null,
     "from": {
@@ -746,7 +728,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": "scenario_jun27_ideal",
-    "status": "planning",
     "mode": "bus",
     "travelers": null,
     "from": {
@@ -788,7 +769,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": null,
-    "status": "planning",
     "mode": "shuttle",
     "travelers": null,
     "from": {
@@ -829,7 +809,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": null,
-    "status": "planning",
     "mode": "shuttle",
     "travelers": null,
     "from": {
@@ -870,7 +849,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": null,
-    "status": "planning",
     "mode": "drive",
     "travelers": null,
     "from": {
@@ -911,7 +889,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": "scenario_jun27_alt",
-    "status": "planning",
     "mode": "bus",
     "travelers": null,
     "from": {
@@ -953,7 +930,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": null,
-    "status": "planning",
     "mode": "flight",
     "travelers": null,
     "from": {
@@ -1020,7 +996,6 @@
     "legId": "leg_parks",
     "journeyId": null,
     "scenarioId": null,
-    "status": "planning",
     "mode": "flight",
     "travelers": null,
     "from": {

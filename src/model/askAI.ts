@@ -38,6 +38,7 @@ import {
   runReadTool,
   ToolInputError,
 } from './askAITools';
+import { bookingOf } from './bookings';
 import { hashDoc } from './changeLog';
 import { EDIT_KINDS, type EditKind, findByKind } from './editForms';
 import {
@@ -164,6 +165,12 @@ function routeTag(t: Transit): string {
   return ` [route: ${t.routeId}${t.routeVariant ? `, variant ${t.routeVariant}` : ''}]`;
 }
 
+// The entry's booking status, when it has a booking.
+function bookingTag(data: TripData, entry: { bookingId?: string | null }): string {
+  const booking = bookingOf(data, entry);
+  return booking ? ` [booking ${booking.status}]` : '';
+}
+
 // Routes are shared reference data, not owned by a Leg, so they get their own section.
 function describeRoute(route: Route): string {
   const variants = route.variants
@@ -195,12 +202,12 @@ export function buildTripContext(data: TripData): string {
     );
     for (const s of stays) {
       lines.push(
-        `  Stay ${s._id}: ${s.lodging?.place.label || '(unnamed)'} — ${s.checkInAt} to ${s.checkOutAt} [${s.status}]`,
+        `  Stay ${s._id}: ${s.lodging?.place.label || '(unnamed)'} — ${s.checkInAt} to ${s.checkOutAt}${bookingTag(data, s)}`,
       );
     }
     for (const t of transits) {
       lines.push(
-        `  Transit ${t._id}: ${t.from.label} -> ${t.to.label} (${t.mode}), departs ${t.departsAt} [${t.status}]${scenarioTag(t.scenarioId)}${routeTag(t)}`,
+        `  Transit ${t._id}: ${t.from.label} -> ${t.to.label} (${t.mode}), departs ${t.departsAt}${bookingTag(data, t)}${scenarioTag(t.scenarioId)}${routeTag(t)}`,
       );
     }
     for (const a of activities) {
@@ -214,7 +221,7 @@ export function buildTripContext(data: TripData): string {
           : ` — ${a.mealType}${a.diningFormat ? ` (${a.diningFormat})` : ''}`
         : '';
       lines.push(
-        `  Activity ${a._id}: ${activityHeadline(a) || '(untitled)'} — ${when}${place}${meal} [${a.status}]${scenarioTag(a.scenarioId)}`,
+        `  Activity ${a._id}: ${activityHeadline(a) || '(untitled)'} — ${when}${place}${meal}${bookingTag(data, a)}${scenarioTag(a.scenarioId)}`,
       );
     }
   }
@@ -424,13 +431,18 @@ function parseProposal(input: unknown, ctx: ProposalContext): ProposedEdit {
 // Checks a batch's changes together (proposals.ts's checkedChanges) — a
 // ToolInputError naming which one goes back to the model to fix. Returns the
 // travelers add_traveler added this turn whom the batch names.
-function checkChanges(changes: ChangeProposal[], ctx: ProposalContext): Traveler[] | undefined {
+function checkChanges(
+  changes: ChangeProposal[],
+  ctx: ProposalContext,
+  removed?: ReadonlySet<string>,
+): Traveler[] | undefined {
   const empty = emptyUpdates(changes);
   if (empty.length) throw new ToolInputError(empty.join('\n'));
   const travelers = travelersNamedIn(changes, ctx);
   const checked = checkedChanges(changes, ctx.data, {
     searches: ctx.placeSearches,
     travelers,
+    removed,
   });
   if ('errors' in checked) throw new ToolInputError(checked.errors.join('\n'));
   return travelers.length ? travelers : undefined;
@@ -472,7 +484,7 @@ function parseDayPlan(input: unknown, ctx: ProposalContext): ProposedDayPlan {
   const errors = dayPlanErrors({ date: raw.date, legId: raw.legId, changes, remove }, ctx.data);
   let newTravelers: Traveler[] | undefined;
   try {
-    newTravelers = checkChanges(changes, ctx);
+    newTravelers = checkChanges(changes, ctx, new Set(remove));
   } catch (err) {
     if (!(err instanceof ToolInputError)) throw err;
     errors.push(err.message);

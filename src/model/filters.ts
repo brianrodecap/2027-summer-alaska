@@ -6,7 +6,7 @@
 // toggling CSS classes on rendered DOM nodes — the React tree here can just
 // not render a filtered-out row in the first place.
 import { liveWarnings } from './mealOptions';
-import { filterTagsFor, rowShows } from './tripModel';
+import { filterTagsFor, optionShows, rowShows } from './tripModel';
 import type {
   ActivityRow,
   Day,
@@ -84,8 +84,9 @@ export function rowMatches(tags: string[], activeTokens: Set<string>): boolean {
 
 // A row's tags: its own entry's — with an activity's warnings computed for
 // the meal candidates selected right now, not the page-load default — and,
-// too, those of what the row shows (rowShows): the first entry of a shared
-// booking carries every sharer's notes, so it matches their warnings as well.
+// too, those of what the row shows (rowShows, and a meal's selected candidate's
+// optionShows): the first entry of a shared booking carries every sharer's
+// notes, so it matches their warnings as well.
 function rowTags(row: ActivityRow | StayRow | TransitRow, day: Day): string[] {
   const entity =
     row.type === 'stay' ? row.stay : row.type === 'transit' ? row.transit : row.activity;
@@ -93,12 +94,17 @@ function rowTags(row: ActivityRow | StayRow | TransitRow, day: Day): string[] {
     row.type === 'activity'
       ? filterTagsFor({ ...row.activity, warnings: liveWarnings(row.activity, day) })
       : filterTagsFor(entity);
-  const { booking, notes } = rowShows(row);
-  const shown = filterTagsFor({
-    legId: entity.legId,
-    booking,
-    hasWarningNote: notes.some((n) => n.kind === 'warning'),
-  });
+  const selectedId = row.type === 'activity' ? day.selectedMeals.get(row.activity._id)?._id : null;
+  const candidate =
+    row.type === 'activity' ? row.activity.options?.find((o) => o._id === selectedId) : undefined;
+  const shown = [rowShows(row), ...(candidate ? [optionShows(candidate)] : [])].flatMap(
+    ({ booking, notes }) =>
+      filterTagsFor({
+        legId: entity.legId,
+        booking,
+        hasWarningNote: notes.some((n) => n.kind === 'warning'),
+      }),
+  );
   return [...new Set([...own, ...shown])];
 }
 

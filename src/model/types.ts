@@ -4,7 +4,6 @@
 import type { DayVisits } from './dayMap';
 import type { TimelineEvent } from './timeline';
 
-export type PlanStatus = 'planning' | 'active' | 'completed' | 'cancelled';
 // 'requested': the seller has the order but hasn't confirmed it yet ("booking
 // request received, payment to be processed") — committed money, not a
 // confirmed booking.
@@ -225,7 +224,6 @@ export interface Stay {
   scenarioId: string | null;
   checkInAt: string;
   checkOutAt: string;
-  status: PlanStatus;
   lodging: Lodging | null;
   bookingId: string | null;
   packages?: Package[] | null;
@@ -253,7 +251,6 @@ export interface Transit {
   legId: string;
   journeyId: string | null;
   scenarioId: string | null;
-  status: PlanStatus;
   mode: TransitMode;
   carrier?: string;
   flightNumber?: string;
@@ -424,7 +421,6 @@ export interface Activity {
   _id: string;
   legId: string;
   scenarioId: string | null;
-  status: PlanStatus;
   startAt: string | null;
   durationMinutes: number | null; // null when unknown/point-in-time; see activityDurationMinutes
   timeLabel: TimeLabel | null;
@@ -499,16 +495,28 @@ export interface TripsIndexEntry {
 // bookings collection.
 export interface EnrichedMealOption extends MealOption {
   booking: Booking | null;
+  bookingShare?: BookingShare;
   travelers: string[] | null; // resolved display names, not ids
   notes: Note[]; // this candidate's own notes, not the Activity's — only shown while it's the selected option
 }
 
-// Set on every entry that shares its booking with others — one object per
-// booking — for the day list to show the booking and every sharer's notes
-// once, on the first of them (tripModel.ts's withSharedBookings, rowShows).
+// Set on every entry that shares its booking with others, for the day list
+// to show the booking and every sharer's notes once, on the first of them
+// (tripModel.ts's withSharedBookings, rowShows).
 export interface BookingShare {
-  firstId: string;
-  notes: Note[]; // every sharer's notes, each once
+  // liveDays.ts's withLiveShare re-picks it from the sharers the reader can
+  // see; null when none is.
+  firstId: string | null;
+  // By start, then id. A meal candidate names its meal (mealId): it counts
+  // only while selected.
+  sharers: { id: string; scenarioId: string | null; mealId?: string; notes: Note[] }[];
+  notes: Note[]; // the sharers' notes, each once
+}
+
+// Anything that can hold a share: an entry, or a meal candidate.
+export interface SharesBooking {
+  _id: string;
+  bookingShare?: BookingShare;
 }
 
 export interface EnrichedActivity extends Omit<Activity, 'options' | 'travelers'> {

@@ -23,9 +23,20 @@ const activityRow = {
     _id: 'act_kayak',
     text: 'Kayak tour',
     place: null,
-    status: 'booked',
     durationMinutes: 180,
     booking: { status: 'booked' },
+  },
+};
+
+const stayRow = {
+  type: 'stay',
+  key: 's',
+  relation: 'Check in',
+  event: { at: '2027-07-14T15:00', fuzzy: false, place: null },
+  stay: {
+    _id: 'stay_inn',
+    lodging: { place: { id: 'place_inn', label: 'Harbor Inn' } },
+    booking: { status: 'requested' },
   },
 };
 
@@ -41,7 +52,7 @@ const boxRow = {
           type: 'activity',
           key: 'h',
           event: { at: '2027-07-14T14:00', fuzzy: true, place: null },
-          activity: { _id: 'act_hike', text: 'Exit Glacier hike', place: null, status: 'planning' },
+          activity: { _id: 'act_hike', text: 'Exit Glacier hike', place: null },
         },
       ],
     },
@@ -55,7 +66,7 @@ const day = {
   title: 'Seward',
   location: 'Seward',
   leg: { _id: 'leg_a', name: 'Kenai' },
-  rows: [activityRow, boxRow],
+  rows: [activityRow, stayRow, boxRow],
   notes: [],
 } as unknown as Day;
 
@@ -77,10 +88,15 @@ const ctx = {
 describe('describeDay', () => {
   const text = describeDay(day);
 
-  it('lists rows with times, ids, place ids and status', () => {
+  it('lists rows with times, ids, place ids and booking status', () => {
     expect(text).toContain(
-      '9:00am Activity act_kayak: Kayak tour @ Resurrection Bay (placeId place_kayak) [booked, 180 min, booking booked]',
+      '9:00am Activity act_kayak: Kayak tour @ Resurrection Bay (placeId place_kayak) [180 min, booking booked]',
     );
+    expect(text).toContain(
+      '3:00pm Check in: Harbor Inn — Stay stay_inn @ Harbor Inn (placeId place_inn) [booking requested]',
+    );
+    // An activity with no tags has no empty brackets.
+    expect(text).toMatch(/Exit Glacier hike$/m);
   });
 
   it('marks fuzzy times and shows which option is selected', () => {

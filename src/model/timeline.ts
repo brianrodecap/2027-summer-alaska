@@ -100,12 +100,20 @@ function tieBreak(a: Pending, b: Pending): number {
   return a.headline.localeCompare(b.headline);
 }
 
+// Whether an entry on this scenario branch (null: every branch) is in the
+// reader's plan.
+export function inScope(
+  activeScenarioIds: ReadonlySet<string>,
+  scenarioId: string | null,
+): boolean {
+  return scenarioId === null || activeScenarioIds.has(scenarioId);
+}
+
 export function buildTimeline(data: TimelineData, selections: TimelineSelections): Timeline {
   const { activeScenarioIds, routeTones, mealOptionIndex } = selections;
-  const inScope = (scenarioId: string | null) =>
-    scenarioId === null || activeScenarioIds.has(scenarioId);
+  const scoped = (scenarioId: string | null) => inScope(activeScenarioIds, scenarioId);
   const routesById = new Map(data.routes.map((r) => [r._id, r]));
-  const activities = data.activities.filter((a) => inScope(a.scenarioId));
+  const activities = data.activities.filter((a) => scoped(a.scenarioId));
   const pending: Pending[] = [];
   const arrivalOf = new Map<string, string>();
   const routeInfoOf = new Map<string, ResolvedRouteInfo>();
@@ -121,7 +129,7 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
     });
 
   for (const stay of data.stays as Stay[]) {
-    if (!inScope(stay.scenarioId)) continue;
+    if (!scoped(stay.scenarioId)) continue;
     const place = stay.lodging?.place ?? null;
     const source = { kind: 'stay' as const, id: stay._id };
     push({
@@ -160,7 +168,7 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
   // that candidate is.
   // Only what's in scope carries a package, as in the day view, and each
   // date's carriers are built once however many meals fall on it.
-  const scopedTransits = data.transits.filter((t) => inScope(t.scenarioId));
+  const scopedTransits = data.transits.filter((t) => scoped(t.scenarioId));
   const carriersByDate = new Map<string, PackageCarrier[]>();
   const carriersOn = (date: string) => {
     let list = carriersByDate.get(date);
@@ -173,7 +181,7 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
   const selectedMeals = selectedMealOptions(activities, staysForDate, carriersOn, mealOptionIndex);
 
   for (const transit of data.transits as Transit[]) {
-    if (!inScope(transit.scenarioId)) continue;
+    if (!scoped(transit.scenarioId)) continue;
     const source = { kind: 'transit' as const, id: transit._id };
     const common = { source, scenarioId: transit.scenarioId };
     push({

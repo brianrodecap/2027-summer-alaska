@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useMemo } from 'react';
 
 import { buildLiveDays, type LiveDayCache, type LiveSelections } from '../model/liveDays';
-import type { Day, EnrichedTransit, TripData, TripView } from '../model/types';
+import type { TripData, TripView } from '../model/types';
 import { LiveDaysContext, type LiveDaysValue } from './LiveDaysContextObject';
 import { useTripData } from './useTripData';
 import {
@@ -19,12 +19,16 @@ import {
 // render) can't leak its Day identities into the next compute.
 const lastLiveDays = new WeakMap<TripView, Map<string, LiveDayCache>>();
 
-interface BuiltLiveDays {
-  days: Day[];
-  byDate: Map<string, Day>;
-  transitsById: ReadonlyMap<string, EnrichedTransit>;
-  cache: Map<string, LiveDayCache>;
-}
+type BuiltLiveDays = LiveDaysValue & { cache: Map<string, LiveDayCache> };
+
+const noLiveDays = (): BuiltLiveDays => ({
+  days: [],
+  byDate: new Map(),
+  transitsById: new Map(),
+  activitiesById: new Map(),
+  staysById: new Map(),
+  cache: new Map(),
+});
 
 // One (data, selections) worth of live days, computed the first time anyone
 // asks. A plain class rather than a closure so the memoized result is an
@@ -45,15 +49,15 @@ class LazyLiveDays {
   get(): BuiltLiveDays {
     if (this.built) return this.built;
     if (!this.view || !this.data) {
-      this.built = { days: [], byDate: new Map(), transitsById: new Map(), cache: new Map() };
+      this.built = noLiveDays();
     } else {
-      const { days, transitsById, cache } = buildLiveDays(
+      const { days, ...live } = buildLiveDays(
         this.view,
         this.data,
         this.selections,
         lastLiveDays.get(this.view),
       );
-      this.built = { days, byDate: new Map(days.map((d) => [d.date, d])), transitsById, cache };
+      this.built = { days, byDate: new Map(days.map((d) => [d.date, d])), ...live };
     }
     return this.built;
   }
@@ -89,6 +93,12 @@ export function LiveDaysProvider({ children }: { children: ReactNode }) {
       },
       get transitsById() {
         return lazy.get().transitsById;
+      },
+      get activitiesById() {
+        return lazy.get().activitiesById;
+      },
+      get staysById() {
+        return lazy.get().staysById;
       },
     }),
     [lazy],

@@ -583,14 +583,14 @@
           </div>
           <div class="principle">
             <span class="p-num">04</span>
-            <h4>Plan status and booking status are independent</h4>
+            <h4>Status lives on the booking</h4>
             <p>
-              Stay, Transit, and Activity each track whether they're happening at all
-              (planning/active/completed/cancelled) regardless of money. A separate, optional
-              <code>bookingId</code> points at the <a href="#booking">Booking</a> that tracks only
-              the reservation itself — present solely when a purchase applies. Trip and Leg carry
-              neither field of their own: a Trip/Leg's booking progress is instead computed by
-              rolling up whatever leaf entities underneath it actually have a booking
+              Stay, Transit, and Activity carry no status of their own: an entry in the plan is
+              happening, and one you decide against is deleted (or kept on a scenario branch you
+              don't pick). Whether it's reserved is the optional <code>bookingId</code>'s
+              <a href="#booking">Booking</a>, present solely when a purchase applies. Trip and Leg
+              carry no booking status of their own either: a Trip/Leg's booking progress is computed
+              by rolling up whatever leaf entities underneath it actually have a booking
               (tripModel.ts's <code>legBookingProgress</code>/<code>tripBookingProgress</code>) —
               see Status ladders, below.
             </p>
@@ -644,26 +644,12 @@
         <div class="ladder-block">
           <div class="ladder-row">
             <div class="ladder-label">
-              <strong>Plan status</strong> — <code>status</code> on Stay, Transit, and Activity. Is
-              this part of the plan happening at all — independent of whether anything was
-              purchased.
-            </div>
-            <div class="pills">
-              <span class="pill active">planning</span><span class="arrow">→</span>
-              <span class="pill active">active</span><span class="arrow">→</span>
-              <span class="pill active">completed</span>
-              <span class="arrow">/</span><span class="pill branch">cancelled</span>
-            </div>
-          </div>
-          <div class="ladder-row">
-            <div class="ladder-label">
               <strong>Booking status</strong> — on the <a href="#booking">Booking</a> that an
               optional <code>bookingId</code> on Leg, Stay, Transit, or Activity points at, present
-              only when a reservation actually applies. Independent of plan status: a cancelled
-              <em>booking</em> doesn't mean the stay itself is cancelled — you might rebook it
-              elsewhere. A <code>Package</code> (see Stay) reuses this exact ladder for the same
-              reason — whether the add-on itself has been purchased is independent of whether the
-              Stay it belongs to is booked.
+              only when a reservation actually applies. A cancelled <em>booking</em> doesn't take
+              the stay out of the plan — you might rebook it elsewhere. A <code>Package</code> (see
+              Stay) reuses this exact ladder for the same reason — whether the add-on itself has
+              been purchased is independent of whether the Stay it belongs to is booked.
             </div>
             <div class="pills">
               <span class="pill active">planning</span><span class="arrow">→</span>
@@ -687,12 +673,11 @@
             </div>
           </div>
           <p style="margin: 1rem 0 0; font-size: 0.88rem; color: var(--ink-muted)">
-            Example: a free, unreserved campsite you decide to skip is
-            <code>status: 'cancelled'</code> with no <code>bookingId</code> at all. A hotel room the
-            hotel cancels on you — while you're still figuring out where else to stay — is a
-            <a href="#booking">Booking</a> with <code>status: 'cancelled'</code> while the
-            <code>Stay</code> itself stays <code>status: 'planning'</code>. Collapsing these into
-            one field loses that distinction.
+            Example: a hotel room the hotel cancels on you — while you're still figuring out where
+            else to stay — is a <a href="#booking">Booking</a> with
+            <code>status: 'cancelled'</code> on a <code>Stay</code> that stays in the plan until you
+            replace it. A free, unreserved campsite you decide to skip has no booking to cancel: its
+            Stay is deleted.
           </p>
         </div>
       </section>
@@ -734,10 +719,6 @@
             through what's inside it, so it has no reservation of its own to carry a
             <code>status</code>/<code>bookingId</code> pair for. Its own booking progress is a
             computed rollup instead (<code>tripBookingProgress</code>) — see Status ladders, above.
-            (This schema originally authored <code>status: PlanStatus</code> directly on Trip,
-            alongside Leg; both were removed once the trips list needed a "how booked is this trip"
-            readout and hand-tracking that fact separately from the bookings already on
-            Stay/Transit/Activity/Leg risked drifting out of sync with them.)
           </li>
           <li>
             <strong>travelers gained <code>age</code></strong> once the cruise line's own booking
@@ -854,7 +835,6 @@
                             // whose overnight the long-drive-day branch skips
   checkInAt:  '2027-06-26T15:00',
   checkOutAt: '2027-06-28T11:00',
-  status: 'active',           // planning | active | completed | cancelled
   lodging: {
     place: { id: 'ChIJ...', label: 'Talkeetna Alaskan Lodge' },
     roomType: null, roomNumber: null, campsite: null,
@@ -871,7 +851,6 @@
   scenarioId: null,
   checkInAt:  '2027-07-17T15:00',
   checkOutAt: '2027-07-24T07:30',
-  status: 'planning',
   lodging: {
     place: { id: null, label: 'Discovery Princess' },
     roomType: 'Balcony (Cat. BC)', roomNumber: 'L232', campsite: null,
@@ -958,7 +937,6 @@
   legId: 'leg_parks',
   scenarioId: null,
   checkInAt: '2027-07-12T00:00', checkOutAt: '2027-07-17T00:00',
-  status: 'planning',
   lodging: null,
   bookingId: 'booking_stay_lc_katmai',
   images: [],
@@ -969,7 +947,6 @@
   legId: 'leg_parks',
   scenarioId: null,
   checkInAt: '2027-07-06T21:00', checkOutAt: '2027-07-07T07:00',
-  status: 'planning',
   lodging: { place: { id: null, label: 'Roadside pullout, Denali Highway' } },
   bookingId: null,               // first-come, first-served — nothing to reserve
   images: [],
@@ -984,7 +961,6 @@
   scenarioId: null,
   checkInAt:  '2026-06-22T12:00',
   checkOutAt: '2026-06-23T11:00',
-  status: 'planning',
   lodging: {
     place: { id: null, label: 'Santa Cruz Scorpion Campground' },
     roomType: null, roomNumber: null, campsite: '022, Lower Loop',
@@ -1004,7 +980,6 @@
   scenarioId: null,
   checkInAt:  '2026-06-17T16:00',
   checkOutAt: '2026-06-19T11:00',
-  status: 'planning',
   lodging: {
     place: { id: null, label: 'Hotel Pacific, Monterey CA' },
     roomType: 'Junior, 2 Double', roomNumber: null, campsite: null,
@@ -1041,12 +1016,6 @@
             <code>Note</code> concerning the Stay — the same "facts get one home, referenced
             everywhere else" reasoning <code>Package.note</code> follows below, once description
             text stopped being a special case just because it happened to live on a specific field.
-          </li>
-          <li>
-            <strong>status and booking are independent</strong>, not one field. Most stays have both
-            moving together, but not always — a free roadside camp never gets a
-            <code>bookingId</code> at all, and a hotel that cancels your reservation doesn't
-            retroactively cancel the <em>stay</em> if you plan to rebook elsewhere.
           </li>
           <li>
             <strong>bedConfiguration/deckGroup/shipZone extend <code>lodging</code></strong> for the
@@ -1167,7 +1136,6 @@
   scenarioId: null,        // set when this movement's own timing depends on which
                             // Scenario played out — e.g. a backup-flight day where
                             // the drive-back departure time differs by branch
-  status: 'planning',      // planning | active | completed | cancelled
   mode: 'drive',
   from: { placeId: null, label: 'Anchorage' },  // null — a whole city, no one
   to:   { placeId: null, label: 'Whittier' },    // correct point to pin
@@ -1180,7 +1148,7 @@
   routeVariant: 'scenic',
   showEndpointsOnMap: true,  // optional, routed drives only — omitted = false:
                              // from/to are left off maps, links and drive totals
-  bookingId: null,           // own car, no reservation — status still tracks the plan
+  bookingId: null,           // own car, no reservation
   images: [],
 }</code></pre>
         <p class="schema-label">
@@ -1193,7 +1161,6 @@
   legId: 'leg_example',
   journeyId: null,
   scenarioId: null,
-  status: 'planning',
   mode: 'ferry',
   from: { placeId: 'ChIJ...', label: 'Long Beach Landing' },  // added: real,
   to:   { placeId: 'ChIJ...', label: 'Avalon Landing' },       // resolvable terminals
@@ -1213,7 +1180,6 @@
   legId: 'leg_example',
   journeyId: null,
   scenarioId: null,
-  status: 'planning',
   mode: 'flight',
   carrier: 'Delta',              // added: mode-specific, present only when
   flightNumber: 'DL479',          // mode is 'flight' — a route/date has many flights
@@ -1288,8 +1254,7 @@
           </li>
           <li>
             <strong>booking stays null for a drive in your own car</strong> — there's nothing to
-            reserve, ever — while <code>status</code> still tracks whether this leg of movement is
-            planned, underway, done, or scrapped.
+            reserve, ever.
           </li>
           <li>
             <strong>scenarioId closes a gap the first migration pass surfaced</strong>: a drive-back
@@ -1767,7 +1732,6 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   _id: 'act_flightseeing',
   legId: 'leg_parks',
   scenarioId: 'scenario_denali_ideal',
-  status: 'planning',   // planning | active | completed | cancelled
   startAt: '2027-06-27T09:30',
   durationMinutes: 120,   // null | minutes, one of a fixed set of 15-min/
                        // 30-min/hour steps (see the edit UI's Duration
@@ -1814,7 +1778,6 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   _id: 'act_example_zipline',
   legId: 'leg_cruise',
   scenarioId: null,
-  status: 'planning',
   startAt: '2027-07-20T14:00',
   durationMinutes: 120,
   timeLabel: null,
@@ -1836,7 +1799,6 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   _id: 'act_jun27_ideal_1',
   legId: 'leg_parks',
   scenarioId: null,
-  status: 'planning',
   startAt: '2027-06-27T08:00',
   durationMinutes: null,
   timeLabel: null,
@@ -1858,7 +1820,6 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   _id: 'act_jul22_dinner_opt2',
   legId: 'leg_cruise',
   scenarioId: null,
-  status: 'planning',
   startAt: '2027-07-22T19:30',
   durationMinutes: null,
   timeLabel: null,
@@ -1878,7 +1839,6 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   _id: 'act_jun27_ideal_1',
   legId: 'leg_parks',
   scenarioId: 'scenario_jun27_ideal',
-  status: 'planning',
   startAt: '2027-06-27T08:00',
   durationMinutes: null,
   timeLabel: null,
@@ -1925,9 +1885,8 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
             vocabulary and sort-anchor mapping.
           </li>
           <li>
-            <strong>booking is absent for most activities</strong> — a casual stroll never needs one
-            — while <code>status</code> is always present, tracking the activity's own plan
-            independent of whether it's reserved.
+            <strong>booking is absent for most activities</strong> — a casual stroll never needs
+            one.
           </li>
           <li>
             <strong
@@ -1939,9 +1898,8 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
             <code>mealType: 'included-breakfast'</code>) would combinatorially explode the same way
             the model already avoids elsewhere (see Transit's <code>mode</code> rationale). A meal
             running late and becoming a drivethru instead needs no special structure to support —
-            it's just editing <code>diningFormat</code>/<code>place</code> on an ordinary
-            <code>status: 'planning'</code> Activity, the same flexibility every other field on this
-            page already has.
+            it's just editing <code>diningFormat</code>/<code>place</code> on an ordinary Activity,
+            the same flexibility every other field on this page already has.
           </li>
           <li>
             <strong>An activity can be a meal without ever setting <code>place</code>.</strong>
@@ -1969,8 +1927,8 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
             pays for it, no separate decision required; <code>'package'</code> means it's covered
             only if a specific optional add-on gets purchased, and that purchase has its own
             <code>planning</code>/<code>booked</code>/<code>cancelled</code> status independent of
-            the Stay. Collapsing them would either lose that distinction or force a not-yet-decided
-            purchase to read as already-included.
+            the Stay's booking. Collapsing them would either lose that distinction or force a
+            not-yet-decided purchase to read as already-included.
           </li>
           <li>
             <strong>options is the one genuinely new mechanism here</strong>, added once "which of
@@ -2002,15 +1960,15 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
           </li>
           <li>
             <strong>priority is an enumerated rank, not a boolean</strong> — matching every other
-            significance-style field on this page (<code>status</code>, <code>mealType</code>,
-            <code>diningFormat</code>) rather than a loose <code>highlight: true/false</code>. Null
-            for nearly everything; set only on the handful of activities worth calling out. It's
-            what the computed Day's title reads to decide whether to name a day after its headline
-            activity — "Denali Flightseeing" — instead of falling back to wherever that night's Stay
-            is. When a day has several activities tied at the same top priority, the title joins
-            their <code>text</code> with " &amp; ", in sequence order. Deliberately generic rather
-            than single-purpose: any future "what matters today" or trip-highlights view can read
-            the same field without a new one being invented.
+            significance-style field on this page (<code>mealType</code>, <code>diningFormat</code>)
+            rather than a loose <code>highlight: true/false</code>. Null for nearly everything; set
+            only on the handful of activities worth calling out. It's what the computed Day's title
+            reads to decide whether to name a day after its headline activity — "Denali
+            Flightseeing" — instead of falling back to wherever that night's Stay is. When a day has
+            several activities tied at the same top priority, the title joins their
+            <code>text</code> with " &amp; ", in sequence order. Deliberately generic rather than
+            single-purpose: any future "what matters today" or trip-highlights view can read the
+            same field without a new one being invented.
           </li>
           <li>
             <strong>travelers is an excursion's own, directly authored roster</strong> —

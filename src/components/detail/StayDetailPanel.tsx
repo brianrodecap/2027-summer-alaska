@@ -7,7 +7,7 @@ import {
   placeFromLodging,
   stayDetailBits,
 } from '../../model/formatting';
-import { dateOnly, stayNights } from '../../model/tripModel';
+import { dateOnly, sheetNotes, stayNights } from '../../model/tripModel';
 import type { EnrichedStay } from '../../model/types';
 import { useHeroImageSelect } from '../../state/useHeroImageSelect';
 import { useStayPlaceImagePersist } from '../../state/usePlaceImagePersist';
@@ -16,7 +16,7 @@ import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
-import { PackagesSection, PortCallsSection, StatusLine } from './DetailSections';
+import { PackagesSection, PortCallsSection } from './DetailSections';
 import { PlacePanel } from './PlacePanel';
 
 // A Stay row's own tap target — mirrors ActivityDetailPanel's side sheet
@@ -52,14 +52,13 @@ export function StayDetailPanel({
     >
       <EntityHeroImage image={image} />
       <Typography variant="body1">{stayWhenLabel(stay)}</Typography>
-      <StatusLine status={stay.status} />
       {detailBits.length > 0 && (
         <Typography variant="body2" color="text.secondary">
           {detailBits.join(' · ')}
         </Typography>
       )}
       <BookingSection booking={stay.booking} date={dateOnly(stay.checkInAt)} entityId={stay._id} />
-      <NotesCluster notes={stay.notes} expanded />
+      <NotesCluster notes={sheetNotes(stay)} expanded />
       <PackagesSection
         packages={stay.packages}
         nights={stayNights(stay)}

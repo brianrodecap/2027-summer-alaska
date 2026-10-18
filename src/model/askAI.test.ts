@@ -14,7 +14,7 @@ import {
 } from './askAI';
 import type { AskAIToolContext } from './askAITools';
 import { dayPlanErrors } from './proposals';
-import type { Day, Route, Transit, TripData, TripView } from './types';
+import type { Booking, Day, Route, Transit, TripData, TripView } from './types';
 
 // The turn loop streams, so the stubbed API answers with server-sent events. Each
 // queued reply is one request's whole response; nothing reaches the real API.
@@ -127,7 +127,6 @@ function tripData(activityText = 'Kayak tour'): TripData {
         _id: 'act_1',
         legId: 'leg_a',
         scenarioId: null,
-        status: 'planning',
         startAt: '2027-07-14T09:00',
         durationMinutes: 120,
         timeLabel: null,
@@ -409,7 +408,6 @@ describe('propose_edit with a route', () => {
     journeyId: null,
     travelers: null,
     scenarioId: null,
-    status: 'planning',
     mode: 'drive',
     from: { id: null, label: 'Anchorage' },
     to: { id: null, label: 'Seward' },
@@ -530,6 +528,17 @@ describe('propose_edit with a route', () => {
     expect(context).toContain('[route: route_a, variant scenic]');
     expect(context).toContain('Route route_a: Anchorage → Seward');
   });
+
+  it('tags a booked entry with its booking status, and an unbooked one with none', () => {
+    const booked = { ...drive, bookingId: 'bk_1' };
+    const bookings: Booking[] = [
+      { _id: 'bk_1', status: 'booked', pricing: null, confirmationNumber: null },
+    ];
+    expect(buildTripContext({ ...data, transits: [booked], bookings })).toContain(
+      'departs 2027-07-14T08:00 [booking booked]',
+    );
+    expect(buildTripContext(data)).not.toContain('[booking');
+  });
 });
 
 describe('propose_edit naming travelers', () => {
@@ -539,7 +548,6 @@ describe('propose_edit naming travelers', () => {
     journeyId: null,
     travelers: ['t_a', 't_b'],
     scenarioId: null,
-    status: 'planning',
     mode: 'flight',
     from: { id: null, label: 'Hometown' },
     to: { id: null, label: 'Faraway' },

@@ -8,7 +8,6 @@ import type {
 } from '../../model/types';
 import { useEdit } from '../../state/useEdit';
 import { useLiveDays } from '../../state/useLiveDays';
-import { useTripData } from '../../state/useTripData';
 
 // Stay's, Transit's and Activity's detail panels are all opened/closed/edited
 // the same way — a plain "which entity is open" state, with Edit clearing it
@@ -16,18 +15,18 @@ import { useTripData } from '../../state/useTripData';
 // carries a selected meal-option candidate, resolved via `resolveSecondary`.
 //
 // Stores only the id(s), not the entity itself — a live edit (an in-place
-// photo pick, say — see PlacePanel's onSelectImage) rebuilds `view` with a
+// photo pick, say — see PlacePanel's onSelectImage) rebuilds the live days with a
 // fresh object for every entity, and a panel that had captured the *old* one
 // at open time would keep showing stale data until closed and reopened.
 // Looking it up by id from `byId` every render instead means the open sheet
-// always reflects whatever `view` currently holds.
+// always reflects whatever the live days currently hold.
 function useDetailPanel<T extends { _id: string }, S = never>(
-  byId: ReadonlyMap<string, T> | undefined,
+  byId: ReadonlyMap<string, T>,
   openEdit: (id: string) => void,
   resolveSecondary?: (entity: T, secondaryId: string) => S | undefined,
 ) {
   const [ids, setIds] = useState<{ id: string; secondaryId?: string } | null>(null);
-  const entity = ids ? (byId?.get(ids.id) ?? null) : null;
+  const entity = ids ? (byId.get(ids.id) ?? null) : null;
   const secondary =
     entity && ids?.secondaryId && resolveSecondary
       ? resolveSecondary(entity, ids.secondaryId)
@@ -61,18 +60,16 @@ function useDetailPanel<T extends { _id: string }, S = never>(
 // The three detail sheets' state, plus the adapter the day list hands its rows
 // (an Activity opens with an optional selected meal candidate).
 export function useDetailPanels() {
-  const { view } = useTripData();
   const { openEdit } = useEdit();
   const liveDays = useLiveDays();
+  // Live entries, so each sheet matches its rows. Read up front, which builds
+  // the live days: DaysView, the one caller, builds them anyway.
   const activityPanel = useDetailPanel<EnrichedActivity, EnrichedMealOption>(
-    view?.activitiesById,
+    liveDays.activitiesById,
     (id) => openEdit('activity', id),
     (activity, optionId) => activity.options?.find((o) => o._id === optionId),
   );
-  const stayPanel = useDetailPanel<EnrichedStay>(view?.staysById, (id) => openEdit('stay', id));
-  // The live Transits (selected route tab, meals picked along the drive), so
-  // the sheet shows the same arrival as the Transit's own rows. DaysView
-  // builds the live days anyway, so reading them here costs nothing extra.
+  const stayPanel = useDetailPanel<EnrichedStay>(liveDays.staysById, (id) => openEdit('stay', id));
   const transitPanel = useDetailPanel<EnrichedTransit>(liveDays.transitsById, (id) =>
     openEdit('transit', id),
   );

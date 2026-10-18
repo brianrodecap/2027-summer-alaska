@@ -4,14 +4,9 @@ import Typography from '@mui/material/Typography';
 import type { ReactNode } from 'react';
 
 import { priceLineLabel } from '../../model/bookingDetails';
-import {
-  packageCostLabel,
-  PLAN_STATUS_LABEL,
-  portCallsInOrder,
-  portCallWhenLabel,
-} from '../../model/entityDetails';
+import { packageCostLabel, portCallsInOrder, portCallWhenLabel } from '../../model/entityDetails';
 import { todayDateStr } from '../../model/tripModel';
-import type { Package, PlanStatus, PortCall, ResolvedRouteInfo } from '../../model/types';
+import type { Package, PortCall, ResolvedRouteInfo } from '../../model/types';
 import { useTravelerNames } from '../../state/useTravelerNames';
 import { BookingStatusChip } from '../shared/BookingChip';
 import { renderMaterialIcon } from '../shared/materialIcon';
@@ -27,16 +22,6 @@ export function DetailSection({ title, children }: { title: string; children: Re
       </Typography>
       {children}
     </Stack>
-  );
-}
-
-// The entity's own plan status ("Planning", "Completed"), apart from its
-// booking's status on the chip.
-export function StatusLine({ status }: { status: PlanStatus }) {
-  return (
-    <Typography variant="body2" color="text.secondary">
-      Status: {PLAN_STATUS_LABEL[status]}
-    </Typography>
   );
 }
 

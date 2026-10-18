@@ -1,25 +1,32 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildLiveDays } from './liveDays';
+import { filterRows } from './filters';
+import { buildLiveDays, type LiveDayCache } from './liveDays';
 import { liveWarnings } from './mealOptions';
 import {
   buildTripView,
   diffMinutesIso,
+  optionShows,
   portCallsOn,
   portCallWarningFor,
   rowShows,
+  sheetNotes,
   splitOutStayBoundaries,
   tripDateRange,
   tripDayCount,
 } from './tripModel';
 import type {
   BoxRow,
+  Day,
+  DayRow,
+  EnrichedActivity,
   EnrichedStay,
   EnrichedTransit,
   MealOption,
   StayRelation,
   StayRow,
   TripData,
+  TripView,
 } from './types';
 
 // A bare-minimum, synthetic TripData — one Trip and one Leg, nothing else —
@@ -56,7 +63,6 @@ function pushMinimalActivity(data: TripData, overrides: Partial<TripData['activi
     _id: 'test_activity',
     legId: 'leg_test',
     scenarioId: null,
-    status: 'planning',
     startAt: null,
     durationMinutes: null,
     timeLabel: null,
@@ -82,7 +88,6 @@ function pushMinimalTransit(data: TripData, overrides: Partial<TripData['transit
     journeyId: null,
     travelers: null,
     scenarioId: null,
-    status: 'planning',
     mode: 'drive',
     from: { id: null, label: 'A' },
     to: { id: null, label: 'B' },
@@ -98,13 +103,30 @@ function pushMinimalTransit(data: TripData, overrides: Partial<TripData['transit
 
 // A day as the reader sees it (rows, scenario tabs): the static frame from
 // buildTripView laid out for the given scenario picks.
-function liveDay(data: TripData, date: string, picks = new Map<string, string>()) {
-  const { days } = buildLiveDays(buildTripView(data), data, {
-    scenarioPicks: picks,
-    routeTones: new Map(),
-    mealOptionIndex: new Map(),
-  });
-  return days.find((d) => d.date === date);
+function liveDay(
+  data: TripData,
+  date: string,
+  picks = new Map<string, string>(),
+  meals = new Map<string, number>(),
+) {
+  return liveDays(buildTripView(data), data, picks, undefined, meals).days.find(
+    (d) => d.date === date,
+  );
+}
+
+function liveDays(
+  view: TripView,
+  data: TripData,
+  picks: Map<string, string>,
+  previous?: Map<string, LiveDayCache>,
+  meals = new Map<string, number>(),
+) {
+  return buildLiveDays(
+    view,
+    data,
+    { scenarioPicks: picks, routeTones: new Map(), mealOptionIndex: meals },
+    previous,
+  );
 }
 
 describe('buildTripView', () => {
@@ -325,7 +347,6 @@ describe('buildTripView', () => {
       scenarioId: 'test_scenario_ideal',
       checkInAt: '2027-05-31T15:00',
       checkOutAt: '2027-06-01T11:00',
-      status: 'planning',
       lodging: null,
       bookingId: null,
       images: [],
@@ -338,7 +359,6 @@ describe('buildTripView', () => {
       scenarioId: 'test_scenario_alt',
       checkInAt: '2027-05-31T15:00',
       checkOutAt: '2027-06-01T11:00',
-      status: 'planning',
       lodging: null,
       bookingId: null,
       images: [],
@@ -919,6 +939,285 @@ describe('a booking several entries share', () => {
     expect(shown('Staying')).toEqual({ booking: null, notes: [] });
     expect(shown('Check out')).toEqual({ booking: null, notes: [] });
   });
+
+  // One booking held across a weather window: an earlier flight on the
+  // alternate branch, the ideal branch's, and the next day's.
+  function weatherWindow(): TripData {
+    const data = minimalTripData();
+    data.bookings.push({ _id: 'booking_window', status: 'booked', pricing: null } as never);
+    data.scenarios.push(
+      {
+        _id: 'sc_good',
+        legId: 'leg_test',
+        tone: 'ideal',
+        label: 'Good',
+        icon: 'sunny',
+        images: [],
+      },
+      {
+        _id: 'sc_bad',
+        legId: 'leg_test',
+        tone: 'alternate',
+        label: 'Bad',
+        icon: 'cloud',
+        images: [],
+      },
+    );
+    const flight = (id: string, scenarioId: string | null, startAt: string) =>
+      pushMinimalActivity(data, { _id: id, scenarioId, startAt, bookingId: 'booking_window' });
+    flight('act_bad', 'sc_bad', '2027-06-01T08:00');
+    flight('act_good', 'sc_good', '2027-06-01T09:00');
+    flight('act_next', null, '2027-06-02T09:00');
+    return data;
+  }
+  // The rows on a day as the reader sees them: the picked branches' only.
+  const visibleRows = (day: Day): DayRow[] => {
+    const visible = (rows: DayRow[]): DayRow[] =>
+      rows.flatMap((r) =>
+        r.type === 'box' ? r.tracks.filter((t) => t.active).flatMap((t) => visible(t.rows)) : [r],
+      );
+    return visible(day.rows);
+  };
+  // A meal row's selected candidate.
+  const selectedOf = (day: Day, activity: EnrichedActivity) =>
+    activity.options?.find((o) => o._id === day.selectedMeals.get(activity._id)?._id);
+  // The entries (or selected meal candidates) on a day showing the booking chip.
+  const showing = (
+    data: TripData,
+    date: string,
+    picks?: Map<string, string>,
+    meals?: Map<string, number>,
+  ) => {
+    const day = liveDay(data, date, picks, meals)!;
+    return visibleRows(day).flatMap((r) => {
+      if (r.type === 'activity') {
+        const candidate = selectedOf(day, r.activity);
+        if (candidate?.bookingId) return optionShows(candidate).booking ? [candidate._id] : [];
+        return rowShows(r).booking ? [r.activity._id] : [];
+      }
+      if (r.type === 'stay') return rowShows(r).booking ? [r.stay._id] : [];
+      if (r.type === 'transit') return rowShows(r).booking ? [r.transit._id] : [];
+      return [];
+    });
+  };
+  const badPick = new Map([['sc_bad+sc_good', 'sc_bad']]);
+
+  it('shows the booking on the first sharer on a branch the reader picked', () => {
+    const data = weatherWindow();
+    expect(showing(data, '2027-06-01')).toEqual(['act_good']);
+    expect(showing(data, '2027-06-01', badPick)).toEqual(['act_bad']);
+    expect(showing(data, '2027-06-02')).toEqual([]);
+  });
+
+  it('moves to the next day when no picked branch has a sharer', () => {
+    const data = weatherWindow();
+    data.activities.find((a) => a._id === 'act_good')!.bookingId = null;
+    expect(showing(data, '2027-06-01')).toEqual([]);
+    expect(showing(data, '2027-06-02')).toEqual(['act_next']);
+  });
+
+  it('rebuilds a cached day whose sharer stops being first after a pick on another day', () => {
+    const data = weatherWindow();
+    data.activities.find((a) => a._id === 'act_good')!.bookingId = null;
+    const view = buildTripView(data);
+    const first = liveDays(view, data, new Map());
+    const next = liveDays(view, data, badPick, first.cache);
+    const day = next.days.find((d) => d.date === '2027-06-02')!;
+    const row = day.rows.find((r) => r.type === 'activity')!;
+    expect(row.type === 'activity' && rowShows(row).booking).toBeNull();
+  });
+
+  it('gathers only the picked branches’ notes', () => {
+    const data = weatherWindow();
+    data.notes.push({
+      _id: 'note_rebook',
+      kind: 'info',
+      text: 'Rebook fee if weather cancels',
+      concerns: [{ entity: 'activity', id: 'act_bad' }],
+      images: [],
+    });
+    const notesOn = (picks?: Map<string, string>) =>
+      liveDay(data, '2027-06-01', picks)!
+        .rows.flatMap((r) => (r.type === 'box' ? r.tracks.filter((t) => t.active) : []))
+        .flatMap((t) => t.rows)
+        .flatMap((r) => (r.type === 'activity' ? rowShows(r).notes.map((n) => n._id) : []));
+    expect(notesOn()).toEqual([]);
+    expect(notesOn(badPick)).toEqual(['note_rebook']);
+  });
+
+  it('follows the picks across a stay and a transit sharing the booking', () => {
+    // The branches' own flights hold them together as one choice; the
+    // booking moves to a drive on one and a stay on the other.
+    const data = weatherWindow();
+    for (const a of data.activities) a.bookingId = null;
+    pushMinimalTransit(data, {
+      _id: 'tr_bad',
+      scenarioId: 'sc_bad',
+      departsAt: '2027-06-01T14:00',
+      arrivesAt: '2027-06-01T16:00',
+      bookingId: 'booking_window',
+    });
+    data.stays.push({
+      _id: 'stay_good',
+      legId: 'leg_test',
+      scenarioId: 'sc_good',
+      checkInAt: '2027-06-01T15:00',
+      checkOutAt: '2027-06-02T11:00',
+      lodging: null,
+      bookingId: 'booking_window',
+      images: [],
+    });
+    expect(showing(data, '2027-06-01')).toEqual(['stay_good']);
+    expect(showing(data, '2027-06-01', badPick)).toEqual(['tr_bad']);
+    // The stay's sheet carries what its Check in row does.
+    data.notes.push({
+      _id: 'note_late',
+      kind: 'info',
+      text: 'Late check-in',
+      concerns: [{ entity: 'stay', id: 'stay_good' }],
+      images: [],
+    });
+    const built = liveDays(buildTripView(data), data, new Map());
+    expect(sheetNotes(built.staysById.get('stay_good')!).map((n) => n._id)).toEqual(['note_late']);
+    expect(sheetNotes(built.transitsById.get('tr_bad')!)).toEqual([]);
+  });
+
+  // A dinner choosing between a candidate the cruise fare covers (sharing its
+  // booking) and one paid apart.
+  const mealOn = (data: TripData, id: string, startAt: string, scenarioId: string | null) =>
+    pushMinimalActivity(data, {
+      _id: id,
+      scenarioId,
+      startAt,
+      mealType: 'dinner',
+      options: [
+        {
+          _id: `${id}_fare`,
+          diningFormat: 'sit-down',
+          place: { id: null, label: 'Main dining room' },
+          includedIn: null,
+          bookingId: 'booking_window',
+        },
+        {
+          _id: `${id}_paid`,
+          diningFormat: 'sit-down',
+          place: { id: null, label: 'Steakhouse' },
+          includedIn: null,
+          bookingId: null,
+        },
+      ],
+    });
+
+  it('leaves a meal candidate’s shared booking to an earlier sharer', () => {
+    const data = weatherWindow();
+    mealOn(data, 'dinner_1', '2027-06-02T19:00', null);
+    expect(showing(data, '2027-06-02')).toEqual([]);
+  });
+
+  it('shows a booking only candidates share on the first of them', () => {
+    const data = weatherWindow();
+    data.activities = [];
+    mealOn(data, 'dinner_1', '2027-06-01T19:00', null);
+    mealOn(data, 'dinner_2', '2027-06-02T19:00', null);
+    expect(showing(data, '2027-06-01')).toEqual(['dinner_1_fare']);
+    expect(showing(data, '2027-06-02')).toEqual([]);
+  });
+
+  it('moves a meal candidate’s booking with the picks', () => {
+    const data = weatherWindow();
+    data.activities.find((a) => a._id === 'act_good')!.bookingId = null;
+    mealOn(data, 'dinner_good', '2027-06-01T09:30', 'sc_good');
+    expect(showing(data, '2027-06-01')).toEqual(['dinner_good_fare']);
+    expect(showing(data, '2027-06-01', badPick)).toEqual(['act_bad']);
+  });
+
+  it('moves a candidate’s booking on when the reader picks another candidate', () => {
+    const data = weatherWindow();
+    data.activities = [];
+    mealOn(data, 'dinner_1', '2027-06-01T19:00', null);
+    mealOn(data, 'dinner_2', '2027-06-02T19:00', null);
+    const paidFirst = new Map([['dinner_1', 1]]);
+    expect(showing(data, '2027-06-01', undefined, paidFirst)).toEqual([]);
+    expect(showing(data, '2027-06-02', undefined, paidFirst)).toEqual(['dinner_2_fare']);
+  });
+
+  it('shows the other sharers’ notes on a first candidate, and filters by them', () => {
+    const data = weatherWindow();
+    data.activities = [];
+    mealOn(data, 'dinner_1', '2027-06-01T19:00', null);
+    pushMinimalTransit(data, {
+      _id: 'tr_home',
+      departsAt: '2027-06-02T09:00',
+      arrivesAt: '2027-06-02T10:00',
+      bookingId: 'booking_window',
+    });
+    data.notes.push({
+      _id: 'note_docs',
+      kind: 'warning',
+      text: 'Bring passports',
+      concerns: [{ entity: 'transit', id: 'tr_home' }],
+      images: [],
+    });
+    const day = liveDay(data, '2027-06-01')!;
+    const row = visibleRows(day).find((r) => r.type === 'activity')!;
+    const dinner = row.type === 'activity' ? row.activity : null;
+    expect(optionShows(selectedOf(day, dinner!)!).notes.map((n) => n._id)).toEqual(['note_docs']);
+    expect(filterRows(day.rows, day, new Set(['attr:attention']))).toContain(row);
+  });
+
+  it('shows on the first sharer’s sheet what its row shows, and only its own on the rest', () => {
+    const data = weatherWindow();
+    const note = (id: string, on: string) => ({
+      _id: id,
+      kind: 'info' as const,
+      text: id,
+      concerns: [{ entity: 'activity' as const, id: on }],
+      images: [],
+    });
+    data.notes.push(note('note_good', 'act_good'), note('note_next', 'act_next'));
+    const built = liveDays(buildTripView(data), data, new Map());
+    const ids = (id: string) =>
+      sheetNotes(built.activitiesById.get(id)!)
+        .map((n) => n._id)
+        .sort();
+    expect(ids('act_good')).toEqual(['note_good', 'note_next']);
+    expect(ids('act_next')).toEqual(['note_next']);
+  });
+
+  it('filters a meal by its selected candidate’s own warning', () => {
+    const data = weatherWindow();
+    data.activities = [];
+    mealOn(data, 'dinner_1', '2027-06-01T19:00', null);
+    data.notes.push({
+      _id: 'note_dress',
+      kind: 'warning',
+      text: 'Formal dress',
+      concerns: [{ entity: 'mealOption', id: 'dinner_1_fare' }],
+      images: [],
+    });
+    const attention = (meals?: Map<string, number>) => {
+      const day = liveDay(data, '2027-06-01', undefined, meals)!;
+      return filterRows(day.rows, day, new Set(['attr:attention'])).length;
+    };
+    expect(attention()).toBe(1);
+    expect(attention(new Map([['dinner_1', 1]]))).toBe(0);
+  });
+
+  it('hands back the same entry for the same picks', () => {
+    const data = weatherWindow();
+    const view = buildTripView(data);
+    const good = (built: ReturnType<typeof liveDays>) =>
+      built.days
+        .find((d) => d.date === '2027-06-01')!
+        .rows.flatMap((r) => (r.type === 'box' ? r.tracks.filter((t) => t.active) : []))
+        .flatMap((t) => t.rows)
+        .find((r) => r.type === 'activity');
+    const a = good(liveDays(view, data, new Map()));
+    const b = good(liveDays(view, data, new Map()));
+    expect(a?.type === 'activity' && b?.type === 'activity' && a.activity === b.activity).toBe(
+      true,
+    );
+  });
 });
 
 describe('same-startAt Activity ordering', () => {
@@ -1070,7 +1369,6 @@ describe('budget: Stay packages', () => {
       scenarioId: null,
       checkInAt: '2027-06-01T15:00',
       checkOutAt: '2027-06-02T11:00',
-      status: 'planning',
       lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } },
       bookingId: null,
       packages: null,
@@ -1182,7 +1480,6 @@ describe('budget: when each price line is paid', () => {
       scenarioId: null,
       checkInAt: `${date}T15:00`,
       checkOutAt: `${date}T23:00`,
-      status: 'planning',
       lodging: { place: { id: 'place_lodge', label: 'Test Lodge' } },
       bookingId: booking._id,
       images: [],
@@ -1215,7 +1512,6 @@ describe('budget: when each price line is paid', () => {
         scenarioId: null,
         checkInAt: `${date}T15:00`,
         checkOutAt: `${date}T23:00`,
-        status: 'planning',
         lodging: { place: { id: 'place_ship', label: 'Ship' } },
         bookingId: null,
         images: [],
@@ -1294,7 +1590,6 @@ describe('budget: when each price line is paid', () => {
       legId: 'leg_test',
       journeyId: null,
       scenarioId: null,
-      status: 'planning',
       mode: 'flight',
       travelers: null,
       from: { id: null, label: 'Float Base' },

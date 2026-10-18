@@ -7,6 +7,7 @@
 import { activeTitleCandidates, followedDayOf, liveHeader } from './dayHeader';
 import { layoutDay } from './dayLayout';
 import { buildDayVisits, indexTimeline } from './dayMap';
+import { uniqueById } from './formatting';
 import {
   resolveActiveScenarios,
   type ScenarioGroup,
@@ -14,9 +15,19 @@ import {
   scenarioMembersOn,
   type ScenarioPicks,
 } from './scenarioGroups';
-import { buildTimeline, type Timeline } from './timeline';
+import { buildTimeline, inScope, type Timeline } from './timeline';
 import { deriveTitle } from './tripModel';
-import type { Day, DayFrame, EnrichedTransit, TripData, TripView } from './types';
+import type {
+  BookingShare,
+  Day,
+  DayFrame,
+  EnrichedActivity,
+  EnrichedStay,
+  EnrichedTransit,
+  SharesBooking,
+  TripData,
+  TripView,
+} from './types';
 
 export interface LiveSelections {
   scenarioPicks: ScenarioPicks;
@@ -36,9 +47,12 @@ export interface LiveDayCache {
 
 export interface LiveDays {
   days: Day[];
-  // Every Transit as the reader is looking at it (see liveTransits) — the
-  // same objects the rows and day.transits carry.
+  // Every Transit, Activity and Stay as the reader is looking at it (route
+  // walk, shared bookings narrowed to what they can see) — the same objects
+  // the rows carry.
   transitsById: ReadonlyMap<string, EnrichedTransit>;
+  activitiesById: ReadonlyMap<string, EnrichedActivity>;
+  staysById: ReadonlyMap<string, EnrichedStay>;
   cache: Map<string, LiveDayCache>;
 }
 
@@ -76,8 +90,66 @@ function liveTransits(
   return live;
 }
 
+// Each entry's copy per set of picked sharers, so a rebuild with the same
+// picks hands back the same object.
+const shareCopies = new WeakMap<object, Map<string, object>>();
+
+interface ShareHolder extends SharesBooking {
+  options?: SharesBooking[] | null;
+}
+
+type Sharer = BookingShare['sharers'][number];
+
+// An entry and its meal candidates: everything that can share a booking.
+const shareHolders = (entry: ShareHolder): SharesBooking[] => [entry, ...(entry.options ?? [])];
+
+// The entry, and its meal candidates, with each shared booking narrowed to
+// the sharers the reader can see: the first of them shows it, with their notes.
+function withLiveShare<T extends ShareHolder>(entry: T, sees: (s: Sharer) => boolean): T {
+  if (!entry.bookingShare && !entry.options?.some((o) => o.bookingShare)) return entry;
+  const holders = shareHolders(entry);
+  const picked = holders.map((h) => (h.bookingShare?.sharers ?? []).filter(sees));
+  if (holders.every((h, i) => (h.bookingShare?.sharers.length ?? 0) === picked[i].length)) {
+    return entry;
+  }
+  const key = picked.map((p) => p.map((s) => s.id).join(',')).join('|');
+  const copies = shareCopies.get(entry) ?? new Map<string, object>();
+  shareCopies.set(entry, copies);
+  const cached = copies.get(key) as T | undefined;
+  if (cached) return cached;
+  const live = <H extends SharesBooking>(h: H, i: number): H => {
+    const share = h.bookingShare;
+    const p = picked[i];
+    if (!share || p.length === share.sharers.length) return h;
+    const firstId = p[0]?.id ?? null;
+    return {
+      ...h,
+      bookingShare: { ...share, firstId, notes: uniqueById(p.flatMap((s) => s.notes)) },
+    };
+  };
+  const copy = {
+    ...live(entry, 0),
+    ...(entry.options && { options: entry.options.map((o, i) => live(o, i + 1)) }),
+  };
+  copies.set(key, copy);
+  return copy;
+}
+
+// `byId` with each entry's live share, the same map when none changes.
+function withLiveShares<T extends ShareHolder>(
+  byId: ReadonlyMap<string, T>,
+  sees: (s: Sharer) => boolean,
+): ReadonlyMap<string, T> {
+  let live: Map<string, T> | undefined;
+  for (const [id, entry] of byId) {
+    const shared = withLiveShare(entry, sees);
+    if (shared !== entry) (live ??= new Map(byId)).set(id, shared);
+  }
+  return live ?? byId;
+}
+
 export function buildLiveDays(
-  view: Pick<TripView, 'days' | 'activitiesById' | 'transitsById' | 'scenarioNotes'>,
+  view: Pick<TripView, 'days' | 'activitiesById' | 'transitsById' | 'staysById' | 'scenarioNotes'>,
   data: TripData,
   selections: LiveSelections,
   previous?: Map<string, LiveDayCache>,
@@ -90,7 +162,13 @@ export function buildLiveDays(
     mealOptionIndex: selections.mealOptionIndex,
   });
 
-  const transitsById = liveTransits(view.transitsById, timeline);
+  // A sharer on a picked branch, and for a meal candidate, the selected one.
+  const sees = (s: Sharer) =>
+    inScope(resolved.activeIds, s.scenarioId) &&
+    (!s.mealId || timeline.selectedMeals.get(s.mealId)?._id === s.id);
+  const transitsById = withLiveShares(liveTransits(view.transitsById, timeline), sees);
+  const activitiesById = withLiveShares(view.activitiesById, sees);
+  const staysById = withLiveShares(view.staysById, sees);
   const index = indexTimeline(timeline);
   const cache = new Map<string, LiveDayCache>();
 
@@ -121,12 +199,25 @@ export function buildLiveDays(
     const carrierKeys = carriers.map(
       (c) => `${c.startsAt}:${(c.packages ?? []).map((p) => p._id).join('+')}`,
     );
+    // Where each of the day's shared bookings shows, which a pick on another
+    // day can move.
+    const stays = day.stays.map((st) => staysById.get(st._id) ?? st);
+    const entries = new Set<ShareHolder | undefined>(stays);
+    for (const { source } of events) {
+      if (source.kind === 'activity') entries.add(activitiesById.get(source.id));
+      if (source.kind === 'transit') entries.add(transitsById.get(source.id));
+    }
+    const sharesKey = [...entries]
+      .flatMap((e) => (e ? shareHolders(e) : []))
+      .flatMap((h) => (h.bookingShare ? [`${h._id}>${h.bookingShare.firstId}`] : []))
+      .join(',');
     const signature = [
       events.map((e) => `${e.id}@${e.at}@${e.place?.id ?? e.place?.label ?? ''}`).join(','),
       tones.join(','),
       groupsSignature(groups, day.date),
       selectedMealKeys.join(','),
       carrierKeys.join(','),
+      sharesKey,
     ].join('|');
 
     const hit = previous?.get(day.date);
@@ -134,7 +225,7 @@ export function buildLiveDays(
       return { day, base: hit.base, signature };
     }
 
-    const dayStayIds = new Set(day.stays.map((st) => st._id));
+    const dayStayIds = new Set(stays.map((st) => st._id));
     const membersOfScenario = (id: string) => {
       const members = scenarioMembersOn(data, id, day.date);
       return { ...members, stayIds: members.stayIds.filter((sid) => dayStayIds.has(sid)) };
@@ -143,8 +234,8 @@ export function buildLiveDays(
       date: day.date,
       events,
       groups,
-      stays: day.stays,
-      activities: view.activitiesById,
+      stays,
+      activities: activitiesById,
       transits: transitsById,
       notesForScenario: (s) => view.scenarioNotes.get(s._id) ?? [],
       membersOfScenario,
@@ -159,6 +250,7 @@ export function buildLiveDays(
     });
     const base: Day = {
       ...day,
+      stays,
       // The live Transits, so everything reading day.transits — the rows'
       // live "during transit" check (liveWarnings) above all —
       // rechecks when the route tab or a meal along the drive changes.
@@ -188,5 +280,5 @@ export function buildLiveDays(
     cache.set(day.date, { staticDay: day, signature, base, live });
     return live;
   });
-  return { days, transitsById, cache };
+  return { days, transitsById, activitiesById, staysById, cache };
 }

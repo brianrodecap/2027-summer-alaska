@@ -12,7 +12,7 @@ import {
   mealOptionTimeLabel,
   selectedMealOptionIndex,
 } from '../../model/mealOptions';
-import { activityHeadline } from '../../model/tripModel';
+import { activityHeadline, optionShows } from '../../model/tripModel';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
 import { useMealOptionSelection } from '../../state/useTripSelections';
 import { BookingChip } from '../shared/BookingChip';
@@ -86,11 +86,8 @@ export function MealRow({
 }) {
   const { selectMealOption } = useMealOptionSelection();
   const { options, index, selected } = useMealSelection(activity, day);
-  const {
-    above: optionAbove,
-    mid: optionMid,
-    below: optionBelow,
-  } = splitNotes(selected?.notes ?? []);
+  const shown = selected && optionShows(selected);
+  const { above: optionAbove, mid: optionMid, below: optionBelow } = splitNotes(shown?.notes ?? []);
   // A selected candidate's own mealOptionTimeLabel already answers "what
   // time is this, really" more specifically than a sun-anchored Sunrise/
   // Sunset label ever could, so that lookup only fires for a still-open
@@ -120,9 +117,9 @@ export function MealRow({
           <NotesCluster notes={midNotes} />
           <NotesCluster notes={optionMid} />
           <TravelerChips names={selected?.travelers} />
-          {selected?.booking && (
+          {shown?.booking && (
             <Box sx={{ mt: 0.5 }}>
-              <BookingChip booking={selected.booking} />
+              <BookingChip booking={shown.booking} />
             </Box>
           )}
           <OverlapWarnings warnings={liveWarnings(activity, day)} />

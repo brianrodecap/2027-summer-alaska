@@ -67,6 +67,7 @@ import type {
   RouteVariant,
   Scenario,
   ScenarioTrack,
+  SharesBooking,
   Stay,
   StayRelation,
   StayRow,
@@ -2552,9 +2553,15 @@ function resolveExcursionTravelers(
 // sharer's notes go on the first of them — by `start` (an activity's is its
 // place on the day's timeline), then id, never by array position. Sets
 // bookingShare on the freshly enriched entries in place.
-function withSharedBookings(
-  entries: { entry: EnrichedTransit | EnrichedActivity | EnrichedStay; start: string }[],
-): void {
+interface ShareCandidate {
+  entry: SharesBooking & { bookingId?: string | null };
+  start: string;
+  scenarioId: string | null;
+  mealId?: string;
+  notes: Note[];
+}
+
+function withSharedBookings(entries: ShareCandidate[]): void {
   const byBooking = new Map<string, typeof entries>();
   for (const e of entries) {
     if (!e.entry.bookingId) continue;
@@ -2564,13 +2571,20 @@ function withSharedBookings(
   }
   for (const sharers of byBooking.values()) {
     if (sharers.length < 2) continue;
-    const [first] = sharers.sort(
+    sharers.sort(
       (a, b) => a.start.localeCompare(b.start) || a.entry._id.localeCompare(b.entry._id),
     );
+    const ordered = sharers.map((e) => ({
+      id: e.entry._id,
+      scenarioId: e.scenarioId,
+      ...(e.mealId && { mealId: e.mealId }),
+      notes: e.notes,
+    }));
     // One note naming two sharers shows once.
     const share = {
-      firstId: first.entry._id,
-      notes: uniqueById(sharers.flatMap((e) => e.entry.notes)),
+      firstId: ordered[0].id,
+      sharers: ordered,
+      notes: uniqueById(sharers.flatMap((e) => e.notes)),
     };
     for (const e of sharers) e.entry.bookingShare = share;
   }
@@ -2598,9 +2612,35 @@ export function rowShows(
       : row.type === 'transit'
         ? row.phase === 'depart'
         : true;
-  const share = entry.bookingShare;
-  if (!own || (share && share.firstId !== entry._id)) return SHOWS_NOTHING;
-  return { booking: entry.booking, notes: share?.notes ?? entry.notes };
+  if (!own || !showsOwnShare(entry)) return SHOWS_NOTHING;
+  return { booking: entry.booking, notes: sheetNotes(entry) };
+}
+
+// Whether an entry (or meal candidate) shows its booking: unless another
+// entry sharing it is the one that does.
+function showsOwnShare(entry: SharesBooking): boolean {
+  return !entry.bookingShare || entry.bookingShare.firstId === entry._id;
+}
+
+// The notes an entry's detail sheet shows: its row's (rowShows), or its own
+// when another sharer's row shows them.
+export function sheetNotes(entry: EnrichedTransit | EnrichedActivity | EnrichedStay): Note[] {
+  return entry.bookingShare && showsOwnShare(entry) ? entry.bookingShare.notes : entry.notes;
+}
+
+// What a meal row (and its sheet) shows for its selected candidate: its own
+// notes, and its booking's chip with the other sharers' notes unless another
+// sharer shows them (showsOwnShare). A candidate shares a booking without its
+// own notes, so the two never overlap.
+export function optionShows(option: EnrichedMealOption): {
+  booking: Booking | null;
+  notes: Note[];
+} {
+  if (!showsOwnShare(option)) return { booking: null, notes: option.notes };
+  return {
+    booking: option.booking,
+    notes: [...option.notes, ...(option.bookingShare?.notes ?? [])],
+  };
 }
 
 export function buildTripView(data: TripData): TripView {
@@ -2674,11 +2714,31 @@ export function buildTripView(data: TripData): TripView {
     hasWarningNote: entityHasWarning(noteIndex, 'stay', s._id),
   }));
 
+  const sharing = (
+    entry: EnrichedTransit | EnrichedActivity | EnrichedStay,
+    start: string,
+  ): ShareCandidate => ({
+    entry,
+    start,
+    scenarioId: entry.scenarioId,
+    notes: entry.notes,
+  });
   withSharedBookings([
-    ...routedTransits.map((t) => ({ entry: t, start: t.departsAt })),
-    // Every activity has a date by now: validateActivityTiming refuses one without.
-    ...enrichedActivities.map((a) => ({ entry: a, start: activityTimelineKey(a)!.at })),
-    ...enrichedStays.map((s) => ({ entry: s, start: s.checkInAt })),
+    ...routedTransits.map((t) => sharing(t, t.departsAt)),
+    ...enrichedActivities.flatMap((a) => {
+      // Every activity has a date by now: validateActivityTiming refuses one without.
+      const start = activityTimelineKey(a)!.at;
+      // A meal candidate's notes stay its own.
+      const options = (a.options ?? []).map((o): ShareCandidate => ({
+        entry: o,
+        start,
+        scenarioId: a.scenarioId,
+        mealId: a._id,
+        notes: [],
+      }));
+      return [sharing(a, start), ...options];
+    }),
+    ...enrichedStays.map((s) => sharing(s, s.checkInAt)),
   ]);
 
   const activitiesByDate = new Map<string, EnrichedActivity[]>();

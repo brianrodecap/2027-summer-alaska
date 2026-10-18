@@ -38,7 +38,6 @@ import type {
   MealType,
   Package,
   Place,
-  PlanStatus,
   PortCall,
   Priority,
   Ref,
@@ -74,7 +73,6 @@ export function blankActivity(
     _id: crypto.randomUUID(),
     legId,
     scenarioId,
-    status: 'planning',
     startAt: null,
     durationMinutes: null,
     timeLabel: null,
@@ -99,7 +97,6 @@ export function blankStay(legId: string, date: string): Stay {
     scenarioId: null,
     checkInAt: `${date}T15:00`,
     checkOutAt: `${addDaysStr(date, 1)}T11:00`,
-    status: 'planning',
     lodging: { place: { id: null, label: '' } },
     bookingId: null,
     packages: null,
@@ -113,7 +110,6 @@ export function blankTransit(legId: string, date: string): Transit {
     legId,
     journeyId: null,
     scenarioId: null,
-    status: 'planning',
     mode: 'drive',
     travelers: null,
     from: { id: null, label: '' },
@@ -615,7 +611,6 @@ export interface ActivityFormState {
   durationMinutes: number | null;
   timeLabel: TimeLabel | '';
   text: string;
-  status: PlanStatus;
   priority: Priority | '';
   mealType: MealType | '';
   diningFormat: DiningFormat | '';
@@ -638,7 +633,6 @@ export function activityFormFrom(activity: Activity, source: BookingSource): Act
     durationMinutes: activity.durationMinutes,
     timeLabel: activity.timeLabel ?? '',
     text: activity.text ?? '',
-    status: activity.status,
     priority: activity.priority ?? '',
     mealType: activity.mealType ?? '',
     diningFormat: activity.diningFormat ?? '',
@@ -701,7 +695,6 @@ export function applyActivityForm(activity: Activity, form: ActivityFormState): 
   const startAt =
     form.startsDate && form.startsTime ? `${form.startsDate}T${form.startsTime}` : null;
   activity.text = text || null;
-  activity.status = form.status;
   activity.priority = form.priority || null;
   if (startAt) {
     activity.startAt = startAt;
@@ -1364,7 +1357,7 @@ export function applyTripForm(
 // returns a finished Leg rather than mutating one in place, since Add leg
 // (like Add trip) only ever creates, never edits an existing Leg.
 //
-// No startDate/endDate/status here either — a Leg's own span is computed
+// No startDate/endDate here either — a Leg's own span is computed
 // from whatever Stay/Transit/Activity ends up pointing at it (tripModel.ts's
 // legDateRange), so a freshly created Leg simply has no span (and shows up
 // with none) until its first entity is added.

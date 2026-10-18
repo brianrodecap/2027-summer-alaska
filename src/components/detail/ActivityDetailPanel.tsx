@@ -1,9 +1,19 @@
 import Typography from '@mui/material/Typography';
 
 import { includedInLabel, PRIORITY_LABEL } from '../../model/entityDetails';
-import { DINING_FORMAT_LABEL, firstImage, timeAndMealTypeLabel } from '../../model/formatting';
+import {
+  DINING_FORMAT_LABEL,
+  firstImage,
+  timeAndMealTypeLabel,
+  uniqueById,
+} from '../../model/formatting';
 import { mealOptionLabel, mealOptionTimeLabel } from '../../model/mealOptions';
-import { activityHeadline, resolveActivityDate } from '../../model/tripModel';
+import {
+  activityHeadline,
+  optionShows,
+  resolveActivityDate,
+  sheetNotes,
+} from '../../model/tripModel';
 import type { Booking, EnrichedActivity, EnrichedMealOption, Place } from '../../model/types';
 import { useHeroImageSelect } from '../../state/useHeroImageSelect';
 import { useActivityPlaceImagePersist } from '../../state/usePlaceImagePersist';
@@ -15,7 +25,7 @@ import { LinkifiedText } from '../shared/LinkifiedText';
 import { DEFAULT_PLACE_ICON, DINING_FORMAT_ICON, renderMaterialIcon } from '../shared/materialIcon';
 import { splitNotes } from '../shared/noteKind';
 import { NotesCluster } from '../shared/Notes';
-import { PackagesSection, StatusLine, TravelersSection } from './DetailSections';
+import { PackagesSection, TravelersSection } from './DetailSections';
 import { PlacePanel } from './PlacePanel';
 
 function selectedPlace(
@@ -107,7 +117,12 @@ export function ActivityDetailPanel({
     above,
     mid,
     below: footnotes,
-  } = splitNotes([...(activity.notes ?? []), ...(selectedOption?.notes ?? [])]);
+  } = splitNotes(
+    uniqueById([
+      ...sheetNotes(activity),
+      ...(selectedOption ? optionShows(selectedOption).notes : []),
+    ]),
+  );
   const aboveNotes = [...above, ...mid];
 
   return (
@@ -125,7 +140,6 @@ export function ActivityDetailPanel({
           selectedOption ? mealOptionTimeLabel(activity, selectedOption) : undefined,
         )}
       </Typography>
-      <StatusLine status={activity.status} />
       {activity.priority && (
         <Typography variant="body2" color="text.secondary">
           {PRIORITY_LABEL[activity.priority]}

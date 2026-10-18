@@ -3,7 +3,7 @@ import Typography from '@mui/material/Typography';
 
 import { transitWhenLabel } from '../../model/entityDetails';
 import { firstImage } from '../../model/formatting';
-import { dateOnly, transitRouteLabel } from '../../model/tripModel';
+import { dateOnly, sheetNotes, transitRouteLabel } from '../../model/tripModel';
 import type { EnrichedTransit } from '../../model/types';
 import { useHeroImageSelect } from '../../state/useHeroImageSelect';
 import { useTransitPlaceImagePersist } from '../../state/usePlaceImagePersist';
@@ -13,7 +13,7 @@ import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
 import { renderMaterialIcon, transitModeIconName } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
-import { PackagesSection, RouteStopsSection, StatusLine, TravelersSection } from './DetailSections';
+import { PackagesSection, RouteStopsSection, TravelersSection } from './DetailSections';
 import { PlacePanel } from './PlacePanel';
 import { SeatList } from './SeatList';
 
@@ -71,7 +71,6 @@ export function TransitDetailPanel({
     >
       <EntityHeroImage image={image} />
       <Typography variant="body1">{transitWhenLabel(transit)}</Typography>
-      <StatusLine status={transit.status} />
       {flight && (
         <Typography variant="body2" color="text.secondary">
           {flight}
@@ -88,7 +87,7 @@ export function TransitDetailPanel({
         wholePartyWhenNull
       />
       <RouteStopsSection routeInfo={transit.routeInfo} />
-      <NotesCluster notes={transit.notes} expanded />
+      <NotesCluster notes={sheetNotes(transit)} expanded />
       <PackagesSection packages={transit.packages} date={dateOnly(transit.departsAt)} />
       {endpoints.map(
         ({ place, onAutoImage }) =>

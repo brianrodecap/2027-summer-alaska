@@ -113,6 +113,7 @@ export function applyBatch(
   const named = new Set(changes.flatMap((change) => [...proposedTravelerIds(change)]));
   const checked = checkedChanges(changes, data, {
     travelers: travelers.filter((t) => named.has(t.id)),
+    removed,
   });
   if ('errors' in checked) return { error: noLongerFits(checked.errors) };
   const queued = queueFromProposals(checked.state);
