@@ -11,21 +11,24 @@ import dayjs from 'dayjs';
 // dayjs objects are constructed/read only at this component's own boundary —
 // tripModel.ts does all date math on plain ISO strings, so nothing here ever
 // hands a dayjs object back across that line.
+// `error` shows under the field, marked as an error.
 export function DateStringField({
   label,
   value,
   onChange,
+  error,
 }: {
   label: string;
   value: string | null; // 'YYYY-MM-DD'
   onChange: (value: string | null) => void;
+  error?: string | null;
 }) {
   return (
     <DatePicker
       label={label}
       value={value ? dayjs(value, 'YYYY-MM-DD') : null}
       onChange={(v) => onChange(v?.isValid() ? v.format('YYYY-MM-DD') : null)}
-      slotProps={{ textField: { fullWidth: true } }}
+      slotProps={{ textField: { fullWidth: true, error: !!error, helperText: error } }}
     />
   );
 }

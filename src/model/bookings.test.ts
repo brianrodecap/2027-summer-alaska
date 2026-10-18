@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { bookingFormValueFrom, readBookingFormValue } from './bookingFormValue';
+import {
+  bookingFormValueFrom,
+  hasVaryingFares,
+  paymentDueError,
+  readBookingFormValue,
+} from './bookingFormValue';
 import {
   bookingCost,
   bookingReferrers,
@@ -8,6 +13,7 @@ import {
   finalPaymentDue,
   fixedCost,
   perTravelerCost,
+  travelerPrices,
   withoutOrphanBookings,
 } from './bookings';
 import { blankActivity, blankTransit, commitEntityEdit, deleteEntityByKind } from './editForms';
@@ -323,7 +329,7 @@ describe('a fare paid in parts', () => {
 });
 
 describe('booking form: a fare paid in parts', () => {
-  it('keeps each payment line, its due date included, on Save', () => {
+  it('keeps each payment line, its date included, on Save when two are already paid', () => {
     const booking: Booking = {
       _id: 'b',
       status: 'booked',
@@ -334,7 +340,7 @@ describe('booking form: a fare paid in parts', () => {
           {
             travelerId: 't1',
             fare: { amount: 1000, currency: 'USD' },
-            payable: { dueBy: '2027-04-18' },
+            payable: { paidAt: '2026-10-16' },
           },
         ],
         fixed: [],
@@ -344,6 +350,193 @@ describe('booking form: a fare paid in parts', () => {
     expect(value.perPersonAmount).toBe('');
     expect(readBookingFormValue(value, ['t1'])?.pricing?.perTraveler).toEqual(
       booking.pricing!.perTraveler,
+    );
+  });
+});
+
+describe('booking form: payments due', () => {
+  const party = ['t_a', 't_b'];
+  const withBalance = {
+    ...bookingFormValueFrom(null),
+    status: 'booked' as const,
+    perPersonAmount: '675',
+    payable: { paidAt: '2026-10-16' },
+    paymentsDue: [{ key: 'k', amount: '2025', dueBy: '2027-05-01' }],
+  };
+  const balanceLines = [
+    { travelerId: 't_a', fare: usd(675), payable: { paidAt: '2026-10-16' } },
+    { travelerId: 't_a', fare: usd(2025), payable: { dueBy: '2027-05-01' } },
+    { travelerId: 't_b', fare: usd(675), payable: { paidAt: '2026-10-16' } },
+    { travelerId: 't_b', fare: usd(2025), payable: { dueBy: '2027-05-01' } },
+  ];
+
+  it('adds each payment due to every traveler’s fare, due by its date', () => {
+    const booking = readBookingFormValue(withBalance, party);
+    expect(booking?.pricing?.perTraveler).toEqual(balanceLines);
+    expect(booking?.pricing?.fixed).toEqual([]);
+    expect(bookingCost(booking)).toEqual(usd(5400));
+    expect(finalPaymentDue(booking)).toBe('2027-05-01');
+  });
+
+  it('reads the payments due back as rows and saves them unchanged', () => {
+    const saved = readBookingFormValue(withBalance, party)!;
+    const value = bookingFormValueFrom(saved);
+    expect(value.perPersonAmount).toBe('675');
+    expect(value.payable).toEqual({ paidAt: '2026-10-16' });
+    expect(value.paymentsDue).toMatchObject([{ amount: '2025', dueBy: '2027-05-01' }]);
+    expect(readBookingFormValue(value, [])?.pricing).toEqual(saved.pricing);
+  });
+
+  it('keeps each traveler’s ticket number on their own fare', () => {
+    const base: Booking = {
+      _id: 'b_t',
+      status: 'booked',
+      confirmationNumber: null,
+      pricing: {
+        perTraveler: balanceLines.map((l) =>
+          l.payable.paidAt ? { ...l, ticketNumber: `tkt-${l.travelerId}` } : l,
+        ),
+        fixed: [],
+      },
+    };
+    expect(readBookingFormValue(bookingFormValueFrom(base), [])?.pricing).toEqual(base.pricing);
+  });
+
+  it('drops the payment due once its row is removed', () => {
+    const saved = readBookingFormValue(withBalance, party)!;
+    const value = { ...bookingFormValueFrom(saved), paymentsDue: [] };
+    expect(readBookingFormValue(value, [])?.pricing?.perTraveler).toEqual(
+      balanceLines.filter((l) => l.payable.paidAt),
+    );
+  });
+
+  it('reads the earliest date as the Payment when every line is due by one', () => {
+    const value = {
+      ...withBalance,
+      payable: { dueBy: '2027-01-01' },
+      paymentsDue: [
+        { key: 'a', amount: '100', dueBy: '2027-06-01' },
+        { key: 'b', amount: '200', dueBy: '2027-05-01' },
+      ],
+    };
+    const saved = readBookingFormValue(value, party)!;
+    const reread = bookingFormValueFrom(saved);
+    expect(reread.payable).toEqual({ dueBy: '2027-01-01' });
+    expect(reread.paymentsDue).toMatchObject([
+      { amount: '200', dueBy: '2027-05-01' },
+      { amount: '100', dueBy: '2027-06-01' },
+    ]);
+    expect(bookingCost(readBookingFormValue(reread, []))).toEqual(usd(1950));
+  });
+
+  it('drops a row with no amount', () => {
+    const value = { ...withBalance, paymentsDue: [{ key: 'k', amount: '', dueBy: '2027-05-01' }] };
+    expect(readBookingFormValue(value, party)?.pricing?.perTraveler).toHaveLength(2);
+  });
+
+  it('leaves out a row with no date, and says to pick one', () => {
+    const row = { key: 'k', amount: '2025', dueBy: '' };
+    const value = { ...withBalance, paymentsDue: [row] };
+    expect(paymentDueError(value, row)).toBe('Pick a date');
+    expect(readBookingFormValue(value, party)?.pricing?.perTraveler).toHaveLength(2);
+  });
+
+  it('flags a row due no later than the Payment, and clears once it is later', () => {
+    const value = { ...withBalance, payable: { dueBy: '2027-05-01' } };
+    expect(paymentDueError(value, value.paymentsDue[0])).toBe('Pick a date after the Payment’s');
+    const later = { key: 'k', amount: '2025', dueBy: '2027-05-02' };
+    expect(paymentDueError({ ...value, paymentsDue: [later] }, later)).toBeNull();
+    expect(paymentDueError(withBalance, withBalance.paymentsDue[0])).toBeNull();
+  });
+
+  it('saves payments due only alongside a per-person amount', () => {
+    const value = { ...withBalance, perPersonAmount: '' };
+    expect(readBookingFormValue(value, party)?.pricing).toBeNull();
+  });
+
+  it('keeps a ticket number stored on a balance line', () => {
+    const base: Booking = {
+      _id: 'b_tb',
+      status: 'booked',
+      confirmationNumber: null,
+      pricing: {
+        perTraveler: balanceLines.map((l) =>
+          l.payable.dueBy ? { ...l, ticketNumber: `tkt-${l.travelerId}` } : l,
+        ),
+        fixed: [],
+      },
+    };
+    const saved = readBookingFormValue(bookingFormValueFrom(base), [])!;
+    expect(travelerPrices(saved).map((t) => t.ticketNumber)).toEqual(['tkt-t_a', 'tkt-t_b']);
+  });
+
+  it('keeps an undated deposit and its balance beside a fee paid at the property', () => {
+    const base: Booking = {
+      _id: 'b_mix',
+      status: 'booked',
+      confirmationNumber: null,
+      pricing: {
+        perTraveler: [
+          { travelerId: 't_a', fare: usd(100) },
+          { travelerId: 't_a', fare: usd(900), payable: { dueBy: '2027-04-18' } },
+        ],
+        fixed: [{ label: 'Port fees', amount: usd(50), payable: 'atProperty' }],
+      },
+    };
+    const value = bookingFormValueFrom(base);
+    expect(value.perPersonAmount).toBe('100');
+    expect(value.paymentsDue).toMatchObject([{ amount: '900', dueBy: '2027-04-18' }]);
+    expect(readBookingFormValue(value, [])?.pricing).toEqual(base.pricing);
+  });
+
+  it('leaves fares that differ by traveler as they are, payments due and all', () => {
+    const base: Booking = {
+      _id: 'b_v',
+      status: 'booked',
+      confirmationNumber: null,
+      pricing: {
+        perTraveler: [
+          { travelerId: 't_a', fare: usd(50), payable: { paidAt: '2026-08-06' } },
+          { travelerId: 't_a', fare: usd(3000), payable: { dueBy: '2027-04-18' } },
+          { travelerId: 't_b', fare: usd(50), payable: { paidAt: '2026-08-06' } },
+          { travelerId: 't_b', fare: usd(1000), payable: { dueBy: '2027-04-18' } },
+        ],
+        fixed: [],
+      },
+    };
+    const value = bookingFormValueFrom(base);
+    expect(hasVaryingFares(value)).toBe(true);
+    expect(value.paymentsDue).toEqual([]);
+    const edited = { ...value, paymentsDue: [{ key: 'k', amount: '5', dueBy: '2027-05-01' }] };
+    expect(readBookingFormValue(edited, [])?.pricing).toEqual(base.pricing);
+  });
+});
+
+describe('booking form: booked through', () => {
+  const base: Booking = {
+    _id: 'b_seller',
+    status: 'booked',
+    confirmationNumber: 'ABC',
+    pricing: null,
+    bookedThrough: { name: 'Expedia', confirmationNumber: '7261' },
+  };
+
+  it('keeps the seller’s own confirmation number while its name is unchanged', () => {
+    const value = bookingFormValueFrom(base);
+    expect(value.bookedThrough).toBe('Expedia');
+    expect(readBookingFormValue(value, [])?.bookedThrough).toEqual(base.bookedThrough);
+    expect(
+      readBookingFormValue({ ...value, bookedThrough: ' expedia ' }, [])?.bookedThrough,
+    ).toEqual({ name: 'expedia', confirmationNumber: '7261' });
+  });
+
+  it('drops that number for a different seller, and the seller once cleared', () => {
+    const value = bookingFormValueFrom(base);
+    expect(readBookingFormValue({ ...value, bookedThrough: 'Viator' }, [])?.bookedThrough).toBe(
+      'Viator',
+    );
+    expect(readBookingFormValue({ ...value, bookedThrough: ' ' }, [])).not.toHaveProperty(
+      'bookedThrough',
     );
   });
 });

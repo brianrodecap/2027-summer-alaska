@@ -1,23 +1,33 @@
+import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 
 import {
+  blankPaymentDue,
   type BookingFormValue,
   hasItemizedFixedCharges,
   hasMixedPayables,
-  hasSplitFares,
   hasVaryingFares,
+  paymentDueError,
 } from '../../model/bookingFormValue';
 import {
   bookingFares,
   bookingFixedCharges,
+  fareLinesByTraveler,
+  faresByTraveler,
   fixedCost,
   perTravelerCost,
 } from '../../model/bookings';
 import { bookingNoun } from '../../model/formatting';
 import type { BookingStatus } from '../../model/types';
+import { materialIcon } from '../shared/materialIcon';
+import { DateStringField } from './DateTimeFieldPair';
 import { PayableField } from './PayableField';
+import { rowList } from './rowList';
+
+const DeleteIcon = materialIcon('delete');
 
 const BOOKING_STATUS_OPTIONS: { value: BookingStatus | ''; label: string }[] = [
   { value: '', label: 'None' },
@@ -48,6 +58,8 @@ const BOOKING_STATUS_OPTIONS: { value: BookingStatus | ''; label: string }[] = [
 // pays, and what the booking costs regardless of headcount (a room, a fee).
 // Either goes read-only when it can't be one number — fares that differ by
 // traveler, or several itemized fixed charges — and Save keeps it as is.
+// Below them, each payment due adds an amount every traveler still owes by a
+// date (a balance after a deposit).
 export function BookingFields({
   value,
   onChange,
@@ -61,6 +73,12 @@ export function BookingFields({
   const itemizedFixed = hasItemizedFixedCharges(value);
   const { covers } = value;
   const fareCount = bookingFares(value.base)?.length ?? 0;
+  const travelerCount = fareLinesByTraveler(value.base).length;
+  // Read-only fares that are the same for everyone are only split oddly.
+  const faresDiffer = new Set(faresByTraveler(value.base).map((f) => f.fare.amount)).size > 1;
+  const paymentsDue = rowList(value.paymentsDue, (rows) =>
+    onChange({ ...value, paymentsDue: rows }),
+  );
   return (
     <Stack spacing={1.5}>
       <TextField
@@ -97,12 +115,12 @@ export function BookingFields({
               onChange={(e) => onChange({ ...value, perPersonAmount: e.target.value })}
               disabled={varyingFares}
               helperText={
-                hasSplitFares(value)
+                varyingFares && !faresDiffer
                   ? `${fareCount} fare lines, paid in parts`
                   : varyingFares
-                    ? `${fareCount} fares, varying by traveler`
-                    : fareCount
-                      ? `× ${fareCount} travelers`
+                    ? `${travelerCount} fares, varying by traveler`
+                    : travelerCount
+                      ? `× ${travelerCount} travelers`
                       : 'Grows with each traveler'
               }
               fullWidth
@@ -128,6 +146,37 @@ export function BookingFields({
                 onChange={(payable) => onChange({ ...value, payable })}
               />
             )}
+          {!varyingFares && value.perPersonAmount && (
+            <>
+              {value.paymentsDue.map((row, index) => (
+                <Stack key={row.key} direction="row" spacing={2} sx={{ alignItems: 'center' }}>
+                  <TextField
+                    label="Due per person"
+                    type="number"
+                    value={row.amount}
+                    onChange={(e) => paymentsDue.updateAt(index, { amount: e.target.value })}
+                    fullWidth
+                  />
+                  <DateStringField
+                    label="Due by"
+                    value={row.dueBy || null}
+                    onChange={(next) => paymentsDue.updateAt(index, { dueBy: next ?? '' })}
+                    error={paymentDueError(value, row)}
+                  />
+                  <IconButton aria-label="Remove" onClick={() => paymentsDue.removeAt(index)}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Stack>
+              ))}
+              <Button
+                size="small"
+                onClick={() => paymentsDue.add(blankPaymentDue())}
+                sx={{ alignSelf: 'flex-start' }}
+              >
+                Add a payment due
+              </Button>
+            </>
+          )}
           <TextField
             label="Booked through"
             placeholder="e.g. Capital One Travel"

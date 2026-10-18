@@ -306,11 +306,12 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
     return byId;
   }, [messages, data]);
 
-  // Follow the conversation as it grows, including while an answer streams in.
+  // Follow the conversation as it grows, including while an answer streams in, and
+  // bring the import panel into view when it opens below it.
   useEffect(() => {
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
-  }, [messages.length, pending?.text, pending?.lookups.length]);
+  }, [messages.length, pending?.text, pending?.lookups.length, importOpen]);
 
   // The assistant names places by id only, so whatever it drafts gets each place still
   // without an image its primary photo before it's reviewed or applied (see
@@ -482,6 +483,9 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
               </Bubble>
             </>
           )}
+          {/* In the conversation's scroller, not the fixed footer, so a long list of
+              changes scrolls with it instead of pushing past the panel. */}
+          {importOpen && <ImportDocumentPanel onClose={() => setImportOpen(false)} />}
         </Stack>
       </Box>
 
@@ -497,7 +501,6 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
             {error}
           </Alert>
         )}
-        {importOpen && <ImportDocumentPanel onClose={() => setImportOpen(false)} />}
         {focusDay && (
           <Typography variant="caption" color="primary">
             Looking at {focusDay.dateLabel}

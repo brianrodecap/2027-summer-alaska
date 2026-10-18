@@ -4,8 +4,8 @@
 // saving an import's review queue the way a reviewer clicking Save on every
 // draft would, and comparing the result with an expected-results file kept
 // beside the private documents (attachments/expected.json, never committed).
-import { bookedThroughName } from '../model/bookingFormValue';
 import {
+  bookedThroughName,
   bookingCost,
   bookingOf,
   faresByTraveler,

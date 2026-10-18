@@ -1285,6 +1285,7 @@ describe('validation of malformed tool input', () => {
     booking: {
       ref: 'cruise',
       status: 'booked',
+      bookedThrough: 'Seller',
       perTraveler: [{ travelerId: 't1', amount: 100, payable: 'paid' }],
       fixed: [{ label: 'Fee', amount: 5, payable: 'atProperty' }],
     },
@@ -1697,6 +1698,20 @@ describe('entry point parity', () => {
     expect('error' in applyBatch(trip(), [proposal])).toBe(true);
   });
 
+  it('turns down a seller that is not text everywhere, and takes its name', () => {
+    const sold = (bookedThrough: unknown) =>
+      ({
+        ...onNewActivity({ text: 'x' }),
+        booking: { ref: 'r', status: 'booked', bookedThrough },
+      }) as ChangeProposal;
+    const checked = checkedChanges([sold(5)], trip(), { searches: noPlaceSearches() });
+    expect('errors' in checked && checked.errors.join()).toMatch(/bookedThrough must be text/);
+    expect(applyBatch(trip(), [sold(5)])).toHaveProperty('error');
+    const named = checkedChanges([sold('Expedia')], trip(), { searches: noPlaceSearches() });
+    expect(named).toHaveProperty('state');
+    expect(applyBatch(trip(), [sold('Expedia')])).toHaveProperty('data');
+  });
+
   it('turns down a resolved place renamed without its id everywhere, and takes its id back', () => {
     const renamed = (to: { label: string; placeId?: string }): ChangeProposal => ({
       entityId: 'ph_out',
@@ -1879,6 +1894,20 @@ describe('entry point parity', () => {
       const flight = applied.data.activities.find((a) => a._id === 'act_flight');
       const own = applied.data.bookings.find((b) => b._id === flight?.bookingId);
       expect(own).toMatchObject({ status: 'booked', confirmationNumber: 'D1' });
+    });
+
+    it('keeps the seller’s own confirmation number while the import names the same seller', () => {
+      const seller = { name: 'Expedia', confirmationNumber: '7261' };
+      const sold = (bookedThrough: string) => {
+        const data = held();
+        data.bookings.find((b) => b._id === 'bk_flight')!.bookedThrough = seller;
+        const applied = applyBatch(data, [update({ booking: { ...booking, bookedThrough } })]);
+        if (!('data' in applied)) throw new Error(applied.error);
+        return applied.data.bookings.find((b) => b._id === 'bk_flight')?.bookedThrough;
+      };
+      expect(sold('Expedia')).toEqual(seller);
+      expect(sold(' expedia ')).toEqual({ ...seller, name: 'expedia' });
+      expect(sold('Viator')).toBe('Viator');
     });
 
     it('takes the placeholder removed in the same day plan through both', () => {

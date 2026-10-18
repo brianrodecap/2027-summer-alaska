@@ -2127,7 +2127,15 @@
     "place": {
       "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
       "label": "Golden Eagle Outfitters",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ9-Ij5lkXzVARObCKEwG8c1I"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": "booking_act_jul6_4",
     "mealType": null,
@@ -2243,7 +2251,7 @@
         }
       ]
     },
-    "bookingId": "booking_act_jul7_1",
+    "bookingId": "booking_act_jul6_4",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2283,9 +2291,17 @@
     "place": {
       "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
       "label": "Golden Eagle Outfitters",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ9-Ij5lkXzVARObCKEwG8c1I"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
-    "bookingId": "booking_act_jul7_bonus",
+    "bookingId": "booking_act_jul6_4",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2390,9 +2406,17 @@
     "place": {
       "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
       "label": "Golden Eagle Outfitters",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ9-Ij5lkXzVARObCKEwG8c1I"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
-    "bookingId": "booking_act_jul8_1",
+    "bookingId": "booking_act_jul6_4",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -2442,9 +2466,17 @@
     "place": {
       "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
       "label": "Golden Eagle Outfitters",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ9-Ij5lkXzVARObCKEwG8c1I"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
-    "bookingId": "booking_act_jul8_lastchance",
+    "bookingId": "booking_act_jul6_4",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,

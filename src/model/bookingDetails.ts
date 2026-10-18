@@ -2,7 +2,7 @@
 // paid and what is still due, each line's own payment state, and who sold it.
 // Pure — the sheet's BookingDetails renders these. Payment states come from
 // the budget's lineBucket, so the sheet and the budget always agree.
-import { bookedThroughName } from './bookingFormValue';
+import { bookedThroughName } from './bookings';
 import { type BookingPaymentSummary, formatLongDate, formatMoney, lineBucket } from './tripModel';
 import type { Booking, Payable } from './types';
 

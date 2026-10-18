@@ -1718,5 +1718,17 @@
       }
     ],
     "images": []
+  },
+  {
+    "_id": "af7c7639-a5e7-4b30-a7d8-7b84dcc1e989",
+    "kind": "info",
+    "text": "You've paid a $2,700 deposit for 4 people (Kobuk, Noatak and Krusenstern, July 8–10). It's based on 2026 prices because 2027 prices aren't set yet. Confirm the final price and when the balance is due with Golden Eagle Outfitters.",
+    "concerns": [
+      {
+        "entity": "activity",
+        "id": "act_jul6_4"
+      }
+    ],
+    "images": []
   }
 ]

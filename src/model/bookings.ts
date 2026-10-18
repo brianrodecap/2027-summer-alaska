@@ -80,18 +80,26 @@ export interface TravelerPrice {
   lines: { amount: Money; payable?: Payable }[];
 }
 
-// One entry per traveler, each with every payment line of their fare (a
-// deposit paid, the balance due), in the order the booking lists them; the
-// ticket number is whichever line carries one.
-export function travelerPrices(booking: Booking | null | undefined): TravelerPrice[] {
-  const byTraveler = new Map<string, TravelerPrice>();
+// Each traveler's fare lines (a deposit paid, the balance due), travelers in
+// the order the booking first lists them, lines in the order it lists them.
+export function fareLinesByTraveler(booking: Booking | null | undefined): PassengerFare[][] {
+  const byTraveler = new Map<string, PassengerFare[]>();
   for (const f of booking?.pricing?.perTraveler ?? []) {
-    const entry = byTraveler.get(f.travelerId) ?? { travelerId: f.travelerId, lines: [] };
-    entry.lines.push({ amount: f.fare, payable: f.payable });
-    entry.ticketNumber ??= f.ticketNumber;
-    byTraveler.set(f.travelerId, entry);
+    const lines = byTraveler.get(f.travelerId) ?? [];
+    lines.push(f);
+    byTraveler.set(f.travelerId, lines);
   }
   return [...byTraveler.values()];
+}
+
+// One entry per traveler, each with every payment line of their fare; the
+// ticket number is whichever line carries one.
+export function travelerPrices(booking: Booking | null | undefined): TravelerPrice[] {
+  return fareLinesByTraveler(booking).map((lines) => ({
+    travelerId: lines[0].travelerId,
+    ticketNumber: lines.find((f) => f.ticketNumber != null)?.ticketNumber,
+    lines: lines.map((f) => ({ amount: f.fare, payable: f.payable })),
+  }));
 }
 
 // One fare per traveler: a fare split into payment lines (a deposit paid, the
@@ -132,6 +140,26 @@ export function finalPaymentDue(booking: Booking | null | undefined): string | n
     .map((line) => payableDueBy(line.payable))
     .filter((d): d is string => d !== null);
   return dates.length ? dates.sort().at(-1)! : null;
+}
+
+// Booking.bookedThrough is a plain string or a {name, confirmationNumber}
+// object; edits (the booking form, an import) only ever name the seller.
+export function bookedThroughName(bookedThrough: Booking['bookedThrough']): string {
+  if (!bookedThrough) return '';
+  return typeof bookedThrough === 'string' ? bookedThrough : bookedThrough.name;
+}
+
+// The seller an edit names, as stored. Naming the stored seller again, in any
+// case or spacing, keeps its own confirmation number. Undefined for a blank
+// name.
+export function namedBookedThrough(
+  stored: Booking['bookedThrough'],
+  name: string,
+): Booking['bookedThrough'] {
+  const trimmed = name.trim();
+  if (!trimmed) return undefined;
+  const same = bookedThroughName(stored).trim().toLowerCase() === trimmed.toLowerCase();
+  return same && typeof stored === 'object' ? { ...stored, name: trimmed } : trimmed;
 }
 
 export function bookingFixedCharges(booking: Booking | null | undefined): FixedCharge[] | null {

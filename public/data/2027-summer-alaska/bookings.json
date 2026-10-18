@@ -359,33 +359,93 @@
   },
   {
     "_id": "booking_act_jul6_4",
-    "status": "planning",
-    "pricing": null,
-    "confirmationNumber": null
-  },
-  {
-    "_id": "booking_act_jul7_1",
-    "status": "planning",
-    "pricing": null,
-    "confirmationNumber": null
-  },
-  {
-    "_id": "booking_act_jul7_bonus",
-    "status": "planning",
-    "pricing": null,
-    "confirmationNumber": null
-  },
-  {
-    "_id": "booking_act_jul8_1",
-    "status": "planning",
-    "pricing": null,
-    "confirmationNumber": null
-  },
-  {
-    "_id": "booking_act_jul8_lastchance",
-    "status": "planning",
-    "pricing": null,
-    "confirmationNumber": null
+    "status": "booked",
+    "pricing": {
+      "perTraveler": [
+        {
+          "travelerId": "trav_brian",
+          "fare": {
+            "amount": 675,
+            "currency": "USD"
+          },
+          "payable": {
+            "paidAt": "2026-10-16"
+          }
+        },
+        {
+          "travelerId": "trav_brian",
+          "fare": {
+            "amount": 2025,
+            "currency": "USD"
+          },
+          "payable": {
+            "dueBy": "2027-07-10"
+          }
+        },
+        {
+          "travelerId": "trav_stacy",
+          "fare": {
+            "amount": 675,
+            "currency": "USD"
+          },
+          "payable": {
+            "paidAt": "2026-10-16"
+          }
+        },
+        {
+          "travelerId": "trav_stacy",
+          "fare": {
+            "amount": 2025,
+            "currency": "USD"
+          },
+          "payable": {
+            "dueBy": "2027-07-10"
+          }
+        },
+        {
+          "travelerId": "trav_lorelei",
+          "fare": {
+            "amount": 675,
+            "currency": "USD"
+          },
+          "payable": {
+            "paidAt": "2026-10-16"
+          }
+        },
+        {
+          "travelerId": "trav_lorelei",
+          "fare": {
+            "amount": 2025,
+            "currency": "USD"
+          },
+          "payable": {
+            "dueBy": "2027-07-10"
+          }
+        },
+        {
+          "travelerId": "trav_redding",
+          "fare": {
+            "amount": 675,
+            "currency": "USD"
+          },
+          "payable": {
+            "paidAt": "2026-10-16"
+          }
+        },
+        {
+          "travelerId": "trav_redding",
+          "fare": {
+            "amount": 2025,
+            "currency": "USD"
+          },
+          "payable": {
+            "dueBy": "2027-07-10"
+          }
+        }
+      ],
+      "fixed": []
+    },
+    "confirmationNumber": "Invoice #000018"
   },
   {
     "_id": "booking_act_jul10_3",

@@ -8,7 +8,7 @@
 //     and their messages go back to the AI to fix, never get repaired here;
 //   - queueFromProposals turns checked proposals into review drafts.
 // IMPORT_CONVENTIONS is how this trip is modeled, in one list the AI gets.
-import { bookingById, bookingOf, payableLines } from './bookings';
+import { bookingById, bookingOf, namedBookedThrough, payableLines } from './bookings';
 import type { QueuedImport } from './documentImport';
 import {
   blankActivity,
@@ -1132,8 +1132,8 @@ function packageFieldErrors(
   return errors;
 }
 
-// The proposal's booking: each price line, its ref and status, and the same
-// price as any earlier proposal naming the same ref.
+// The proposal's booking: each price line, its ref, status and seller, and
+// the same price as any earlier proposal naming the same ref.
 function validateBooking(p: ChangeProposal, state: ProposalState): string[] {
   if (!p.booking) return [];
   const errors: string[] = [];
@@ -1153,6 +1153,9 @@ function validateBooking(p: ChangeProposal, state: ProposalState): string[] {
   }
   if (!BOOKING_STATUSES.includes(p.booking.status)) {
     errors.push(`A booking's status must be one of ${BOOKING_STATUSES.join(', ')}.`);
+  }
+  if (p.booking.bookedThrough !== undefined && typeof p.booking.bookedThrough !== 'string') {
+    errors.push("A booking's bookedThrough must be text: the seller's name.");
   }
   // Naming an earlier booking's ref without a price is that same booking.
   const { ref } = p.booking;
@@ -2129,7 +2132,8 @@ function bookingFrom(b: ProposedBooking, id: string, current: Booking | null): B
         }
       : (current?.pricing ?? null),
   };
-  if (b.bookedThrough) booking.bookedThrough = b.bookedThrough;
+  const bookedThrough = namedBookedThrough(current?.bookedThrough, b.bookedThrough ?? '');
+  if (bookedThrough) booking.bookedThrough = bookedThrough;
   return booking;
 }
 
