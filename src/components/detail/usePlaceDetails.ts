@@ -1,5 +1,6 @@
+import { hasGoogleApiKey } from '../../config/apiKeys';
 import { useKeyedAsync } from '../../hooks/useKeyedAsync';
-import { getPlace, isPlacesApiKeyConfigured, type PlaceDetails } from '../../model/places';
+import { getPlace, type PlaceDetails } from '../../model/places';
 
 interface PlaceDetailsState {
   details: PlaceDetails | null;
@@ -14,7 +15,7 @@ interface PlaceDetailsState {
 // `loading: false` straight away rather than a state that can only ever
 // resolve to "unavailable."
 export function usePlaceDetails(placeId: string | null): PlaceDetailsState {
-  const configured = isPlacesApiKeyConfigured();
+  const configured = hasGoogleApiKey();
   const shouldFetch = Boolean(placeId) && configured;
   const { value: details, loading, failed } = useKeyedAsync(placeId, shouldFetch, getPlace);
   return { details, loading, failed, configured };

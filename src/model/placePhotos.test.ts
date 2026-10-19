@@ -1,24 +1,17 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { withHeroImage } from './formatting';
 import {
+  autoPlaceImage,
+  createPhotoResolver,
   matchPlacePhoto,
-  peekImage,
+  type PhotoSource,
+  pickedPlace,
   placePhotoImage,
   placePrimaryImage,
-  resolveImage,
 } from './placePhotos';
 import type { PlacePhoto } from './places';
 import type { Image } from './types';
-
-const fetchPlaceFields = vi.fn();
-const placeAlreadyRequested = vi.fn();
-vi.mock('./places', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./places')>()),
-  fetchPlaceFields: (...args: unknown[]) => fetchPlaceFields(...args) as unknown,
-  placeAlreadyRequested: (...args: unknown[]) => placeAlreadyRequested(...args) as unknown,
-  isPlacesApiKeyConfigured: () => true,
-}));
 
 const photo = (name: string, author: string, widthPx = 800, heightPx = 600): PlacePhoto => ({
   name,
@@ -32,6 +25,41 @@ const PHOTOS = [
   photo('places/p1/photos/b', 'Bo', 1024, 768),
   photo('places/p1/photos/c', 'Bo', 640, 480),
 ];
+
+describe('pickedPlace', () => {
+  it("gives a freshly picked place its primary Google photo, not the previous place's", () => {
+    const previous = {
+      id: 'place_old',
+      label: 'Old Diner',
+      onboard: true,
+      images: [{ uri: 'old.jpg', credit: null, caption: null }],
+    };
+    expect(pickedPlace({ id: 'place_diner', label: 'Alpha Diner' }, previous)).toEqual({
+      id: 'place_diner',
+      label: 'Alpha Diner',
+      onboard: true,
+      images: [{ placePhoto: { placeId: 'place_diner' }, credit: null, caption: null }],
+    });
+  });
+});
+
+describe('autoPlaceImage', () => {
+  const own: Image = { uri: 'existing', credit: null, caption: null };
+
+  it("stores the place's primary photo, by reference, once Google has one", () => {
+    expect(autoPlaceImage('p1', [], 1)).toEqual({
+      placePhoto: { placeId: 'p1' },
+      credit: null,
+      caption: null,
+    });
+  });
+
+  it('stores nothing for a place with an image, unresolved, or with no photos', () => {
+    expect(autoPlaceImage('p1', [own], 1)).toBeNull();
+    expect(autoPlaceImage(null, [], 1)).toBeNull();
+    expect(autoPlaceImage('p1', [], 0)).toBeNull();
+  });
+});
 
 describe('matchPlacePhoto', () => {
   it("takes the place's primary photo when no particular one was picked", () => {
@@ -107,20 +135,39 @@ describe('withHeroImage', () => {
   });
 });
 
-describe('resolveImage', () => {
-  beforeEach(() => {
-    fetchPlaceFields.mockReset();
-    placeAlreadyRequested.mockReset();
+// A resolver whose photos-only lookups answer with `answer` (each one counted in
+// `asked`), reading full lookups from `started`, with key `key`, on a clock that
+// `advance` moves on.
+function stubSource(
+  answer: PhotoSource['photosOnly'],
+  started: PhotoSource['startedLookup'] = () => undefined,
+  key = 'K',
+) {
+  const asked: string[] = [];
+  let time = 0;
+  const resolver = createPhotoResolver({
+    photosOnly: (placeId) => {
+      asked.push(placeId);
+      return answer(placeId);
+    },
+    startedLookup: started,
+    key: () => key,
+    now: () => time,
   });
+  return { asked, advance: (ms: number) => (time += ms), ...resolver };
+}
+const found = (photos: PlacePhoto[]) => async () => ({ photos });
 
+describe('resolveImage', () => {
   it('draws a web image as is, without a lookup', async () => {
+    const { asked, resolveImage } = stubSource(found(PHOTOS));
     const web: Image = { uri: 'https://example.test/a.jpg', credit: 'Cy', caption: null };
     expect(await resolveImage(web, 'photo')).toEqual({ src: web.uri, credit: 'Cy' });
-    expect(fetchPlaceFields).not.toHaveBeenCalled();
+    expect(asked).toEqual([]);
   });
 
   it("builds the media URL from the place's current photo name, at the asked size", async () => {
-    fetchPlaceFields.mockResolvedValue({ photos: PHOTOS });
+    const { asked, peekImage, resolveImage } = stubSource(found(PHOTOS));
     const image = placePrimaryImage('place_resolve');
     expect(peekImage(image, 'photo')).toBeUndefined();
 
@@ -128,17 +175,17 @@ describe('resolveImage', () => {
     expect(resolved?.src).toMatch(
       /^https:\/\/places\.googleapis\.com\/v1\/places\/p1\/photos\/a\/media\?maxWidthPx=400&/,
     );
+    expect(resolved?.src).toMatch(/&key=K$/);
     expect(resolved?.credit).toBe('Ann');
-    expect(fetchPlaceFields).toHaveBeenCalledWith('place_resolve', 'photos');
     // Known from then on: drawn on the first render, and never looked up again.
     expect(peekImage(image, 'photo')).toEqual(resolved);
     await resolveImage(placePhotoImage('place_resolve', PHOTOS[2], PHOTOS), 'photo');
-    expect(fetchPlaceFields).toHaveBeenCalledTimes(1);
+    expect(asked).toEqual(['place_resolve']);
   });
 
   it("resolves each image once per size, and keeps a picked photo's own ref apart", async () => {
     const twins = [photo('places/p1/photos/x', 'Di'), photo('places/p1/photos/y', 'Di')];
-    fetchPlaceFields.mockResolvedValue({ photos: twins });
+    const { peekImage, resolveImage } = stubSource(found(twins));
     const first = placePhotoImage('place_sizes', twins[0], twins);
     const second = placePhotoImage('place_sizes', twins[1], twins);
     await resolveImage(first);
@@ -147,61 +194,66 @@ describe('resolveImage', () => {
     expect(peekImage(first, 'avatar')).toBe(peekImage(first, 'avatar'));
     expect(peekImage(first, 'avatar')?.src).toMatch(/\/photos\/x\/media\?maxWidthPx=96&/);
     expect(peekImage(first, 'hero')?.src).toMatch(/\/photos\/x\/media\?maxWidthPx=1600&/);
-    expect(peekImage(first, 'avatar')?.src).toMatch(/maxWidthPx=96&/);
     // Same author and size, told apart only by which of the two it was.
     expect(peekImage(second, 'avatar')?.src).toMatch(/\/photos\/y\/media\?maxWidthPx=96&/);
   });
 
   it('draws nothing after a failed lookup, and tries again only after a while', async () => {
-    vi.useFakeTimers();
-    try {
-      fetchPlaceFields.mockRejectedValueOnce(new Error('quota'));
-      const image = placePrimaryImage('place_flaky');
-      expect(await resolveImage(image, 'photo')).toBeNull();
-      expect(peekImage(image)).toBeNull();
-      // The rows mounting right after the failure don't each retry it.
-      await resolveImage(image);
-      expect(fetchPlaceFields).toHaveBeenCalledTimes(1);
+    let fail = true;
+    const { asked, advance, peekImage, resolveImage } = stubSource(async () => {
+      if (fail) throw new Error('quota');
+      return { photos: PHOTOS };
+    });
+    const image = placePrimaryImage('place_flaky');
+    expect(await resolveImage(image, 'photo')).toBeNull();
+    expect(peekImage(image)).toBeNull();
+    // The rows mounting right after the failure don't each retry it.
+    advance(30_000);
+    await resolveImage(image);
+    expect(asked).toHaveLength(1);
 
-      vi.advanceTimersByTime(31_000);
-      fetchPlaceFields.mockResolvedValueOnce({ photos: PHOTOS });
-      expect((await resolveImage(image))?.credit).toBe('Ann');
-      expect(fetchPlaceFields).toHaveBeenCalledTimes(2);
-    } finally {
-      vi.useRealTimers();
-    }
+    advance(1);
+    fail = false;
+    expect((await resolveImage(image))?.credit).toBe('Ann');
+    expect(asked).toHaveLength(2);
   });
 
   it('reads a full lookup started right after it in the same commit, instead of its own', async () => {
     // A side sheet's hero asks for the photos first; its PlacePanel's full
     // lookup starts later in the same synchronous pass.
-    const image = placePrimaryImage('place_sheet');
-    const pending = resolveImage(image, 'photo');
-    placeAlreadyRequested.mockImplementation((id: string) =>
-      id === 'place_sheet' ? Promise.resolve({ photos: PHOTOS }) : undefined,
-    );
+    let full: Promise<{ photos: PlacePhoto[] }> | undefined;
+    const { asked, resolveImage } = stubSource(found(PHOTOS), () => full);
+    const pending = resolveImage(placePrimaryImage('place_sheet'), 'photo');
+    full = Promise.resolve({ photos: PHOTOS });
     expect((await pending)?.credit).toBe('Ann');
-    expect(fetchPlaceFields).not.toHaveBeenCalled();
+    expect(asked).toEqual([]);
   });
 
   it('asks for the photos on their own when no full lookup starts', async () => {
-    fetchPlaceFields.mockResolvedValue({ photos: PHOTOS });
+    const { asked, resolveImage } = stubSource(found(PHOTOS));
     expect((await resolveImage(placePrimaryImage('place_row'), 'photo'))?.credit).toBe('Ann');
-    expect(fetchPlaceFields).toHaveBeenCalledWith('place_row', 'photos');
+    expect(asked).toEqual(['place_row']);
   });
 
   it('asks for the photos on their own when the full lookup it would read has failed', async () => {
-    placeAlreadyRequested.mockReturnValue(Promise.reject(new Error('blip')));
-    fetchPlaceFields.mockResolvedValue({ photos: PHOTOS });
+    const { asked, resolveImage } = stubSource(found(PHOTOS), () =>
+      Promise.reject(new Error('blip')),
+    );
     expect((await resolveImage(placePrimaryImage('place_failed_full'), 'photo'))?.credit).toBe(
       'Ann',
     );
-    expect(fetchPlaceFields).toHaveBeenCalledWith('place_failed_full', 'photos');
+    expect(asked).toEqual(['place_failed_full']);
   });
 
   it('draws nothing for a place Google has no photos for', async () => {
-    fetchPlaceFields.mockResolvedValue({});
+    const { peekImage, resolveImage } = stubSource(async () => ({}));
     expect(await resolveImage(placePrimaryImage('place_bare'), 'photo')).toBeNull();
     expect(peekImage(placePrimaryImage('place_bare'), 'photo')).toBeNull();
+  });
+
+  it('draws nothing without a key, and asks Google nothing', async () => {
+    const { asked, resolveImage } = stubSource(found(PHOTOS), undefined, '');
+    expect(await resolveImage(placePrimaryImage('place_keyless'), 'photo')).toBeNull();
+    expect(asked).toEqual([]);
   });
 });

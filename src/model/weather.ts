@@ -9,12 +9,12 @@
 // refetched from scratch on every visit, so it's only ever as of whenever
 // the site happens to be opened, never baked in as of whenever this code
 // shipped.
+import { hasGoogleApiKey } from '../config/apiKeys';
 import { memoizeAsync } from './asyncCache';
 import { persisted } from './idbCache';
 import { parseIsoDateUTC, parseMonthDayUTC } from './isoDate';
 import { fetchOpenMeteoJson } from './openMeteoClient';
 import { type Coordinates, coordKey, getCoordinates } from './placeCoordinates';
-import { isPlacesApiKeyConfigured } from './places';
 import { addDaysStr, formatTime, todayDateStr } from './tripModel';
 
 export interface DayWeather {
@@ -298,7 +298,7 @@ export async function getPlaceTemperature(
   placeId: string,
   date: string,
 ): Promise<PlaceTemperature | null> {
-  if (!isPlacesApiKeyConfigured()) return null;
+  if (!hasGoogleApiKey()) return null;
   const weather = await getPlaceWeather(placeId, date);
   if (!weather || weather.highF === null || weather.lowF === null) return null;
   return { highF: weather.highF, lowF: weather.lowF, isForecast: weather.isForecast };
@@ -321,7 +321,7 @@ export async function getPlaceSunriseSunset(
   placeId: string,
   date: string,
 ): Promise<PlaceSunriseSunset | null> {
-  if (!isPlacesApiKeyConfigured()) return null;
+  if (!hasGoogleApiKey()) return null;
   const weather = await getPlaceWeather(placeId, date);
   if (!weather) return null;
   return { sunrise: weather.sunrise, sunset: weather.sunset };
@@ -358,7 +358,7 @@ async function fetchAirQuality(coords: Coordinates, date: string): Promise<numbe
 }
 
 async function getAirQuality(placeId: string | null, date: string): Promise<number | null> {
-  if (!placeId || !isPlacesApiKeyConfigured()) return null;
+  if (!placeId || !hasGoogleApiKey()) return null;
   const daysAway = daysFromToday(date);
   if (daysAway < 0 || daysAway >= AIR_QUALITY_FORECAST_WINDOW_DAYS) return null;
   const coords = await getCoordinates(placeId);
@@ -395,7 +395,7 @@ function fetchWaveHeightFt(coords: Coordinates, date: string): Promise<number | 
 }
 
 async function getWaveHeightFt(placeId: string | null, date: string): Promise<number | null> {
-  if (!placeId || !isPlacesApiKeyConfigured()) return null;
+  if (!placeId || !hasGoogleApiKey()) return null;
   const daysAway = daysFromToday(date);
   if (daysAway < 0 || daysAway >= MARINE_FORECAST_WINDOW_DAYS) return null;
   const coords = await getCoordinates(placeId);
@@ -422,7 +422,7 @@ export async function getDayWeather(
   places: DayWeatherPlaces,
   date: string,
 ): Promise<DayWeather | null> {
-  if (!isPlacesApiKeyConfigured()) return null;
+  if (!hasGoogleApiKey()) return null;
   const uniqueIds = [
     ...new Set(
       [places.sunrisePlaceId, places.sunsetPlaceId, places.weatherPlaceId].filter(

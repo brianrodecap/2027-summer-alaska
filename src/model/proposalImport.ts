@@ -11,12 +11,14 @@ import type {
   BetaToolResultBlockParam,
 } from '@anthropic-ai/sdk/resources/beta/messages/messages';
 
-import { createMessage } from './anthropicClient';
+import { createMessage, type SendMessage } from './anthropicClient';
 import { buildTripContext } from './askAI';
-import { READ_TOOLS, runReadTool, ToolInputError } from './askAITools';
+import { type AskAIToolContext, READ_TOOLS, runReadTool, ToolInputError } from './askAITools';
+import type { ClientOptions } from './clientOptions';
 import { documentContent, DocumentImportError, type QueuedImport } from './documentImport';
 import { NOTE_KINDS } from './formatting';
 import { withPrimaryImage } from './placePhotos';
+import { searchPlaces } from './places';
 import {
   ADD_TRAVELER_TOOL,
   addTraveler,
@@ -146,16 +148,36 @@ function withUserReminder(messages: BetaMessageParam[], text: string): BetaMessa
   ];
 }
 
+// The import's requests, sent with its own errors. `options` are for tests.
+export const importRequest =
+  (options?: ClientOptions): SendMessage =>
+  (request) =>
+    createMessage(
+      request,
+      (msg) => new DocumentImportError(msg),
+      'Claude declined to process this document.',
+      options,
+    );
+
 export async function importByProposals(
   file: File,
   data: TripData,
   view: TripView,
-  // A different model or effort to read with — for comparing them in the
-  // attachments check. Effort defaults to low: on the ten-document check it
-  // scored the same as medium for about 30% less (attachments/import-check/
-  // STRATEGIES.md). null leaves it out (Haiku 4.5 doesn't take it).
-  options: { model?: string; effort?: 'low' | 'medium' | 'high' | null; newTrip?: boolean } = {},
+  options: {
+    // A different model or effort to read with — for comparing them in the
+    // attachments check. Effort defaults to low: on the ten-document check it
+    // scored the same as medium for about 30% less (attachments/import-check/
+    // STRATEGIES.md). null leaves it out (Haiku 4.5 doesn't take it).
+    model?: string;
+    effort?: 'low' | 'medium' | 'high' | null;
+    // The document starts a new trip rather than updating this one.
+    newTrip?: boolean;
+    // Sends each request, and runs search_places; tests pass stubs.
+    create?: SendMessage;
+    searchPlaces?: AskAIToolContext['searchPlaces'];
+  } = {},
 ): Promise<ProposalImport> {
+  const { create = importRequest(), searchPlaces: searchPlacesFor = searchPlaces } = options;
   const media = await documentContent(file);
   const state: ProposalState = proposalState(data);
   const rejected: ProposalImport['rejected'] = [];
@@ -179,19 +201,15 @@ export async function importByProposals(
 
   let trip: { tripName?: string; tripSummary?: string } = {};
   for (let requests = 1; requests <= MAX_REQUESTS; requests++) {
-    const message = await createMessage(
-      {
-        model: options.model,
-        max_tokens: 16000,
-        ...(options.effort === null
-          ? {}
-          : { output_config: { effort: options.effort ?? ('low' as const) } }),
-        tools,
-        messages,
-      },
-      (msg) => new DocumentImportError(msg),
-      'Claude declined to process this document.',
-    );
+    const message = await create({
+      model: options.model,
+      max_tokens: 16000,
+      ...(options.effort === null
+        ? {}
+        : { output_config: { effort: options.effort ?? ('low' as const) } }),
+      tools,
+      messages,
+    });
     tokens.input += message.usage.input_tokens;
     tokens.output += message.usage.output_tokens;
     tokens.cacheRead += message.usage.cache_read_input_tokens ?? 0;
@@ -226,6 +244,7 @@ export async function importByProposals(
             view,
             byDate: new Map(),
             placeSearches: state.placeSearches,
+            searchPlaces: searchPlacesFor,
           }).then(
             (text) => ({ text, isError: false }),
             (err: unknown) => ({

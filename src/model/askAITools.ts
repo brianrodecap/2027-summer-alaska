@@ -11,7 +11,7 @@ import { bookingById, bookingIdsOf } from './bookings';
 import { lookupTravelInfo } from './directions';
 import { TRAVEL_MODES, uniqueById } from './formatting';
 import { isIsoDate } from './isoDate';
-import { searchPlaces } from './places';
+import type { PlaceSearchResult } from './places';
 import type { PlaceSearches } from './proposals';
 import { activityHeadline, formatMoney, formatTime } from './tripModel';
 import type { Booking, Day, DayRow, Note, Place, TravelMode, TripData, TripView } from './types';
@@ -25,6 +25,8 @@ export interface AskAIToolContext {
   byDate: ReadonlyMap<string, Day>;
   // Where search_places records what it found (see PlaceSearches).
   placeSearches: PlaceSearches;
+  // Runs search_places' query: Google's Text Search, or a test's stub.
+  searchPlaces: (query: string) => Promise<PlaceSearchResult[]>;
 }
 
 export class ToolInputError extends Error {}
@@ -323,7 +325,7 @@ export async function runReadTool(
       const query = stringField(input, 'query', true);
       // A search that can't run (no Google key, an API error) finds nothing
       // too, so a place can still be proposed as not on Google.
-      const results = await searchPlaces(query).catch((err: unknown) => {
+      const results = await ctx.searchPlaces(query).catch((err: unknown) => {
         ctx.placeSearches.emptyQueries.add(query);
         throw err;
       });

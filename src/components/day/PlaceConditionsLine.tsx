@@ -4,9 +4,9 @@ import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 
+import { hasGoogleApiKey } from '../../config/apiKeys';
 import { useKeyedAsync } from '../../hooks/useKeyedAsync';
 import { getElevationFt } from '../../model/elevation';
-import { isPlacesApiKeyConfigured } from '../../model/places';
 import type { Place } from '../../model/types';
 import { getPlaceTemperature, type PlaceTemperature } from '../../model/weather';
 import { temperatureColor } from '../../model/weatherColors';
@@ -42,7 +42,7 @@ export function PlaceConditionsLine({ place, date }: { place: Place | null; date
   const placeId = place?.id ?? null;
   const showWeather = Boolean(place?.showWeather);
   const showElevation = Boolean(place?.showElevation);
-  const wantsAny = Boolean(placeId) && (showWeather || showElevation) && isPlacesApiKeyConfigured();
+  const wantsAny = Boolean(placeId) && (showWeather || showElevation) && hasGoogleApiKey();
   const { ref, inView } = useInViewport<HTMLDivElement>();
   const activePlaceId = wantsAny && inView ? placeId : null;
 

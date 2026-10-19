@@ -9,6 +9,7 @@ import {
   blankRouteVariant,
   blankStay,
   blankTransit,
+  bookingCoverageLabels,
   NO_BOOKINGS,
   packagesFromForm,
   routeFormFrom,
@@ -16,7 +17,7 @@ import {
   transitFormFrom,
   tripFormFrom,
 } from './editForms';
-import type { Package, Route, Scenario, Transit, Trip } from './types';
+import type { Leg, Package, Route, Scenario, Transit, Trip } from './types';
 
 // Synthetic fixture only — never the real public/data/routes.json, which is the
 // site's live, actively-edited reference data rather than a fixed test fixture.
@@ -314,5 +315,21 @@ describe('stay form: port calls', () => {
     expect(
       applyStayForm(stay, { ...form, portCalls: [{ ...call, arrivesAt: '2027-08-01T06:00' }] }),
     ).toMatch(/between check-in and check-out/);
+  });
+});
+
+describe('bookingCoverageLabels', () => {
+  it('names what else a booking pays for, leaving out the entry it is shown on', () => {
+    const leg = { _id: 'leg1', name: 'Test leg', bookingId: 'b1' } as Leg;
+    const ship = {
+      ...blankStay('leg1', '2027-07-01'),
+      _id: 'stay1',
+      bookingId: 'b1',
+      lodging: { place: { id: null, label: 'Test ship' } },
+    };
+    const other = { ...blankStay('leg1', '2027-07-01'), _id: 'stay2', bookingId: 'b2' };
+    const data = { legs: [leg], stays: [ship, other], transits: [], activities: [] };
+    expect(bookingCoverageLabels(data, 'b1', 'stay1')).toEqual(['Test leg']);
+    expect(bookingCoverageLabels(data, 'b1')).toEqual(['Test leg', 'Test ship']);
   });
 });

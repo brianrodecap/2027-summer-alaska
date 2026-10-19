@@ -4,14 +4,19 @@
 // non-2xx response" handling, just a different endpoint/field-mask/body per
 // caller.
 import { getGoogleApiKey } from '../config/apiKeys';
+import type { ClientOptions } from './clientOptions';
 
+// A request with a `body` is a POST of it as JSON.
 export async function googleApiFetch<T>(
   apiLabel: string,
   url: string,
   fieldMask: string,
-  body?: unknown,
+  {
+    body,
+    apiKey: key = getGoogleApiKey(),
+    fetch = globalThis.fetch,
+  }: ClientOptions & { body?: unknown } = {},
 ): Promise<T> {
-  const key = getGoogleApiKey();
   if (!key) throw new Error('Add your Google API key in Settings.');
   const res = await fetch(url, {
     method: body ? 'POST' : 'GET',

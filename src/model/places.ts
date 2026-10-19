@@ -13,7 +13,6 @@
 // plain <img src>) — still nothing from Enterprise+Atmosphere (no
 // rating/reviews, which add review display/attribution obligations on top of
 // the extra cost).
-import { getGoogleApiKey } from '../config/apiKeys';
 import { memoizeAsync } from './asyncCache';
 import { googleApiFetch } from './googleApiFetch';
 
@@ -133,17 +132,15 @@ async function fetchSearch(query: string, includedType?: string): Promise<PlaceS
   const { places } = await googleApiFetch<{
     places?: { id: string; displayName?: { text?: string }; formattedAddress?: string }[];
   }>('Places API', 'https://places.googleapis.com/v1/places:searchText', SEARCH_FIELD_MASK, {
-    textQuery: query,
-    maxResultCount: 5,
-    ...(includedType ? { includedType, strictTypeFiltering: true } : {}),
+    body: {
+      textQuery: query,
+      maxResultCount: 5,
+      ...(includedType ? { includedType, strictTypeFiltering: true } : {}),
+    },
   });
   return (places ?? []).map((p): PlaceSearchResult => ({
     id: p.id,
     label: p.displayName?.text ?? '',
     address: p.formattedAddress ?? '',
   }));
-}
-
-export function isPlacesApiKeyConfigured(): boolean {
-  return Boolean(getGoogleApiKey());
 }

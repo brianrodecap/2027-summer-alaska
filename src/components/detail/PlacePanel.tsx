@@ -12,10 +12,10 @@ import Typography from '@mui/material/Typography';
 import { useEffect, useMemo, useRef } from 'react';
 
 import {
+  autoPlaceImage,
   MAX_PHOTOS,
   photoMediaUrl,
   placePhotoImage,
-  placePrimaryImage,
 } from '../../model/placePhotos';
 import type { PlaceAuthorAttribution, PlacePhoto } from '../../model/places';
 import type { Image, Place } from '../../model/types';
@@ -167,13 +167,11 @@ export function PlacePanel({
   // opportunity, not a repeat of this one.
   const persistedPlaceId = useRef<string | null>(null);
   useEffect(() => {
-    if (!onAutoImage || place.images?.length) return;
-    if (persistedPlaceId.current === place.id) return;
-    // Only a place Google has a photo for gets one stored — the image itself
-    // is "this place's primary photo", resolved whenever it's drawn.
-    if (!photos.length || !place.id) return;
+    if (!onAutoImage || persistedPlaceId.current === place.id) return;
+    const image = autoPlaceImage(place.id, place.images, photos.length);
+    if (!image) return;
     persistedPlaceId.current = place.id;
-    onAutoImage(placePrimaryImage(place.id));
+    onAutoImage(image);
   }, [photos, place.id, place.images, onAutoImage]);
 
   // A named-but-unresolved place (place.id: null — a shipboard restaurant

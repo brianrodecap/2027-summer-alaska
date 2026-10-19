@@ -10,7 +10,11 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 
-import { recomputeRouteTravel, recomputeVariant } from '../../model/directions';
+import {
+  recomputeRouteTravel,
+  removeRouteStage,
+  replaceRouteStagePlace,
+} from '../../model/directions';
 import { blankRoutePlaceEntry, blankRouteVariant, swapItems as swap } from '../../model/editForms';
 import { formatTravel } from '../../model/formatting';
 import {
@@ -181,16 +185,10 @@ export function RouteEditForm({
                       updatePlace(vi, variant, pi, (p) => ({ ...p, place: picked ?? undefined }));
                     }}
                     onPicked={async (picked) => {
-                      const nextPlaces = variant.places.map((p, i) =>
-                        i === pi ? { ...p, place: picked } : p,
+                      updateVariant(
+                        vi,
+                        await replaceRouteStagePlace(variant, pi, picked, form.from.id, form.to.id),
                       );
-                      const nextVariant = await recomputeVariant(
-                        { ...variant, places: nextPlaces },
-                        form.from.id,
-                        form.to.id,
-                        pi,
-                      );
-                      updateVariant(vi, nextVariant);
                     }}
                   />
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
@@ -207,11 +205,11 @@ export function RouteEditForm({
                     <IconButton
                       aria-label="Remove this stage"
                       onClick={async () => {
-                        const nextVariant = await recomputeVariant(
-                          { ...variant, places: variant.places.filter((_, i) => i !== pi) },
+                        const nextVariant = await removeRouteStage(
+                          variant,
+                          pi,
                           form.from.id,
                           form.to.id,
-                          pi,
                         );
                         updateVariant(vi, nextVariant);
                       }}

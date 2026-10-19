@@ -6,7 +6,7 @@ export default defineConfig({
   base: '/2027-summer-alaska/',
   plugins: [react()],
   test: {
-    environment: 'jsdom',
+    environment: 'node',
     setupFiles: ['./src/test/setup.ts'],
   },
 });

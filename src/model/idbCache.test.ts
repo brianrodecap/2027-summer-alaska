@@ -1,39 +1,57 @@
 import { IDBFactory } from 'fake-indexeddb';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { migrateLegacyCaches, persisted, resetIdbCacheForTests } from './idbCache';
+import { MemoryStorage } from '../test/memoryStorage';
+import { createIdbCache } from './idbCache';
 
-// jsdom has no IndexedDB, so each test gets a fresh in-memory one.
-beforeEach(() => {
-  vi.stubGlobal('indexedDB', new IDBFactory());
-  resetIdbCacheForTests();
-  localStorage.clear();
-});
+// A cache over a fresh in-memory IndexedDB (none when `indexedDB` is null) and
+// `storage`, on a clock that `advance` moves on.
+function cacheOver({
+  storage = new MemoryStorage(),
+  indexedDB = new IDBFactory() as IDBFactory | null,
+} = {}) {
+  let time = 1_000_000;
+  const cache = createIdbCache({
+    indexedDB: () => indexedDB ?? undefined,
+    storage: () => storage,
+    now: () => time,
+  });
+  return { ...cache, advance: (ms: number) => (time += ms) };
+}
 
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
+// A compute that answers `value` and counts its calls.
+function computing<T>(value: T) {
+  const calls = { count: 0 };
+  const compute = async () => {
+    calls.count++;
+    return value;
+  };
+  return { calls, compute };
+}
 
-const entry = (value: unknown, savedAt = Date.now()) => JSON.stringify({ value, savedAt });
+const entry = (value: unknown, savedAt: number) => JSON.stringify({ value, savedAt });
 
 describe('persisted', () => {
   it('computes once, then serves the cached value', async () => {
-    const compute = vi.fn(async () => ({ minutes: 12 }));
+    const { persisted, savesSettled } = cacheOver();
+    const { calls, compute } = computing({ minutes: 12 });
     expect(await persisted('route:v2:a', Infinity, compute)).toEqual({ minutes: 12 });
-    // Let the fire-and-forget save land before reading again.
-    await new Promise((r) => setTimeout(r, 0));
+    await savesSettled();
     expect(await persisted('route:v2:a', Infinity, compute)).toEqual({ minutes: 12 });
-    expect(compute).toHaveBeenCalledTimes(1);
+    expect(calls.count).toBe(1);
   });
 
-  it('recomputes an entry older than the TTL', async () => {
-    const compute = vi.fn(async () => 'fresh');
-    await persisted('k', Infinity, async () => 'old');
-    await new Promise((r) => setTimeout(r, 5));
-    expect(await persisted('k', 1, compute)).toBe('fresh');
+  it('serves an entry within its TTL and recomputes one older than it', async () => {
+    const { persisted, savesSettled, advance } = cacheOver();
+    await persisted('k', Infinity, async () => 'cached');
+    await savesSettled();
+    advance(60_000);
+    expect(await persisted('k', 120_000, async () => 'fresh')).toBe('cached');
+    expect(await persisted('k', 30_000, async () => 'fresh')).toBe('fresh');
   });
 
   it('repairs a database that exists without its store', async () => {
+    const indexedDB = new IDBFactory();
     // Something else opened the name first, creating an empty version-1 database.
     await new Promise<void>((resolve) => {
       const request = indexedDB.open('itinerary-cache');
@@ -42,65 +60,82 @@ describe('persisted', () => {
         resolve();
       };
     });
-    const compute = vi.fn(async () => 'v');
+    const { persisted, savesSettled } = cacheOver({ indexedDB });
+    const { calls, compute } = computing('v');
     await persisted('k', Infinity, compute);
-    await new Promise((r) => setTimeout(r, 0));
+    await savesSettled();
     await persisted('k', Infinity, compute);
-    expect(compute).toHaveBeenCalledTimes(1);
+    expect(calls.count).toBe(1);
   });
 
   it('still answers, uncached, when IndexedDB is unavailable', async () => {
-    vi.stubGlobal('indexedDB', undefined);
-    resetIdbCacheForTests();
-    const compute = vi.fn(async () => 'v');
+    const { persisted } = cacheOver({ indexedDB: null });
+    const { calls, compute } = computing('v');
     expect(await persisted('k', Infinity, compute)).toBe('v');
     expect(await persisted('k', Infinity, compute)).toBe('v');
-    expect(compute).toHaveBeenCalledTimes(2);
+    expect(calls.count).toBe(2);
   });
 });
 
 describe('migrateLegacyCaches', () => {
   it('moves legacy cache entries into IndexedDB and frees localStorage', async () => {
-    localStorage.setItem('route:v2:a', entry({ travel: { minutes: 5 } }));
-    localStorage.setItem('holidays:v1:US-2027', entry([]));
-    localStorage.setItem('route:v2:junk', 'not json');
-    localStorage.setItem('driving-path:retired', 'x');
-    localStorage.setItem('itinerary.changes.v1/trip', '[]');
+    const storage = new MemoryStorage({
+      'route:v2:a': entry({ travel: { minutes: 5 } }, 1),
+      'holidays:v1:US-2027': entry([], 1),
+      'route:v2:junk': 'not json',
+      'driving-path:retired': 'x',
+      'itinerary.changes.v1/trip': '[]',
+    });
+    const { persisted } = cacheOver({ storage });
+    const { calls, compute } = computing('refetched');
 
-    await migrateLegacyCaches();
-
-    expect(localStorage.getItem('route:v2:a')).toBeNull();
-    expect(localStorage.getItem('holidays:v1:US-2027')).toBeNull();
-    // Unreadable cache entries and retired formats are just freed.
-    expect(localStorage.getItem('route:v2:junk')).toBeNull();
-    expect(localStorage.getItem('driving-path:retired')).toBeNull();
-    // Not a cache: left alone.
-    expect(localStorage.getItem('itinerary.changes.v1/trip')).toBe('[]');
-
-    const compute = vi.fn();
     expect(await persisted('route:v2:a', Infinity, compute)).toEqual({ travel: { minutes: 5 } });
-    expect(compute).not.toHaveBeenCalled();
+    expect(calls.count).toBe(0);
+    expect(storage.getItem('route:v2:a')).toBeNull();
+    expect(storage.getItem('holidays:v1:US-2027')).toBeNull();
+    // Unreadable cache entries and retired formats are just freed.
+    expect(storage.getItem('route:v2:junk')).toBeNull();
+    expect(storage.getItem('driving-path:retired')).toBeNull();
+    // Not a cache: left alone.
+    expect(storage.getItem('itinerary.changes.v1/trip')).toBe('[]');
   });
 
-  it('runs before the first read, so an already-cached lookup is not refetched', async () => {
-    localStorage.setItem('place-coords:v1:p', entry({ lat: 1, lng: 2 }));
-    const compute = vi.fn();
-    expect(await persisted('place-coords:v1:p', Infinity, compute)).toEqual({ lat: 1, lng: 2 });
-    expect(compute).not.toHaveBeenCalled();
+  it('runs once, before the first read only', async () => {
+    const storage = new MemoryStorage();
+    const { persisted } = cacheOver({ storage });
+    await persisted('k', Infinity, async () => 'v');
+    storage.setItem('place-coords:v1:later', entry({ lat: 1, lng: 2 }, 1));
+    await persisted('k', Infinity, async () => 'v');
+    expect(storage.getItem('place-coords:v1:later')).not.toBeNull();
+  });
+
+  it('still answers when the browser blocks localStorage', async () => {
+    const { persisted, savesSettled } = createIdbCache({
+      indexedDB: () => new IDBFactory(),
+      storage: () => {
+        throw new DOMException('blocked', 'SecurityError');
+      },
+      now: () => 0,
+    });
+    const { calls, compute } = computing('v');
+    expect(await persisted('k', Infinity, compute)).toBe('v');
+    await savesSettled();
+    expect(await persisted('k', Infinity, compute)).toBe('v');
+    expect(calls.count).toBe(1);
   });
 
   it('keeps the original savedAt, so TTLs carry over', async () => {
-    localStorage.setItem('weather-climate:v3:old', entry('stale', 1));
+    const storage = new MemoryStorage({ 'weather-climate:v3:old': entry('stale', 1) });
+    const { persisted } = cacheOver({ storage });
     expect(await persisted('weather-climate:v3:old', 1000, async () => 'refetched')).toBe(
       'refetched',
     );
   });
 
   it('still frees localStorage when IndexedDB is unavailable', async () => {
-    vi.stubGlobal('indexedDB', undefined);
-    resetIdbCacheForTests();
-    localStorage.setItem('route:v2:a', entry('x'));
-    await migrateLegacyCaches();
-    expect(localStorage.getItem('route:v2:a')).toBeNull();
+    const storage = new MemoryStorage({ 'route:v2:a': entry('x', 1) });
+    const { persisted } = cacheOver({ storage, indexedDB: null });
+    await persisted('k', Infinity, async () => 'v');
+    expect(storage.getItem('route:v2:a')).toBeNull();
   });
 });

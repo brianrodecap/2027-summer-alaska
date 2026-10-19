@@ -1,29 +1,34 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { setGoogleApiKey } from '../config/apiKeys';
 import { googleApiFetch } from './googleApiFetch';
 
-afterEach(() => vi.unstubAllGlobals());
+// A fetch that answers `{"ok":true}` and records each request it was given.
+function okFetch() {
+  const sent: RequestInit[] = [];
+  const fetch = async (_url: RequestInfo | URL, init?: RequestInit) => {
+    sent.push(init ?? {});
+    return new Response('{"ok":true}', { status: 200 });
+  };
+  return { sent, fetch };
+}
 
 describe('googleApiFetch', () => {
-  it('sends the Google key from Settings', async () => {
-    setGoogleApiKey('AIza-test');
-    const fetch = vi.fn(async () => new Response('{"ok":true}', { status: 200 }));
-    vi.stubGlobal('fetch', fetch);
-    await expect(googleApiFetch('Places API', 'https://example.test', 'id')).resolves.toEqual({
-      ok: true,
-    });
-    const init = (fetch.mock.calls[0] as unknown as [string, RequestInit])[1];
-    expect((init.headers as Record<string, string>)['X-Goog-Api-Key']).toBe('AIza-test');
+  it('sends the Google key', async () => {
+    const { sent, fetch } = okFetch();
+    await expect(
+      googleApiFetch('Places API', 'https://example.test', 'id', {
+        apiKey: 'AIza-test',
+        fetch,
+      }),
+    ).resolves.toEqual({ ok: true });
+    expect((sent[0].headers as Record<string, string>)['X-Goog-Api-Key']).toBe('AIza-test');
   });
 
   it('asks for a key, without calling Google, when none is set', async () => {
-    setGoogleApiKey('');
-    const fetch = vi.fn();
-    vi.stubGlobal('fetch', fetch);
-    await expect(googleApiFetch('Places API', 'https://example.test', 'id')).rejects.toThrow(
-      'Add your Google API key in Settings.',
-    );
-    expect(fetch).not.toHaveBeenCalled();
+    const { sent, fetch } = okFetch();
+    await expect(
+      googleApiFetch('Places API', 'https://example.test', 'id', { apiKey: '', fetch }),
+    ).rejects.toThrow('Add your Google API key in Settings.');
+    expect(sent).toHaveLength(0);
   });
 });

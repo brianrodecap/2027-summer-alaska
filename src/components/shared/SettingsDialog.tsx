@@ -18,8 +18,8 @@ import { useState } from 'react';
 import {
   getAnthropicApiKey,
   getGoogleApiKey,
-  setAnthropicApiKey,
-  setGoogleApiKey,
+  keysChanged,
+  saveApiKeys,
 } from '../../config/apiKeys';
 import type { ThemePreference } from '../../config/themePreference';
 import { useThemePreference } from '../../state/useThemePreference';
@@ -103,16 +103,6 @@ function ApiKeyField({
   );
 }
 
-// False when the browser refused the write; the key is still held for this visit.
-function trySave(save: () => void): boolean {
-  try {
-    save();
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 function ApiKeysSection() {
   const [saved, setSaved] = useState(() => ({
     anthropic: getAnthropicApiKey(),
@@ -121,36 +111,17 @@ function ApiKeysSection() {
   const [anthropic, setAnthropic] = useState(saved.anthropic);
   const [google, setGoogle] = useState(saved.google);
   const [error, setError] = useState<string | null>(null);
-  const next = { anthropic: anthropic.trim(), google: google.trim() };
-  const changed = next.anthropic !== saved.anthropic || next.google !== saved.google;
+  const entered = { anthropic, google };
+  const changed = keysChanged(entered, saved);
 
   const handleSave = () => {
-    // Only changed keys are written, each on its own, so one failed write
-    // can't drop the other key.
-    const googleChanged = next.google !== saved.google;
-    const anthropicSaved =
-      next.anthropic === saved.anthropic || trySave(() => setAnthropicApiKey(next.anthropic));
-    const googleSaved = !googleChanged || trySave(() => setGoogleApiKey(next.google));
-    // Google lookups are gated when each component first renders and the map's
-    // script loads once, so a new Google key takes effect on a fresh page. A
-    // reload would lose an unsaved Anthropic key, so it waits for a clean save.
-    if (googleChanged && googleSaved && anthropicSaved) {
+    const result = saveApiKeys(entered, saved);
+    if (result.reload) {
       window.location.reload();
       return;
     }
-    setSaved(next);
-    setError(
-      anthropicSaved && googleSaved
-        ? null
-        : [
-            "Couldn't save in this browser, which has storage blocked or full.",
-            !anthropicSaved && 'The Anthropic key works only until you leave.',
-            !googleSaved && 'The new Google key needs saved storage to take effect.',
-            googleChanged && googleSaved && 'Reload the page to start using the new Google key.',
-          ]
-            .filter(Boolean)
-            .join(' '),
-    );
+    setSaved(result.saved);
+    setError(result.error);
   };
 
   return (

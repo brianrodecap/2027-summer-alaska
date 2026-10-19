@@ -16,11 +16,11 @@ function isThemePreference(value: string | null): value is ThemePreference {
   return (THEME_PREFERENCES as readonly (string | null)[]).includes(value);
 }
 
-export function getStoredThemePreference(): ThemePreference {
-  const stored = safeGetItem(STORAGE_KEY);
+export function getStoredThemePreference(storage?: Storage): ThemePreference {
+  const stored = safeGetItem(STORAGE_KEY, storage);
   return isThemePreference(stored) ? stored : DEFAULT_THEME_PREFERENCE;
 }
 
-export function setStoredThemePreference(preference: ThemePreference): void {
-  safeSetItem(STORAGE_KEY, preference);
+export function setStoredThemePreference(preference: ThemePreference, storage?: Storage): void {
+  safeSetItem(STORAGE_KEY, preference, storage);
 }

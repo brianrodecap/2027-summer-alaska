@@ -1,5 +1,5 @@
+import { hasGoogleApiKey } from '../../config/apiKeys';
 import { useKeyedAsync } from '../../hooks/useKeyedAsync';
-import { isPlacesApiKeyConfigured } from '../../model/places';
 import { type DayWeather, type DayWeatherPlaces, getDayWeather } from '../../model/weather';
 
 interface DayWeatherState {
@@ -18,7 +18,7 @@ export function useDayWeather(places: DayWeatherPlaces, date: string): DayWeathe
   const hasAnyPlace = Boolean(
     sunrisePlaceId || sunsetPlaceId || weatherPlaceId || airQualityPlaceId || marinePlaceId,
   );
-  const shouldFetch = hasAnyPlace && isPlacesApiKeyConfigured();
+  const shouldFetch = hasAnyPlace && hasGoogleApiKey();
   const key = hasAnyPlace
     ? `${sunrisePlaceId}|${sunsetPlaceId}|${weatherPlaceId}|${airQualityPlaceId}|${marinePlaceId}|${date}`
     : null;

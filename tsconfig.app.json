@@ -19,7 +19,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
 
-    "types": ["@testing-library/jest-dom", "node", "google.maps"]
+    "types": ["node", "google.maps"]
   },
   "include": ["src"]
 }

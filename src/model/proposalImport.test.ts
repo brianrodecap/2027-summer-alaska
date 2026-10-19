@@ -1,45 +1,36 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { setAnthropicApiKey } from '../config/apiKeys';
+import { fakeAnthropic, fakeMessage } from '../test/fakeAnthropic';
+import type { SendMessage } from './anthropicClient';
+import { DocumentImportError } from './documentImport';
 import { blankTransit } from './editForms';
-import { draftTripData, importByProposals, stagedFromProposals } from './proposalImport';
+import {
+  draftTripData,
+  importByProposals,
+  importRequest,
+  stagedFromProposals,
+} from './proposalImport';
 import { buildTripView } from './tripModel';
 import type { Transit, TripData } from './types';
 
-// The API is stubbed: each request gets the next canned reply, and every request
-// body is kept for the assertions.
-function stubTurns(...replies: unknown[][]): Record<string, unknown>[] {
+// A client answering each request with the next canned reply (the last one again
+// once they run out), and each request as it was sent; nothing reaches the API.
+function stubTurns(...replies: unknown[][]) {
   const bodies: Record<string, unknown>[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (_url: string, init: RequestInit) => {
-      bodies.push(JSON.parse(String(init.body)));
-      const content = replies[Math.min(bodies.length - 1, replies.length - 1)];
-      return new Response(
-        JSON.stringify({
-          id: `msg_${bodies.length}`,
-          type: 'message',
-          role: 'assistant',
-          model: 'claude-opus-5-5',
-          content,
-          stop_reason: 'tool_use',
-          stop_sequence: null,
-          usage: { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 3 },
-        }),
-        { status: 200, headers: { 'content-type': 'application/json' } },
-      );
-    }),
-  );
-  return bodies;
+  const create: SendMessage = async (request) => {
+    bodies.push(structuredClone(request) as Record<string, unknown>);
+    const content = replies[Math.min(bodies.length - 1, replies.length - 1)];
+    return fakeMessage(content, 'tool_use', {
+      id: `msg_${bodies.length}`,
+      usage: { input_tokens: 10, output_tokens: 5, cache_read_input_tokens: 3 },
+    });
+  };
+  return { bodies, create };
 }
 
-beforeEach(() => setAnthropicApiKey('sk-test'));
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
-
 const call = (id: string, name: string, input: unknown) => ({ type: 'tool_use', id, name, input });
-const pdf = () => new File(['%PDF-1.4 synthetic'], 'booking.pdf', { type: 'application/pdf' });
+const confirmation = () =>
+  new File(['Booking confirmation (synthetic)'], 'booking.eml', { type: 'message/rfc822' });
 
 function trip(): TripData {
   const flight: Transit = {
@@ -75,7 +66,7 @@ const proposal = {
 
 describe('importByProposals', () => {
   it('offers the lookups and proposal tools, and queues what passes', async () => {
-    const bodies = stubTurns([
+    const { bodies, create } = stubTurns([
       call('a', 'propose_change', proposal),
       call('b', 'finish', {
         documentTotal: { amount: 100 },
@@ -83,7 +74,7 @@ describe('importByProposals', () => {
       }),
     ]);
     const data = trip();
-    const result = await importByProposals(pdf(), data, buildTripView(data));
+    const result = await importByProposals(confirmation(), data, buildTripView(data), { create });
 
     const [body] = bodies;
     expect((body.tools as { name: string }[]).map((t) => t.name)).toEqual([
@@ -103,19 +94,19 @@ describe('importByProposals', () => {
   });
 
   it('checks finish after the turn’s other calls, whatever order they came in', async () => {
-    stubTurns([
+    const { create } = stubTurns([
       call('b', 'finish', { documentTotal: { amount: 100 }, refundTerms: { policy: 'none' } }),
       call('a', 'propose_change', proposal),
     ]);
     const data = trip();
-    const result = await importByProposals(pdf(), data, buildTripView(data));
+    const result = await importByProposals(confirmation(), data, buildTripView(data), { create });
     expect(result.requests).toBe(1);
     expect(result.queue).toHaveLength(1);
     expect(result.rejected).toEqual([]);
   });
 
   it('won’t finish in a turn where another call was turned down', async () => {
-    stubTurns(
+    const { create } = stubTurns(
       [
         call('a', 'propose_change', { ...proposal, entityId: 'nope' }),
         call('b', 'finish', { documentTotal: { amount: 100 }, refundTerms: { policy: 'none' } }),
@@ -126,14 +117,14 @@ describe('importByProposals', () => {
       ],
     );
     const data = trip();
-    const result = await importByProposals(pdf(), data, buildTripView(data));
+    const result = await importByProposals(confirmation(), data, buildTripView(data), { create });
     expect(result.requests).toBe(2);
     expect(result.queue).toHaveLength(1);
     expect(result.rejected.map((r) => r.tool)).toEqual(['propose_change', 'finish']);
   });
 
   it('sends a failed check back to the AI, and goes on once it’s fixed', async () => {
-    const bodies = stubTurns(
+    const { bodies, create } = stubTurns(
       [call('a', 'propose_change', { ...proposal, entityId: 'nope' })],
       [
         call('b', 'propose_change', proposal),
@@ -141,7 +132,7 @@ describe('importByProposals', () => {
       ],
     );
     const data = trip();
-    const result = await importByProposals(pdf(), data, buildTripView(data));
+    const result = await importByProposals(confirmation(), data, buildTripView(data), { create });
 
     const turned = (bodies[1].messages as { content: unknown }[]).at(-1)?.content as {
       is_error?: boolean;
@@ -159,7 +150,7 @@ describe('importByProposals', () => {
 
 describe('a new trip from a document', () => {
   it('stages what was proposed on the real leg, with its notes and new travelers', async () => {
-    stubTurns(
+    const { create } = stubTurns(
       [call('a', 'add_traveler', { name: 'Pat Guest' })],
       [
         call('b', 'propose_change', {
@@ -183,8 +174,9 @@ describe('a new trip from a document', () => {
       ],
     );
     const draft = draftTripData([], false);
-    const result = await importByProposals(pdf(), draft, buildTripView(draft), {
+    const result = await importByProposals(confirmation(), draft, buildTripView(draft), {
       newTrip: true,
+      create,
     });
     expect(result.tripName).toBe('Catalina');
     expect(result.newTravelers).toEqual([{ id: 'trav_pat_guest', name: 'Pat Guest' }]);
@@ -193,5 +185,21 @@ describe('a new trip from a document', () => {
     expect(staged.transits.map((t) => t.legId)).toEqual(['leg_real']);
     expect(staged.bookings).toHaveLength(1);
     expect(staged.notes.map((n) => n.text)).toEqual(['Free cancellation until 48 hours before']);
+  });
+});
+
+describe('importRequest', () => {
+  const hello = { max_tokens: 100, messages: [{ role: 'user' as const, content: 'hello' }] };
+
+  it('reports a declined document as the import’s own error', async () => {
+    const { options } = fakeAnthropic({ body: fakeMessage([], 'refusal') });
+    const sent = importRequest(options)(hello);
+    await expect(sent).rejects.toBeInstanceOf(DocumentImportError);
+    await expect(sent).rejects.toThrow('Claude declined to process this document.');
+  });
+
+  it('asks for a key as the import’s own error', async () => {
+    const { options } = fakeAnthropic({ body: {} }, '');
+    await expect(importRequest(options)(hello)).rejects.toBeInstanceOf(DocumentImportError);
   });
 });

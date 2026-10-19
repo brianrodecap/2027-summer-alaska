@@ -1,50 +1,40 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
+import { BlockedStorage, MemoryStorage } from '../test/memoryStorage';
 import { readJson, safeGetItem, safeRemoveItem, safeSetItem } from './safeStorage';
 
 describe('safeStorage', () => {
-  afterEach(() => {
-    vi.restoreAllMocks();
-    localStorage.clear();
-  });
-
   it('returns null for a key that was never stored', () => {
-    expect(safeGetItem('missing')).toBeNull();
+    expect(safeGetItem('missing', new MemoryStorage())).toBeNull();
   });
 
   it('round-trips a stored value, and removes it', () => {
-    safeSetItem('k', 'v');
-    expect(safeGetItem('k')).toBe('v');
-    safeRemoveItem('k');
-    expect(safeGetItem('k')).toBeNull();
+    const storage = new MemoryStorage();
+    safeSetItem('k', 'v', storage);
+    expect(safeGetItem('k', storage)).toBe('v');
+    safeRemoveItem('k', storage);
+    expect(safeGetItem('k', storage)).toBeNull();
   });
 
   it('does not throw when localStorage is unavailable', () => {
-    for (const method of ['getItem', 'setItem', 'removeItem'] as const) {
-      vi.spyOn(Storage.prototype, method).mockImplementation(() => {
-        throw new Error('blocked');
-      });
-    }
-    expect(safeGetItem('k')).toBeNull();
-    expect(() => safeSetItem('k', 'v')).not.toThrow();
-    expect(() => safeRemoveItem('k')).not.toThrow();
+    const blocked = new BlockedStorage();
+    expect(safeGetItem('k', blocked)).toBeNull();
+    expect(() => safeSetItem('k', 'v', blocked)).not.toThrow();
+    expect(() => safeRemoveItem('k', blocked)).not.toThrow();
   });
 });
 
 describe('readJson', () => {
-  afterEach(() => localStorage.clear());
   const isNumbers = (v: unknown): v is number[] => Array.isArray(v);
 
   it('returns the stored value when it passes the guard', () => {
-    localStorage.setItem('k', '[1,2]');
-    expect(readJson('k', isNumbers, null)).toEqual([1, 2]);
+    expect(readJson('k', isNumbers, null, new MemoryStorage({ k: '[1,2]' }))).toEqual([1, 2]);
   });
 
   it('falls back when missing, corrupt, or the wrong shape', () => {
-    expect(readJson('missing', isNumbers, null)).toBeNull();
-    localStorage.setItem('corrupt', '{not json');
-    expect(readJson('corrupt', isNumbers, null)).toBeNull();
-    localStorage.setItem('shape', '{"a":1}');
-    expect(readJson('shape', isNumbers, null)).toBeNull();
+    const storage = new MemoryStorage({ corrupt: '{not json', shape: '{"a":1}' });
+    expect(readJson('missing', isNumbers, null, storage)).toBeNull();
+    expect(readJson('corrupt', isNumbers, null, storage)).toBeNull();
+    expect(readJson('shape', isNumbers, null, storage)).toBeNull();
   });
 });

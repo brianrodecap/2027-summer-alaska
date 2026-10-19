@@ -13,6 +13,7 @@ import type {
 } from '@anthropic-ai/sdk/resources/beta/messages/messages';
 
 import { getAnthropicApiKey } from '../config/apiKeys';
+import type { ClientOptions } from './clientOptions';
 
 export const MODEL_ID = 'claude-opus-5-5';
 
@@ -35,14 +36,14 @@ function apiErrorMessage(err: InstanceType<typeof Anthropic.APIError>): string {
   return body?.error?.message ?? err.message;
 }
 
-async function loadClient(apiKey: string) {
+async function loadClient(apiKey: string, fetch?: typeof globalThis.fetch) {
   // Loaded on first use rather than imported statically: the SDK is ~200 KB, and only
   // a visit that actually uses an AI feature should pay for it (TripsHome's Add-trip-
   // from-a-document reaches this module from the initial bundle).
   const { default: AnthropicClient } = await import('@anthropic-ai/sdk');
   return {
     AnthropicClient,
-    client: new AnthropicClient({ apiKey, dangerouslyAllowBrowser: true }),
+    client: new AnthropicClient({ apiKey, fetch, dangerouslyAllowBrowser: true }),
   };
 }
 
@@ -66,10 +67,10 @@ async function send(
   run: (client: Anthropic) => Promise<BetaMessage>,
   makeError: (message: string) => Error,
   refusalMessage: string,
+  { apiKey = getAnthropicApiKey(), fetch }: ClientOptions = {},
 ): Promise<BetaMessage> {
-  const apiKey = getAnthropicApiKey();
   if (!apiKey) throw makeError('Add your Anthropic API key in Settings.');
-  const { AnthropicClient, client } = await loadClient(apiKey);
+  const { AnthropicClient, client } = await loadClient(apiKey, fetch);
   let message: BetaMessage;
   try {
     message = await run(client);
@@ -87,11 +88,13 @@ export function createMessage(
   request: MessageRequest,
   makeError: (message: string) => Error,
   refusalMessage: string,
+  options?: ClientOptions,
 ): Promise<BetaMessage> {
   return send(
     (client) => client.beta.messages.create(withFallback(request)),
     makeError,
     refusalMessage,
+    options,
   );
 }
 
@@ -110,6 +113,7 @@ export function streamMessage(
   refusalMessage: string,
   handlers: StreamHandlers,
   signal?: AbortSignal,
+  options?: ClientOptions,
 ): Promise<BetaMessage> {
   return send(
     (client) => {
@@ -120,8 +124,18 @@ export function streamMessage(
     },
     makeError,
     refusalMessage,
+    options,
   );
 }
+
+// What a caller sends its requests through, with its own errors already bound;
+// tests pass stubs.
+export type SendMessage = (request: MessageRequest) => Promise<BetaMessage>;
+export type StreamMessage = (
+  request: MessageRequest,
+  handlers: StreamHandlers,
+  signal?: AbortSignal,
+) => Promise<BetaMessage>;
 
 // Text blocks only — with thinking always on, a response can also carry `thinking`
 // blocks, which are never shown as the answer.

@@ -1,47 +1,7 @@
 import { createContext } from 'react';
 
+import type { NoteDraft } from '../model/noteDrafts';
 import type { Note, NoteKind, Ref } from '../model/types';
-
-// An item already resolved (saved or skipped) earlier in the same draft
-// sequence, kept so NoteEditDialog's own Back button can return to it —
-// most-recently-resolved last, so Back always pops the one just left.
-// `savedId` is set only when this entry actually became a real Note (Back
-// then reopens it pointed at that same id, so Save updates it in place
-// instead of appending a duplicate); left unset for a skipped entry, which
-// Back reopens exactly as it was — still undecided.
-export interface NoteHistoryEntry {
-  ref: Ref;
-  kind: NoteKind;
-  text: string;
-  savedId?: string;
-}
-
-// `text`, when given, seeds the dialog's text field instead of leaving it
-// blank — the AI document-import flow's own way of handing over an
-// already-drafted note for review rather than making a human retype what it
-// found (see openNoteDraftSequence). `queue` (create only) holds whatever
-// drafts still follow this one in that same sequence; `history` holds
-// whatever already-resolved ones came before it, for Back. `savedId` (create
-// only) is set once this exact draft has already been saved as a real Note
-// (reached again via Back) — Save then updates that Note instead of
-// creating a second one.
-export type NoteTarget =
-  | {
-      mode: 'create';
-      ref: Ref;
-      kind: NoteKind;
-      text?: string;
-      savedId?: string;
-      history: NoteHistoryEntry[];
-      queue: NoteDraft[];
-    }
-  | { mode: 'edit'; note: Note };
-
-export interface NoteDraft {
-  ref: Ref;
-  kind: NoteKind;
-  text: string;
-}
 
 export interface NoteEditContextValue {
   // ref is whatever the new note should concern — an entity ref for a

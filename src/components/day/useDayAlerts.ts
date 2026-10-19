@@ -1,6 +1,6 @@
+import { hasGoogleApiKey } from '../../config/apiKeys';
 import { useKeyedAsync } from '../../hooks/useKeyedAsync';
 import { getAlertsForPlaces, type NwsAlert } from '../../model/nwsAlerts';
-import { isPlacesApiKeyConfigured } from '../../model/places';
 import { addDaysStr, todayDateStr } from '../../model/tripModel';
 
 // Gates the NWS lookup to only the day matching the real-world "today" or
@@ -15,7 +15,7 @@ import { addDaysStr, todayDateStr } from '../../model/tripModel';
 export function useDayAlerts(date: string, placeIds: (string | null)[]): { alerts: NwsAlert[] } {
   const isRelevant = date === todayDateStr() || date === addDaysStr(todayDateStr(), 1);
   const uniqueIds = [...new Set(placeIds.filter((id): id is string => Boolean(id)))].sort();
-  const shouldFetch = isRelevant && uniqueIds.length > 0 && isPlacesApiKeyConfigured();
+  const shouldFetch = isRelevant && uniqueIds.length > 0 && hasGoogleApiKey();
   const key = shouldFetch ? uniqueIds.join('|') : null;
 
   const { value } = useKeyedAsync(key, shouldFetch, () => getAlertsForPlaces(uniqueIds));

@@ -10,8 +10,8 @@ import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
+import type { NoteTarget } from '../../model/noteDrafts';
 import type { NoteKind, Ref, RefEntityKind } from '../../model/types';
-import type { NoteTarget } from '../../state/NoteEditContextObject';
 import { ConfirmableDeleteButton } from '../shared/ConfirmableDeleteButton';
 import { NOTE_ICON as KIND_ICON } from '../shared/noteKind';
 

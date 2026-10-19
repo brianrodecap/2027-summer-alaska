@@ -6,10 +6,10 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { useMemo } from 'react';
 
-import { bookedThroughLabel, paymentSummaryLine, priceLineLabel } from '../../model/bookingDetails';
-import { bookingCost, bookingFixedCharges, travelerPrices } from '../../model/bookings';
+import { bookingPanel, priceLineLabel } from '../../model/bookingDetails';
+import { bookingCost } from '../../model/bookings';
 import { bookingCoverageLabels } from '../../model/editForms';
-import { bookingPaymentSummary, formatMoney, todayDateStr } from '../../model/tripModel';
+import { formatMoney, todayDateStr } from '../../model/tripModel';
 import type { Booking, Money, Payable } from '../../model/types';
 import { useTravelerNames } from '../../state/useTravelerNames';
 import { useTripData } from '../../state/useTripData';
@@ -75,19 +75,15 @@ export function BookingDetails({
   );
   const names = useTravelerNames();
 
-  const payments = bookingPaymentSummary(booking, date, today);
-  const summary = paymentSummaryLine(booking, payments);
-  const seller = bookedThroughLabel(booking.bookedThrough);
-  const travelers = travelerPrices(booking);
-  const fixed = bookingFixedCharges(booking) ?? [];
-  const lineCount = travelers.reduce((n, t) => n + t.lines.length, 0) + fixed.length;
+  const panel = bookingPanel(booking, date, today);
+  const { summary, seller, travelers, fixed } = panel;
   const state = (payable: Payable | undefined) => priceLineLabel(payable, booking, date, today);
 
   return (
     <>
-      {(summary || seller || lineCount > 0) && (
+      {panel.show && (
         <Accordion
-          defaultExpanded={payments.due.length > 0}
+          defaultExpanded={panel.startOpen}
           disableGutters
           elevation={0}
           sx={{
@@ -152,7 +148,7 @@ export function BookingDetails({
                   state={state(c.payable)}
                 />
               ))}
-              {lineCount > 1 && <PriceRow label="Total" amount={bookingCost(booking)} bold />}
+              {panel.showTotal && <PriceRow label="Total" amount={bookingCost(booking)} bold />}
             </Stack>
           </AccordionDetails>
         </Accordion>

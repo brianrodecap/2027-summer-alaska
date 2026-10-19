@@ -1165,22 +1165,40 @@ describe('a booking several entries share', () => {
     expect(filterRows(day.rows, day, new Set(['attr:attention']))).toContain(row);
   });
 
-  it('shows on the first sharer’s sheet what its row shows, and only its own on the rest', () => {
-    const data = weatherWindow();
-    const note = (id: string, on: string) => ({
-      _id: id,
-      kind: 'info' as const,
-      text: id,
-      concerns: [{ entity: 'activity' as const, id: on }],
-      images: [],
-    });
-    data.notes.push(note('note_good', 'act_good'), note('note_next', 'act_next'));
-    const built = liveDays(buildTripView(data), data, new Map());
-    const ids = (id: string) =>
+  // An info note on an activity, named by its id.
+  const noteOn = (id: string, on: string) => ({
+    _id: id,
+    kind: 'info' as const,
+    text: id,
+    concerns: [{ entity: 'activity' as const, id: on }],
+    images: [],
+  });
+  // The note ids an activity's detail sheet shows, under the reader's picks.
+  const sheetNoteIds = (data: TripData, picks: Map<string, string>) => {
+    const built = liveDays(buildTripView(data), data, picks);
+    return (id: string) =>
       sheetNotes(built.activitiesById.get(id)!)
         .map((n) => n._id)
         .sort();
+  };
+
+  it('shows on the first sharer’s sheet what its row shows, and only its own on the rest', () => {
+    const data = weatherWindow();
+    data.notes.push(noteOn('note_good', 'act_good'), noteOn('note_next', 'act_next'));
+    const ids = sheetNoteIds(data, new Map());
     expect(ids('act_good')).toEqual(['note_good', 'note_next']);
+    expect(ids('act_next')).toEqual(['note_next']);
+  });
+
+  it('moves the first sharer’s sheet notes with the reader’s pick', () => {
+    const data = weatherWindow();
+    data.notes.push(
+      noteOn('note_bad', 'act_bad'),
+      noteOn('note_good', 'act_good'),
+      noteOn('note_next', 'act_next'),
+    );
+    const ids = sheetNoteIds(data, badPick);
+    expect(ids('act_bad')).toEqual(['note_bad', 'note_next']);
     expect(ids('act_next')).toEqual(['note_next']);
   });
 

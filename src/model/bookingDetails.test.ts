@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { bookedThroughLabel, paymentSummaryLine, priceLineLabel } from './bookingDetails';
+import {
+  bookedThroughLabel,
+  bookingPanel,
+  paymentSummaryLine,
+  priceLineLabel,
+} from './bookingDetails';
 import { travelerPrices } from './bookings';
 import { bookingPaymentSummary } from './tripModel';
 import type { Booking } from './types';
@@ -189,5 +194,27 @@ describe('bookedThroughLabel', () => {
     expect(bookedThroughLabel({ name: 'Expedia', confirmationNumber: '7261' })).toBe(
       'Expedia · Conf# 7261',
     );
+  });
+});
+
+describe('bookingPanel', () => {
+  const panel = (booking: Booking, on: string) => bookingPanel(booking, '2027-07-17', on);
+
+  it('opens on its own while money is still due', () => {
+    expect(panel(fare, today)).toMatchObject({ show: true, startOpen: true });
+  });
+
+  it('stays collapsed once nothing is owed', () => {
+    expect(panel(fare, '2027-05-01')).toMatchObject({ show: true, startOpen: false });
+  });
+
+  it('totals more than one price line, and not a single one', () => {
+    expect(panel(fare, today).showTotal).toBe(true);
+    expect(panel(withFixed([{ label: 'Port fee', amount: usd(20) }]), today).showTotal).toBe(false);
+  });
+
+  it('is left out when there is nothing to list', () => {
+    const bare: Booking = { _id: 'b2', status: 'booked', confirmationNumber: null, pricing: null };
+    expect(panel(bare, today).show).toBe(false);
   });
 });

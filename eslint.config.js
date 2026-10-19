@@ -44,6 +44,27 @@ export default [
     },
   },
   {
+    // Tests use synthetic in-memory fixtures: no files, no real trip data or bookings.
+    files: ['src/**/*.test.{ts,tsx}', 'src/test/**'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: ['fs', 'fs/promises', 'node:fs', 'node:fs/promises'].map((name) => ({
+            name,
+            message: 'Tests use in-memory fixtures, never files.',
+          })),
+          patterns: [
+            {
+              group: ['**/public/**', '**/attachments/**'],
+              message: 'Tests use synthetic fixtures, never real trip data or attachments.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['scripts/**/*.mjs'],
     languageOptions: { globals: globals.node },
   },

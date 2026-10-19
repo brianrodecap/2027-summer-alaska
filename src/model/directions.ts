@@ -10,7 +10,7 @@
 import { memoizeAsync } from './asyncCache';
 import { googleApiFetch } from './googleApiFetch';
 import { persisted } from './idbCache';
-import type { Route, RouteVariant, TravelMode } from './types';
+import type { Place, Route, RouteVariant, TravelMode } from './types';
 
 const METERS_PER_MILE = 1609.344;
 
@@ -50,9 +50,11 @@ async function fetchRoute(
       polyline?: { encodedPolyline?: string };
     }[];
   }>('Routes API', 'https://routes.googleapis.com/directions/v2:computeRoutes', ROUTE_FIELD_MASK, {
-    origin: { placeId: originPlaceId },
-    destination: { placeId: destinationPlaceId },
-    travelMode: mode,
+    body: {
+      origin: { placeId: originPlaceId },
+      destination: { placeId: destinationPlaceId },
+      travelMode: mode,
+    },
   });
   const duration: string | undefined = routes?.[0]?.duration;
   const distanceMeters: number | undefined = routes?.[0]?.distanceMeters;
@@ -104,6 +106,8 @@ export function lookupDriveInfo(
   return lookupTravelInfo(originPlaceId, destinationPlaceId, 'DRIVE');
 }
 
+export type DriveLookup = (originId: string, destinationId: string) => Promise<DriveInfo | null>;
+
 // ---------- a Route's stored travel times ----------
 //
 // Place ID, each place's travel, and each variant's finalTravel
@@ -128,6 +132,7 @@ export async function recomputeVariant(
   fromId: string | null,
   toId: string | null,
   fromIndex = 0,
+  lookup: DriveLookup = lookupDriveInfo,
 ): Promise<RouteVariant> {
   const legs: { originId: string | null; destId: string | null }[] = [];
   let originId = fromId;
@@ -142,11 +147,11 @@ export async function recomputeVariant(
     Promise.all(
       legs.map(({ originId, destId }, i) =>
         i >= fromIndex && originId && destId
-          ? lookupDriveInfo(originId, destId).catch(() => null)
+          ? lookup(originId, destId).catch(() => null)
           : Promise.resolve(null),
       ),
     ),
-    finalOriginId && toId ? lookupDriveInfo(finalOriginId, toId).catch(() => null) : null,
+    finalOriginId && toId ? lookup(finalOriginId, toId).catch(() => null) : null,
   ]);
 
   const places = variant.places.map((p, i) => {
@@ -161,6 +166,31 @@ export async function recomputeVariant(
       ? { minutes: finalInfo.minutes, miles: finalInfo.miles }
       : variant.finalTravel,
   };
+}
+
+// A variant with the stage at `index` set to `place`, its travel recomputed from there on.
+export function replaceRouteStagePlace(
+  variant: RouteVariant,
+  index: number,
+  place: Place,
+  fromId: string | null,
+  toId: string | null,
+  lookup: DriveLookup = lookupDriveInfo,
+): Promise<RouteVariant> {
+  const places = variant.places.map((p, i) => (i === index ? { ...p, place } : p));
+  return recomputeVariant({ ...variant, places }, fromId, toId, index, lookup);
+}
+
+// A variant without the stage at `index`, its travel recomputed from there on.
+export function removeRouteStage(
+  variant: RouteVariant,
+  index: number,
+  fromId: string | null,
+  toId: string | null,
+  lookup: DriveLookup = lookupDriveInfo,
+): Promise<RouteVariant> {
+  const places = variant.places.filter((_, i) => i !== index);
+  return recomputeVariant({ ...variant, places }, fromId, toId, index, lookup);
 }
 
 // Every variant recomputed from scratch — after a Route's From/To changes, or for a

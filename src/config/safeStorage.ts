@@ -7,25 +7,27 @@
 // `storage.setItem` directly instead, so a failure surfaces. localStorage holds only
 // user data like those — lookup caches live in IndexedDB (src/model/idbCache.ts),
 // so they can't fill the quota out from under it.
-export function safeGetItem(key: string, storage: Storage = localStorage): string | null {
+// `storage` defaults to localStorage, read inside each try: in a browser with site
+// data blocked, even reading the global throws.
+export function safeGetItem(key: string, storage?: Storage): string | null {
   try {
-    return storage.getItem(key);
+    return (storage ?? localStorage).getItem(key);
   } catch {
     return null;
   }
 }
 
-export function safeSetItem(key: string, value: string, storage: Storage = localStorage): void {
+export function safeSetItem(key: string, value: string, storage?: Storage): void {
   try {
-    storage.setItem(key, value);
+    (storage ?? localStorage).setItem(key, value);
   } catch {
     // Not persisted; callers keep their in-memory value for this visit.
   }
 }
 
-export function safeRemoveItem(key: string, storage: Storage = localStorage): void {
+export function safeRemoveItem(key: string, storage?: Storage): void {
   try {
-    storage.removeItem(key);
+    (storage ?? localStorage).removeItem(key);
   } catch {
     // Blocked storage: nothing stored to remove.
   }
@@ -37,7 +39,7 @@ export function readJson<T, F>(
   key: string,
   guard: (value: unknown) => value is T,
   fallback: F,
-  storage: Storage = localStorage,
+  storage?: Storage,
 ): T | F {
   const raw = safeGetItem(key, storage);
   if (!raw) return fallback;

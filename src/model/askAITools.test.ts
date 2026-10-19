@@ -1,14 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { describeDay, runReadTool, ToolInputError } from './askAITools';
 import { noPlaceSearches } from './proposals';
 import type { Day, TripData, TripView } from './types';
-
-const searchPlaces = vi.fn();
-vi.mock('./places', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('./places')>()),
-  searchPlaces: (...args: unknown[]) => searchPlaces(...args) as unknown,
-}));
 
 // Synthetic live-day rows: only the fields describeDay reads are filled in.
 const activityRow = {
@@ -83,6 +77,7 @@ const ctx = {
   view: { dateRange: { startDate: '2027-07-10', endDate: '2027-07-20' } } as TripView,
   byDate: new Map([[day.date, day]]),
   placeSearches: noPlaceSearches(),
+  searchPlaces: async () => [],
 };
 
 describe('describeDay', () => {
@@ -110,13 +105,15 @@ describe('describeDay', () => {
 describe('search_places', () => {
   it('records the ids it finds, and a query that finds nothing or can’t run', async () => {
     const searches = noPlaceSearches();
+    // Google's answers by query; 'Keyless' fails the way a search with no key does.
+    const searchPlaces = async (query: string) => {
+      if (query === 'Keyless') throw new Error('Add your Google API key in Settings.');
+      return query === 'Found' ? [{ id: 'p_found', label: 'Found', address: 'Here' }] : [];
+    };
     const run = (query: string) =>
-      runReadTool('search_places', { query }, { ...ctx, placeSearches: searches });
-    searchPlaces.mockResolvedValueOnce([{ id: 'p_found', label: 'Found', address: 'Here' }]);
+      runReadTool('search_places', { query }, { ...ctx, placeSearches: searches, searchPlaces });
     expect(await run('Found')).toMatch(/placeId p_found/);
-    searchPlaces.mockResolvedValueOnce([]);
     expect(await run('Nowhere')).toBe('No places found.');
-    searchPlaces.mockRejectedValueOnce(new Error('Add your Google API key in Settings.'));
     await expect(run('Keyless')).rejects.toThrow(/Google API key/);
     expect(searches).toEqual({
       placeIds: new Set(['p_found']),

@@ -21,14 +21,14 @@ function isTextDocument(file: File): boolean {
 
 // The document as a message content block, whatever its format: a PDF or a
 // text document as a document block, a photo or screenshot as an image.
-export async function documentContent(file: File) {
+export async function documentContent(file: File, readDataUrl = readAsDataUrl) {
   if (isTextDocument(file)) {
     return {
       type: 'document' as const,
       source: { type: 'text' as const, media_type: 'text/plain' as const, data: await file.text() },
     };
   }
-  const data = await fileToBase64(file);
+  const data = await fileToBase64(file, readDataUrl);
   const mediaType = file.type as SupportedType;
   return mediaType === 'application/pdf'
     ? {
@@ -56,18 +56,26 @@ export function importErrorMessage(err: unknown): string {
     : 'Something went wrong reading that document.';
 }
 
-async function fileToBase64(file: File): Promise<string> {
-  if (!SUPPORTED_TYPES.includes(file.type as SupportedType)) {
-    throw new DocumentImportError(
-      `Unsupported file type: ${file.type || 'unknown'} — please use a PDF, an image, or a saved email (.eml, .rtf, .txt).`,
-    );
-  }
-  const dataUrl = await new Promise<string>((resolve, reject) => {
+// The file read as a data: URL.
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
     reader.onerror = () => reject(new DocumentImportError('Could not read the file.'));
     reader.readAsDataURL(file);
   });
+}
+
+async function fileToBase64(
+  file: File,
+  readDataUrl: (file: File) => Promise<string>,
+): Promise<string> {
+  if (!SUPPORTED_TYPES.includes(file.type as SupportedType)) {
+    throw new DocumentImportError(
+      `Unsupported file type: ${file.type || 'unknown'} — please use a PDF, an image, or a saved email (.eml, .rtf, .txt).`,
+    );
+  }
+  const dataUrl = await readDataUrl(file);
   const comma = dataUrl.indexOf(',');
   return comma === -1 ? dataUrl : dataUrl.slice(comma + 1);
 }

@@ -1,9 +1,14 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { BetaMessage } from '@anthropic-ai/sdk/resources/beta/messages/messages';
+import { describe, expect, it } from 'vitest';
 
-import { setAnthropicApiKey } from '../config/apiKeys';
+import { fakeAnthropic, fakeMessage, streamedBody } from '../test/fakeAnthropic';
+import type { StreamMessage } from './anthropicClient';
 import {
   applyDayPlan,
   type AskAIConversation,
+  AskAIError,
+  askAIStream,
+  type AskAITurnInput,
   buildTripContext,
   describeDayPlan,
   type ProposedDayPlan,
@@ -12,107 +17,40 @@ import {
   runAskAITurn,
   startConversation,
 } from './askAI';
-import type { AskAIToolContext } from './askAITools';
 import { dayPlanErrors } from './proposals';
 import type { Booking, Day, Route, Transit, TripData, TripView } from './types';
 
-// The turn loop streams, so the stubbed API answers with server-sent events. Each
-// queued reply is one request's whole response; nothing reaches the real API.
+// Each queued reply is one request's whole response, handed back by a stub stream;
+// nothing reaches the API.
 
 type Block =
   | { type: 'text'; text: string }
   | { type: 'thinking'; thinking: string }
   | { type: 'tool_use'; id: string; name: string; input: unknown };
 
-function sse(blocks: Block[], stopReason: string): string {
-  const events: unknown[] = [
-    {
-      type: 'message_start',
-      message: {
-        id: 'msg_test',
-        type: 'message',
-        role: 'assistant',
-        model: 'claude-opus-5-5',
-        content: [],
-        stop_reason: null,
-        stop_sequence: null,
-        usage: { input_tokens: 10, output_tokens: 0 },
-      },
-    },
-  ];
-  blocks.forEach((block, index) => {
-    if (block.type === 'text') {
-      events.push({
-        type: 'content_block_start',
-        index,
-        content_block: { type: 'text', text: '' },
-      });
-      events.push({
-        type: 'content_block_delta',
-        index,
-        delta: { type: 'text_delta', text: block.text },
-      });
-    } else if (block.type === 'thinking') {
-      events.push({
-        type: 'content_block_start',
-        index,
-        content_block: { type: 'thinking', thinking: '', signature: '' },
-      });
-      events.push({
-        type: 'content_block_delta',
-        index,
-        delta: { type: 'thinking_delta', thinking: block.thinking },
-      });
-      events.push({
-        type: 'content_block_delta',
-        index,
-        delta: { type: 'signature_delta', signature: 'sig' },
-      });
-    } else {
-      events.push({
-        type: 'content_block_start',
-        index,
-        content_block: { type: 'tool_use', id: block.id, name: block.name, input: {} },
-      });
-      events.push({
-        type: 'content_block_delta',
-        index,
-        delta: { type: 'input_json_delta', partial_json: JSON.stringify(block.input) },
-      });
-    }
-    events.push({ type: 'content_block_stop', index });
-  });
-  events.push({
-    type: 'message_delta',
-    delta: { stop_reason: stopReason, stop_sequence: null },
-    usage: { output_tokens: 10 },
-  });
-  events.push({ type: 'message_stop' });
-  return events
-    .map((e) => `event: ${(e as { type: string }).type}\ndata: ${JSON.stringify(e)}\n\n`)
-    .join('');
-}
-
-// Queues one SSE reply per expected request and records every request body sent.
-function stubTurns(...replies: string[]) {
-  const bodies: Record<string, unknown>[] = [];
-  vi.stubGlobal(
-    'fetch',
-    vi.fn(async (_url: string, init: RequestInit) => {
-      bodies.push(JSON.parse(String(init.body)));
-      const next = replies.shift();
-      if (!next) throw new Error('No more stubbed replies');
-      return new Response(next, { status: 200, headers: { 'content-type': 'text/event-stream' } });
-    }),
+function apiReply(blocks: Block[], stopReason: string): BetaMessage {
+  return fakeMessage(
+    blocks.map((b) => (b.type === 'thinking' ? { ...b, signature: 'sig' } : b)),
+    stopReason,
   );
-  return bodies;
 }
 
-beforeEach(() => setAnthropicApiKey('sk-test'));
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
+// A stream answering each request with the next reply, and each request as it was
+// sent; the stream hands each reply's text and thinking to the handlers.
+function stubTurns(...replies: BetaMessage[]) {
+  const bodies: Record<string, unknown>[] = [];
+  const stream: StreamMessage = async (request, handlers) => {
+    bodies.push(structuredClone(request) as Record<string, unknown>);
+    const next = replies.shift();
+    if (!next) throw new Error('No more stubbed replies');
+    for (const block of next.content) {
+      if (block.type === 'text') handlers.onText?.(block.text);
+      if (block.type === 'thinking') handlers.onThinking?.(block.thinking);
+    }
+    return next;
+  };
+  return { bodies, stream };
+}
 
 function tripData(activityText = 'Kayak tour'): TripData {
   return {
@@ -157,7 +95,7 @@ const DAY = {
   notes: [{ _id: 'note_1', kind: 'warning', text: 'Bring rain gear', concerns: [], images: [] }],
 } as unknown as Day;
 
-function tools(data: TripData): Omit<AskAIToolContext, 'placeSearches'> {
+function tools(data: TripData): AskAITurnInput['tools'] {
   return {
     data,
     view: { dateRange: { startDate: '2027-07-14', endDate: '2027-07-14' } } as TripView,
@@ -165,21 +103,49 @@ function tools(data: TripData): Omit<AskAIToolContext, 'placeSearches'> {
   };
 }
 
-function turn(conversation: AskAIConversation | null, question: string, data = tripData()) {
-  return runAskAITurn(conversation, { question, data, tools: tools(data) });
+function turn(
+  stream: StreamMessage,
+  conversation: AskAIConversation | null,
+  question: string,
+  data = tripData(),
+) {
+  return runAskAITurn(conversation, { question, data, tools: tools(data), stream });
 }
 
 describe('runAskAITurn', () => {
+  it('hands the streamed answer and progress notes to the turn’s events', async () => {
+    const { stream } = stubTurns(
+      apiReply(
+        [
+          { type: 'thinking', thinking: 'Checking the 14th.' },
+          { type: 'text', text: 'Bring rain gear.' },
+        ],
+        'end_turn',
+      ),
+    );
+    const text: string[] = [];
+    const progress: string[] = [];
+    await runAskAITurn(null, {
+      question: 'Anything for the 14th?',
+      data: tripData(),
+      tools: tools(tripData()),
+      events: { onText: (t) => text.push(t), onProgress: (t) => progress.push(t) },
+      stream,
+    });
+    expect(text.join('')).toBe('Bring rain gear.');
+    expect(progress.join('')).toBe('Checking the 14th.');
+  });
+
   it('runs a lookup, feeds the result back, and passes thinking blocks back unchanged', async () => {
-    const bodies = stubTurns(
-      sse(
+    const { bodies, stream } = stubTurns(
+      apiReply(
         [
           { type: 'thinking', thinking: 'Checking the 14th.' },
           { type: 'tool_use', id: 'tu_1', name: 'get_day', input: { date: '2027-07-14' } },
         ],
         'tool_use',
       ),
-      sse([{ type: 'text', text: 'Bring rain gear on the 14th.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Bring rain gear on the 14th.' }], 'end_turn'),
     );
     const start = startConversation(tripData());
     const lookups: string[] = [];
@@ -188,6 +154,7 @@ describe('runAskAITurn', () => {
       data: tripData(),
       tools: tools(tripData()),
       events: { onLookup: (label) => lookups.push(label) },
+      stream,
     });
 
     expect(bodies).toHaveLength(2);
@@ -215,8 +182,8 @@ describe('runAskAITurn', () => {
   });
 
   it('queues a proposal for review instead of applying anything', async () => {
-    const bodies = stubTurns(
-      sse(
+    const { bodies, stream } = stubTurns(
+      apiReply(
         [
           {
             type: 'tool_use',
@@ -232,9 +199,9 @@ describe('runAskAITurn', () => {
         ],
         'tool_use',
       ),
-      sse([{ type: 'text', text: 'I proposed moving the kayak tour to 10am.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'I proposed moving the kayak tour to 10am.' }], 'end_turn'),
     );
-    const after = await turn(startConversation(tripData()), 'Move the kayak later');
+    const after = await turn(stream, startConversation(tripData()), 'Move the kayak later');
 
     const toolResult = (bodies[1].messages as { content: { content: string }[] }[])[2].content[0];
     expect(toolResult.content).toMatch(/Queued for the user to review/);
@@ -251,8 +218,8 @@ describe('runAskAITurn', () => {
   });
 
   it('queues alternatives and meal-option adds as data, not text', async () => {
-    stubTurns(
-      sse(
+    const { stream } = stubTurns(
+      apiReply(
         [
           {
             type: 'tool_use',
@@ -294,13 +261,13 @@ describe('runAskAITurn', () => {
         ],
         'tool_use',
       ),
-      sse([{ type: 'text', text: 'Proposed both.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Proposed both.' }], 'end_turn'),
     );
     const searched = {
       ...startConversation(tripData()),
       placeSearches: { placeIds: ['p_orso', 'p_crows_nest'], emptyQueries: [] },
     };
-    const after = await turn(searched, 'Plan dinner and a grounded day');
+    const after = await turn(stream, searched, 'Plan dinner and a grounded day');
     const reply = after.messages.at(-1)!;
     // One list, in the order the assistant proposed them, each keyed by its tool call.
     const [plan, alternative] = reply.proposals ?? [];
@@ -319,22 +286,22 @@ describe('runAskAITurn', () => {
   });
 
   it('starts the conversation itself when there is none yet, with no itinerary update', async () => {
-    const bodies = stubTurns(sse([{ type: 'text', text: 'Hello.' }], 'end_turn'));
-    const after = await turn(null, 'Hi');
+    const { bodies, stream } = stubTurns(apiReply([{ type: 'text', text: 'Hello.' }], 'end_turn'));
+    const after = await turn(stream, null, 'Hi');
     expect(after.system).toBe(startConversation(tripData()).system);
     const sent = bodies[0].messages as { role: string }[];
     expect(sent.map((m) => m.role)).toEqual(['user']);
   });
 
   it('returns a malformed tool input to the model as an error it can correct', async () => {
-    const bodies = stubTurns(
-      sse(
+    const { bodies, stream } = stubTurns(
+      apiReply(
         [{ type: 'tool_use', id: 'tu_1', name: 'get_day', input: { date: 'July 14' } }],
         'tool_use',
       ),
-      sse([{ type: 'text', text: 'Sorry, which day?' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Sorry, which day?' }], 'end_turn'),
     );
-    await turn(startConversation(tripData()), 'What about that day?');
+    await turn(stream, startConversation(tripData()), 'What about that day?');
 
     const result = (
       bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
@@ -344,14 +311,15 @@ describe('runAskAITurn', () => {
   });
 
   it('keeps history append-only and announces trip edits in an appended system message', async () => {
-    stubTurns(sse([{ type: 'text', text: 'First answer.' }], 'end_turn'));
-    const first = await turn(startConversation(tripData()), 'First question');
-
-    const bodies = stubTurns(sse([{ type: 'text', text: 'Second answer.' }], 'end_turn'));
+    const { bodies, stream } = stubTurns(
+      apiReply([{ type: 'text', text: 'First answer.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Second answer.' }], 'end_turn'),
+    );
+    const first = await turn(stream, startConversation(tripData()), 'First question');
     const edited = tripData('Glacier kayak tour');
-    const second = await turn(first, 'Second question', edited);
+    const second = await turn(stream, first, 'Second question', edited);
 
-    const sent = bodies[0] as { system: { text: string }[]; messages: unknown[] };
+    const sent = bodies[1] as { system: { text: string }[]; messages: unknown[] };
     expect(sent.system[0].text).toBe(first.system);
     // Every earlier message is resent exactly as it was…
     expect(sent.messages.slice(0, first.apiMessages.length)).toEqual(first.apiMessages);
@@ -366,24 +334,26 @@ describe('runAskAITurn', () => {
   });
 
   it('sends no itinerary update when the trip is unchanged', async () => {
-    stubTurns(sse([{ type: 'text', text: 'One.' }], 'end_turn'));
-    const first = await turn(startConversation(tripData()), 'Q1');
-    const bodies = stubTurns(sse([{ type: 'text', text: 'Two.' }], 'end_turn'));
-    await turn(first, 'Q2');
-    const roles = (bodies[0].messages as { role: string }[]).map((m) => m.role);
+    const { bodies, stream } = stubTurns(
+      apiReply([{ type: 'text', text: 'One.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Two.' }], 'end_turn'),
+    );
+    const first = await turn(stream, startConversation(tripData()), 'Q1');
+    await turn(stream, first, 'Q2');
+    const roles = (bodies[1].messages as { role: string }[]).map((m) => m.role);
     expect(roles).not.toContain('system');
   });
 
   it('tells the model to stop looking things up once the request limit is reached', async () => {
-    const lookup = sse(
+    const lookup = apiReply(
       [{ type: 'tool_use', id: 'tu', name: 'get_day', input: { date: '2027-07-14' } }],
       'tool_use',
     );
-    const bodies = stubTurns(
+    const { bodies, stream } = stubTurns(
       ...Array.from({ length: 7 }, () => lookup),
-      sse([{ type: 'text', text: 'Here is what I found.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Here is what I found.' }], 'end_turn'),
     );
-    const after = await turn(startConversation(tripData()), 'Dig deep');
+    const after = await turn(stream, startConversation(tripData()), 'Dig deep');
     expect(bodies).toHaveLength(8);
     expect(bodies[6].tool_choice).toBeUndefined();
     expect(bodies[7].tool_choice).toEqual({ type: 'none' });
@@ -639,8 +609,8 @@ describe('place ids from earlier turns', () => {
         { role: 'assistant', content: [{ type: 'text', text: 'Found Café is close.' }] },
       ],
     };
-    stubTurns(
-      sse(
+    const { stream } = stubTurns(
+      apiReply(
         [
           {
             type: 'tool_use',
@@ -656,17 +626,17 @@ describe('place ids from earlier turns', () => {
         ],
         'tool_use',
       ),
-      sse([{ type: 'text', text: 'Proposed.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Proposed.' }], 'end_turn'),
     );
-    const after = await turn(earlier, 'Use that café');
+    const after = await turn(stream, earlier, 'Use that café');
     expect(after.messages.at(-1)?.proposals).toHaveLength(1);
   });
 });
 
 describe('add_traveler in the chat', () => {
   it('adds someone new and hands a proposal naming them their real id', async () => {
-    stubTurns(
-      sse(
+    const { stream } = stubTurns(
+      apiReply(
         [
           { type: 'tool_use', id: 'tu_1', name: 'add_traveler', input: { name: 'Pat Guest' } },
           {
@@ -683,9 +653,9 @@ describe('add_traveler in the chat', () => {
         ],
         'tool_use',
       ),
-      sse([{ type: 'text', text: 'Proposed.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Proposed.' }], 'end_turn'),
     );
-    const after = await turn(startConversation(tripData()), 'Pat Guest is coming kayaking');
+    const after = await turn(stream, startConversation(tripData()), 'Pat Guest is coming kayaking');
     const [proposal] = after.messages.at(-1)?.proposals ?? [];
     expect(proposal).toMatchObject({
       type: 'edit',
@@ -700,8 +670,8 @@ describe('add_traveler in the chat', () => {
 
 describe('a day plan', () => {
   it('turns down a place id no search found, so the model can look it up', async () => {
-    const bodies = stubTurns(
-      sse(
+    const { bodies, stream } = stubTurns(
+      apiReply(
         [
           {
             type: 'tool_use',
@@ -725,9 +695,9 @@ describe('a day plan', () => {
         ],
         'tool_use',
       ),
-      sse([{ type: 'text', text: 'Let me search.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Let me search.' }], 'end_turn'),
     );
-    const after = await turn(startConversation(tripData()), 'Add lunch');
+    const after = await turn(stream, startConversation(tripData()), 'Add lunch');
     expect(after.messages.at(-1)?.proposals ?? []).toEqual([]);
     const result = (
       bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
@@ -737,8 +707,8 @@ describe('a day plan', () => {
   });
 
   it('turns down a plan that both changes and removes one activity', async () => {
-    const bodies = stubTurns(
-      sse(
+    const { bodies, stream } = stubTurns(
+      apiReply(
         [
           {
             type: 'tool_use',
@@ -755,9 +725,9 @@ describe('a day plan', () => {
         ],
         'tool_use',
       ),
-      sse([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
     );
-    await turn(startConversation(tripData()), 'Shuffle');
+    await turn(stream, startConversation(tripData()), 'Shuffle');
     const result = (
       bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
     ).at(-1)!.content[0];
@@ -766,8 +736,8 @@ describe('a day plan', () => {
   });
 
   it('turns down removing an activity that is on another day', async () => {
-    const bodies = stubTurns(
-      sse(
+    const { bodies, stream } = stubTurns(
+      apiReply(
         [
           {
             type: 'tool_use',
@@ -778,9 +748,9 @@ describe('a day plan', () => {
         ],
         'tool_use',
       ),
-      sse([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
     );
-    await turn(startConversation(tripData()), 'Clear');
+    await turn(stream, startConversation(tripData()), 'Clear');
     const result = (
       bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
     ).at(-1)!.content[0];
@@ -789,8 +759,8 @@ describe('a day plan', () => {
   });
 
   it('turns down changing an activity that is on another day', async () => {
-    const bodies = stubTurns(
-      sse(
+    const { bodies, stream } = stubTurns(
+      apiReply(
         [
           {
             type: 'tool_use',
@@ -806,9 +776,9 @@ describe('a day plan', () => {
         ],
         'tool_use',
       ),
-      sse([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
     );
-    await turn(startConversation(tripData()), 'Shuffle');
+    await turn(stream, startConversation(tripData()), 'Shuffle');
     const result = (
       bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
     ).at(-1)!.content[0];
@@ -817,8 +787,8 @@ describe('a day plan', () => {
   });
 
   it('turns down an alternative whose ideal entries are on another day', async () => {
-    const bodies = stubTurns(
-      sse(
+    const { bodies, stream } = stubTurns(
+      apiReply(
         [
           {
             type: 'tool_use',
@@ -837,9 +807,9 @@ describe('a day plan', () => {
         ],
         'tool_use',
       ),
-      sse([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
     );
-    await turn(startConversation(tripData()), 'Rainy day');
+    await turn(stream, startConversation(tripData()), 'Rainy day');
     const result = (
       bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
     ).at(-1)!.content[0];
@@ -848,8 +818,8 @@ describe('a day plan', () => {
   });
 
   it('turns down a new plan entry dated on another day', async () => {
-    const bodies = stubTurns(
-      sse(
+    const { bodies, stream } = stubTurns(
+      apiReply(
         [
           {
             type: 'tool_use',
@@ -865,9 +835,9 @@ describe('a day plan', () => {
         ],
         'tool_use',
       ),
-      sse([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
     );
-    await turn(startConversation(tripData()), 'Add dinner');
+    await turn(stream, startConversation(tripData()), 'Add dinner');
     const result = (
       bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
     ).at(-1)!.content[0];
@@ -882,8 +852,8 @@ describe('a day plan', () => {
       _id: 'act_meal',
       includedIn: { entity: 'activity', id: 'act_1' },
     });
-    const bodies = stubTurns(
-      sse(
+    const { bodies, stream } = stubTurns(
+      apiReply(
         [
           {
             type: 'tool_use',
@@ -894,9 +864,9 @@ describe('a day plan', () => {
         ],
         'tool_use',
       ),
-      sse([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+      apiReply([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
     );
-    await turn(startConversation(data), 'Clear', data);
+    await turn(stream, startConversation(data), 'Clear', data);
     const result = (
       bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
     ).at(-1)!.content[0];
@@ -1202,5 +1172,21 @@ describe('day plan parity', () => {
     const ok = plan({ changes: [update('act_1')] });
     expect(dayPlanErrors(ok, data())).toEqual([]);
     expect('data' in applyDayPlan(ok, data())).toBe(true);
+  });
+});
+
+describe('askAIStream', () => {
+  const hello = { max_tokens: 100, messages: [{ role: 'user' as const, content: 'hello' }] };
+
+  it('reports a declined question as the chat’s own error', async () => {
+    const { options } = fakeAnthropic({ body: streamedBody(fakeMessage([], 'refusal')) });
+    const sent = askAIStream(options)(hello, {});
+    await expect(sent).rejects.toBeInstanceOf(AskAIError);
+    await expect(sent).rejects.toThrow('Claude declined to respond to that.');
+  });
+
+  it('asks for a key as the chat’s own error', async () => {
+    const { options } = fakeAnthropic({ body: '' }, '');
+    await expect(askAIStream(options)(hello, {})).rejects.toBeInstanceOf(AskAIError);
   });
 });

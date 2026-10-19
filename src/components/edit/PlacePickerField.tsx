@@ -68,10 +68,7 @@ export function PlacePickerField({
         }}
         onChange={(_, value) => {
           if (value && typeof value !== 'string') {
-            // A fresh pick names a different physical place than whatever
-            // `place` pointed at before, so its images are replaced with the
-            // new place's own photo rather than spread forward.
-            const picked = { ...place, ...pickedPlace(value) };
+            const picked = pickedPlace(value, place);
             onChange(picked);
             void onPicked?.(picked);
           }

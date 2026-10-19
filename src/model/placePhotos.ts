@@ -2,18 +2,12 @@
 // (see types.ts): Google's photo names expire and its terms forbid storing
 // them, so every render looks the names up fresh and builds the media URL from
 // one. The lookup asks for the `photos` field alone, which Google bills as
-// Place Details Essentials (IDs Only), and each place is looked up at most
-// once per page load — the media fetch itself (one plain <img src> per photo
-// shown) is the only per-image cost. A lookup that fails stays failed for the
-// page load: each row naming that place would otherwise retry it on mount.
+// Place Details Essentials (IDs Only), and each place is looked up once, again
+// only after a failure (see createPhotoResolver) — the media fetch itself (one
+// plain <img src> per photo shown) is the only per-image cost.
 import { getGoogleApiKey } from '../config/apiKeys';
 import { imageKey } from './formatting';
-import {
-  fetchPlaceFields,
-  isPlacesApiKeyConfigured,
-  placeAlreadyRequested,
-  type PlacePhoto,
-} from './places';
+import { fetchPlaceFields, placeAlreadyRequested, type PlacePhoto } from './places';
 import type { Image, Place, PlacePhotoRef } from './types';
 
 // Google returns up to 10 photos per place — capped well below that so one
@@ -35,9 +29,13 @@ export type PhotoSize = keyof typeof PHOTO_SIZE_PX;
 // never through googleApiFetch's header-based auth, since an <img> can't
 // attach a custom header. Google's media endpoint takes the key as a query
 // param for exactly this.
-export function photoMediaUrl(photoName: string, size: PhotoSize): string {
+export function photoMediaUrl(
+  photoName: string,
+  size: PhotoSize,
+  key: string = getGoogleApiKey(),
+): string {
   const px = String(PHOTO_SIZE_PX[size]);
-  const params = new URLSearchParams({ maxWidthPx: px, maxHeightPx: px, key: getGoogleApiKey() });
+  const params = new URLSearchParams({ maxWidthPx: px, maxHeightPx: px, key });
   return `https://places.googleapis.com/v1/${photoName}/media?${params}`;
 }
 
@@ -45,6 +43,18 @@ export function photoMediaUrl(photoName: string, size: PhotoSize): string {
 // when it's drawn.
 export function placePrimaryImage(placeId: string): Image {
   return { placePhoto: { placeId }, credit: null, caption: null };
+}
+
+// The image to store for a place with no images of its own yet, once a lookup
+// shows Google has a photo for it: its primary photo, by reference. Null when the
+// place has images, isn't resolved, or Google has none.
+export function autoPlaceImage(
+  placeId: string | null,
+  images: Image[] | undefined,
+  photoCount: number,
+): Image | null {
+  if (images?.length || !placeId || !photoCount) return null;
+  return placePrimaryImage(placeId);
 }
 
 // A resolved place with no image yet, given its primary photo; any other place
@@ -55,10 +65,14 @@ export function withPrimaryImage<P extends Place | null | undefined>(place: P): 
     : place;
 }
 
-// A place just picked from a search, with its primary photo — a new place
-// carries no images from whatever was picked before it.
-export function pickedPlace({ id, label }: { id: string; label: string }): Place {
-  return { id, label, images: [placePrimaryImage(id)] };
+// A place just picked from a search over `previous`, with its primary photo. A
+// fresh pick names a different physical place, so it keeps the previous place's
+// other fields but none of its images.
+export function pickedPlace(
+  { id, label }: { id: string; label: string },
+  previous?: Place | null,
+): Place {
+  return { ...previous, id, label, images: [placePrimaryImage(id)] };
 }
 
 const authorOf = (photo: PlacePhoto) => photo.authorAttributions?.[0]?.displayName;
@@ -102,6 +116,11 @@ export function matchPlacePhoto(photos: PlacePhoto[], ref: PlacePhotoRef): Place
   return exact[ref.nth ?? 0] ?? exact[0] ?? sameAuthor[0] ?? photos[0] ?? null;
 }
 
+export interface ResolvedImage {
+  src: string;
+  credit: string | null;
+}
+
 // Per place id: its lookup, and its photos once that settles (an empty list
 // for a failed lookup) — read synchronously, so a row that re-mounts (or a
 // second row naming the same place) draws its photo on the first render.
@@ -113,7 +132,6 @@ interface Lookup {
   // peeks at its image.
   resolved: Map<string, ResolvedImage | null>;
 }
-const lookups = new Map<string, Lookup>();
 
 // How long a failed lookup stands before the next image naming that place
 // tries again — long enough that the rows mounting together after one failure
@@ -121,78 +139,95 @@ const lookups = new Map<string, Lookup>();
 // place's photos until a reload.
 const RETRY_AFTER_MS = 30_000;
 
-// Looks up a place's current photos once per page load (again only after a
-// failure, see RETRY_AFTER_MS) — from a full lookup when one was started,
-// else on their own. A first lookup decides a microtask later: a side sheet's
-// hero image mounts before its PlacePanel, so the hero's effect asks first
-// and the panel's full lookup starts later in the same commit. Waiting until
-// that commit's effects have all run lets the hero read the panel's lookup
-// instead of paying for a second, photos-only one. It saves nothing when the
-// photos-only lookup came first (a day row's avatar, before its sheet opened):
-// the panel's full lookup asks for more than photos and still goes out.
-function lookUpPhotos(placeId: string): Promise<void> {
-  const known = lookups.get(placeId);
-  const retry = known?.failedAt !== undefined && Date.now() - known.failedAt > RETRY_AFTER_MS;
-  if (known && !retry) return known.promise;
-  const photosOnly = () => fetchPlaceFields<{ photos?: PlacePhoto[] }>(placeId, 'photos');
-  // A full lookup that failed (getPlace keeps its rejection for the page
-  // load) is no reason to go without photos: they're asked for on their own.
-  const lookup = retry
-    ? photosOnly()
-    : Promise.resolve().then(
-        () => placeAlreadyRequested(placeId)?.catch(photosOnly) ?? photosOnly(),
-      );
-  const entry: Lookup = {
-    resolved: new Map(),
-    promise: lookup
-      .then((details) => {
-        entry.photos = details.photos ?? [];
-      })
-      .catch(() => {
-        entry.photos = [];
-        entry.failedAt = Date.now();
-      }),
-  };
-  lookups.set(placeId, entry);
-  return entry.promise;
+type PlacePhotos = { photos?: PlacePhoto[] };
+
+// What a resolver asks: a place's photos on their own (the cheap lookup), a full
+// lookup already started, the Google key ('' when there's none), and the time.
+export interface PhotoSource {
+  photosOnly: (placeId: string) => Promise<PlacePhotos>;
+  startedLookup: (placeId: string) => Promise<PlacePhotos> | undefined;
+  key: () => string;
+  now: () => number;
 }
 
-export interface ResolvedImage {
-  src: string;
-  credit: string | null;
-}
+// Resolves images through `source`, caching each place's photos.
+export function createPhotoResolver(source: PhotoSource) {
+  const lookups = new Map<string, Lookup>();
 
-// The image as it can be drawn right now: a web image as is, a place photo
-// once its place's photos are known (null when it has none, undefined while
-// they aren't known yet).
-export function peekImage(
-  image: Image,
-  size: PhotoSize = 'photo',
-): ResolvedImage | null | undefined {
-  if ('uri' in image) return { src: image.uri, credit: image.credit };
-  const lookup = lookups.get(image.placePhoto.placeId);
-  if (!lookup?.photos) return undefined;
-  const key = `${size}|${imageKey(image)}`;
-  let resolved = lookup.resolved.get(key);
-  if (resolved === undefined) {
-    const photo = matchPlacePhoto(lookup.photos, image.placePhoto);
-    resolved = photo
-      ? { src: photoMediaUrl(photo.name, size), credit: authorOf(photo) ?? null }
-      : null;
-    lookup.resolved.set(key, resolved);
+  // Looks up a place's current photos once (again only after a
+  // failure, see RETRY_AFTER_MS) — from a full lookup when one was started,
+  // else on their own. A first lookup decides a microtask later: a side sheet's
+  // hero image mounts before its PlacePanel, so the hero's effect asks first
+  // and the panel's full lookup starts later in the same commit. Waiting until
+  // that commit's effects have all run lets the hero read the panel's lookup
+  // instead of paying for a second, photos-only one. It saves nothing when the
+  // photos-only lookup came first (a day row's avatar, before its sheet opened):
+  // the panel's full lookup asks for more than photos and still goes out.
+  function lookUpPhotos(placeId: string): Promise<void> {
+    const known = lookups.get(placeId);
+    const retry = known?.failedAt !== undefined && source.now() - known.failedAt > RETRY_AFTER_MS;
+    if (known && !retry) return known.promise;
+    const photosOnly = () => source.photosOnly(placeId);
+    // A started full lookup that failed is no reason to go without photos:
+    // they're asked for on their own.
+    const lookup = retry
+      ? photosOnly()
+      : Promise.resolve().then(
+          () => source.startedLookup(placeId)?.catch(photosOnly) ?? photosOnly(),
+        );
+    const entry: Lookup = {
+      resolved: new Map(),
+      promise: lookup
+        .then((details) => {
+          entry.photos = details.photos ?? [];
+        })
+        .catch(() => {
+          entry.photos = [];
+          entry.failedAt = source.now();
+        }),
+    };
+    lookups.set(placeId, entry);
+    return entry.promise;
   }
-  return resolved;
+
+  // The image as it can be drawn right now: a web image as is, a place photo
+  // once its place's photos are known (null when it has none, undefined while
+  // they aren't known yet).
+  function peekImage(image: Image, size: PhotoSize = 'photo'): ResolvedImage | null | undefined {
+    if ('uri' in image) return { src: image.uri, credit: image.credit };
+    const lookup = lookups.get(image.placePhoto.placeId);
+    if (!lookup?.photos) return undefined;
+    const key = `${size}|${imageKey(image)}`;
+    let resolved = lookup.resolved.get(key);
+    if (resolved === undefined) {
+      const photo = matchPlacePhoto(lookup.photos, image.placePhoto);
+      resolved = photo
+        ? { src: photoMediaUrl(photo.name, size, source.key()), credit: authorOf(photo) ?? null }
+        : null;
+      lookup.resolved.set(key, resolved);
+    }
+    return resolved;
+  }
+
+  // The image's src and credit, looking up its place's photos if need be. Null
+  // when there's nothing to draw: no key, a failed lookup, or no photos.
+  async function resolveImage(
+    image: Image,
+    size: PhotoSize = 'photo',
+  ): Promise<ResolvedImage | null> {
+    if ('placePhoto' in image) {
+      if (!source.key()) return null;
+      await lookUpPhotos(image.placePhoto.placeId);
+    }
+    return peekImage(image, size) ?? null;
+  }
+
+  return { peekImage, resolveImage };
 }
 
-// The image's src and credit, looking up its place's photos if need be. Null
-// when there's nothing to draw: no key, a failed lookup, or no photos.
-export async function resolveImage(
-  image: Image,
-  size: PhotoSize = 'photo',
-): Promise<ResolvedImage | null> {
-  if ('placePhoto' in image) {
-    if (!isPlacesApiKeyConfigured()) return null;
-    await lookUpPhotos(image.placePhoto.placeId);
-  }
-  return peekImage(image, size) ?? null;
-}
+export const { peekImage, resolveImage } = createPhotoResolver({
+  photosOnly: (placeId) => fetchPlaceFields<PlacePhotos>(placeId, 'photos'),
+  startedLookup: placeAlreadyRequested,
+  key: getGoogleApiKey,
+  now: () => Date.now(),
+});

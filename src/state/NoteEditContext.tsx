@@ -1,33 +1,18 @@
 import { type ReactNode, useCallback, useMemo, useRef, useState } from 'react';
 
 import { NoteEditDialog } from '../components/notes/NoteEditDialog';
-import type { Note, NoteKind, Ref } from '../model/types';
 import {
+  firstDraft,
+  nextDraft,
+  noteDialogActions,
   type NoteDraft,
-  NoteEditContext,
-  type NoteHistoryEntry,
   type NoteTarget,
-} from './NoteEditContextObject';
+  previousDraft,
+  upsertNote,
+} from '../model/noteDrafts';
+import type { Note, NoteKind, Ref } from '../model/types';
+import { NoteEditContext } from './NoteEditContextObject';
 import { useTripData } from './useTripData';
-
-// Shared by openNoteDraftSequence/advance/handleBack: builds the 'create'
-// NoteTarget for whichever draft is becoming current, carrying over the
-// history/queue each of those three call sites computes differently.
-function createTarget(
-  item: { ref: Ref; kind: NoteKind; text?: string; savedId?: string },
-  history: NoteHistoryEntry[],
-  queue: NoteDraft[],
-): NoteTarget {
-  return {
-    mode: 'create',
-    ref: item.ref,
-    kind: item.kind,
-    text: item.text,
-    savedId: item.savedId,
-    history,
-    queue,
-  };
-}
 
 // Mirrors EditContext's own shape (a target + a dialog mounted once here),
 // kept separate because a Note's create/edit/delete flow is genuinely
@@ -77,21 +62,20 @@ export function NoteEditProvider({ children }: { children: ReactNode }) {
   );
   const openNoteDraftSequence = useCallback(
     (drafts: NoteDraft[], onComplete?: () => void) => {
-      if (!drafts.length) {
+      const first = firstDraft(drafts);
+      if (!first) {
         onComplete?.();
         return;
       }
-      const [first, ...rest] = drafts;
       onCompleteRef.current = onComplete;
-      show(createTarget(first, [], rest));
+      show(first);
     },
     [show],
   );
   // Abandons the rest of a draft sequence rather than advancing past it — a
   // viewer who bails on the whole review shouldn't have the remaining ones
   // saved without ever being shown. Declining just the one currently on
-  // screen while keeping the rest of the queue going is handleSkip's job
-  // instead (see NoteEditDialog's own Skip button).
+  // screen while keeping the rest of the queue going is handleSkip's job.
   const closeNoteEdit = useCallback(() => {
     setTarget(null);
     const onComplete = onCompleteRef.current;
@@ -99,22 +83,14 @@ export function NoteEditProvider({ children }: { children: ReactNode }) {
     onComplete?.();
   }, []);
 
-  // Shared by handleSave and handleSkip: once this step is resolved (saved
-  // or declined, `resolved` describing which and, for a save, its final id),
-  // record it in history so Back can return to it, then move on to whatever
-  // is still queued, or close if this was the last one.
+  // Shared by handleSave and handleSkip: shows the next queued draft (see
+  // nextDraft), or closes if this was the last one.
   const advance = useCallback(
     (current: { ref: Ref; kind: NoteKind; text: string }, savedId: string | undefined) => {
       if (!target || target.mode !== 'create') return;
-      const historyEntry: NoteHistoryEntry = { ...current, savedId };
-      const history = [...target.history, historyEntry];
-      const { queue } = target;
-      if (queue.length) {
-        const [next, ...rest] = queue;
-        show(createTarget(next, history, rest));
-      } else {
-        closeNoteEdit();
-      }
+      const next = nextDraft(target, current, savedId);
+      if (next) show(next);
+      else closeNoteEdit();
     },
     [target, closeNoteEdit, show],
   );
@@ -131,51 +107,30 @@ export function NoteEditProvider({ children }: { children: ReactNode }) {
         closeNoteEdit();
         return;
       }
-      // A draft reached again via Back that was already saved once updates
-      // that same Note in place rather than appending a duplicate.
+      // A draft reached again via Back that was already saved once keeps its id.
       const savedId = target.savedId ?? crypto.randomUUID();
-      setData((prev) => {
-        if (prev.notes.some((n) => n._id === savedId)) {
-          return {
-            ...prev,
-            notes: prev.notes.map((n) => (n._id === savedId ? { ...n, kind, text } : n)),
-          };
-        }
-        const note: Note = { _id: savedId, kind, text, concerns: [target.ref], images: [] };
-        return { ...prev, notes: [...prev.notes, note] };
-      });
+      setData((prev) => ({
+        ...prev,
+        notes: upsertNote(prev.notes, savedId, target.ref, kind, text),
+      }));
       advance({ ref: target.ref, kind, text }, savedId);
     },
     [target, setData, advance, closeNoteEdit],
   );
 
-  // Declines the note currently on screen — nothing is written to notes,
-  // and any earlier save under this same position (reached via Back) is
-  // left exactly as it was — then moves on to the rest of its queue, if
-  // any. Only offered (see NoteEditDialog's own onSkip prop below) for a
-  // drafted note under review, where "I don't want this one" shouldn't cost
-  // the viewer the other drafts still waiting; a plain manual "Add
-  // alert/info/footnote" has no queue to preserve, so Cancel already covers
-  // it.
+  // Declines the draft on screen, leaving any earlier save under it as is, and
+  // moves on (see nextDraft).
   const handleSkip = useCallback(() => {
     if (!target || target.mode !== 'create') return;
     advance({ ref: target.ref, kind: target.kind, text: target.text ?? '' }, target.savedId);
   }, [target, advance]);
 
-  // Returns to whichever draft was on screen just before this one — the one
-  // just left (with the caller's own current, possibly-edited kind/text) is
-  // pushed back onto the front of the queue so it's shown again once the
-  // popped-back one is itself resolved. Only offered for a drafted note
-  // with something in its own history (see NoteEditDialog's own onBack
-  // prop) — there's nothing to go back to on the very first item, or for a
-  // plain manual create.
+  // Returns to the draft on screen just before this one (see previousDraft).
   const handleBack = useCallback(
     (kind: NoteKind, text: string) => {
-      if (!target || target.mode !== 'create' || !target.history.length) return;
-      const history = [...target.history];
-      const prev = history.pop() as NoteHistoryEntry;
-      const requeued: NoteDraft = { ref: target.ref, kind, text };
-      show(createTarget(prev, history, [requeued, ...target.queue]));
+      if (!target || target.mode !== 'create') return;
+      const prev = previousDraft(target, kind, text);
+      if (prev) show(prev);
     },
     [target, show],
   );
@@ -192,7 +147,7 @@ export function NoteEditProvider({ children }: { children: ReactNode }) {
     [openNoteCreate, openNoteEdit, openNoteDraftSequence],
   );
 
-  const isDraft = target?.mode === 'create' && target.text !== undefined;
+  const actions = target && noteDialogActions(target);
 
   return (
     <NoteEditContext.Provider value={contextValue}>
@@ -203,12 +158,10 @@ export function NoteEditProvider({ children }: { children: ReactNode }) {
           target={target}
           onClose={closeNoteEdit}
           onSave={handleSave}
-          onDelete={target.mode === 'edit' ? handleDelete : undefined}
-          onSkip={isDraft ? handleSkip : undefined}
-          onBack={
-            isDraft && target.mode === 'create' && target.history.length ? handleBack : undefined
-          }
-          hasMoreQueued={target.mode === 'create' && target.queue.length > 0}
+          onDelete={actions?.canDelete ? handleDelete : undefined}
+          onSkip={actions?.canSkip ? handleSkip : undefined}
+          onBack={actions?.canGoBack ? handleBack : undefined}
+          hasMoreQueued={actions?.hasMoreQueued ?? false}
         />
       )}
     </NoteEditContext.Provider>

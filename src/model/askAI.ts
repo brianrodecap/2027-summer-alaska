@@ -14,7 +14,12 @@ import type {
   BetaToolUseBlock,
 } from '@anthropic-ai/sdk/resources/beta/messages/messages';
 
-import { RequestAbortedError, responseText, streamMessage } from './anthropicClient';
+import {
+  RequestAbortedError,
+  responseText,
+  type StreamMessage,
+  streamMessage,
+} from './anthropicClient';
 import {
   alternativeEntry,
   applyBatch,
@@ -40,7 +45,9 @@ import {
 } from './askAITools';
 import { bookingOf } from './bookings';
 import { hashDoc } from './changeLog';
+import type { ClientOptions } from './clientOptions';
 import { EDIT_KINDS, type EditKind, findByKind } from './editForms';
+import { searchPlaces } from './places';
 import {
   ADD_TRAVELER_TOOL,
   addTraveler,
@@ -65,6 +72,19 @@ import { activityHeadline, formatTime, transitRouteLabel } from './tripModel';
 import type { Activity, Booking, Route, Stay, Transit, Traveler, TripData } from './types';
 
 export class AskAIError extends Error {}
+
+// The turn's requests, sent with the chat's own errors. `options` are for tests.
+export const askAIStream =
+  (options?: ClientOptions): StreamMessage =>
+  (request, handlers, signal) =>
+    streamMessage(
+      request,
+      (msg) => new AskAIError(msg),
+      'Claude declined to respond to that.',
+      handlers,
+      signal,
+      options,
+    );
 
 export interface ProposedEdit {
   // The change itself, in the same shape (and checked the same way, see
@@ -672,10 +692,13 @@ export interface AskAITurnInput {
   // The date the reader is looking at, if any — lets "this day" mean something.
   focusDate?: string | null;
   data: TripData;
-  // The turn adds the conversation's own placeSearches.
-  tools: Omit<AskAIToolContext, 'placeSearches'>;
+  // The turn adds the conversation's own placeSearches and `searchPlaces`.
+  tools: Omit<AskAIToolContext, 'placeSearches' | 'searchPlaces'>;
   events?: AskAITurnEvents;
   signal?: AbortSignal;
+  // Sends each request, and runs search_places; tests pass stubs.
+  stream?: StreamMessage;
+  searchPlaces?: AskAIToolContext['searchPlaces'];
 }
 
 // The people earlier turns' proposals carry as new travelers, by id, leaving
@@ -708,7 +731,16 @@ export async function runAskAITurn(
   previous: AskAIConversation | null,
   input: AskAITurnInput,
 ): Promise<AskAIConversation> {
-  const { question, focusDate, data, tools, events = {}, signal } = input;
+  const {
+    question,
+    focusDate,
+    data,
+    tools,
+    events = {},
+    signal,
+    stream = askAIStream(),
+    searchPlaces: searchPlacesFor = searchPlaces,
+  } = input;
   const conversation = previous ?? startConversation(data);
   const update = previous ? itineraryUpdateFor(previous, data) : null;
   const prompt = focusDate
@@ -735,7 +767,7 @@ export async function runAskAITurn(
   // What this conversation's searches have found, in earlier turns too;
   // search_places adds to it as this turn runs (see proposals.ts's validateProposal).
   const placeSearches = placeSearchesFrom(conversation.placeSearches);
-  const lookupContext = { ...tools, placeSearches };
+  const lookupContext = { ...tools, searchPlaces: searchPlacesFor, placeSearches };
   // People add_traveler added — this turn, or an earlier one whose proposal is
   // still pending — for proposals to name. Anyone since saved is on the trip.
   const addedTravelers: Traveler[] = travelersFromHistory(conversation.messages, data);
@@ -784,7 +816,7 @@ export async function runAskAITurn(
 
   for (let request = 1; ; request++) {
     const lastRequest = request >= MAX_REQUESTS_PER_TURN;
-    const message = await streamMessage(
+    const message = await stream(
       {
         max_tokens: 16000,
         betas: [DISPLAY_UPDATES_BETA],
@@ -799,8 +831,6 @@ export async function runAskAITurn(
         ...(lastRequest ? { tool_choice: { type: 'none' as const } } : {}),
         messages: apiMessages,
       },
-      (msg) => new AskAIError(msg),
-      'Claude declined to respond to that.',
       { onText: events.onText, onThinking: events.onProgress },
       signal,
     );

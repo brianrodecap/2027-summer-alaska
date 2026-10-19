@@ -7,12 +7,12 @@ import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
 import { DOCUMENT_ACCEPT, importErrorMessage, type QueuedImport } from '../../model/documentImport';
-import { EDIT_KIND_LABEL, type Entity, entityStartAt, findByKind } from '../../model/editForms';
+import { type Entity, findByKind } from '../../model/editForms';
+import { importRowSummary } from '../../model/importSummary';
+import type { NoteDraft } from '../../model/noteDrafts';
 import { importByProposals, type ProposalImport } from '../../model/proposalImport';
-import { dateOnly, entityLabel, formatDateLabel, formatTime } from '../../model/tripModel';
 import type { TripData } from '../../model/types';
 import type { DraftReview } from '../../state/EditContextObject';
-import type { NoteDraft } from '../../state/NoteEditContextObject';
 import { useEdit } from '../../state/useEdit';
 import { useNoteEdit } from '../../state/useNoteEdit';
 import { useTripData } from '../../state/useTripData';
@@ -35,49 +35,24 @@ function existingEntry(data: TripData, draft: QueuedImport): Entity | null {
   return draft.overrideId ? (findByKind(draft.kind, draft.overrideId, data) ?? null) : null;
 }
 
-// What reviewing an update will change, in the reader's terms — the times
-// are what a delayed or rescheduled booking most often moves.
-function timeChange(draft: QueuedImport, before: Entity): string | null {
-  const start = entityStartAt(draft.kind, before);
-  const after = entityStartAt(draft.kind, draft.entity);
-  if (!start || !after || start === after) return null;
-  const verb = draft.kind === 'transit' ? 'departs' : 'starts';
-  return dateOnly(start) === dateOnly(after)
-    ? `${verb} ${formatTime(start)} → ${formatTime(after)}`
-    : `${verb} ${formatDateLabel(dateOnly(start))} ${formatTime(start)} → ${formatDateLabel(dateOnly(after))} ${formatTime(after)}`;
-}
-
 // One proposed change: what it is, whether it updates an entry already on
 // the itinerary or adds a new one, and the AI's own reason for it.
 export function ImportEntryRow({ draft, before }: { draft: QueuedImport; before: Entity | null }) {
-  const kindLabel = EDIT_KIND_LABEL[draft.kind];
-  const start = entityStartAt(draft.kind, draft.entity);
-  const changes = before ? timeChange(draft, before) : null;
-  const booking = draft.bookings[0];
-  const details = [
-    start ? formatDateLabel(dateOnly(start)) : null,
-    booking?.confirmationNumber ? `booking ${booking.confirmationNumber}` : null,
-    booking?.status === 'requested' ? 'awaiting confirmation' : null,
-    draft.notes.length
-      ? `${draft.notes.length} note${draft.notes.length > 1 ? 's' : ''} to review`
-      : null,
-  ].filter(Boolean);
+  const summary = importRowSummary(draft, before);
   return (
     <Box sx={{ p: 1.5, borderRadius: 1, bgcolor: 'action.hover' }}>
-      <Typography variant="subtitle2">
-        {kindLabel}: {entityLabel(draft.kind, draft.entity)}
-      </Typography>
+      <Typography variant="subtitle2">{summary.title}</Typography>
       <Typography variant="body2" color="text.secondary">
-        {details.join(' · ')}
+        {summary.details}
       </Typography>
       <Typography variant="body2">
-        {before ? (
-          <>
-            Updates <strong>{entityLabel(draft.kind, before)}</strong>
-            {changes ? ` · ${changes}` : ''}
-          </>
+        {summary.effect.kind === 'adds' ? (
+          summary.effect.label
         ) : (
-          `Adds a new ${kindLabel.toLowerCase()}`
+          <>
+            Updates <strong>{summary.effect.label}</strong>
+            {summary.effect.changes ? ` · ${summary.effect.changes}` : ''}
+          </>
         )}
       </Typography>
       <Typography variant="body2" color="text.secondary">

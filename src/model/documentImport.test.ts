@@ -16,13 +16,14 @@ describe('documentContent', () => {
   it('sends a PDF as a document and a photo as an image', async () => {
     const pdf = new File(['%PDF'], 'a.pdf', { type: 'application/pdf' });
     const png = new File(['png'], 'a.png', { type: 'image/png' });
-    expect(await documentContent(pdf)).toMatchObject({
+    const read = async (file: File) => `data:${file.type};base64,${file.name}-bytes`;
+    expect(await documentContent(pdf, read)).toMatchObject({
       type: 'document',
-      source: { type: 'base64', media_type: 'application/pdf' },
+      source: { type: 'base64', media_type: 'application/pdf', data: 'a.pdf-bytes' },
     });
-    expect(await documentContent(png)).toMatchObject({
+    expect(await documentContent(png, read)).toMatchObject({
       type: 'image',
-      source: { type: 'base64', media_type: 'image/png' },
+      source: { type: 'base64', media_type: 'image/png', data: 'a.png-bytes' },
     });
   });
 

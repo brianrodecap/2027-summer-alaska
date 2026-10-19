@@ -2,8 +2,14 @@
 // paid and what is still due, each line's own payment state, and who sold it.
 // Pure — the sheet's BookingDetails renders these. Payment states come from
 // the budget's lineBucket, so the sheet and the budget always agree.
-import { bookedThroughName } from './bookings';
-import { type BookingPaymentSummary, formatLongDate, formatMoney, lineBucket } from './tripModel';
+import { bookedThroughName, bookingFixedCharges, travelerPrices } from './bookings';
+import {
+  type BookingPaymentSummary,
+  bookingPaymentSummary,
+  formatLongDate,
+  formatMoney,
+  lineBucket,
+} from './tripModel';
 import type { Booking, Payable } from './types';
 
 // "Paid $198.00 · Due $9,138.00 by Apr 18, 2027", one "Due" per due date.
@@ -59,4 +65,26 @@ export function bookedThroughLabel(bookedThrough: Booking['bookedThrough']): str
   if (!name) return null;
   const conf = typeof bookedThrough === 'object' ? bookedThrough.confirmationNumber : null;
   return conf ? `${name} · Conf# ${conf}` : name;
+}
+
+// What the booking details panel lists — the payment summary, the seller, each
+// traveler's fare lines and each fixed charge — and whether it shows at all (when
+// it has any of those), opens on its own (while money is still due), and totals
+// (once there's more than one price line).
+export function bookingPanel(booking: Booking, date: string | null, today: string) {
+  const payments = bookingPaymentSummary(booking, date, today);
+  const summary = paymentSummaryLine(booking, payments);
+  const seller = bookedThroughLabel(booking.bookedThrough);
+  const travelers = travelerPrices(booking);
+  const fixed = bookingFixedCharges(booking) ?? [];
+  const lineCount = travelers.reduce((n, t) => n + t.lines.length, 0) + fixed.length;
+  return {
+    summary,
+    seller,
+    travelers,
+    fixed,
+    show: Boolean(summary || seller || lineCount > 0),
+    startOpen: payments.due.length > 0,
+    showTotal: lineCount > 1,
+  };
 }
