@@ -98,6 +98,13 @@ describe('withHeroImage', () => {
     const images = withHeroImage([web, placePhotoImage('p1', PHOTOS[1], PHOTOS)], picked);
     expect(images).toEqual([picked, web]);
   });
+
+  it('keeps a stored photo that shares its author and size with the picked one', () => {
+    const twins = [photo('places/p1/photos/x', 'Di'), photo('places/p1/photos/y', 'Di')];
+    const stored = placePhotoImage('p1', twins[0], twins);
+    const picked = placePhotoImage('p1', twins[1], twins);
+    expect(withHeroImage([stored], picked)).toEqual([picked, stored]);
+  });
 });
 
 describe('resolveImage', () => {
@@ -127,6 +134,22 @@ describe('resolveImage', () => {
     expect(peekImage(image, 'photo')).toEqual(resolved);
     await resolveImage(placePhotoImage('place_resolve', PHOTOS[2], PHOTOS), 'photo');
     expect(fetchPlaceFields).toHaveBeenCalledTimes(1);
+  });
+
+  it("resolves each image once per size, and keeps a picked photo's own ref apart", async () => {
+    const twins = [photo('places/p1/photos/x', 'Di'), photo('places/p1/photos/y', 'Di')];
+    fetchPlaceFields.mockResolvedValue({ photos: twins });
+    const first = placePhotoImage('place_sizes', twins[0], twins);
+    const second = placePhotoImage('place_sizes', twins[1], twins);
+    await resolveImage(first);
+
+    // A row re-rendering gets the very same object back, not an equal copy.
+    expect(peekImage(first, 'avatar')).toBe(peekImage(first, 'avatar'));
+    expect(peekImage(first, 'avatar')?.src).toMatch(/\/photos\/x\/media\?maxWidthPx=96&/);
+    expect(peekImage(first, 'hero')?.src).toMatch(/\/photos\/x\/media\?maxWidthPx=1600&/);
+    expect(peekImage(first, 'avatar')?.src).toMatch(/maxWidthPx=96&/);
+    // Same author and size, told apart only by which of the two it was.
+    expect(peekImage(second, 'avatar')?.src).toMatch(/\/photos\/y\/media\?maxWidthPx=96&/);
   });
 
   it('draws nothing after a failed lookup, and tries again only after a while', async () => {

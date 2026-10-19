@@ -7,6 +7,7 @@
 // shown) is the only per-image cost. A lookup that fails stays failed for the
 // page load: each row naming that place would otherwise retry it on mount.
 import { getGoogleApiKey } from '../config/apiKeys';
+import { imageKey } from './formatting';
 import {
   fetchPlaceFields,
   isPlacesApiKeyConfigured,
@@ -21,10 +22,13 @@ import type { Image, Place, PlacePhotoRef } from './types';
 // strip renders exactly this many, never more.
 export const MAX_PHOTOS = 4;
 
-// Each media fetch is billed, so a row's avatar and its side sheet's hero share
-// one size — the same URL, downloaded once — rather than each fetching its own.
-// Only PlacePanel's strip of other photos (120x90 shown) asks for a smaller one.
-const PHOTO_SIZE_PX = { thumbnail: 240, photo: 400 } as const;
+// Each media fetch is billed per request, whatever its size. A row's avatar
+// (48px shown) asks for its own small size: most rows are never opened, so
+// downloading a sheet-sized photo for each would cost bandwidth on every row to
+// save one request per opened sheet. PlacePanel's strip of other photos (120x90
+// shown) asks for `thumbnail`, side sheets and cards for `photo`, and the
+// full-width trip hero for `hero`.
+const PHOTO_SIZE_PX = { avatar: 96, thumbnail: 240, photo: 400, hero: 1600 } as const;
 export type PhotoSize = keyof typeof PHOTO_SIZE_PX;
 
 // Photo Media is fetched directly by the browser as a plain <img src> —
@@ -105,6 +109,9 @@ interface Lookup {
   promise: Promise<void>;
   photos?: PlacePhoto[];
   failedAt?: number;
+  // Each image and size drawn from `photos`, resolved once: every row's render
+  // peeks at its image.
+  resolved: Map<string, ResolvedImage | null>;
 }
 const lookups = new Map<string, Lookup>();
 
@@ -136,6 +143,7 @@ function lookUpPhotos(placeId: string): Promise<void> {
         () => placeAlreadyRequested(placeId)?.catch(photosOnly) ?? photosOnly(),
       );
   const entry: Lookup = {
+    resolved: new Map(),
     promise: lookup
       .then((details) => {
         entry.photos = details.photos ?? [];
@@ -162,15 +170,18 @@ export function peekImage(
   size: PhotoSize = 'photo',
 ): ResolvedImage | null | undefined {
   if ('uri' in image) return { src: image.uri, credit: image.credit };
-  const photos = lookups.get(image.placePhoto.placeId)?.photos;
-  if (!photos) return undefined;
-  const photo = matchPlacePhoto(photos, image.placePhoto);
-  return photo
-    ? {
-        src: photoMediaUrl(photo.name, size),
-        credit: photo.authorAttributions?.[0]?.displayName ?? null,
-      }
-    : null;
+  const lookup = lookups.get(image.placePhoto.placeId);
+  if (!lookup?.photos) return undefined;
+  const key = `${size}|${imageKey(image)}`;
+  let resolved = lookup.resolved.get(key);
+  if (resolved === undefined) {
+    const photo = matchPlacePhoto(lookup.photos, image.placePhoto);
+    resolved = photo
+      ? { src: photoMediaUrl(photo.name, size), credit: authorOf(photo) ?? null }
+      : null;
+    lookup.resolved.set(key, resolved);
+  }
+  return resolved;
 }
 
 // The image's src and credit, looking up its place's photos if need be. Null

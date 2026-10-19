@@ -35,6 +35,7 @@ export function AvatarOrDotView({
       ref={observe}
       image={image}
       enabled={inView}
+      size="avatar"
       sx={{
         width: ROW_LEADING_SIZE,
         height: ROW_LEADING_SIZE,

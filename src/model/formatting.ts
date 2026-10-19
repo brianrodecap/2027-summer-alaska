@@ -82,8 +82,8 @@ export function uniqueById<T extends { _id: string }>(items: (T | null)[]): T[] 
 // What makes two images the same one, for de-duplicating a list of them.
 export function imageKey(image: Image): string {
   if ('uri' in image) return image.uri;
-  const { placeId, author = '', widthPx = '', heightPx = '' } = image.placePhoto;
-  return `place:${placeId}|${author}|${widthPx}x${heightPx}`;
+  const { placeId, author = '', widthPx = '', heightPx = '', nth = 0 } = image.placePhoto;
+  return `place:${placeId}|${author}|${widthPx}x${heightPx}|${nth}`;
 }
 
 // Makes `image` the entity's own hero — firstImage's first entry — moving

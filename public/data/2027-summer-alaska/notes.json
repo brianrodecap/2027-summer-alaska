@@ -1612,18 +1612,6 @@
     "images": []
   },
   {
-    "_id": "0de9c221-c86b-4da0-b2a1-ed148eff13f8",
-    "kind": "warning",
-    "text": "Nonrefundable fare ($1,520.76 total).",
-    "concerns": [
-      {
-        "entity": "transit",
-        "id": "transit_flight_otz_anc"
-      }
-    ],
-    "images": []
-  },
-  {
     "_id": "e9b1ca36-ab78-4787-a1a5-b826b4f943a8",
     "kind": "footnote",
     "text": "Operators: K2 Aviation, Talkeetna Air Taxi, or Sheldon Air Service, all out of Talkeetna Airport (TKA).",

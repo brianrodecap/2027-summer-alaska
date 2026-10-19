@@ -158,7 +158,8 @@ export function TripsHome() {
                   }}
                 >
                   <Box sx={{ position: 'relative', height: 160, flexShrink: 0 }}>
-                    <CardPhoto image={image} height={160} />
+                    {/* The trip hero's size, so opening the trip reuses this download. */}
+                    <CardPhoto image={image} height={160} size="hero" />
                     <Box
                       sx={{
                         position: 'absolute',

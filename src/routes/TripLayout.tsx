@@ -13,10 +13,11 @@ import Typography from '@mui/material/Typography';
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, Outlet, useMatch, useParams } from 'react-router-dom';
 
-import { useResolvedImage } from '../components/shared/useResolvedImage';
+import { useDrawableImage } from '../components/shared/useResolvedImage';
 import { Wordmark } from '../components/shared/Wordmark';
 import { TravelersDialog } from '../components/trips/TravelersDialog';
 import { exportEdits } from '../model/exportEdits';
+import { firstImage } from '../model/formatting';
 import { formatTripDateChip, tripDayCount } from '../model/tripModel';
 import { EditProvider } from '../state/EditContext';
 import { LiveDaysProvider } from '../state/LiveDaysContext';
@@ -97,7 +98,10 @@ function TripHero() {
     useTripData();
   const [travelersOpen, setTravelersOpen] = useState(false);
   const tripName = view?.trip.name;
-  const heroImage = useResolvedImage(view?.trip.images[0] ?? null);
+  const { resolved: heroImage, onError: onHeroImageError } = useDrawableImage(
+    firstImage(view?.trip),
+    { size: 'hero' },
+  );
 
   useEffect(() => {
     if (!tripName) return;
@@ -133,7 +137,9 @@ function TripHero() {
   // The photo hero is a dark surface in both color modes, so it renders under the
   // dark theme: its icons, chips and h4 gold then resolve to dark-mode values
   // without any per-element overrides. Only the outlined chips' border needs a
-  // brighter line to read against the photo.
+  // brighter line to read against the photo. The photo is an <img> behind the
+  // content, not a CSS background, so one that fails to load drops the hero
+  // back to its plain styling.
   const heroChip = heroImage
     ? ({ variant: 'outlined', sx: { borderColor: 'rgba(255,255,255,0.7)' } } as const)
     : ({ variant: 'filled' } as const);
@@ -151,13 +157,37 @@ function TripHero() {
         ...(heroImage
           ? {
               color: 'common.white',
-              backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.68)), url("${heroImage.src}")`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
+              // The dark theme's own page color under the photo while it loads, so the
+              // white text reads.
+              bgcolor: 'background.default',
+              isolation: 'isolate',
+              '&::after': {
+                content: '""',
+                position: 'absolute',
+                inset: 0,
+                zIndex: -1,
+                backgroundImage: 'linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.68))',
+              },
             }
           : { bgcolor: 'primary.container', color: 'primary.onContainer' }),
       }}
     >
+      {heroImage && (
+        <Box
+          component="img"
+          src={heroImage.src}
+          alt=""
+          onError={onHeroImageError}
+          sx={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: -1,
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+          }}
+        />
+      )}
       <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>
         <TripBreadcrumbs crumbs={crumbs} />
         {canUndo && (
