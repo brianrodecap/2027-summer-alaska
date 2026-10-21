@@ -514,10 +514,9 @@ export function tripBookingSummary(legs: Leg[], sources: BookingSources): Bookin
 }
 
 export function formatTime(iso: string): string {
-  let [h, m] = iso.slice(11, 16).split(':').map(Number);
+  const [h, m] = iso.slice(11, 16).split(':').map(Number);
   const ampm = h >= 12 ? 'pm' : 'am';
-  h = h % 12 || 12;
-  return `${h}:${String(m).padStart(2, '0')}${ampm}`;
+  return `${h % 12 || 12}:${String(m).padStart(2, '0')}${ampm}`;
 }
 
 export function formatMoney(cost: Money | null | undefined): string | null {
