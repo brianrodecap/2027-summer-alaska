@@ -28,10 +28,13 @@ import {
   type ChangeProposal,
   checkedChanges,
   danglingCoverErrors,
+  placeIdProvenanceErrors,
+  type PlaceSearches,
   PROPOSAL_PROPERTIES,
   type ProposedChanges,
   proposedTravelerIds,
   queueFromProposals,
+  stampZones,
 } from './proposals';
 import { dateOnly, DEFAULT_ROUTE_TONE, resolveActivityDate } from './tripModel';
 import type {
@@ -479,6 +482,7 @@ interface ProposedRoutePlace {
   kind: RoutePlaceKind;
   label: string;
   placeId: string;
+  timeZone?: string; // stamped by parseRoute, like ProposedPlace.timeZone
   durationMinutes?: number;
   note?: string;
 }
@@ -492,6 +496,7 @@ export interface ProposedRouteVariant {
 interface ProposedEndpoint {
   label: string;
   placeId: string;
+  timeZone?: string; // stamped by parseRoute, like ProposedPlace.timeZone
 }
 
 export interface ProposedRoute {
@@ -572,7 +577,21 @@ function parseEndpoint(value: unknown, key: string): ProposedEndpoint | undefine
   return { label: e.label, placeId: e.placeId };
 }
 
-export function parseRoute(input: unknown): ProposedRoute {
+// Every place a proposed route names: its ends and each variant's stops.
+export function proposedRoutePlaces(
+  route: ProposedRoute,
+): (ProposedEndpoint | ProposedRoutePlace)[] {
+  return [route.from, route.to, ...(route.variants ?? []).flatMap((v) => v.places)].filter(
+    (place) => place !== undefined,
+  );
+}
+
+// Its places' ids are checked against `check` like every proposal's
+// (placeIdProvenanceErrors): each from search_places or the trip.
+export function parseRoute(
+  input: unknown,
+  check: { placeSearches: PlaceSearches; data: TripData },
+): ProposedRoute {
   const raw = (input ?? {}) as ProposedRoute;
   if (typeof raw.summary !== 'string' || !raw.summary) {
     throw new ToolInputError('"summary" is required.');
@@ -593,7 +612,8 @@ export function parseRoute(input: unknown): ProposedRoute {
       }
       if (!p.label || !p.placeId) throw new ToolInputError('Each place needs a label and placeId.');
     }
-    return v;
+    // Fresh objects, so stamping their zones never writes into the tool input.
+    return { ...v, places: v.places.map((place) => ({ ...place })) };
   });
   if (!raw.routeId && !(from && to && variants)) {
     throw new ToolInputError('A new route needs from, to and variants.');
@@ -601,7 +621,15 @@ export function parseRoute(input: unknown): ProposedRoute {
   if (raw.routeId && !from && !to && !variants) {
     throw new ToolInputError('To change a route, give its new from, to and/or variants.');
   }
-  return { routeId: raw.routeId, from, to, variants, summary: raw.summary };
+  const route = { routeId: raw.routeId, from, to, variants, summary: raw.summary };
+  const errors = placeIdProvenanceErrors(
+    proposedRoutePlaces(route),
+    check.placeSearches,
+    check.data,
+  );
+  if (errors.length) throw new ToolInputError(errors.join('\n'));
+  stampZones(proposedRoutePlaces(route), check.placeSearches, check.data);
+  return route;
 }
 
 // One proposed variant as a real RouteVariant. A stop the route already has at the
@@ -614,7 +642,12 @@ function buildVariant(spec: ProposedRouteVariant, existing?: RouteVariant): Rout
     const durationMinutes = p.durationMinutes ?? match?.durationMinutes;
     return {
       kind: p.kind,
-      place: { ...match?.place, id: p.placeId, label: p.label },
+      place: {
+        ...match?.place,
+        id: p.placeId,
+        label: p.label,
+        ...(p.timeZone ? { timeZone: p.timeZone } : {}),
+      },
       travel: match?.travel ?? { minutes: 0 },
       // A via is a pass-through, so it never carries a stop duration.
       ...(p.kind === 'waypoint' && durationMinutes !== undefined ? { durationMinutes } : {}),
@@ -671,7 +704,9 @@ export function resolveRouteProposal(proposal: ProposedRoute, data: TripData): R
     return { error: "Couldn't find the route the AI was referring to." };
   }
   const endpoint = (e: ProposedEndpoint | undefined, fallback: Route['from'] | undefined) =>
-    e ? { id: e.placeId, label: e.label } : fallback!;
+    e
+      ? { id: e.placeId, label: e.label, ...(e.timeZone ? { timeZone: e.timeZone } : {}) }
+      : fallback!;
   const built = proposal.variants?.map((spec) =>
     buildVariant(spec, existing && matchingVariant(existing.variants, spec)),
   );

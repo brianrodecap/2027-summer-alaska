@@ -69,10 +69,19 @@ export function withPrimaryImage<P extends Place | null | undefined>(place: P): 
 // fresh pick names a different physical place, so it keeps the previous place's
 // other fields but none of its images.
 export function pickedPlace(
-  { id, label }: { id: string; label: string },
+  { id, label, timeZone }: { id: string; label: string; timeZone?: string | null },
   previous?: Place | null,
 ): Place {
-  return { ...previous, id, label, images: [placePrimaryImage(id)] };
+  // The picked place's own zone; never the zone of a different place it replaces.
+  const { timeZone: previousZone, ...kept } = previous ?? {};
+  const zone = timeZone ?? (previous?.id === id ? previousZone : undefined);
+  return {
+    ...kept,
+    id,
+    label,
+    ...(zone ? { timeZone: zone } : {}),
+    images: [placePrimaryImage(id)],
+  };
 }
 
 const authorOf = (photo: PlacePhoto) => photo.authorAttributions?.[0]?.displayName;

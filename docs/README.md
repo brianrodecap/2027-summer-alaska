@@ -132,6 +132,14 @@ Two gaps the booking confirmations surfaced. A tour sells inclusions (Rust's Fly
 
 A Google Places photo used to be stored as its media URL, which embeds the photo's _name_. Google's photo names expire (and its terms forbid storing them), so the stored URLs started returning 400s, which the browser reports as `net::ERR_BLOCKED_BY_ORB` on an `<img>`. `Image` is now either `{ uri }` (a plain web image, unchanged) or `{ placePhoto: { placeId, author?, widthPx?, heightPx? } }`. The media URL is built when the photo is drawn, from a fresh lookup (`src/model/placePhotos.ts`). A ref with no author or size means the place's primary photo; a photo a viewer picked keeps its author and size so the same one can be found again. Migration: all 134 stored media URLs became refs carrying the place id from the URL. On a Place they mean the primary photo; on an entity's own `images` (a hand-picked hero) they keep the old `credit` as `author`. Nothing other than `images` changed in any file.
 
+### Place time zones (Oct 2026)
+
+`Place` and `RouteEndpoint` gained an optional `timeZone`, the IANA zone Google reports for the place (`America/Phoenix`). It is recorded wherever a place id is: the place picker, the AI's `search_places`, every accepted AI proposal (chat edits, day plans, alternatives and document import, through `stampZones`), and route proposals. Migration: none. Existing places have no zone until they're next picked (or given one by hand in the data); until then a transit's duration is left out, and the flight-status window reads that airport's times on the reader's clock.
+
+### Booking clocks (Oct 2026)
+
+`Activity` and `Stay` gained an optional `clockZone`, the IANA zone a booking's times are stated on when it isn't its place's (a canyon tour on Arizona time at a canyon on Navajo time). Absent or null reads the times on the place's (lodging's) `timeZone`, through `activityZone` and `stayZone`. AI proposals (chat edits, day plans, document import) can set it when a document names a clock: any spelling the browser knows is stored by its canonical IANA name (`canonicalZone`), null clears it, and anything else, a fixed offset included, is turned down by `shapeErrors`. The edit forms offer it as "Booking's clock", stored the same way. A change, by a proposal or a form, that moves the booking to another place or lodging drops its clock unless it states one (`clockAfterChange`), and a rough time of day has none. Migration: none; no booking in the trips is on another clock.
+
 ### Plan status removed (Oct 2026)
 
 Stay, Transit and Activity have no `status` field. Every entry was `planning` and nothing read it, so it only contradicted the booking's status. Migration: the line was removed from all 211 entries in both trips.

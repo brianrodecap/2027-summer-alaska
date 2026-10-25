@@ -152,8 +152,8 @@ export function RouteStopsSection({ routeInfo }: { routeInfo: ResolvedRouteInfo 
   return (
     <DetailSection title={`Route stops · ${variant.label}`}>
       <Box component="ol" sx={{ pl: 2.5, m: 0 }}>
-        {variant.stages.map((stage) => (
-          <Typography component="li" variant="body2" key={stage.key}>
+        {variant.stages.map((stage, i) => (
+          <Typography component="li" variant="body2" key={`${i}:${stage.key}`}>
             {stage.place.label}
             <Typography component="span" variant="caption" color="text.secondary">
               {stage.kind === 'via' ? ' · via' : ''}

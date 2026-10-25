@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { fakeAnthropic, fakeMessage, streamedBody } from '../test/fakeAnthropic';
+import { type Block, fakeAnthropic, fakeMessage, streamedBody } from '../test/fakeAnthropic';
 import { createMessage, RequestAbortedError, streamMessage } from './anthropicClient';
 
 // The one adapter over the SDK, so its tests run through it: each hands the SDK a
@@ -55,7 +55,7 @@ describe('createMessage', () => {
 });
 
 describe('streamMessage', () => {
-  const streamed = (content: unknown[], stopReason = 'end_turn') =>
+  const streamed = (content: Block[], stopReason = 'end_turn') =>
     fakeAnthropic({ body: streamedBody(fakeMessage(content, stopReason)) });
 
   it('hands over text and thinking as they stream, and the whole message at the end', async () => {

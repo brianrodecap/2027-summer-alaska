@@ -5,6 +5,7 @@
 // share one request queue and one quota-cooldown state rather than each
 // pacing itself independently and, between them, still exceeding Open-Meteo's
 // per-IP limits.
+import type { ClientOptions } from './clientOptions';
 
 // Open-Meteo's free tier rate-limits bursts of concurrent requests — an
 // unvirtualized day list can easily resolve several dozen distinct places at
@@ -19,29 +20,6 @@
 // paces the request *rate*, which is what Open-Meteo enforces.
 const MAX_CONCURRENT_OPEN_METEO_REQUESTS = 1;
 const MIN_DISPATCH_INTERVAL_MS = 300;
-let activeOpenMeteoRequests = 0;
-let lastDispatchAt = 0;
-const openMeteoQueue: (() => void)[] = [];
-
-function runQueued<T>(task: () => Promise<T>): Promise<T> {
-  return new Promise((resolve, reject) => {
-    const run = () => {
-      const wait = Math.max(0, lastDispatchAt + MIN_DISPATCH_INTERVAL_MS - Date.now());
-      lastDispatchAt = Date.now() + wait;
-      activeOpenMeteoRequests++;
-      setTimeout(() => {
-        task()
-          .then(resolve, reject)
-          .finally(() => {
-            activeOpenMeteoRequests--;
-            openMeteoQueue.shift()?.();
-          });
-      }, wait);
-    };
-    if (activeOpenMeteoRequests < MAX_CONCURRENT_OPEN_METEO_REQUESTS) run();
-    else openMeteoQueue.push(run);
-  });
-}
 
 // A 429 from Open-Meteo means one of three different things, and only two of
 // them are worth a cooldown. A *minutely* burst limit is exactly what the
@@ -64,8 +42,7 @@ function runQueued<T>(task: () => Promise<T>): Promise<T> {
 // duration. A minutely-only reason returns null so the retry loop below
 // handles it — its own backoff comfortably clears 60s well before that
 // ladder's 9 attempts run out.
-function cooldownForReason(reason: string): number | null {
-  const now = Date.now();
+function cooldownForReason(reason: string, now: number): number | null {
   const HOUR_MS = 60 * 60 * 1000;
   const DAY_MS = 24 * HOUR_MS;
   const SLACK_MS = 60 * 1000;
@@ -78,32 +55,78 @@ function cooldownForReason(reason: string): number | null {
   return null;
 }
 
-let quotaBlockedUntil = 0;
+// What the client waits and fetches with: the browser's by default; tests pass
+// their own.
+export interface OpenMeteoEnv {
+  fetch: NonNullable<ClientOptions['fetch']>;
+  now: () => number;
+  sleep: (ms: number) => Promise<void>;
+}
 
-// Raw-JSON fetch/retry/cooldown, shared by every Open-Meteo-family host
-// (forecast/archive, air-quality, marine) — each has its own rate limit, but
-// they all speak the same "429, or a JSON body with an `error`/`reason`"
-// shape, so one retry ladder and one quota-cooldown check covers all of them.
-async function fetchOpenMeteoJsonWithRetry(url: string, attempt = 0): Promise<unknown> {
-  const res = await fetch(url);
-  const json = await res.json().catch(() => null);
-  if ((json as { error?: boolean } | null)?.error) {
-    const cooldown = cooldownForReason((json as { reason?: string }).reason ?? '');
-    if (cooldown !== null) {
-      quotaBlockedUntil = Date.now() + cooldown;
+// One queue and one quota-cooldown state per client; the app shares the one
+// below.
+export function createOpenMeteoClient(env: OpenMeteoEnv) {
+  let activeOpenMeteoRequests = 0;
+  let lastDispatchAt = 0;
+  const openMeteoQueue: (() => void)[] = [];
+
+  function runQueued<T>(task: () => Promise<T>): Promise<T> {
+    return new Promise((resolve, reject) => {
+      const run = () => {
+        const now = env.now();
+        const wait = Math.max(0, lastDispatchAt + MIN_DISPATCH_INTERVAL_MS - now);
+        lastDispatchAt = now + wait;
+        activeOpenMeteoRequests++;
+        env
+          .sleep(wait)
+          .then(task)
+          .then(resolve, reject)
+          .finally(() => {
+            activeOpenMeteoRequests--;
+            openMeteoQueue.shift()?.();
+          });
+      };
+      if (activeOpenMeteoRequests < MAX_CONCURRENT_OPEN_METEO_REQUESTS) run();
+      else openMeteoQueue.push(run);
+    });
+  }
+
+  let quotaBlockedUntil = 0;
+
+  // Raw-JSON fetch/retry/cooldown, shared by every Open-Meteo-family host
+  // (forecast/archive, air-quality, marine) — each has its own rate limit, but
+  // they all speak the same "429, or a JSON body with an `error`/`reason`"
+  // shape, so one retry ladder and one quota-cooldown check covers all of them.
+  async function fetchOpenMeteoJsonWithRetry(url: string, attempt = 0): Promise<unknown> {
+    const res = await env.fetch(url);
+    const json = await res.json().catch(() => null);
+    if ((json as { error?: boolean } | null)?.error) {
+      const now = env.now();
+      const cooldown = cooldownForReason((json as { reason?: string }).reason ?? '', now);
+      if (cooldown !== null) {
+        quotaBlockedUntil = now + cooldown;
+        return null;
+      }
+      if (attempt < 9) {
+        await env.sleep(Math.min(1000 * 2 ** attempt, 20_000));
+        return fetchOpenMeteoJsonWithRetry(url, attempt + 1);
+      }
       return null;
     }
-    if (attempt < 9) {
-      await new Promise((resolve) => setTimeout(resolve, Math.min(1000 * 2 ** attempt, 20_000)));
-      return fetchOpenMeteoJsonWithRetry(url, attempt + 1);
-    }
-    return null;
+    if (!res.ok) throw new Error(`Open-Meteo error ${res.status}`);
+    return json;
   }
-  if (!res.ok) throw new Error(`Open-Meteo error ${res.status}`);
-  return json;
+
+  function fetchOpenMeteoJson(url: string): Promise<unknown> {
+    if (env.now() < quotaBlockedUntil) return Promise.resolve(null);
+    return runQueued(() => fetchOpenMeteoJsonWithRetry(url));
+  }
+
+  return { fetchOpenMeteoJson };
 }
 
-export function fetchOpenMeteoJson(url: string): Promise<unknown> {
-  if (Date.now() < quotaBlockedUntil) return Promise.resolve(null);
-  return runQueued(() => fetchOpenMeteoJsonWithRetry(url));
-}
+export const { fetchOpenMeteoJson } = createOpenMeteoClient({
+  fetch: (...args) => globalThis.fetch(...args),
+  now: () => Date.now(),
+  sleep: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+});

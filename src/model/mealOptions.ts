@@ -7,12 +7,17 @@ import { DINING_FORMAT_LABEL } from './formatting';
 import {
   activitiesDeep,
   activityTimeLabel,
-  activityTimelineKey,
+  activityTimelineStart,
   activityWarnings,
+  activityZone,
+  compareTimes,
   dateOnly,
+  departure,
   resolveActivityDate,
   stayRelation,
   staysInScope,
+  stayZone,
+  type ZonedTime,
 } from './tripModel';
 import type {
   Activity,
@@ -26,14 +31,15 @@ import type {
   Transit,
 } from './types';
 
-type StayForOption = Pick<Stay, '_id' | 'packages' | 'checkInAt' | 'checkOutAt'>;
+type StayForOption = Pick<Stay, '_id' | 'packages' | 'checkInAt' | 'checkOutAt'> &
+  Partial<Pick<Stay, 'lodging' | 'clockZone'>>;
 
 // A Transit or Activity that may hold Packages (see packages.ts), with when it
-// starts: all a meal needs is whether a package ref names one of its packages
-// and whether the holder has begun.
+// starts (on its own clock): all a meal needs is whether a package ref names
+// one of its packages and whether the holder has begun.
 export interface PackageCarrier {
   packages?: Package[] | null;
-  startsAt: string;
+  startsAt: ZonedTime;
 }
 
 // The Transits under way on `date` (departed that day or earlier, not yet
@@ -42,17 +48,20 @@ export interface PackageCarrier {
 // the day's rows and the timeline builder use, so they can't disagree about
 // which meal candidates a package covers.
 export function packageCarriersOn(
-  transits: Pick<Transit, 'departsAt' | 'arrivesAt' | 'packages'>[],
-  activities: Pick<Activity, 'startAt' | 'date' | 'packages'>[],
+  transits: Pick<Transit, 'departsAt' | 'arrivesAt' | 'from' | 'packages'>[],
+  activities: Pick<Activity, 'startAt' | 'date' | 'place' | 'clockZone' | 'packages'>[],
   date: string,
 ): PackageCarrier[] {
   return [
     ...transits
       .filter((t) => dateOnly(t.departsAt) <= date && date <= dateOnly(t.arrivesAt ?? t.departsAt))
-      .map((t) => ({ packages: t.packages, startsAt: t.departsAt })),
+      .map((t) => ({ packages: t.packages, startsAt: departure(t) })),
     ...activities
       .filter((a) => resolveActivityDate(a as Activity) === date)
-      .map((a) => ({ packages: a.packages, startsAt: a.startAt ?? `${date}T00:00` })),
+      .map((a) => ({
+        packages: a.packages,
+        startsAt: { at: a.startAt ?? `${date}T00:00`, zone: activityZone(a) },
+      })),
   ];
 }
 
@@ -72,29 +81,37 @@ function stayForIncludedIn<S extends StayForOption>(stays: S[], includedIn: Ref 
 // A 'package' candidate held by a Transit or Activity (a tour's included lunch)
 // has no stay to wait for: it reads as covered from the holder's own start on
 // its own date, so `carriers` are those on the meal's date (packageCarriersOn).
-function carriesPackage(carriers: PackageCarrier[], includedIn: Ref | null, at: string): boolean {
+function carriesPackage(
+  carriers: PackageCarrier[],
+  includedIn: Ref | null,
+  at: ZonedTime,
+): boolean {
   if (!includedIn || !('entity' in includedIn) || includedIn.entity !== 'package') return false;
-  return carriers.some((c) => c.startsAt <= at && c.packages?.some((p) => p._id === includedIn.id));
+  return carriers.some(
+    (c) => compareTimes(c.startsAt, at) <= 0 && c.packages?.some((p) => p._id === includedIn.id),
+  );
 }
 
 // An 'included' or 'package' candidate only actually reads as covered once its
 // stay is underway — before check-in has happened there's no room to have
 // gotten breakfast bundled (or package-covered) into yet. On the check-in day
-// that's decided by the meal's own time (`at`, its timeline instant), not the
-// whole date: a first-night dinner onboard after a 3pm embarkation is covered.
+// that's decided by the meal's own time (`at`, on its own clock), not the
+// whole date: a first-night dinner onboard after a 3pm embarkation is covered,
+// each read on its own clock (compareTimes).
 // Any other diningFormat has no such precondition. `stays` is whichever Stays
 // overlap `date` (a Day's own stays, or the timeline's date-filtered set).
 function isIncludedOptionActive(
   stays: StayForOption[],
   carriers: PackageCarrier[],
   date: string,
-  at: string,
+  at: ZonedTime,
   option: Pick<MealOption, 'diningFormat' | 'includedIn'>,
 ): boolean {
   if (option.diningFormat !== 'included' && option.diningFormat !== 'package') return true;
   const stay = stayForIncludedIn(stays, option.includedIn);
   if (!stay) return carriesPackage(carriers, option.includedIn, at);
-  return stayRelation(stay, date) !== 'Check in' || at >= stay.checkInAt;
+  const checkIn = { at: stay.checkInAt, zone: stayZone(stay) };
+  return stayRelation(stay, date) !== 'Check in' || compareTimes(at, checkIn) >= 0;
 }
 
 // activity.options is only ever set while a meal is genuinely undecided
@@ -106,7 +123,7 @@ export function isMealActivity(activity: { options: unknown[] | null }): boolean
 }
 
 export function activeMealOptions(activity: EnrichedActivity, day: Day): EnrichedMealOption[] {
-  const at = activityTimelineKey(activity)?.at ?? `${day.date}T00:00`;
+  const at = activityTimelineStart(activity) ?? { at: `${day.date}T00:00`, zone: null };
   return activeMealOptionsOn(activity.options ?? [], day.stays, day.mealCarriers, day.date, at);
 }
 
@@ -117,7 +134,7 @@ export function activeMealOptionsOn<O extends Pick<MealOption, 'diningFormat' | 
   stays: StayForOption[],
   carriers: PackageCarrier[],
   date: string,
-  at: string,
+  at: ZonedTime,
 ): O[] {
   return options.filter((option) => isIncludedOptionActive(stays, carriers, date, at, option));
 }
@@ -146,7 +163,7 @@ export function selectedMealOptionOn(
   stays: StayForOption[],
   carriers: PackageCarrier[],
   date: string,
-  at: string,
+  at: ZonedTime,
   mealOptionIndex: ReadonlyMap<string, number>,
 ): MealOption | undefined {
   const options = activeMealOptionsOn(activity.options ?? [], stays, carriers, date, at);
@@ -218,14 +235,15 @@ export function selectedMealOptions(
   const selections = new Map<string, MealOption>();
   for (const activity of activities) {
     if (!isMealActivity(activity)) continue;
-    const key = activityTimelineKey(activity);
-    if (!key) continue;
+    const start = activityTimelineStart(activity);
+    if (!start) continue;
+    const date = dateOnly(start.at);
     const selected = selectedMealOptionOn(
       activity,
-      staysOn(key.date),
-      carriersOn(key.date),
-      key.date,
-      key.at,
+      staysOn(date),
+      carriersOn(date),
+      date,
+      start,
       mealOptionIndex,
     );
     if (selected) selections.set(activity._id, selected);
@@ -257,6 +275,7 @@ export function liveWarnings(activity: EnrichedActivity, day: Day): string[] {
       dayActivities(day),
       day.transits,
       staysInScope(day.stays, activity),
+      day.clock,
       day.selectedMeals,
     );
     byActivity.set(activity, warnings);

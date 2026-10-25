@@ -14,6 +14,7 @@ import { EntityHeroImage } from '../shared/EntityHeroImage';
 import { renderMaterialIcon, transitModeIconName } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
 import { PackagesSection, RouteStopsSection, TravelersSection } from './DetailSections';
+import { FlightStatusSection } from './FlightStatusSection';
 import { PlacePanel } from './PlacePanel';
 import { SeatList } from './SeatList';
 
@@ -76,6 +77,7 @@ export function TransitDetailPanel({
           {flight}
         </Typography>
       )}
+      <FlightStatusSection transit={transit} open={open} />
       <BookingSection
         booking={transit.booking}
         date={dateOnly(transit.departsAt)}

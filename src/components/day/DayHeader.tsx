@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 
 import type { Day } from '../../model/types';
+import { DayClockChip } from './DayClockChip';
 import { DayHolidayChip } from './DayHolidayChip';
 import { DayPortCallChip } from './DayPortCallChip';
 
@@ -26,6 +27,7 @@ export function DayHeader({
         <Typography variant="caption" color="text.secondary">
           {day.dateLabel}
         </Typography>
+        <DayClockChip day={day} />
         <DayHolidayChip date={day.date} />
         <DayPortCallChip day={day} />
       </Box>

@@ -19,12 +19,17 @@ import {
 } from './mealOptions';
 import {
   activityHeadline,
-  activityTimelineKey,
+  activityStart,
+  activityTimelineStart,
   addDaysStr,
-  addMinutesIso,
   dateOnly,
+  movedBy,
+  orderInstant,
   resolveTransitRoute,
   stayOverlapsDay,
+  stayZone,
+  type TripClock,
+  tripClock,
 } from './tripModel';
 import type {
   MealOption,
@@ -49,7 +54,9 @@ export type EventKind = 'check-in' | 'check-out' | 'depart' | 'route-stage' | 'a
 export interface TimelineEvent {
   id: string; // `${kind}:${sourceId}` (+ `:${stageIndex}`) — one scheme, no per-variant twins
   kind: EventKind;
-  at: string; // 'YYYY-MM-DDTHH:mm' wall clock; the ONLY sort key
+  at: string; // 'YYYY-MM-DDTHH:mm' wall clock, read on `zone`
+  zone: string | null; // the IANA zone `at` is on; null when its place has none
+  instant: number; // when it happens (orderInstant): the order every view keeps
   endAt: string | null; // an Activity's start + its explicit duration; null for point events
   date: string; // dateOnly(at): the display bucket, never used for logic
   source: { kind: 'stay' | 'transit' | 'activity'; id: string };
@@ -109,7 +116,12 @@ export function inScope(
   return scenarioId === null || activeScenarioIds.has(scenarioId);
 }
 
-export function buildTimeline(data: TimelineData, selections: TimelineSelections): Timeline {
+// `clock` is the trip's (tripClock), built once with the view when there is one.
+export function buildTimeline(
+  data: TimelineData,
+  selections: TimelineSelections,
+  clock: TripClock = tripClock(data),
+): Timeline {
   const { activeScenarioIds, routeTones, mealOptionIndex } = selections;
   const scoped = (scenarioId: string | null) => inScope(activeScenarioIds, scenarioId);
   const routesById = new Map(data.routes.map((r) => [r._id, r]));
@@ -118,26 +130,38 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
   const arrivalOf = new Map<string, string>();
   const routeInfoOf = new Map<string, ResolvedRouteInfo>();
 
+  // An event's clock is its place's zone unless it says otherwise.
   const push = (
-    event: Omit<TimelineEvent, 'date' | 'endAt' | 'fuzzy'> &
-      Partial<Pick<TimelineEvent, 'endAt' | 'fuzzy'>>,
+    event: Omit<TimelineEvent, 'date' | 'endAt' | 'fuzzy' | 'zone' | 'instant'> &
+      Partial<Pick<TimelineEvent, 'endAt' | 'fuzzy' | 'zone'>>,
     headline: string | null = null,
-  ) =>
+  ) => {
+    const zone = event.zone !== undefined ? event.zone : (event.place?.timeZone ?? null);
     pending.push({
-      event: { endAt: null, fuzzy: false, ...event, date: dateOnly(event.at) },
+      event: {
+        endAt: null,
+        fuzzy: false,
+        ...event,
+        zone,
+        instant: orderInstant({ at: event.at, zone }, clock),
+        date: dateOnly(event.at),
+      },
       headline,
     });
+  };
 
   for (const stay of data.stays as Stay[]) {
     if (!scoped(stay.scenarioId)) continue;
     const place = stay.lodging?.place ?? null;
     const source = { kind: 'stay' as const, id: stay._id };
+    const zone = stayZone(stay);
     push({
       id: `check-in:${stay._id}`,
       kind: 'check-in',
       at: stay.checkInAt,
       source,
       place,
+      zone,
       scenarioId: stay.scenarioId,
     });
     push({
@@ -146,6 +170,7 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
       at: stay.checkOutAt,
       source,
       place,
+      zone,
       scenarioId: stay.scenarioId,
     });
   }
@@ -194,7 +219,7 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
 
     // The route walk's own model default (routeVariant, else the first
     // variant) applies when the reader hasn't picked a tone for this Transit.
-    const info = resolveTransitRoute(transit, routesById, activities, {
+    const info = resolveTransitRoute(transit, routesById, activities, clock, {
       routeVariant: routeTones.get(transit._id),
       selectedMeals,
     });
@@ -206,6 +231,7 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
         id: `route-stage:${transit._id}:${i}`,
         kind: 'route-stage',
         at: stage.key,
+        zone: stage.zone,
         place: stage.place,
         stage,
         stageIndex: i,
@@ -218,6 +244,8 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
         id: `arrive:${transit._id}`,
         kind: 'arrive',
         at: arrivesAt,
+        // A routed arrival is on the clock its walk reached it on.
+        ...(variant ? { zone: variant.arrivesZone } : {}),
         place: transit.to,
         ...common,
       });
@@ -225,19 +253,24 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
   }
 
   for (const a of activities) {
-    const key = activityTimelineKey(a);
-    if (!key) continue; // undated: not on the timeline yet
-    const { at } = key;
+    const start = activityTimelineStart(a);
+    if (!start) continue; // undated: not on the timeline yet
     push(
       {
         id: `activity:${a._id}`,
         kind: 'activity',
-        at,
-        endAt: a.startAt && a.durationMinutes ? addMinutesIso(a.startAt, a.durationMinutes) : null,
+        at: start.at,
+        endAt:
+          a.startAt && a.durationMinutes
+            ? movedBy(activityStart(a), a.durationMinutes, clock)
+            : null,
         source: { kind: 'activity', id: a._id },
         // A still-open meal is wherever its selected candidate is, so the map,
         // route URLs, travel totals and the row footers all read that answer.
         place: isMealActivity(a) ? (selectedMeals.get(a._id)?.place ?? null) : a.place,
+        // Its own clock (activityZone: its clockZone, else its place's), whichever
+        // candidate is picked, as scenario anchors read it (activityTimelineStart).
+        zone: start.zone,
         scenarioId: a.scenarioId,
         fuzzy: !a.startAt,
       },
@@ -246,12 +279,7 @@ export function buildTimeline(data: TimelineData, selections: TimelineSelections
   }
 
   const events = pending
-    .sort((a, b) => {
-      // Plain string comparison, like the day rows' own sort — the timestamps
-      // share one fixed-width format, and locale collation isn't wanted here.
-      if (a.event.at !== b.event.at) return a.event.at < b.event.at ? -1 : 1;
-      return tieBreak(a, b);
-    })
+    .sort((a, b) => a.event.instant - b.event.instant || tieBreak(a, b))
     .map((p) => p.event);
   return { events, arrivalOf, routeInfoOf, selectedMeals, carriersOn };
 }

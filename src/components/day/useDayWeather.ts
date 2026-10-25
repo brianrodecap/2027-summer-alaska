@@ -1,5 +1,6 @@
 import { hasGoogleApiKey } from '../../config/apiKeys';
 import { useKeyedAsync } from '../../hooks/useKeyedAsync';
+import { todayDateStr } from '../../model/tripModel';
 import { type DayWeather, type DayWeatherPlaces, getDayWeather } from '../../model/weather';
 
 interface DayWeatherState {
@@ -27,7 +28,7 @@ export function useDayWeather(places: DayWeatherPlaces, date: string): DayWeathe
     value: weather,
     loading,
     failed,
-  } = useKeyedAsync(key, shouldFetch, () => getDayWeather(places, date));
+  } = useKeyedAsync(key, shouldFetch, () => getDayWeather(places, date, todayDateStr()));
 
   return { weather, loading, failed };
 }

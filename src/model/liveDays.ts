@@ -60,7 +60,8 @@ function groupsSignature(groups: ScenarioGroup[], date: string): string {
   return groups
     .filter((g) => g.anchorAtByDate[date] !== undefined)
     .map(
-      (g) => `${g.key}:${g.activeId}:${g.anchorAtByDate[date]}:${g.membersByDate[date]?.join(',')}`,
+      (g) =>
+        `${g.key}:${g.activeId}:${g.anchorAtByDate[date]?.at}@${g.anchorAtByDate[date]?.zone}:${g.membersByDate[date]?.join(',')}`,
     )
     .join(';');
 }
@@ -83,7 +84,12 @@ function liveTransits(
     live.set(
       id,
       routeInfo || (arrivesAt && arrivesAt !== t.arrivesAt)
-        ? { ...t, routeInfo: routeInfo ?? t.routeInfo, arrivesAt: arrivesAt ?? t.arrivesAt }
+        ? {
+            ...t,
+            routeInfo: routeInfo ?? t.routeInfo,
+            arrivesAt: arrivesAt ?? t.arrivesAt,
+            arrivesZone: routeInfo ? routeInfo.resolvedArrivesZone : t.arrivesZone,
+          }
         : t,
     );
   }
@@ -149,18 +155,26 @@ function withLiveShares<T extends ShareHolder>(
 }
 
 export function buildLiveDays(
-  view: Pick<TripView, 'days' | 'activitiesById' | 'transitsById' | 'staysById' | 'scenarioNotes'>,
+  view: Pick<
+    TripView,
+    'days' | 'activitiesById' | 'transitsById' | 'staysById' | 'scenarioNotes' | 'clock'
+  >,
   data: TripData,
   selections: LiveSelections,
   previous?: Map<string, LiveDayCache>,
 ): LiveDays {
   const resolved = resolveActiveScenarios(data, selections.scenarioPicks);
   const groups = scenarioGroups(data, resolved);
-  const timeline = buildTimeline(data, {
-    activeScenarioIds: resolved.activeIds,
-    routeTones: selections.routeTones,
-    mealOptionIndex: selections.mealOptionIndex,
-  });
+  const { clock } = view;
+  const timeline = buildTimeline(
+    data,
+    {
+      activeScenarioIds: resolved.activeIds,
+      routeTones: selections.routeTones,
+      mealOptionIndex: selections.mealOptionIndex,
+    },
+    clock,
+  );
 
   // A sharer on a picked branch, and for a meal candidate, the selected one.
   const sees = (s: Sharer) =>
@@ -197,7 +211,8 @@ export function buildLiveDays(
     // which meal candidates are active.
     const carriers = timeline.carriersOn(day.date);
     const carrierKeys = carriers.map(
-      (c) => `${c.startsAt}:${(c.packages ?? []).map((p) => p._id).join('+')}`,
+      (c) =>
+        `${c.startsAt.at}@${c.startsAt.zone}:${(c.packages ?? []).map((p) => p._id).join('+')}`,
     );
     // Where each of the day's shared bookings shows, which a pick on another
     // day can move.
@@ -239,6 +254,7 @@ export function buildLiveDays(
       transits: transitsById,
       notesForScenario: (s) => view.scenarioNotes.get(s._id) ?? [],
       membersOfScenario,
+      clock,
     });
     const header = liveHeader({
       frame: day,
@@ -260,6 +276,7 @@ export function buildLiveDays(
       scenarioTracks: layout.scenarioTracks,
       visits: buildDayVisits({ date: day.date, rows: layout.rows, index }),
       selectedMeals: timeline.selectedMeals,
+      clock,
       mealCarriers: carriers,
       title: '', // filled in by pass 2
     };

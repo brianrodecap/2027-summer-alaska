@@ -16,10 +16,14 @@ import Typography from '@mui/material/Typography';
 import { useState } from 'react';
 
 import {
-  getAnthropicApiKey,
-  getGoogleApiKey,
+  API_KEY_NAMES,
+  apiKeyHelp,
+  apiKeyLabel,
+  keyNeedsReload,
   keysChanged,
+  listKeys,
   saveApiKeys,
+  savedApiKeys,
 } from '../../config/apiKeys';
 import type { ThemePreference } from '../../config/themePreference';
 import { useThemePreference } from '../../state/useThemePreference';
@@ -103,15 +107,12 @@ function ApiKeyField({
   );
 }
 
+const reloadKeys = API_KEY_NAMES.filter(keyNeedsReload);
+
 function ApiKeysSection() {
-  const [saved, setSaved] = useState(() => ({
-    anthropic: getAnthropicApiKey(),
-    google: getGoogleApiKey(),
-  }));
-  const [anthropic, setAnthropic] = useState(saved.anthropic);
-  const [google, setGoogle] = useState(saved.google);
+  const [saved, setSaved] = useState(savedApiKeys);
+  const [entered, setEntered] = useState(saved);
   const [error, setError] = useState<string | null>(null);
-  const entered = { anthropic, google };
   const changed = keysChanged(entered, saved);
 
   const handleSave = () => {
@@ -129,21 +130,20 @@ function ApiKeysSection() {
       <Typography variant="subtitle2" component="h3">
         API keys
       </Typography>
-      <ApiKeyField
-        label="Anthropic API key"
-        helperText="For the assistant and document import. Sent only to api.anthropic.com."
-        value={anthropic}
-        onChange={setAnthropic}
-      />
-      <ApiKeyField
-        label="Google API key"
-        helperText="For maps, place details, photos and weather. Sent only to Google."
-        value={google}
-        onChange={setGoogle}
-      />
+      {API_KEY_NAMES.map((name) => (
+        <ApiKeyField
+          key={name}
+          label={`${apiKeyLabel(name)} API key`}
+          helperText={apiKeyHelp(name)}
+          value={entered[name]}
+          onChange={(value) => setEntered((keys) => ({ ...keys, [name]: value }))}
+        />
+      ))}
       {error && <Alert severity="warning">{error}</Alert>}
       <Typography variant="caption" color="text.secondary">
-        Kept only in this browser, never committed. Saving a new Google key reloads the page.
+        Kept only in this browser, never committed.
+        {reloadKeys.length > 0 &&
+          ` Saving a new ${listKeys(reloadKeys, 'disjunction')} key reloads the page.`}
       </Typography>
       <Button
         variant="contained"

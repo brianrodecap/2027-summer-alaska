@@ -2,6 +2,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 
 import type { StayFormState, TransitFormState } from '../../model/editForms';
+import { ClockZoneField } from './ClockZoneField';
 import { DateTimeFieldPair } from './DateTimeFieldPair';
 import { PlaceConditionsTogglesFor } from './PlaceConditionsToggles';
 import { PlacePickerField } from './PlacePickerField';
@@ -102,6 +103,10 @@ export function StayWhenFields({
         timeValue={form.checkOutTime}
         onDateChange={(v) => onChange({ ...form, checkOutDate: v })}
         onTimeChange={(v) => onChange({ ...form, checkOutTime: v })}
+      />
+      <ClockZoneField
+        value={form.clockZone}
+        onChange={(clockZone) => onChange({ ...form, clockZone })}
       />
     </Stack>
   );

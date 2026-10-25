@@ -257,7 +257,11 @@ export function timeAndMealTypeLabel(
     options: MealOption[] | null;
   },
   timeOverride?: string,
+  clock = '', // the clock to follow the time with (clockSuffix), on a day it moves
 ): string {
-  const time = timeOverride ?? activityTimeLabel(activity);
+  const time = `${timeOverride ?? activityTimeLabel(activity)}${clock}`;
   return `${time} · ${activity.mealType ? MEAL_TYPE_LABEL[activity.mealType] : 'Activity'}`;
 }
+
+// A time zone as the forms show it: 'America/Port of Spain'.
+export const zoneLabel = (zone: string) => zone.replace(/_/g, ' ');

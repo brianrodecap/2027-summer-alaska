@@ -29,12 +29,21 @@ import {
   activityDurationMinutes,
   activityNodeKey,
   activitySortKey,
-  addMinutesIso,
+  activityStart,
+  activityZone,
   dateOnly,
-  diffMinutesIso,
+  departure,
+  earliestTime,
+  minutesBetween,
+  movedBy,
+  onClockOf,
+  orderInstant,
   stageNodeKey,
   stayNodeKey,
   transitBoundaryKey,
+  type TripClock,
+  tripClock,
+  type ZonedTime,
 } from './tripModel';
 import type { Activity, DayRow, ScenarioTrack, Stay, Transit, TripData } from './types';
 
@@ -101,7 +110,14 @@ export function rowMembersOf(meta: DragMeta): ReorderMembers {
 
 type ActivityTiming = Pick<
   Activity,
-  '_id' | 'startAt' | 'timeLabel' | 'durationMinutes' | 'mealType' | 'diningFormat' | 'options'
+  | '_id'
+  | 'startAt'
+  | 'timeLabel'
+  | 'place'
+  | 'durationMinutes'
+  | 'mealType'
+  | 'diningFormat'
+  | 'options'
 >;
 
 // An anchor row's own end-of-event moment — what a dropped Activity lands
@@ -114,9 +130,9 @@ type ActivityTiming = Pick<
 // shared instant is fine — see DragMeta's own note below for how the
 // resulting tie actually gets resolved in the dragged Activity's favor,
 // without needing to nudge the anchor's own timestamp at all.
-function activityAnchorEndAt(activity: ActivityTiming, dayStart: string): string {
+function activityAnchorEndAt(activity: ActivityTiming, dayStart: string, clock: TripClock): string {
   if (!activity.startAt) return activitySortKey(activity, dayStart);
-  return activityEndAt(activity.startAt, activity);
+  return activityEndAt(activityStart(activity), activity, clock);
 }
 
 // One entry per row DayTimeline actually renders (Stay/Transit boundary or
@@ -202,6 +218,11 @@ export interface DragMeta {
   // room for or take a slot from — would just be a meaningless, un-asked-for
   // time change.
   endAt: string | null;
+  // The clock `endAt` reads on: the anchor's zone, null when it has none (then
+  // it reads on the trip's clock, as the day list does). A drop converts endAt
+  // onto the dragged entity's own clock (dropEndOn), so it lands right after
+  // the anchor in real time.
+  endZone: string | null;
   // The container's own day-start (`${date}T00:00`) — always populated,
   // regardless of endAt — so DaysView.tsx's handleDragEnd can resolve which
   // calendar day a drop landed on (needed for resolveDropTiming's own
@@ -240,6 +261,7 @@ export interface DragMeta {
   cascadeActivityIds?: string[];
   before?: {
     endAt: string;
+    endZone: string | null;
     legId: string;
     anchorEntityId: AnchorEntity | null;
     anchorTimeLabel: string | null;
@@ -258,6 +280,7 @@ export interface DragMeta {
 
 interface RealAnchor {
   endAt: string;
+  zone: string | null; // the clock endAt and activityStartAt read on
   legId: string;
   entityId: AnchorEntity | null;
   activityStartAt: string | null;
@@ -272,12 +295,13 @@ interface RealAnchor {
 // true chronological order — what Check-out/Check-in's own drop targets
 // (above) resolve against, since they're excluded from this list even
 // though they're physically first/last in `flattened`.
-function buildRealAnchors(flattened: DayRow[], dayStart: string): RealAnchor[] {
+function buildRealAnchors(flattened: DayRow[], dayStart: string, clock: TripClock): RealAnchor[] {
   const anchors: RealAnchor[] = [];
   for (const row of flattened) {
     if (row.type === 'transit') {
       anchors.push({
         endAt: row.key,
+        zone: row.event.zone,
         legId: row.transit.legId,
         entityId: { kind: 'transit', id: row.transit._id },
         activityStartAt: null,
@@ -286,7 +310,8 @@ function buildRealAnchors(flattened: DayRow[], dayStart: string): RealAnchor[] {
     } else if (row.type === 'activity') {
       const { activity } = row;
       anchors.push({
-        endAt: activityAnchorEndAt(activity, dayStart),
+        endAt: activityAnchorEndAt(activity, dayStart, clock),
+        zone: row.event.zone,
         legId: activity.legId,
         entityId: { kind: 'activity', id: activity._id },
         activityStartAt: activity.startAt,
@@ -359,8 +384,10 @@ export function buildDragMeta(
   // DragMeta entry (a whole sub-timeline, not a single row, so it has no
   // real anchor of its own to take a legId from).
   dayLegId: string,
+  // The trip's clock (Day.clock): an Activity anchor's end is real minutes on it.
+  clock: TripClock,
 ): DragMeta[] {
-  const realAnchors = buildRealAnchors(flattened, dayStart);
+  const realAnchors = buildRealAnchors(flattened, dayStart, clock);
   const firstActivityIdx = realAnchors.findIndex((a) => a.entityId?.kind === 'activity');
   const lastAnchor = realAnchors[realAnchors.length - 1] ?? null;
 
@@ -397,6 +424,7 @@ export function buildDragMeta(
     return {
       before: {
         endAt: preceding?.endAt ?? own.activityStartAt ?? own.endAt,
+        endZone: (preceding ?? own).zone,
         legId: preceding?.legId ?? ownLegId,
         anchorEntityId: preceding?.entityId ?? null,
         anchorTimeLabel: preceding ? preceding.timeLabel : own.timeLabel,
@@ -422,6 +450,7 @@ export function buildDragMeta(
             {
               id,
               endAt: first?.activityStartAt ?? null,
+              endZone: first?.zone ?? null,
               legId: first?.legId ?? item.stay.legId,
               scenarioId,
               source: null, // Check-out is never a drag source — see applyStayReorder
@@ -438,6 +467,7 @@ export function buildDragMeta(
             {
               id,
               endAt: lastAnchor?.endAt ?? null,
+              endZone: lastAnchor?.zone ?? null,
               legId: lastAnchor?.legId ?? item.stay.legId,
               scenarioId,
               // Check-in is the one row a Stay is draggable via (see
@@ -462,6 +492,7 @@ export function buildDragMeta(
           {
             id,
             endAt: null,
+            endZone: null,
             legId: item.stay.legId,
             scenarioId,
             source: null, // a 'Staying' row is never a drag source
@@ -477,6 +508,7 @@ export function buildDragMeta(
           {
             id,
             endAt: item.key,
+            endZone: item.event.zone,
             legId: item.transit.legId,
             scenarioId,
             // Only Depart carries a 'transit' source — the whole compound
@@ -498,6 +530,7 @@ export function buildDragMeta(
           {
             id,
             endAt: item.key,
+            endZone: item.event.zone,
             legId: item.transit.legId,
             scenarioId,
             source: null, // a route stage is never independently draggable
@@ -515,7 +548,8 @@ export function buildDragMeta(
         return [
           {
             id,
-            endAt: activityAnchorEndAt(activity, dayStart),
+            endAt: activityAnchorEndAt(activity, dayStart, clock),
+            endZone: item.event.zone,
             legId: activity.legId,
             scenarioId,
             source: { kind: 'activity', id: activity._id },
@@ -548,6 +582,7 @@ export function buildDragMeta(
       // is a drop target only (source: null), never a drag source itself.
       const sharedFields = {
         endAt: item.key,
+        endZone: item.zone,
         legId: dayLegId,
         scenarioId,
         anchorEntityId: null,
@@ -631,16 +666,25 @@ export function resolveDropTiming(
   return { startAt };
 }
 
-// An Activity's own end-of-event moment starting from a given `startAt` —
-// same duration math as activityAnchorEndAt, just without that function's
-// day-start fallback, since every caller here already has a real startAt in
-// hand.
+// A drop's anchor time on the clock of the entity it moves (`zone`, else the
+// trip's), so it lands right after the anchor in real time; null with no anchor.
+function dropEndOn(meta: DragMeta, zone: string | null | undefined, clock: TripClock) {
+  return meta.endAt === null
+    ? null
+    : onClockOf({ at: meta.endAt, zone: meta.endZone }, zone, clock);
+}
+
+// An Activity's own end-of-event moment starting from a given start — same
+// duration math as activityAnchorEndAt, just without that function's
+// day-start fallback, since every caller here already has a real start in
+// hand. Its length is real minutes on the start's clock (movedBy).
 function activityEndAt(
-  startAt: string,
+  start: ZonedTime,
   activity: Pick<Activity, '_id' | 'durationMinutes' | 'mealType' | 'diningFormat' | 'options'>,
+  clock: TripClock,
 ): string {
   const minutes = activityDurationMinutes(activity);
-  return minutes == null ? startAt : addMinutesIso(startAt, minutes);
+  return minutes == null ? start.at : movedBy(start, minutes, clock);
 }
 
 // Pushes `cascadeActivityIds` later to clear the space a drop just took
@@ -660,28 +704,33 @@ function activityEndAt(
 //     first slot pushes the entire rest of the day back by exactly that much
 //     — there's no "already has room" case to stop early at.
 // A fuzzy (no-startAt) Activity has nothing to shift against/from, so it's
-// skipped in either policy without breaking the walk.
+// skipped in either policy without breaking the walk. Both work in real time,
+// each Activity on its own clock: `minimal`'s "already has room" compares
+// instants, and `uniform` moves by real minutes.
 function cascadeShift(
   activities: Activity[],
   cascadeActivityIds: string[],
-  policy: { kind: 'minimal'; startAfter: string } | { kind: 'uniform'; shiftMinutes: number },
+  policy: { kind: 'minimal'; startAfter: ZonedTime } | { kind: 'uniform'; shiftMinutes: number },
+  clock: TripClock,
 ): Activity[] {
   const byId = new Map(activities.map((a) => [a._id, a]));
   const shifted = new Map<string, Activity>();
   if (policy.kind === 'uniform') {
     for (const id of cascadeActivityIds) {
       const a = byId.get(id);
-      if (a?.startAt)
-        shifted.set(id, { ...a, startAt: addMinutesIso(a.startAt, policy.shiftMinutes) });
+      if (a?.startAt) {
+        shifted.set(id, { ...a, startAt: movedBy(activityStart(a), policy.shiftMinutes, clock) });
+      }
     }
   } else {
-    let requiredStart = policy.startAfter;
+    let required = policy.startAfter;
     for (const id of cascadeActivityIds) {
       const a = byId.get(id);
       if (!a?.startAt) continue;
-      if (a.startAt >= requiredStart) break;
-      shifted.set(id, { ...a, startAt: requiredStart });
-      requiredStart = activityEndAt(requiredStart, a);
+      if (orderInstant(activityStart(a), clock) >= orderInstant(required, clock)) break;
+      const moved = { ...a, startAt: onClockOf(required, activityStart(a).zone, clock) };
+      shifted.set(id, moved);
+      required = { ...activityStart(moved), at: activityEndAt(activityStart(moved), a, clock) };
     }
   }
   return activities.map((a) => shifted.get(a._id) ?? a);
@@ -750,7 +799,8 @@ export function applyActivityReorder(
     dropMeta.kind === 'front-takeover' && activityDurationMinutes(activity) == null;
   const skipTakeover = preserveOwnTiming || isNoOpFrontTakeover;
   const anchorTimeLabel = skipTakeover ? null : dropMeta.anchorTimeLabel;
-  const endAt = skipTakeover ? null : dropMeta.endAt;
+  const clock = tripClock(data);
+  const endAt = skipTakeover ? null : dropEndOn(dropMeta, activityZone(activity), clock);
 
   let rest = data.activities.filter((a) => a._id !== activityId);
 
@@ -806,7 +856,18 @@ export function applyActivityReorder(
         cascadeActivityIds,
         dropMeta.kind === 'day-start'
           ? { kind: 'uniform', shiftMinutes: activityDurationMinutes(activity) ?? 1 }
-          : { kind: 'minimal', startAfter: activityEndAt(resolved.startAt, activity) },
+          : {
+              kind: 'minimal',
+              startAfter: {
+                at: activityEndAt(
+                  { ...activityStart(activity), at: resolved.startAt },
+                  activity,
+                  clock,
+                ),
+                zone: activityZone(activity),
+              },
+            },
+        clock,
       );
     }
   }
@@ -831,13 +892,13 @@ export function applyActivityReorder(
 // from departsAt on every render, so only departsAt needs to move for it.
 // An unrouted Transit's arrivesAt is its own authored field, though —
 // shifting departsAt alone would silently collapse or inflate its
-// duration, so arrivesAt shifts by the same delta to preserve it exactly.
-// Shared by applyTransitReorder (a lone Transit drag) and applyBlockReorder
-// (every Transit in a dragged scenario-group bundle).
-function shiftedArrivesAt(transit: Transit, deltaMinutes: number): string | null {
+// duration, so arrivesAt shifts by the same real delta, on its destination's
+// clock, to preserve it exactly. Shared by applyTransitReorder (a lone Transit
+// drag) and applyBlockReorder (every Transit in a dragged scenario-group bundle).
+function shiftedArrivesAt(transit: Transit, deltaMinutes: number, clock: TripClock) {
   return transit.routeId || !transit.arrivesAt
     ? transit.arrivesAt
-    : addMinutesIso(transit.arrivesAt, deltaMinutes);
+    : movedBy({ at: transit.arrivesAt, zone: transit.to.timeZone ?? null }, deltaMinutes, clock);
 }
 
 // Repositions a dragged entity within its own array, immediately after
@@ -876,15 +937,17 @@ export function applyTransitReorder(
   const transit = data.transits.find((t) => t._id === transitId);
   if (!transit) return data;
 
-  const endAt = preserveOwnTiming ? null : dropMeta.endAt;
+  const clock = tripClock(data);
+  const endAt = preserveOwnTiming ? null : dropEndOn(dropMeta, transit.from.timeZone, clock);
   const crossesDay = dateOnly(transit.departsAt) !== dateOnly(dayStart);
   const timing = resolveDropTiming(endAt, dayStart, transit.departsAt, crossesDay);
-  const deltaMinutes = diffMinutesIso(transit.departsAt, timing.startAt);
+  const departs = departure(transit);
+  const deltaMinutes = minutesBetween(departs, { ...departs, at: timing.startAt }, clock);
 
   const updated: Transit = {
     ...transit,
     departsAt: timing.startAt,
-    arrivesAt: shiftedArrivesAt(transit, deltaMinutes),
+    arrivesAt: shiftedArrivesAt(transit, deltaMinutes, clock),
     legId: dropMeta.legId,
     scenarioId: dropMeta.scenarioId,
   };
@@ -959,22 +1022,23 @@ export function applyBlockReorder(
   // correct timing no-op below) rather than early-returning `data`
   // unchanged, so legId still reassigns to every member below even in that
   // edge case (the plan's own "legId reassigns unconditionally" requirement).
-  let anchorTime: string | null = null;
-  for (const a of data.activities) {
-    if (activityIds.has(a._id) && a.startAt && (anchorTime === null || a.startAt < anchorTime)) {
-      anchorTime = a.startAt;
-    }
-  }
-  for (const t of data.transits) {
-    if (transitIds.has(t._id) && (anchorTime === null || t.departsAt < anchorTime)) {
-      anchorTime = t.departsAt;
-    }
-  }
+  // The earliest member in real time, each on its own clock, and the block
+  // moves by real minutes, so members on other clocks keep their real offsets.
+  const clock = tripClock(data);
+  const anchor = earliestTime(
+    [
+      ...data.activities.filter((a) => activityIds.has(a._id) && a.startAt).map(activityStart),
+      ...data.transits.filter((t) => transitIds.has(t._id)).map(departure),
+    ],
+    clock,
+  );
+  const anchorTime = anchor?.at ?? null;
   const crossesDay = anchorTime !== null && dateOnly(anchorTime) !== dateOnly(dayStart);
-  const timing = anchorTime
-    ? resolveDropTiming(dropMeta.endAt, dayStart, anchorTime, crossesDay)
+  const timing = anchor
+    ? resolveDropTiming(dropEndOn(dropMeta, anchor.zone, clock), dayStart, anchor.at, crossesDay)
     : null;
-  const deltaMinutes = timing && anchorTime ? diffMinutesIso(anchorTime, timing.startAt) : 0;
+  const deltaMinutes =
+    anchor && timing ? minutesBetween(anchor, { ...anchor, at: timing.startAt }, clock) : 0;
   const reassignedScenarioId = (id: string, currentScenarioId: string | null) =>
     scenarioReassignIds.has(id) ? dropMeta.scenarioId : currentScenarioId;
 
@@ -995,7 +1059,7 @@ export function applyBlockReorder(
       if (!activityIds.has(a._id)) return a;
       return {
         ...a,
-        startAt: a.startAt ? addMinutesIso(a.startAt, deltaMinutes) : a.startAt,
+        startAt: a.startAt ? movedBy(activityStart(a), deltaMinutes, clock) : a.startAt,
         date: a.startAt ? a.date : dateOnly(dayStart),
         legId: dropMeta.legId,
         scenarioId: reassignedScenarioId(a._id, a.scenarioId),
@@ -1005,8 +1069,8 @@ export function applyBlockReorder(
       if (!transitIds.has(t._id)) return t;
       return {
         ...t,
-        departsAt: addMinutesIso(t.departsAt, deltaMinutes),
-        arrivesAt: shiftedArrivesAt(t, deltaMinutes),
+        departsAt: movedBy(departure(t), deltaMinutes, clock),
+        arrivesAt: shiftedArrivesAt(t, deltaMinutes, clock),
         legId: dropMeta.legId,
         scenarioId: reassignedScenarioId(t._id, t.scenarioId),
       };
@@ -1080,7 +1144,12 @@ export function applyGroupActivityReorder(
     if (!placed) continue;
     nextDropMeta = {
       ...nextDropMeta,
-      endAt: placed.startAt ? activityEndAt(placed.startAt, placed) : nextDropMeta.endAt,
+      // Read on the clock as it stands with this member placed, as the next
+      // member's drop (applyActivityReorder) reads it.
+      ...(placed.startAt && {
+        endAt: activityEndAt(activityStart(placed), placed, tripClock(result)),
+        endZone: activityStart(placed).zone,
+      }),
       anchorEntityId: { kind: 'activity', id: placed._id },
       // Carries the just-placed Activity's own fuzzy label forward (or null
       // once a real startAt has taken over), same as buildDragMeta computes
@@ -1269,10 +1338,16 @@ export function applyGroupDragEnd(
     const originContainerByActivityId = new Map(
       selectedRows.map((row) => [row.members.activityIds[0], row.containerId]),
     );
+    // Chained in the order the day list shows them (orderInstant).
+    const clock = tripClock(data);
     const groupIds = data.activities
       .filter((a) => originContainerByActivityId.has(a._id))
-      .sort((a, b) => activitySortKey(a, dayStart).localeCompare(activitySortKey(b, dayStart)))
-      .map((a) => a._id);
+      .map((a) => ({
+        id: a._id,
+        at: orderInstant({ ...activityStart(a), at: activitySortKey(a, dayStart) }, clock),
+      }))
+      .sort((x, y) => x.at - y.at)
+      .map(({ id }) => id);
     const next = applyGroupActivityReorder(data, dropMeta, groupIds, dayStart, (id) => {
       const originContainerId = originContainerByActivityId.get(id) ?? null;
       return (

@@ -23,6 +23,8 @@ export interface AskAIToolContext {
   data: TripData;
   view: TripView;
   byDate: ReadonlyMap<string, Day>;
+  // The reader's date when the turn started: where the forecast window begins.
+  today: string;
   // Where search_places records what it found (see PlaceSearches).
   placeSearches: PlaceSearches;
   // Runs search_places' query: Google's Text Search, or a test's stub.
@@ -86,6 +88,7 @@ function describeRows(rows: DayRow[], indent: string): string[] {
         const tags = [
           a.mealType,
           a.durationMinutes ? `${a.durationMinutes} min` : null,
+          a.clockZone ? `clockZone ${a.clockZone}` : null,
           a.booking ? `booking ${a.booking.status}` : null,
         ].filter(Boolean);
         const line = `${indent}${rowTime(row.event.at, row.event.fuzzy)} Activity ${a._id}: ${activityHeadline(a) || '(untitled)'}${placeTag(row.event.place ?? a.place)}${tags.length ? ` [${tags.join(', ')}]` : ''}`;
@@ -99,7 +102,7 @@ function describeRows(rows: DayRow[], indent: string): string[] {
         const s = row.stay;
         const when = row.event ? rowTime(row.event.at, row.event.fuzzy) : 'all day';
         return [
-          `${indent}${when} ${row.relation}: ${s.lodging?.place.label ?? '(unnamed lodging)'} — Stay ${s._id}${placeTag(s.lodging?.place)}${bookingTag(s)}`,
+          `${indent}${when} ${row.relation}: ${s.lodging?.place.label ?? '(unnamed lodging)'} — Stay ${s._id}${placeTag(s.lodging?.place)}${s.clockZone ? ` [clockZone ${s.clockZone}]` : ''}${bookingTag(s)}`,
         ];
       }
       case 'transit': {
@@ -236,7 +239,7 @@ const READ_TOOL_DEFINITIONS: BetaTool[] = [
   {
     name: 'search_places',
     description:
-      'Search Google Places for a real place (restaurant, trailhead, museum, ...) — returns up to five matches with their place ids, which propose_edit and propose_day_plan accept as placeId.',
+      'Search Google Places for a real place (restaurant, trailhead, museum, ...) — returns up to five matches with their place ids, which propose_edit, propose_day_plan, propose_alternative and propose_route accept as placeId.',
     input_schema: {
       type: 'object',
       properties: {
@@ -306,6 +309,7 @@ export async function runReadTool(
           marinePlaceId: null,
         },
         date,
+        ctx.today,
       );
       if (!weather) return `No weather is available for ${date} (no resolvable place that day).`;
       return JSON.stringify({ date, location: day.location, ...weather });
@@ -329,7 +333,10 @@ export async function runReadTool(
         ctx.placeSearches.emptyQueries.add(query);
         throw err;
       });
-      for (const p of results) ctx.placeSearches.placeIds.add(p.id);
+      for (const p of results) {
+        ctx.placeSearches.placeIds.add(p.id);
+        if (p.timeZone) ctx.placeSearches.timeZones.set(p.id, p.timeZone);
+      }
       if (!results.length) {
         ctx.placeSearches.emptyQueries.add(query);
         return 'No places found.';

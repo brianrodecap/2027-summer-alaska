@@ -325,7 +325,7 @@ describe('scenarioGroups (display)', () => {
       activity('1', 'i', '2027-06-01T10:00'),
       activity('2', 'a', '2027-06-01T08:00'),
     ]);
-    expect(group.anchorAtByDate['2027-06-01']).toBe('2027-06-01T10:00');
+    expect(group.anchorAtByDate['2027-06-01']?.at).toBe('2027-06-01T10:00');
   });
 
   it('lets a sibling anchor the box when the default member has only a Stay boundary', () => {
@@ -333,7 +333,7 @@ describe('scenarioGroups (display)', () => {
       [activity('1', 'a', '2027-06-01T08:00')],
       [stay('s', 'i', '2027-05-30T15:00', '2027-06-01T11:00')],
     );
-    expect(group.anchorAtByDate['2027-06-01']).toBe('2027-06-01T08:00');
+    expect(group.anchorAtByDate['2027-06-01']?.at).toBe('2027-06-01T08:00');
   });
 
   it('gives a multi-day scenario a box position on each date, and orders scenarios ideal first', () => {
@@ -343,8 +343,8 @@ describe('scenarioGroups (display)', () => {
       activity('3', 'a', '2027-06-01T09:00'),
     ]);
     expect(group.anchorAtByDate).toEqual({
-      '2027-06-01': '2027-06-01T09:00',
-      '2027-06-02': '2027-06-02T13:00',
+      '2027-06-01': { at: '2027-06-01T09:00', zone: null },
+      '2027-06-02': { at: '2027-06-02T13:00', zone: null },
     });
     expect(group.scenarios.map((s) => s._id)).toEqual(['i', 'a']);
   });
@@ -373,10 +373,10 @@ describe('scenarioGroups (display)', () => {
       [flight],
     );
     const [group] = scenarioGroups(d, resolveActiveScenarios(d, new Map()));
-    expect(group.anchorAtByDate['2027-06-01']).toBe('2027-06-01T09:00');
+    expect(group.anchorAtByDate['2027-06-01']?.at).toBe('2027-06-01T09:00');
     // Present on the arrival date, so the Arrive row has a box to render in;
     // only the alternate (which owns the Transit) has a tab there.
-    expect(group.anchorAtByDate['2027-06-02']).toBe('2027-06-02T00:00');
+    expect(group.anchorAtByDate['2027-06-02']?.at).toBe('2027-06-02T00:00');
     expect(group.membersByDate['2027-06-02']).toEqual(['a']);
   });
 
@@ -401,7 +401,9 @@ describe('scenarioGroups (display)', () => {
     ]);
     const groups = scenarioGroups(d, resolveActiveScenarios(d, new Map()));
     expect(groups.map((g) => g.key)).toEqual(['e_ideal']);
-    expect(groups[0].anchorAtByDate).toEqual({ '2027-06-09': '2027-06-09T00:00' });
+    expect(groups[0].anchorAtByDate).toEqual({
+      '2027-06-09': { at: '2027-06-09T00:00', zone: null },
+    });
   });
 });
 

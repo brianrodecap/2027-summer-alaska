@@ -6,6 +6,7 @@ import {
   portCallsInOrder,
   portCallWhenLabel,
   stayWhenLabel,
+  transitDurationMinutes,
   transitWhenLabel,
 } from './entityDetails';
 import { lodgingExtraBits } from './formatting';
@@ -30,23 +31,95 @@ describe('stayWhenLabel', () => {
   });
 });
 
+// A transit between places keeping their clocks in `from` and `to` (none when null).
+const between = (
+  times: { departsAt: string; arrivesAt: string | null },
+  from: string | null = null,
+  to: string | null = null,
+) => ({
+  ...times,
+  from: { id: null, label: 'From', ...(from ? { timeZone: from } : {}) },
+  to: { id: null, label: 'To', ...(to ? { timeZone: to } : {}) },
+});
+
 describe('transitWhenLabel', () => {
   it('keeps a same-day trip to its times', () => {
-    expect(transitWhenLabel({ departsAt: '2027-07-08T08:55', arrivesAt: '2027-07-08T10:33' })).toBe(
-      '8:55am depart · 10:33am arrive',
-    );
+    expect(
+      transitWhenLabel(between({ departsAt: '2027-07-08T08:55', arrivesAt: '2027-07-08T10:33' })),
+    ).toBe('8:55am depart · 10:33am arrive');
   });
 
   it('dates both ends of an overnight trip', () => {
-    expect(transitWhenLabel({ departsAt: '2027-07-09T22:00', arrivesAt: '2027-07-10T06:00' })).toBe(
-      'Fri Jul 9, 10:00pm depart → Sat Jul 10, 6:00am arrive',
-    );
+    expect(
+      transitWhenLabel(between({ departsAt: '2027-07-09T22:00', arrivesAt: '2027-07-10T06:00' })),
+    ).toBe('Fri Jul 9, 10:00pm depart → Sat Jul 10, 6:00am arrive');
   });
 
   it('says when the arrival is not known yet', () => {
-    expect(transitWhenLabel({ departsAt: '2027-07-08T08:55', arrivesAt: null })).toBe(
+    expect(transitWhenLabel(between({ departsAt: '2027-07-08T08:55', arrivesAt: null }))).toBe(
       '8:55am depart · arrival time TBD',
     );
+  });
+
+  const seattleToAnchorage = { departsAt: '2027-07-08T08:55', arrivesAt: '2027-07-08T10:33' };
+
+  it('adds how long it takes, each end on its own clock, and how the clock moves', () => {
+    expect(
+      transitWhenLabel(between(seattleToAnchorage, 'America/Los_Angeles', 'America/Anchorage')),
+    ).toBe('8:55am depart · 10:33am arrive · 2 hr 38 min · Clocks go back 1 hour · PDT → AKDT');
+  });
+
+  it('adds the plain difference when both ends share a zone', () => {
+    const anchorage = 'America/Anchorage';
+    expect(transitWhenLabel(between(seattleToAnchorage, anchorage, anchorage))).toBe(
+      '8:55am depart · 10:33am arrive · 1 hr 38 min',
+    );
+  });
+
+  it('leaves the duration out while either end’s zone is unknown', () => {
+    expect(transitWhenLabel(between(seattleToAnchorage, 'America/Los_Angeles', null))).toBe(
+      '8:55am depart · 10:33am arrive',
+    );
+  });
+});
+
+describe('transitDurationMinutes', () => {
+  it('has no duration when the arrival comes before the departure on their own clocks', () => {
+    expect(
+      transitDurationMinutes(
+        between(
+          { departsAt: '2027-07-08T10:00', arrivesAt: '2027-07-08T09:30' },
+          'America/Anchorage',
+          'America/Anchorage',
+        ),
+      ),
+    ).toBeNull();
+  });
+
+  it('has no duration when the browser doesn’t know a zone', () => {
+    expect(
+      transitDurationMinutes(
+        // Far enough apart to be a positive duration read on any reader's clock.
+        between(
+          { departsAt: '2027-07-08T01:00', arrivesAt: '2027-07-08T23:00' },
+          'Not/AZone',
+          'America/Anchorage',
+        ),
+      ),
+    ).toBeNull();
+  });
+
+  it('counts an overnight flight across the date line of zones', () => {
+    // Anchorage 23:30 AKDT (07:30 UTC) → Tokyo 03:15 JST two days on (18:15 UTC).
+    expect(
+      transitDurationMinutes(
+        between(
+          { departsAt: '2027-07-08T23:30', arrivesAt: '2027-07-10T03:15' },
+          'America/Anchorage',
+          'Asia/Tokyo',
+        ),
+      ),
+    ).toBe(10 * 60 + 45);
   });
 });
 

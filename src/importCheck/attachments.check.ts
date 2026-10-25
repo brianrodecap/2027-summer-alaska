@@ -22,7 +22,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import { MODEL_ID } from '../model/anthropicClient';
 import { importByProposals } from '../model/proposalImport';
-import { buildTripView, TRIP_FILES } from '../model/tripModel';
+import { buildTripView, todayDateStr, TRIP_FILES } from '../model/tripModel';
 import type { TripData } from '../model/types';
 import {
   checkDocument,
@@ -119,7 +119,7 @@ describe('importing each booking document gives what a person entered', () => {
     it.skipIf(!hasKeys)(name, async () => {
       const started = Date.now();
       const data = placeholderData(loadTrip(doc.trip ?? DEFAULT_TRIP), doc);
-      const view = buildTripView(data);
+      const view = buildTripView(data, todayDateStr());
       const file = new File([readFileSync(join(ATTACHMENTS, name))], name, {
         type: MEDIA_TYPES[extname(name).toLowerCase()] ?? '',
       });

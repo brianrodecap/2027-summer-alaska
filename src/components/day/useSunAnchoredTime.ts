@@ -1,7 +1,7 @@
 import { hasGoogleApiKey } from '../../config/apiKeys';
 import { useKeyedAsync } from '../../hooks/useKeyedAsync';
 import { isSunAnchoredActivity, sunAnchoredTimeLabel } from '../../model/formatting';
-import { resolveSunPlaceId } from '../../model/tripModel';
+import { resolveSunPlaceId, todayDateStr } from '../../model/tripModel';
 import type { Day, EnrichedActivity } from '../../model/types';
 import { getPlaceSunriseSunset, type PlaceSunriseSunset } from '../../model/weather';
 
@@ -25,7 +25,7 @@ export function useSunAnchoredTime(
   const key = placeId ? `${placeId}|${day.date}` : null;
 
   const { value } = useKeyedAsync<string, PlaceSunriseSunset | null>(key, shouldFetch, () =>
-    getPlaceSunriseSunset(placeId as string, day.date),
+    getPlaceSunriseSunset(placeId as string, day.date, todayDateStr()),
   );
   return anchored ? sunAnchoredTimeLabel(activity.timeLabel as string, value) : undefined;
 }

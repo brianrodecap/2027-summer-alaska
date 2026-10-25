@@ -10,7 +10,14 @@
 // rows, because their events aren't in the timeline.
 import type { ScenarioGroup } from './scenarioGroups';
 import type { TimelineEvent } from './timeline';
-import { earliestKey, stayEventKey, stayRelation } from './tripModel';
+import {
+  earliestTime,
+  orderInstant,
+  stayEventKey,
+  stayRelation,
+  type TripClock,
+  type ZonedTime,
+} from './tripModel';
 import type {
   DayRow,
   EnrichedActivity,
@@ -33,6 +40,7 @@ export interface DayLayoutInput {
   // ScenarioTrack.members) — an inactive scenario's events aren't in the
   // timeline, so the caller derives them from the data.
   membersOfScenario: (scenarioId: string) => ScenarioTrack['members'];
+  clock: TripClock; // the trip's (tripClock), for the rows that aren't events
 }
 
 export interface DayLayout {
@@ -40,14 +48,23 @@ export interface DayLayout {
   scenarioTracks: ScenarioTrack[]; // the day's top-level tabs, flat
 }
 
-// Rows in clock order; a same-instant tie keeps insertion order (stays, then
-// events in timeline order — which already breaks an Activity tie, then boxes).
-const byKey = (a: DayRow, b: DayRow) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0);
+// Rows by when they happen, the timeline's own order (event rows carry its
+// instant); a same-instant tie keeps insertion order (stays, then events in
+// timeline order — which already breaks an Activity tie, then boxes).
+const byOrder = (a: DayRow, b: DayRow) => a.order - b.order;
 
 export function layoutDay(input: DayLayoutInput): DayLayout {
-  const { date, events, groups, stays, activities, transits } = input;
+  const { date, events, groups, stays, activities, transits, clock } = input;
   const dayStart = `${date}T00:00`;
   const eventById = new Map(events.map((e) => [e.id, e]));
+  // A scenario box row, ordered by when its anchor happens.
+  const boxAt = (anchor: ZonedTime, tracks: ScenarioTrack[]): DayRow => ({
+    type: 'box',
+    key: anchor.at,
+    zone: anchor.zone,
+    order: orderInstant(anchor, clock),
+    tracks,
+  });
 
   // The rows that belong to one scope: the unscoped backbone (null), or one
   // scenario's own content.
@@ -63,12 +80,15 @@ export function layoutDay(input: DayLayoutInput): DayLayout {
           ? null
           : (eventById.get(`${relation === 'Check out' ? 'check-out' : 'check-in'}:${stay._id}`) ??
             null);
+      const key = stayEventKey(stay, relation, dayStart);
       rows.push({
         type: 'stay',
         event,
         stay,
         relation,
-        key: stayEventKey(stay, relation, dayStart),
+        key,
+        // A stay in progress sits at the day's start, read on the trip's clock.
+        order: event?.instant ?? orderInstant({ at: key, zone: null }, clock),
       });
     }
     for (const event of events) {
@@ -85,15 +105,23 @@ export function layoutDay(input: DayLayoutInput): DayLayout {
               stage: event.stage,
               stageIndex: event.stageIndex,
               key: event.at,
+              order: event.instant,
             });
           }
         } else {
           const phase = event.kind === 'depart' ? 'depart' : 'arrive';
-          rows.push({ type: 'transit', event, transit, phase, key: event.at });
+          rows.push({
+            type: 'transit',
+            event,
+            transit,
+            phase,
+            key: event.at,
+            order: event.instant,
+          });
         }
       } else if (event.kind === 'activity') {
         const activity = activities.get(event.source.id) as EnrichedActivity;
-        rows.push({ type: 'activity', event, activity, key: event.at });
+        rows.push({ type: 'activity', event, activity, key: event.at, order: event.instant });
       }
     }
     return rows;
@@ -127,10 +155,10 @@ export function layoutDay(input: DayLayoutInput): DayLayout {
       // A box with no active tab (the picked member has nothing on this date)
       // renders nothing, so it gets no row to leave a dangling connector.
       if (tracks.some((t) => t.active)) {
-        rows.push({ type: 'box', key: group.anchorAtByDate[date], tracks });
+        rows.push(boxAt(group.anchorAtByDate[date], tracks));
       }
     }
-    return rows.sort(byKey);
+    return rows.sort(byOrder);
   }
 
   const topLevel = presentGroups.filter((g) => g.parentId === null);
@@ -138,10 +166,13 @@ export function layoutDay(input: DayLayoutInput): DayLayout {
   const rows = scopedRows(null);
   // One box for the whole day's tab strip, at the earliest of its groups'
   // anchors (the strip lists every top-level group's tabs together).
-  const anchor = earliestKey(topLevel.map((g) => g.anchorAtByDate[date]));
+  const anchor = earliestTime(
+    topLevel.map((g) => g.anchorAtByDate[date]),
+    clock,
+  );
   if (anchor && scenarioTracks.some((t) => t.active)) {
-    rows.push({ type: 'box', key: anchor, tracks: scenarioTracks });
+    rows.push(boxAt(anchor, scenarioTracks));
   }
 
-  return { rows: rows.sort(byKey), scenarioTracks };
+  return { rows: rows.sort(byOrder), scenarioTracks };
 }

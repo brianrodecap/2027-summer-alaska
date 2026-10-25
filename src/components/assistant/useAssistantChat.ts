@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { RequestAbortedError } from '../../model/anthropicClient';
 import { type AskAIConversation, AskAIError, runAskAITurn } from '../../model/askAI';
+import { todayDateStr } from '../../model/tripModel';
 import { useLiveDays } from '../../state/useLiveDays';
 import { useTripData } from '../../state/useTripData';
 
@@ -67,7 +68,7 @@ export function useAssistantChat() {
           question,
           focusDate,
           data,
-          tools: { data, view, byDate: live.byDate },
+          tools: { data, view, byDate: live.byDate, today: todayDateStr() },
           signal: controller.signal,
           events: {
             onText: (delta) => setPending((p) => p && { ...p, text: p.text + delta, progress: '' }),

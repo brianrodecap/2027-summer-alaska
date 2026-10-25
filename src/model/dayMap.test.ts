@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { TEST_TODAY } from '../test/today';
 import {
   mapEmbedUrls,
   mapRouteNodes,
@@ -105,7 +106,7 @@ function live(
   date: string,
   options: { picks?: Map<string, string>; routeTones?: Map<string, string> } = {},
 ) {
-  const view = buildTripView(data);
+  const view = buildTripView(data, TEST_TODAY);
   const { days } = buildLiveDays(view, data, {
     scenarioPicks: options.picks ?? new Map(),
     routeTones: options.routeTones ?? new Map(),
@@ -704,5 +705,31 @@ describe('route nodes', () => {
     // The stay in progress closes the day's markers; as a stay it has no row key.
     expect(nodes[0]).toBe('activity:p_Cafe:');
     expect(nodes[nodes.length - 1]).toBe('stay:p_Lodge:2027-06-02T00:00');
+  });
+});
+
+describe('map stops across time zones', () => {
+  const zoned = (label: string, timeZone: string) => ({
+    place: { id: `p_${label}`, label, timeZone },
+  });
+
+  it('lists a scenario box’s stops in the order they happen, each on its own clock', () => {
+    const data = tripData();
+    data.scenarios.push(scenario('i', 'ideal'), scenario('a', 'alternate'));
+    data.activities.push(
+      // 11:00 at the canyon (17:00 UTC) comes before 10:30 in Page (17:30 UTC).
+      activity('page_lunch', '2027-06-01T10:30', null, {
+        scenarioId: 'i',
+        ...zoned('Page', 'America/Phoenix'),
+      }),
+      activity('canyon_tour', '2027-06-01T11:00', null, {
+        scenarioId: 'i',
+        ...zoned('Canyon', 'America/Denver'),
+      }),
+      activity('alt', '2027-06-01T09:00', 'Elsewhere', { scenarioId: 'a' }),
+    );
+    const { visits } = live(data, '2027-06-01');
+    const ids = visits.rest.map((v) => (v.kind === 'activity' ? v.activity._id : v.kind));
+    expect(ids).toEqual(['canyon_tour', 'page_lunch']);
   });
 });

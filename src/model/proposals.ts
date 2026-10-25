@@ -9,6 +9,7 @@
 //   - queueFromProposals turns checked proposals into review drafts.
 // IMPORT_CONVENTIONS is how this trip is modeled, in one list the AI gets.
 import { bookingById, bookingOf, namedBookedThrough, payableLines } from './bookings';
+import { isDateTime } from './dateTime';
 import type { QueuedImport } from './documentImport';
 import {
   blankActivity,
@@ -33,9 +34,14 @@ import {
   activityHeadline,
   activityRefId,
   addDaysStr,
+  arrivalProblem,
+  canonicalZone,
+  clockAfterChange,
   dateOnly,
-  diffMinutesIso,
   resolveActivityDate,
+  SEARCH_FOR_ZONES,
+  setClockZone,
+  stayTimingProblems,
   tripDateRange,
 } from './tripModel';
 import type {
@@ -69,6 +75,9 @@ export interface ProposedPlace {
   notOnGoogle?: boolean;
   // A venue on the ship taking over from the resolved place with this id.
   replaces?: string;
+  // Set when the proposal is accepted (acceptProposal), from the search that
+  // returned placeId or the trip's own copy; never what the proposal says.
+  timeZone?: string;
 }
 
 const PACKAGE_REQUIRES = ['car', 'pet', 'none'] as const;
@@ -114,6 +123,9 @@ export interface ProposedChanges {
   seats?: SeatAssignment[];
   startAt?: string;
   durationMinutes?: number;
+  // The IANA zone the stated times are on when a document names a clock other
+  // than the place's ("Arizona time"); null puts them back on the place's.
+  clockZone?: string | null;
   text?: string;
   place?: ProposedPlace;
   mealType?: MealType;
@@ -123,6 +135,11 @@ export interface ProposedChanges {
   travelers?: string[] | null; // null: the whole party
   packages?: ProposedPackage[];
 }
+
+// The clock a change states, by its canonical name: undefined when it states
+// none, null to put the times back on the place's (shapeErrors refuses others).
+const statedClock = (c: ProposedChanges) =>
+  c.clockZone === undefined ? undefined : c.clockZone && canonicalZone(c.clockZone);
 
 // Which changes apply to which kind of entry. A field on the wrong kind (a
 // roomType on a transit) is turned down by name rather than silently dropped,
@@ -138,6 +155,7 @@ const FIELDS_BY_KIND: Record<EditKind, ReadonlySet<string>> = {
     'deckGroup',
     'shipZone',
     'portCalls',
+    'clockZone',
     'packages',
   ] satisfies (keyof ProposedChanges)[]),
   transit: new Set([
@@ -157,6 +175,7 @@ const FIELDS_BY_KIND: Record<EditKind, ReadonlySet<string>> = {
   activity: new Set([
     'startAt',
     'durationMinutes',
+    'clockZone',
     'text',
     'place',
     'mealType',
@@ -283,7 +302,8 @@ export const PROPOSAL_PROPERTIES = {
     properties: {
       checkInAt: {
         type: 'string',
-        description: 'Stay. Local date-time, e.g. 2027-07-03T14:00.',
+        description:
+          "Stay. Local date-time, e.g. 2027-07-03T14:00, on the lodging's clock, or on clockZone when set.",
       },
       checkOutAt: { type: 'string' },
       lodging: PLACE,
@@ -343,8 +363,20 @@ export const PROPOSAL_PROPERTIES = {
           required: ['travelerId', 'seat'],
         },
       },
-      startAt: { type: 'string', description: 'Activity.' },
+      startAt: {
+        type: 'string',
+        description:
+          "Activity. On the place's clock, or on clockZone when set: as the document states it.",
+      },
       durationMinutes: { type: 'number' },
+      clockZone: {
+        type: ['string', 'null'],
+        description:
+          "A stay's or activity's own clock: the IANA zone its times are on, only when the " +
+          "document names a clock other than the place's (a tour sold on 'Arizona time' at a " +
+          "canyon on Navajo time: 'America/Phoenix'). null puts them back on the place's clock. " +
+          'A new place or lodging drops the old clock unless you restate it.',
+      },
       text: { type: 'string' },
       place: PLACE,
       mealType: { type: 'string', enum: MEAL_TYPES },
@@ -515,24 +547,6 @@ export const IMPORT_CONVENTIONS = [
 
 // ---------- Checking ----------
 
-const DATE_TIME_SHAPE = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
-
-// A real local date-time ('2027-07-11T08:00'): the shape, and a calendar day
-// and clock time that exist — a lenient digit pattern lets 2027-07-32T24:75
-// through to the overlap and route-walk math, which would run on NaN.
-export function isDateTime(value: string): boolean {
-  const m = DATE_TIME_SHAPE.exec(value);
-  if (!m) return false;
-  const [y, mo, d, h, mi] = m.slice(1).map(Number);
-  const at = new Date(Date.UTC(y, mo - 1, d, h, mi));
-  return (
-    at.getUTCFullYear() === y &&
-    at.getUTCMonth() === mo - 1 &&
-    at.getUTCDate() === d &&
-    h < 24 &&
-    mi < 60
-  );
-}
 const BOOKING_STATUSES: BookingStatus[] = ['planning', 'requested', 'booked', 'cancelled'];
 
 // What place searches have shown, for a proposal's places to be checked
@@ -540,24 +554,50 @@ const BOOKING_STATUSES: BookingStatus[] = ['planning', 'requested', 'booked', 'c
 // from a real lookup; every other id a lookup shows is the trip's own — and
 // the queries that found nothing, which let a place of that name say it isn't
 // on Google (storedPlace). search_places (askAITools.ts) records both.
+// `timeZones` holds the zone each returned place keeps its clocks in, which a
+// proposed place with that id is stored with (placeFrom).
 export interface PlaceSearches {
   placeIds: Set<string>;
   emptyQueries: Set<string>;
+  timeZones: Map<string, string>;
 }
 
 // The same, as plain lists — how a chat conversation keeps it.
-export type SavedPlaceSearches = { [K in keyof PlaceSearches]: string[] };
+export interface SavedPlaceSearches {
+  placeIds: string[];
+  emptyQueries: string[];
+  timeZones?: [string, string][];
+}
 
 export function noPlaceSearches(): PlaceSearches {
-  return { placeIds: new Set(), emptyQueries: new Set() };
+  return { placeIds: new Set(), emptyQueries: new Set(), timeZones: new Map() };
 }
 
 export function placeSearchesFrom(saved: SavedPlaceSearches): PlaceSearches {
-  return { placeIds: new Set(saved.placeIds), emptyQueries: new Set(saved.emptyQueries) };
+  return {
+    placeIds: new Set(saved.placeIds),
+    emptyQueries: new Set(saved.emptyQueries),
+    timeZones: new Map(saved.timeZones),
+  };
 }
 
 export function savedPlaceSearches(searches: PlaceSearches): SavedPlaceSearches {
-  return { placeIds: [...searches.placeIds], emptyQueries: [...searches.emptyQueries] };
+  return {
+    placeIds: [...searches.placeIds],
+    emptyQueries: [...searches.emptyQueries],
+    timeZones: [...searches.timeZones],
+  };
+}
+
+// The zone a place with this id keeps its clocks in: as a search returned it,
+// else as the trip already stores it.
+export function searchedTimeZone(
+  placeId: string | null | undefined,
+  searches: PlaceSearches,
+  data: TripData,
+): string | undefined {
+  if (!placeId) return undefined;
+  return searches.timeZones.get(placeId) ?? knownPlaces(data).zones.get(placeId) ?? undefined;
 }
 
 export interface ProposalState {
@@ -715,8 +755,13 @@ function withTravelerIds(change: ChangeProposal, ids: ReadonlyMap<string, string
 // `places` are the resolved ones a new place can be by name (storedPlace):
 // every one but a route's own endpoints, which are often a whole city
 // ('Anchorage') — fine for a drive time, the wrong id for one exact pin.
-const knownPlacesByData = new WeakMap<TripData, { ids: Set<string>; places: Place[] }>();
-function knownPlaces(data: TripData): { ids: Set<string>; places: Place[] } {
+interface KnownPlaces {
+  ids: Set<string>;
+  places: Place[];
+  zones: Map<string, string | null>; // each id's stored timeZone; null where copies disagree
+}
+const knownPlacesByData = new WeakMap<TripData, KnownPlaces>();
+function knownPlaces(data: TripData): KnownPlaces {
   const cached = knownPlacesByData.get(data);
   if (cached) return cached;
   const entries: Entity[] = [...data.stays, ...data.transits, ...data.activities];
@@ -724,13 +769,38 @@ function knownPlaces(data: TripData): { ids: Set<string>; places: Place[] } {
   const places = [...entries.flatMap(entryPlaces), ...stops].filter(
     (place): place is Place => !!place?.id,
   );
-  const endpoints = data.routes.flatMap((r) => [r.from.id, r.to.id]);
-  const ids = new Set(
-    [...places.map((place) => place.id), ...endpoints].filter((id): id is string => !!id),
-  );
-  const known = { ids, places };
+  const ids = new Set<string>();
+  // Each id's zone where its copies agree; one whose copies disagree has none,
+  // rather than whichever copy comes last.
+  const zones = new Map<string, string | null>();
+  for (const place of [...places, ...data.routes.flatMap((r) => [r.from, r.to])]) {
+    if (!place.id) continue;
+    ids.add(place.id);
+    if (!place.timeZone) continue;
+    const known = zones.get(place.id);
+    zones.set(place.id, known === undefined || known === place.timeZone ? place.timeZone : null);
+  }
+  const known = { ids, places, zones };
   knownPlacesByData.set(data, known);
   return known;
+}
+
+// Where a proposed placeId may come from: a search_places result, or the trip
+// itself. One error per place whose id came from neither.
+export function placeIdProvenanceErrors(
+  places: { placeId?: string | null; label: string }[],
+  searches: PlaceSearches,
+  data: TripData,
+): string[] {
+  const { ids } = knownPlaces(data);
+  const unproven = places.filter(
+    (p) => p.placeId && !searches.placeIds.has(p.placeId) && !ids.has(p.placeId),
+  );
+  // One error per id, however many times the proposal names it.
+  return [...new Map(unproven.map((p) => [p.placeId, p])).values()].map(
+    (p) =>
+      `placeId ${p.placeId} didn't come from search_places or the trip; search for "${p.label}" and use a result's placeId.`,
+  );
 }
 
 // The entry ids, package ids and new-entry or new-package keys a note or
@@ -756,6 +826,7 @@ const PLACE_FIELD_TYPES = [
   ['replaces', 'string', 'a placeId'],
   ['onboard', 'boolean', 'true or false'],
   ['notOnGoogle', 'boolean', 'true or false'],
+  ['timeZone', 'string', 'an IANA zone name'],
 ] as const;
 
 export function shapeErrors(p: ChangeProposal): string[] {
@@ -851,6 +922,11 @@ export function shapeErrors(p: ChangeProposal): string[] {
     }
     placeFields(key, place);
   }
+  if (c.clockZone !== undefined && c.clockZone !== null && !canonicalZone(c.clockZone)) {
+    errors.push(
+      "clockZone must be an IANA zone name like 'America/Phoenix', or null for the place's own clock.",
+    );
+  }
   if (
     c.durationMinutes !== undefined &&
     !(
@@ -898,6 +974,45 @@ export function shapeErrors(p: ChangeProposal): string[] {
 // it's accepted. Checked in stages: what it targets, then (once its shape is
 // sound) its fields and its booking, then — only when those pass — the entry
 // as it would be saved.
+
+// Stamps each place with the zone it keeps its clocks in: as the search that
+// returned its placeId reported it, else the trip's own copy; never a zone the
+// proposal states. The one rule every proposal path's places go through.
+export function stampZones(
+  places: { placeId?: string | null; timeZone?: string }[],
+  searches: PlaceSearches,
+  data: TripData,
+): void {
+  for (const place of places) {
+    const zone = searchedTimeZone(place.placeId, searches, data);
+    if (zone) place.timeZone = zone;
+    else delete place.timeZone;
+  }
+}
+
+// Accepts a proposal that passes validateProposal. While the searches are known
+// its places are stamped (stampZones); once checked, the stamps it carries stand.
+export function acceptProposal(p: ChangeProposal, state: ProposalState): string[] {
+  const errors = validateProposal(p, state);
+  if (errors.length) return errors;
+  const accepted = structuredClone(p);
+  if (!state.placesChecked) stampZones(proposedPlaces(accepted), state.placeSearches, state.data);
+  state.accepted.push(accepted);
+  return [];
+}
+
+// `proposal` with its places' zones stamped (stampZones): what a chat proposal
+// is queued with, so its draft keeps the zones its searches found.
+export function withStampedZones(
+  proposal: ChangeProposal,
+  searches: PlaceSearches,
+  data: TripData,
+): ChangeProposal {
+  const zoned = structuredClone(proposal);
+  stampZones(proposedPlaces(zoned), searches, data);
+  return zoned;
+}
+
 export function validateProposal(p: ChangeProposal, state: ProposalState): string[] {
   if (!EDIT_KINDS.includes(p.kind)) return [`kind must be one of ${EDIT_KINDS.join(', ')}.`];
   // The state is fixed for this call, so what's derived from it is built once.
@@ -1009,7 +1124,7 @@ function validateFields(
     }
   }
   for (const key of ['checkInAt', 'checkOutAt', 'departsAt', 'arrivesAt', 'startAt'] as const) {
-    if (c[key] !== undefined && !isDateTime(c[key] as string)) {
+    if (c[key] !== undefined && !isDateTime(c[key])) {
       errors.push(`${key} must be a local date-time like 2027-07-11T08:00.`);
     }
   }
@@ -1032,17 +1147,8 @@ function validateFields(
       if (format) errors.push(format);
     }
   }
-  let known: Set<string> | undefined;
-  for (const place of state.placesChecked ? [] : proposedPlaces(p)) {
-    if (
-      place.placeId &&
-      !state.placeSearches.placeIds.has(place.placeId) &&
-      !(known ??= knownPlaces(data).ids).has(place.placeId)
-    ) {
-      errors.push(
-        `placeId ${place.placeId} didn't come from search_places or the trip; search for "${place.label}" and use a result's placeId.`,
-      );
-    }
+  if (!state.placesChecked) {
+    errors.push(...placeIdProvenanceErrors(proposedPlaces(p), state.placeSearches, data));
   }
   const travelerIds = new Set([...data.trip.travelers, ...state.newTravelers].map((t) => t.id));
   for (const id of proposedTravelerIds(p)) {
@@ -1188,32 +1294,15 @@ function validateAsSaved(
         `${p.entityId} is a routed drive: its arrival comes from the route walk, so arrivesAt can't be set. Change departsAt instead, or leave the arrival out.`,
       );
     }
-    if (t.arrivesAt && diffMinutesIso(t.departsAt, t.arrivesAt) <= 0) {
-      errors.push(`Arrives ${t.arrivesAt}, not after it departs ${t.departsAt}.`);
-    }
+    const arrival = arrivalProblem(t, SEARCH_FOR_ZONES);
+    if (arrival) errors.push(arrival);
   }
   if (p.kind === 'stay') {
     const s = entry as Stay;
-    if (diffMinutesIso(s.checkInAt, s.checkOutAt) <= 0) {
-      errors.push(`Checks out ${s.checkOutAt}, not after check-in ${s.checkInAt}.`);
-    }
     // Every port call the stay ends up with — restated or already on it, since
     // moving the cruise can leave the stored ones outside it.
     const restate = c.portCalls ? '' : ' Restate portCalls for the new dates.';
-    for (const call of s.portCalls ?? []) {
-      const where = call.place?.label || 'A port call';
-      for (const at of [call.arrivesAt, call.departsAt]) {
-        if (at && !isDateTime(at)) errors.push(`${where}: times look like 2027-07-21T06:30.`);
-        else if (at && (at < s.checkInAt || at > s.checkOutAt)) {
-          errors.push(
-            `${where} at ${at} is outside the cruise (${s.checkInAt} to ${s.checkOutAt}).${restate}`,
-          );
-        }
-      }
-      if (call.arrivesAt && call.departsAt && call.departsAt <= call.arrivesAt) {
-        errors.push(`${where}: leaves ${call.departsAt}, not after it arrives ${call.arrivesAt}.`);
-      }
-    }
+    errors.push(...stayTimingProblems(s, restate));
   }
   errors.push(...packageRequirementErrors(p, state, entry, referableOnce));
   if (p.kind === 'activity' && !base)
@@ -1556,11 +1645,12 @@ export function checkedChanges(
   state.handled = new Set([...removed, ...boughtPlaceholders(remapped)]);
   const errors: string[] = [];
   remapped.forEach((change, i) => {
-    const found = validateProposal(change, state);
-    if (!found.length) state.accepted.push(change);
-    else errors.push(...(changes.length > 1 ? found.map((e) => `Change ${i + 1}: ${e}`) : found));
+    const found = acceptProposal(change, state);
+    if (found.length) {
+      errors.push(...(changes.length > 1 ? found.map((e) => `Change ${i + 1}: ${e}`) : found));
+    }
   });
-  return errors.length ? { errors } : { state, changes: remapped };
+  return errors.length ? { errors } : { state, changes: state.accepted };
 }
 
 // ---------- Day plans ----------
@@ -1758,12 +1848,19 @@ function placeFrom(p: ProposedPlace, match: Place | null | undefined): Place {
     const { onboard: _drop, ...rest } = match;
     const onboard = p.onboard ?? match.onboard;
     // The stored label is the curated one; the proposal's loose spelling of the
-    // same place ("Anchorage Airport") doesn't replace it.
-    return { ...rest, id: match.id ?? p.placeId ?? null, ...(onboard ? { onboard: true } : {}) };
+    // same place ("Anchorage Airport") doesn't replace it. A match keeps its own
+    // zone; one without takes the stamped zone of the id it's resolved to.
+    return {
+      ...rest,
+      id: match.id ?? p.placeId ?? null,
+      ...(!match.timeZone && p.timeZone ? { timeZone: p.timeZone } : {}),
+      ...(onboard ? { onboard: true } : {}),
+    };
   }
   return {
     id: p.placeId ?? null,
     label: p.label,
+    ...(p.timeZone ? { timeZone: p.timeZone } : {}),
     ...(p.onboard ? { onboard: true } : {}),
   };
 }
@@ -1838,7 +1935,11 @@ function storedPlace(
   );
   const byName = ofName.length === 1 ? ofName[0] : undefined;
   const restated = match ?? byName;
-  const place = placeFrom(proposed, restated);
+  const built = placeFrom(proposed, restated);
+  // A place resolved by name takes the zone the trip knows for its id.
+  const knownZone =
+    !built.timeZone && searchedTimeZone(built.id, check.state.placeSearches, check.state.data);
+  const place = knownZone ? { ...built, timeZone: knownZone } : built;
   const { problems } = check;
   if (!problems || restated || proposed.placeId) return place;
   const resolved = (replacing?.places ?? []).filter((p) => p.id);
@@ -1923,6 +2024,7 @@ function applyChanges(
     if (!base && p.scenarioId) s.scenarioId = p.scenarioId;
     if (c.checkInAt) s.checkInAt = c.checkInAt;
     if (c.checkOutAt) s.checkOutAt = c.checkOutAt;
+    const lodgingBefore = s.lodging?.place;
     if (c.portCalls) {
       // A restated call keeps what the stay already had for the same port —
       // its resolved place and any times the proposal leaves out.
@@ -1982,6 +2084,7 @@ function applyChanges(
       for (const key of details) if (c[key]) lodging[key] = c[key];
       s.lodging = lodging;
     }
+    setClockZone(s, clockAfterChange(s.clockZone, statedClock(c), lodgingBefore, s.lodging?.place));
     if (bookingId) s.bookingId = bookingId;
     return withPackages(s);
   }
@@ -2014,7 +2117,9 @@ function applyChanges(
   }
   if (c.durationMinutes) a.durationMinutes = c.durationMinutes;
   if (c.text) a.text = c.text;
+  const placeBefore = a.place;
   if (c.place) a.place = restate('place', c.place, a.place);
+  setClockZone(a, clockAfterChange(a.clockZone, statedClock(c), placeBefore, a.place));
   if (c.mealType) a.mealType = c.mealType;
   if (c.diningFormat) {
     a.diningFormat = c.diningFormat;

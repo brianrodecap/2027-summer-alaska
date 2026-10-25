@@ -3,18 +3,23 @@
 // cruise's port calls, and what a meal is included in. Pure — the sheets in
 // components/detail render these. Day/location/scenario context stays in the
 // day row the sheet opened from and is never restated here.
-import { countLabel } from './formatting';
+import { clockChangeText } from './dayClocks';
+import { countLabel, formatMinutes } from './formatting';
 import { allPackages } from './packages';
 import {
   activityHeadline,
   dateOnly,
+  endpointZonesOf,
   formatDateLabel,
   formatMoney,
   formatTime,
+  instantOf,
   packageTotal,
   packageUnits,
   stayNights,
   transitRouteLabel,
+  wallClockMs,
+  zoneShortName,
 } from './tripModel';
 import type { Package, PortCall, Priority, Ref, Stay, Transit, TripData } from './types';
 
@@ -45,17 +50,51 @@ export function stayWhenLabel(stay: Pick<Stay, 'checkInAt' | 'checkOutAt'>): str
   return nights > 0 ? `${span} · ${countLabel(nights, 'night')}` : span;
 }
 
-// "8:55am depart · 10:33am arrive".
-export function transitWhenLabel(
-  transit: Pick<Transit, 'departsAt'> & { arrivesAt: string | null },
-): string {
-  // No duration: times are stored as local wall-clock times with no zone, so
-  // the difference is wrong for any trip that crosses a time zone.
-  return spanLabel(transit.departsAt, transit.arrivesAt, {
+type TransitTimes = Pick<Transit, 'departsAt' | 'arrivesAt' | 'from' | 'to'>;
+
+// How long the trip takes, each end read on its own clock, so a Seattle 08:55 →
+// Anchorage 10:33 flight is 2 hr 38 min. Null unless both zones are known: a
+// difference of the stored local times is wrong across a zone line.
+export function transitDurationMinutes(transit: TransitTimes): number | null {
+  const { departsAt, arrivesAt } = transit;
+  const zones = endpointZonesOf(transit);
+  const departs = instantOf(departsAt, zones.from);
+  const arrives = arrivesAt ? instantOf(arrivesAt, zones.to) : null;
+  if (departs === null || arrives === null) return null;
+  const minutes = (arrives - departs) / 60_000;
+  return minutes > 0 ? minutes : null;
+}
+
+// "8:55am depart · 10:33am arrive", plus "· 1 hr 38 min" once both ends' zones
+// are known, and where the clock moves on the way, the move and both clocks:
+// "· Clocks go back 1 hour · EDT → CDT".
+export function transitWhenLabel(transit: TransitTimes): string {
+  const span = spanLabel(transit.departsAt, transit.arrivesAt, {
     start: 'depart',
     end: 'arrive',
     endMissing: 'arrival time TBD',
   });
+  const minutes = transitDurationMinutes(transit);
+  if (minutes === null) return span;
+  const moved = clockMove(transit, minutes);
+  return `${span} · ${formatMinutes(minutes)}${moved ? ` · ${moved}` : ''}`;
+}
+
+// "Clocks go back 1 hour · PDT → AKDT" for a trip the clock moves on: the move is
+// the wall-clock difference less the real one (`minutes`). null when it doesn't.
+function clockMove(transit: TransitTimes, minutes: number): string | null {
+  const arrivesAt = transit.arrivesAt as string;
+  const moved = Math.round(
+    (wallClockMs(arrivesAt) - wallClockMs(transit.departsAt)) / 60_000 - minutes,
+  );
+  if (!moved) return null;
+  const zones = endpointZonesOf(transit);
+  const from = zoneShortName(
+    zones.from as string,
+    instantOf(transit.departsAt, zones.from) as number,
+  );
+  const to = zoneShortName(zones.to as string, instantOf(arrivesAt, zones.to) as number);
+  return clockChangeText({ minutes: moved, from, to });
 }
 
 // "$100.00", or for a nightly rate on a Stay "$25.00 / night · $150.00 for 6

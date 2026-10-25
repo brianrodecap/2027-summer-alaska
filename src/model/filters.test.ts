@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { TEST_TODAY } from '../test/today';
 import { buildFilterGroups, dayHasVisibleContent, filterRows, rowMatches } from './filters';
 import { buildLiveDays } from './liveDays';
 import { buildTripView } from './tripModel';
@@ -67,7 +68,7 @@ function twoLegTrip(): TripData {
 
 describe('filters', () => {
   const data = twoLegTrip();
-  const view = buildTripView(data);
+  const view = buildTripView(data, TEST_TODAY);
   const { days } = buildLiveDays(view, data, {
     scenarioPicks: new Map(),
     routeTones: new Map(),
@@ -119,7 +120,7 @@ describe('filters', () => {
       icon: 'help_outline',
       images: [],
     }));
-    const tripView = buildTripView(trip);
+    const tripView = buildTripView(trip, TEST_TODAY);
     const live = buildLiveDays(tripView, trip, {
       scenarioPicks: new Map(),
       routeTones: new Map(),
@@ -149,7 +150,7 @@ describe('filters', () => {
       }),
       activity('tour', 'leg_parks', '2027-06-01T12:30'),
     ];
-    const tripView = buildTripView(trip);
+    const tripView = buildTripView(trip, TEST_TODAY);
     const lunchFlagged = (index: number) => {
       const day = buildLiveDays(tripView, trip, {
         scenarioPicks: new Map(),
@@ -220,7 +221,7 @@ describe('filters match what a row shows of a shared booking', () => {
     concerns: [{ entity: 'transit', id: 'f_on' }],
     images: [],
   });
-  const view = buildTripView(data);
+  const view = buildTripView(data, TEST_TODAY);
   const { days } = buildLiveDays(view, data, {
     scenarioPicks: new Map(),
     routeTones: new Map(),

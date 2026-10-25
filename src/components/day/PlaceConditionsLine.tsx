@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography';
 import { hasGoogleApiKey } from '../../config/apiKeys';
 import { useKeyedAsync } from '../../hooks/useKeyedAsync';
 import { getElevationFt } from '../../model/elevation';
+import { todayDateStr } from '../../model/tripModel';
 import type { Place } from '../../model/types';
 import { getPlaceTemperature, type PlaceTemperature } from '../../model/weather';
 import { temperatureColor } from '../../model/weatherColors';
@@ -17,7 +18,7 @@ import { usePlaceWeatherLink } from './usePlaceWeatherLink';
 function usePlaceTemperature(placeId: string | null, date: string) {
   const key = placeId ? `${placeId}|${date}` : null;
   return useKeyedAsync<string, PlaceTemperature | null>(key, key !== null, () =>
-    getPlaceTemperature(placeId as string, date),
+    getPlaceTemperature(placeId as string, date, todayDateStr()),
   );
 }
 

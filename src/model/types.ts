@@ -1,8 +1,8 @@
 // TypeScript re-expression of docs/data-model.html's schema. The schema itself is not
 // redesigned here — every shape below mirrors that document's own field lists exactly.
-
 import type { DayVisits } from './dayMap';
 import type { TimelineEvent } from './timeline';
+import type { TripClock, ZonedTime } from './tripModel';
 
 // 'requested': the seller has the order but hasn't confirmed it yet ("booking
 // request received, payment to be processed") — committed money, not a
@@ -152,6 +152,9 @@ export interface Leg {
 export interface Place {
   id: string | null;
   label: string;
+  // The IANA zone the place keeps its clocks in ("America/Anchorage"), as Google
+  // reported it when the place was picked or searched. Absent when not known.
+  timeZone?: string;
   images?: Image[];
   showWeather?: boolean;
   showElevation?: boolean;
@@ -186,6 +189,7 @@ export interface Place {
 export interface RouteEndpoint {
   id: string | null;
   label: string;
+  timeZone?: string; // as on Place: a city or junction keeps one clock
 }
 
 export interface Lodging {
@@ -225,6 +229,9 @@ export interface Stay {
   checkInAt: string;
   checkOutAt: string;
   lodging: Lodging | null;
+  // The IANA zone checkInAt/checkOutAt are stated on when the booking's clock
+  // isn't its lodging's; absent or null reads them on the lodging's (stayZone).
+  clockZone?: string | null;
   bookingId: string | null;
   packages?: Package[] | null;
   // A cruise cabin's stops between embarking (checkInAt) and disembarking
@@ -431,6 +438,10 @@ export interface Activity {
   // through instead of reading .text directly.
   text: string | null;
   place: Place | null;
+  // The IANA zone startAt is stated on when the booking's clock isn't its
+  // place's (a tour on Arizona time at a canyon on Navajo time); absent or null
+  // reads it on the place's (activityZone).
+  clockZone?: string | null;
   bookingId: string | null;
   mealType: MealType | null;
   diningFormat: DiningFormat | null;
@@ -507,8 +518,8 @@ export interface BookingShare {
   // liveDays.ts's withLiveShare re-picks it from the sharers the reader can
   // see; null when none is.
   firstId: string | null;
-  // By start, then id. A meal candidate names its meal (mealId): it counts
-  // only while selected.
+  // By start in real time, then id. A meal candidate names its meal (mealId):
+  // it counts only while selected.
   sharers: { id: string; scenarioId: string | null; mealId?: string; notes: Note[] }[];
   notes: Note[]; // the sharers' notes, each once
 }
@@ -540,6 +551,7 @@ export interface RouteStage {
   note: string | null;
   kind: RoutePlaceKind;
   key: string;
+  zone: string | null; // the zone `key` is on (see stageTimesForVariant)
   place: Place;
 }
 
@@ -548,12 +560,14 @@ export interface ResolvedRouteVariant {
   label: string;
   stages: RouteStage[];
   arrivesAt: string;
+  arrivesZone: string | null; // the zone `arrivesAt` is on
 }
 
 export interface ResolvedRouteInfo {
   variants: ResolvedRouteVariant[];
   selectedTone: string;
   resolvedArrivesAt: string;
+  resolvedArrivesZone: string | null;
 }
 
 export interface EnrichedTransit extends Omit<Transit, 'arrivesAt'> {
@@ -561,6 +575,7 @@ export interface EnrichedTransit extends Omit<Transit, 'arrivesAt'> {
   bookingShare?: BookingShare;
   routeInfo: ResolvedRouteInfo | null;
   arrivesAt: string | null; // overridden with the route walk's resolved arrival, when routed
+  arrivesZone: string | null; // the zone arrivesAt is on: the walk's, else the destination's
   notes: Note[];
   hasWarningNote: boolean;
 }
@@ -580,6 +595,7 @@ export interface ActivityRow {
   event: TimelineEvent;
   activity: EnrichedActivity;
   key: string;
+  order: number; // when the row happens (orderInstant): the day list's one sort
 }
 
 export interface StayRow {
@@ -590,6 +606,7 @@ export interface StayRow {
   stay: EnrichedStay;
   relation: StayRelation;
   key: string;
+  order: number; // when the row happens (orderInstant): the day list's one sort
 }
 
 export interface TransitBoundaryRow {
@@ -598,6 +615,7 @@ export interface TransitBoundaryRow {
   transit: EnrichedTransit;
   phase: 'depart' | 'arrive';
   key: string;
+  order: number; // when the row happens (orderInstant): the day list's one sort
 }
 
 // A stop along the selected route variant.
@@ -609,6 +627,7 @@ export interface TransitStageRow {
   stage: RouteStage;
   stageIndex: number; // its position in the variant's stages
   key: string;
+  order: number; // when the row happens (orderInstant): the day list's one sort
 }
 
 export type TransitRow = TransitBoundaryRow | TransitStageRow;
@@ -616,6 +635,8 @@ export type TransitRow = TransitBoundaryRow | TransitStageRow;
 export interface BoxRow {
   type: 'box';
   key: string; // the box's anchor
+  zone: string | null; // the clock its anchor reads on
+  order: number; // when the anchor happens (orderInstant)
   // Every tab of the box: the active one carries the branch's rows, the others
   // are just chips. A day's top-level box lists all of its groups' tabs; a
   // nested box (inside a track's rows) lists one group's.
@@ -683,10 +704,13 @@ export interface Day extends DayFrame {
   // read so they agree with the route walk's timing, and its place, so the
   // live port-call check knows when the meal is ashore.
   selectedMeals: ReadonlyMap<string, MealOption>;
+  // The trip's clock (tripClock), so the live overlap warnings read each time
+  // the way the day list orders it.
+  clock: TripClock;
   // The Transits/Activities in the live scenario scope that hold Packages on
   // this date (the timeline's own carriersOn), so a meal row lists the same
   // active candidates the timeline picked its selection from.
-  mealCarriers: { packages?: Package[] | null; startsAt: string }[];
+  mealCarriers: { packages?: Package[] | null; startsAt: ZonedTime }[];
   summary: string;
   title: string;
 }
@@ -788,6 +812,9 @@ export interface TripView {
   scenariosById: Map<string, Scenario>;
   scenarioNotes: Map<string, Note[]>; // notes concerning each scenario, by scenario id
   routesById: Map<string, Route>;
+  // The date the view was built for: what "past" and "ahead" mean in it.
+  today: string;
+  clock: TripClock; // the trip's (tripClock), built once with the view
   budget: BudgetView;
   bookingProgress: BookingProgress;
   bookingPercent: number;

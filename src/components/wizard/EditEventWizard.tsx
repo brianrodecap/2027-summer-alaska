@@ -23,6 +23,7 @@ import {
   wizardStepCanProceed,
   wizardStepsForCategory,
 } from '../../model/editForms';
+import { todayDateStr } from '../../model/tripModel';
 import type { Activity, Booking, Route, Stay, Transit, Traveler } from '../../model/types';
 import { ConfirmableDeleteButton } from '../shared/ConfirmableDeleteButton';
 import { renderWizardStep, type WizardStepContext } from './renderWizardStep';
@@ -74,7 +75,7 @@ function EditEventWizardBody({
   // Computed via a lazy useState initializer (like the three form states
   // below it) so entityDateOnly only runs once per mount, not on every
   // re-render of this body.
-  const [blankDate] = useState(() => entityDateOnly(kind, entity));
+  const [blankDate] = useState(() => entityDateOnly(kind, entity, todayDateStr()));
   // Only an Activity being edited actually is one — narrowed once here so
   // both the form-init below and the scenario-scoped duplicate search
   // further down share the same cast instead of each re-checking `kind`.

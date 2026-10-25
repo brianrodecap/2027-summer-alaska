@@ -1,19 +1,25 @@
 import { describe, expect, it } from 'vitest';
 
+import { TEST_TODAY } from '../test/today';
 import { filterRows } from './filters';
 import { buildLiveDays, type LiveDayCache } from './liveDays';
 import { liveWarnings } from './mealOptions';
 import {
   buildTripView,
   diffMinutesIso,
+  instantOf,
+  movedBy,
   optionShows,
   portCallsOn,
   portCallWarningFor,
   rowShows,
   sheetNotes,
   splitOutStayBoundaries,
+  stayTimingProblems,
+  tripClock,
   tripDateRange,
   tripDayCount,
+  zonedInstant,
 } from './tripModel';
 import type {
   BoxRow,
@@ -109,7 +115,7 @@ function liveDay(
   picks = new Map<string, string>(),
   meals = new Map<string, number>(),
 ) {
-  return liveDays(buildTripView(data), data, picks, undefined, meals).days.find(
+  return liveDays(buildTripView(data, TEST_TODAY), data, picks, undefined, meals).days.find(
     (d) => d.date === date,
   );
 }
@@ -134,7 +140,7 @@ describe('buildTripView', () => {
     const data = minimalTripData();
     pushMinimalActivity(data, { startAt: '2027-06-01T09:00' });
     pushMinimalActivity(data, { _id: 'test_activity_2', startAt: '2027-06-03T09:00' });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     expect(view.days.length).toBeGreaterThan(0);
     const range = tripDateRange(data.stays, data.transits, data.activities);
     expect(range).not.toBeNull();
@@ -241,7 +247,7 @@ describe('buildTripView', () => {
         },
       ],
     });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     const withOptions = view.activitiesById.get('test_activity');
     expect(withOptions).toBeDefined();
     expect(withOptions!.options?.length).toBe(2);
@@ -492,7 +498,7 @@ describe('activity warnings: overlapping a transit', () => {
       diningFormat: 'sit-down',
     });
     pushMinimalTransit(data, { departsAt: '2027-06-28T23:15', arrivesAt: '2027-06-28T23:45' });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBe(
       'A departs before this ends.',
     );
@@ -506,7 +512,7 @@ describe('activity warnings: overlapping a transit', () => {
       mealType: 'snack',
       diningFormat: 'drivethru',
     });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBeNull();
   });
 
@@ -514,7 +520,7 @@ describe('activity warnings: overlapping a transit', () => {
     const data = minimalTripData();
     pushMinimalTransit(data, { departsAt: '2027-06-28T23:00', arrivesAt: '2027-06-28T23:30' });
     pushMinimalActivity(data, { startAt: '2027-06-28T23:10' });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBe(
       'During transit: A → B',
     );
@@ -558,7 +564,8 @@ describe('a routed drive and the Activities along it', () => {
     });
     return data;
   }
-  const routeOf = (data: TripData) => buildTripView(data).transitsById.get('test_transit')!;
+  const routeOf = (data: TripData) =>
+    buildTripView(data, TEST_TODAY).transitsById.get('test_transit')!;
 
   it('stops at a waypoint for the default 15 minutes, and a via not at all', () => {
     const transit = routeOf(routedDrive());
@@ -579,7 +586,7 @@ describe('a routed drive and the Activities along it', () => {
   it('folds an Activity inside the drive into its timing, and flags it', () => {
     const data = routedDrive();
     pushMinimalActivity(data, { startAt: '2027-06-01T10:30', durationMinutes: 20 });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     // 10:15 leave View, drive 15 min, stop 20 min at 10:30, 15 min to the Fork.
     expect(view.transitsById.get('test_transit')!.arrivesAt).toBe('2027-06-01T12:05');
     expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBe(
@@ -594,7 +601,7 @@ describe('a routed drive and the Activities along it', () => {
       mealType: 'lunch',
       diningFormat: 'sit-down',
     });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     expect(view.transitsById.get('test_transit')!.arrivesAt).toBe('2027-06-01T12:45');
     expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBeNull();
   });
@@ -602,7 +609,7 @@ describe('a routed drive and the Activities along it', () => {
   it('places an Activity at the exact departure time before the drive, not inside it', () => {
     const data = routedDrive();
     pushMinimalActivity(data, { startAt: '2027-06-01T09:00' });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     expect(view.transitsById.get('test_transit')!.arrivesAt).toBe('2027-06-01T11:45');
     expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBeNull();
     const rows = liveDay(data, '2027-06-01')!.rows.map((r) =>
@@ -614,7 +621,7 @@ describe('a routed drive and the Activities along it', () => {
   it('leaves an Activity after the arrival out of the drive', () => {
     const data = routedDrive();
     pushMinimalActivity(data, { startAt: '2027-06-01T11:45', durationMinutes: 60 });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     expect(view.transitsById.get('test_transit')!.arrivesAt).toBe('2027-06-01T11:45');
     expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBeNull();
   });
@@ -653,7 +660,7 @@ describe('the direct route variant', () => {
     for (const routeVariant of [null, 'no-such-tone']) {
       const data = twoTones();
       data.transits[0].routeVariant = routeVariant;
-      const transit = buildTripView(data).transitsById.get('test_transit')!;
+      const transit = buildTripView(data, TEST_TODAY).transitsById.get('test_transit')!;
       expect(transit.routeInfo!.selectedTone).toBe('direct');
       expect(transit.arrivesAt).toBe('2027-06-01T10:00');
     }
@@ -662,17 +669,23 @@ describe('the direct route variant', () => {
   it('must exist exactly once and carry no vias', () => {
     const noDirect = twoTones();
     noDirect.routes[0].variants[1].tone = 'scenic';
-    expect(() => buildTripView(noDirect)).toThrow(/exactly one 'direct' variant \(has 0\)/);
+    expect(() => buildTripView(noDirect, TEST_TODAY)).toThrow(
+      /exactly one 'direct' variant \(has 0\)/,
+    );
 
     const twoDirect = twoTones();
     twoDirect.routes[0].variants[0].tone = 'direct';
-    expect(() => buildTripView(twoDirect)).toThrow(/exactly one 'direct' variant \(has 2\)/);
+    expect(() => buildTripView(twoDirect, TEST_TODAY)).toThrow(
+      /exactly one 'direct' variant \(has 2\)/,
+    );
 
     const viaOnDirect = twoTones();
     viaOnDirect.routes[0].variants[1].places = [
       { kind: 'via', place: { id: 'p_fork', label: 'Fork' }, travel: { minutes: 30 } },
     ];
-    expect(() => buildTripView(viaOnDirect)).toThrow(/'direct' variant can't have vias/);
+    expect(() => buildTripView(viaOnDirect, TEST_TODAY)).toThrow(
+      /'direct' variant can't have vias/,
+    );
   });
 
   it('rechecks "during transit" when the route tab switches', () => {
@@ -680,13 +693,13 @@ describe('the direct route variant', () => {
     // 10:30 is after the direct arrival (10:00) but inside the scenic drive (12:00).
     pushMinimalActivity(data, { startAt: '2027-06-01T10:30', durationMinutes: 15 });
     const warningFor = (tone: string) => {
-      const { days } = buildLiveDays(buildTripView(data), data, {
+      const { days } = buildLiveDays(buildTripView(data, TEST_TODAY), data, {
         scenarioPicks: new Map(),
         routeTones: new Map([['test_transit', tone]]),
         mealOptionIndex: new Map(),
       });
       const day = days.find((d) => d.date === '2027-06-01')!;
-      const activity = buildTripView(data).activitiesById.get('test_activity')!;
+      const activity = buildTripView(data, TEST_TODAY).activitiesById.get('test_activity')!;
       return liveWarnings(activity, day)[0] ?? null;
     };
     expect(warningFor('direct')).toBeNull();
@@ -695,7 +708,7 @@ describe('the direct route variant', () => {
 
   it('hands every reader the same live Transit for the selected tab', () => {
     const data = twoTones();
-    const live = buildLiveDays(buildTripView(data), data, {
+    const live = buildLiveDays(buildTripView(data, TEST_TODAY), data, {
       scenarioPicks: new Map(),
       routeTones: new Map([['test_transit', 'scenic']]),
       mealOptionIndex: new Map(),
@@ -724,7 +737,7 @@ describe('activity warnings: overlapping another activity', () => {
       mealType: 'lunch',
       diningFormat: 'self-catered',
     });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBe(
       'Overlaps with "Root Glacier guided half-day hike".',
     );
@@ -744,7 +757,7 @@ describe('activity warnings: overlapping another activity', () => {
       diningFormat: 'included-with-activity',
       includedIn: { entity: 'activity', id: 'test_container' },
     });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBeNull();
   });
 });
@@ -764,7 +777,7 @@ describe('overlap warnings are scoped to one leg + scenario branch', () => {
       durationMinutes: 60,
       scenarioId: 'scenario_two',
     });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     expect(view.activitiesById.get('test_a')?.warnings[0] ?? null).toBeNull();
     expect(view.activitiesById.get('test_b')?.warnings[0] ?? null).toBeNull();
   });
@@ -782,7 +795,7 @@ describe('overlap warnings are scoped to one leg + scenario branch', () => {
       text: 'Photo stop',
       startAt: '2027-06-28T10:00',
     });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     expect(view.activitiesById.get('test_point')?.warnings[0] ?? null).toBe(
       'Overlaps with "Long hike".',
     );
@@ -804,7 +817,7 @@ describe('overlap warnings are scoped to one leg + scenario branch', () => {
       departsAt: '2027-06-28T23:15',
       arrivesAt: '2027-06-28T23:45',
     });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     expect(view.activitiesById.get('test_activity')?.warnings[0] ?? null).toBeNull();
   });
 });
@@ -834,7 +847,7 @@ describe('entity notes', () => {
         images: [],
       },
     );
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     const withNote = view.activitiesById.get('test_activity');
     expect(withNote?.notes.map((n) => n._id)).toEqual(['note_warn']);
     expect(withNote?.hasWarningNote).toBe(true);
@@ -888,7 +901,7 @@ describe('a booking several entries share', () => {
     rowShows({ type: 'transit', transit, phase: 'depart' });
 
   it('shows the booking only on the first departure', () => {
-    const view = buildTripView(connection());
+    const view = buildTripView(connection(), TEST_TODAY);
     expect(depart(view.transitsById.get('z_first')!).booking?._id).toBe('booking_ticket');
     expect(depart(view.transitsById.get('a_second')!).booking).toBeNull();
     // Never on an Arrive.
@@ -898,7 +911,7 @@ describe('a booking several entries share', () => {
   });
 
   it('gathers every sharer’s notes on the first departure, each once', () => {
-    const view = buildTripView(connection());
+    const view = buildTripView(connection(), TEST_TODAY);
     const second = view.transitsById.get('a_second')!;
     const ids = (t: EnrichedTransit) =>
       depart(t)
@@ -914,10 +927,81 @@ describe('a booking several entries share', () => {
     expect(second.notes.map((n) => n._id).sort()).toEqual(['note_both', 'note_refund']);
   });
 
+  it('picks the first departure in real time when the legs are on different clocks', () => {
+    // 09:00 in New York (13:00 UTC) leaves before 08:00 in Anchorage (16:00 UTC).
+    const data = connection();
+    data.transits = data.transits.map((t) =>
+      t._id === 'z_first'
+        ? {
+            ...t,
+            departsAt: '2027-06-26T09:00',
+            arrivesAt: '2027-06-26T13:00',
+            from: { id: 'p_ny', label: 'NY', timeZone: 'America/New_York' },
+          }
+        : {
+            ...t,
+            departsAt: '2027-06-26T08:00',
+            arrivesAt: '2027-06-26T10:00',
+            from: { id: 'p_anc', label: 'ANC', timeZone: 'America/Anchorage' },
+          },
+    );
+    const view = buildTripView(data, TEST_TODAY);
+    expect(view.transitsById.get('z_first')!.bookingShare?.firstId).toBe('z_first');
+  });
+
+  it('picks the earliest day first, as the day list shows them', () => {
+    // 01:00 on the 26th in Tokyo (16:00 UTC on the 25th) is earlier in real
+    // time than 10:00 on the 25th in Anchorage (18:00 UTC), but sits on a later day.
+    const data = connection();
+    data.transits = data.transits.map((t) =>
+      t._id === 'z_first'
+        ? {
+            ...t,
+            departsAt: '2027-06-25T10:00',
+            arrivesAt: '2027-06-25T12:00',
+            from: { id: 'p_anc', label: 'ANC', timeZone: 'America/Anchorage' },
+          }
+        : {
+            ...t,
+            departsAt: '2027-06-26T01:00',
+            arrivesAt: '2027-06-26T03:00',
+            from: { id: 'p_nrt', label: 'NRT', timeZone: 'Asia/Tokyo' },
+          },
+    );
+    const view = buildTripView(data, TEST_TODAY);
+    expect(view.transitsById.get('a_second')!.bookingShare?.firstId).toBe('z_first');
+  });
+
+  it('orders a stay and an activity sharing a booking by real time on their own clocks', () => {
+    // Check-in 15:00 in Vancouver (22:00 UTC) is before 14:30 in Anchorage (22:30 UTC).
+    const data = minimalTripData();
+    data.bookings.push({ _id: 'booking_cabin', status: 'booked', pricing: null } as never);
+    data.stays.push({
+      _id: 'z_cabin',
+      legId: 'leg_test',
+      scenarioId: null,
+      checkInAt: '2027-06-26T15:00',
+      checkOutAt: '2027-06-28T09:00',
+      lodging: {
+        place: { id: 'p_van', label: 'Vancouver', timeZone: 'America/Vancouver' },
+      } as never,
+      bookingId: 'booking_cabin',
+      images: [],
+    });
+    pushMinimalActivity(data, {
+      _id: 'a_transfer',
+      startAt: '2027-06-26T14:30',
+      place: { id: 'p_anc', label: 'Anchorage', timeZone: 'America/Anchorage' },
+      bookingId: 'booking_cabin',
+    });
+    const view = buildTripView(data, TEST_TODAY);
+    expect(view.activitiesById.get('a_transfer')!.bookingShare?.firstId).toBe('z_cabin');
+  });
+
   it('leaves a booking with one entry, and its notes, where they are', () => {
     const data = connection();
     data.transits = data.transits.filter((t) => t._id === 'a_second');
-    const only = buildTripView(data).transitsById.get('a_second')!;
+    const only = buildTripView(data, TEST_TODAY).transitsById.get('a_second')!;
     expect(only.bookingShare).toBeUndefined();
     expect(depart(only).booking?._id).toBe('booking_ticket');
     expect(
@@ -1019,7 +1103,7 @@ describe('a booking several entries share', () => {
   it('rebuilds a cached day whose sharer stops being first after a pick on another day', () => {
     const data = weatherWindow();
     data.activities.find((a) => a._id === 'act_good')!.bookingId = null;
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     const first = liveDays(view, data, new Map());
     const next = liveDays(view, data, badPick, first.cache);
     const day = next.days.find((d) => d.date === '2027-06-02')!;
@@ -1077,7 +1161,7 @@ describe('a booking several entries share', () => {
       concerns: [{ entity: 'stay', id: 'stay_good' }],
       images: [],
     });
-    const built = liveDays(buildTripView(data), data, new Map());
+    const built = liveDays(buildTripView(data, TEST_TODAY), data, new Map());
     expect(sheetNotes(built.staysById.get('stay_good')!).map((n) => n._id)).toEqual(['note_late']);
     expect(sheetNotes(built.transitsById.get('tr_bad')!)).toEqual([]);
   });
@@ -1175,7 +1259,7 @@ describe('a booking several entries share', () => {
   });
   // The note ids an activity's detail sheet shows, under the reader's picks.
   const sheetNoteIds = (data: TripData, picks: Map<string, string>) => {
-    const built = liveDays(buildTripView(data), data, picks);
+    const built = liveDays(buildTripView(data, TEST_TODAY), data, picks);
     return (id: string) =>
       sheetNotes(built.activitiesById.get(id)!)
         .map((n) => n._id)
@@ -1223,7 +1307,7 @@ describe('a booking several entries share', () => {
 
   it('hands back the same entry for the same picks', () => {
     const data = weatherWindow();
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     const good = (built: ReturnType<typeof liveDays>) =>
       built.days
         .find((d) => d.date === '2027-06-01')!
@@ -1299,6 +1383,7 @@ describe('splitOutStayBoundaries', () => {
       event: null,
       relation: 'Check out',
       key: '2027-07-01T11:00',
+      order: Date.parse('2027-07-01T11:00Z'),
       stay: { _id: 's1' } as never,
     };
     const checkin: StayRow = {
@@ -1306,6 +1391,7 @@ describe('splitOutStayBoundaries', () => {
       event: null,
       relation: 'Check in',
       key: '2027-07-01T03:00', // earlier clock time than checkout, but must still render last
+      order: Date.parse('2027-07-01T03:00Z'),
       stay: { _id: 's2' } as never,
     };
     const middle: StayRow = {
@@ -1313,6 +1399,7 @@ describe('splitOutStayBoundaries', () => {
       event: null,
       relation: 'Overnight',
       key: '2027-07-01T07:00',
+      order: Date.parse('2027-07-01T07:00Z'),
       stay: { _id: 's3' } as never,
     };
 
@@ -1328,6 +1415,7 @@ describe('splitOutStayBoundaries', () => {
       event: null,
       relation: 'Staying',
       key: '2027-07-01T00:00', // synthetic dayStart anchor — earliest possible key
+      order: Date.parse('2027-07-01T00:00Z'),
       stay: { _id: 's1' } as never,
     };
 
@@ -1345,11 +1433,14 @@ describe('splitOutStayBoundaries', () => {
       event: null,
       relation: 'Check out',
       key: '2027-07-01T11:00',
+      order: Date.parse('2027-07-01T11:00Z'),
       stay: { _id: 's1' } as never,
     };
     const box: BoxRow = {
       type: 'box',
       key: '2027-07-01T10:00',
+      zone: null,
+      order: Date.parse('2027-07-01T10:00Z'),
       tracks: [track(true, [checkoutRow]), track(false, [])],
     };
     const { checkOuts, rest, checkIns } = splitOutStayBoundaries([box]);
@@ -1423,7 +1514,7 @@ describe('budget: Stay packages', () => {
         ],
       }),
     );
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     expect(view.budget.totals.spent).toBe(120);
   });
 
@@ -1447,13 +1538,13 @@ describe('budget: Stay packages', () => {
         ],
       }),
     );
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     expect(view.budget.totals.spent).toBeCloseTo(29.85);
     const labels = view.budget.byLeg.flatMap((g) => g.rows.map((r) => r.label));
     expect(labels).toContain('Parking (3 nights × $9.95)');
 
     data.stays[0] = { ...data.stays[0], checkOutAt: '2027-06-02T11:00' };
-    expect(buildTripView(data).budget.totals.spent).toBeCloseTo(9.95);
+    expect(buildTripView(data, TEST_TODAY).budget.totals.spent).toBeCloseTo(9.95);
   });
 
   // A 'booked' package with no separately-broken-out cost (a perk bundled
@@ -1480,13 +1571,16 @@ describe('budget: Stay packages', () => {
         ],
       }),
     );
-    expect(() => buildTripView(data)).not.toThrow();
-    const alex = buildTripView(data).budget.byTraveler.find((t) => t.name === 'Alex');
+    expect(() => buildTripView(data, TEST_TODAY)).not.toThrow();
+    const alex = buildTripView(data, TEST_TODAY).budget.byTraveler.find((t) => t.name === 'Alex');
     expect(alex?.totals.spent).toBe(0);
   });
 });
 
 describe('budget: when each price line is paid', () => {
+  const TODAY = '2027-06-15';
+  const PAST = '2027-06-01';
+  const AHEAD = '2027-07-01';
   const usd = (amount: number) => ({ amount, currency: 'USD' });
   const lineView = (date: string, booking: TripData['bookings'][number]) => {
     const data = minimalTripData();
@@ -1502,7 +1596,7 @@ describe('budget: when each price line is paid', () => {
       bookingId: booking._id,
       images: [],
     });
-    return buildTripView(data).budget;
+    return buildTripView(data, TODAY).budget;
   };
   const booked = (fixed: TripData['bookings'][number]['pricing']) => ({
     _id: 'booking_room',
@@ -1534,14 +1628,15 @@ describe('budget: when each price line is paid', () => {
         bookingId: null,
         images: [],
       });
-      return buildTripView(data).budget.totals;
+      return buildTripView(data, TODAY).budget.totals;
     };
-    expect(budgetFor('2020-01-01')).toMatchObject({ spent: 100, pending: 0 });
-    expect(budgetFor('2099-01-01')).toMatchObject({ spent: 0, pending: 100 });
+    expect(budgetFor(PAST)).toMatchObject({ spent: 100, pending: 0 });
+    expect(budgetFor(TODAY)).toMatchObject({ spent: 100, pending: 0 });
+    expect(budgetFor(AHEAD)).toMatchObject({ spent: 0, pending: 100 });
   });
 
   it('counts a requested booking as pending, whatever its lines say', () => {
-    const budget = lineView('2020-01-01', {
+    const budget = lineView(PAST, {
       ...booked({ perTraveler: [], fixed: [{ label: 'Tour', amount: usd(300) }] }),
       status: 'requested',
     });
@@ -1554,11 +1649,11 @@ describe('budget: when each price line is paid', () => {
       perTraveler: [{ travelerId: 't1', fare: usd(30) }],
       fixed: [{ label: 'Room', amount: usd(100), payable: 'atProperty' as const }],
     };
-    const ahead = lineView('2999-06-01', booked(pricing));
+    const ahead = lineView(AHEAD, booked(pricing));
     expect(ahead.totals.pending).toBe(100);
     expect(ahead.totals.spent).toBe(30);
     expect(ahead.byLeg[0].rows[0].bucket).toBe('pending');
-    const past = lineView('2000-06-01', booked(pricing));
+    const past = lineView(PAST, booked(pricing));
     expect(past.totals.spent).toBe(130);
   });
 
@@ -1568,10 +1663,10 @@ describe('budget: when each price line is paid', () => {
       fixed: [{ label: 'Room', amount: usd(100), payable: 'atProperty' as const }],
     };
     for (const status of ['requested', 'planning'] as const) {
-      const past = lineView('2000-06-01', { ...booked(pricing), status });
+      const past = lineView(PAST, { ...booked(pricing), status });
       expect(past.totals.spent).toBe(100);
     }
-    const ahead = lineView('2999-06-01', { ...booked(pricing), status: 'requested' });
+    const ahead = lineView(AHEAD, { ...booked(pricing), status: 'requested' });
     expect(ahead.totals.pending).toBe(100);
   });
 
@@ -1580,10 +1675,10 @@ describe('budget: when each price line is paid', () => {
       perTraveler: [],
       fixed: [
         { label: 'Deposit', amount: usd(50) },
-        { label: 'Balance', amount: usd(70), payable: { dueBy: '2999-01-01' } },
+        { label: 'Balance', amount: usd(70), payable: { dueBy: '2027-06-20' } },
       ],
     };
-    const budget = lineView('2999-06-01', booked(pricing));
+    const budget = lineView(AHEAD, booked(pricing));
     expect(budget.totals.spent).toBe(50);
     expect(budget.totals.pending).toBe(70);
   });
@@ -1593,10 +1688,10 @@ describe('budget: when each price line is paid', () => {
       perTraveler: [],
       fixed: [
         { label: 'Deposit', amount: usd(50), payable: { paidAt: '2026-08-06' } },
-        { label: 'Balance', amount: usd(70), payable: { dueBy: '2999-01-01' } },
+        { label: 'Balance', amount: usd(70), payable: { dueBy: '2027-06-20' } },
       ],
     };
-    const budget = lineView('2999-06-01', booked(pricing));
+    const budget = lineView(AHEAD, booked(pricing));
     expect(budget.totals.spent).toBe(50);
     expect(budget.totals.pending).toBe(70);
   });
@@ -1612,8 +1707,8 @@ describe('budget: when each price line is paid', () => {
       travelers: null,
       from: { id: null, label: 'Float Base' },
       to: { id: null, label: 'Remote Lodge' },
-      departsAt: '2999-07-01T08:00',
-      arrivesAt: '2999-07-01T09:00',
+      departsAt: `${AHEAD}T08:00`,
+      arrivesAt: `${AHEAD}T09:00`,
       routeId: null,
       routeVariant: null,
       bookingId: null,
@@ -1630,7 +1725,7 @@ describe('budget: when each price line is paid', () => {
       ],
       images: [],
     });
-    const view = buildTripView(data);
+    const view = buildTripView(data, TODAY);
     expect(view.budget.totals.estimated).toBe(40);
     expect(view.budget.byBasis.fixed.estimated).toBe(40);
     expect(view.legSummaries[0].bookingProgress).toBe('unplanned');
@@ -1666,6 +1761,33 @@ describe('port calls', () => {
     options: null,
   });
 
+  it('checks a port call is inside a cruise on the port’s clock when the cruise states its own', () => {
+    // Boarding at 16:00 on Vancouver time is 15:00 in Juneau, so a 15:30 call is inside.
+    const cruiseOnShipTime = {
+      checkInAt: '2027-07-17T16:00',
+      checkOutAt: '2027-07-24T07:30',
+      clockZone: 'America/Vancouver',
+      lodging: null,
+      portCalls: [
+        {
+          kind: 'port' as const,
+          place: { id: 'place_juneau', label: 'Juneau', timeZone: 'America/Juneau' },
+          arrivesAt: '2027-07-17T15:30',
+          departsAt: '2027-07-17T20:00',
+        },
+      ],
+    };
+    expect(stayTimingProblems(cruiseOnShipTime)).toEqual([]);
+    expect(
+      stayTimingProblems({
+        ...cruiseOnShipTime,
+        portCalls: [{ ...cruiseOnShipTime.portCalls[0], arrivesAt: '2027-07-17T14:30' }],
+      }),
+    ).toEqual([
+      'Juneau at 2027-07-17T14:30 is outside the cruise (2027-07-17T16:00 to 2027-07-24T07:30).',
+    ]);
+  });
+
   it('lists the stops a cruise makes on a day', () => {
     expect(portCallsOn([cruise], '2027-07-21').map((c) => c.place.label)).toEqual(['Juneau']);
     expect(portCallsOn([cruise], '2027-07-19')).toEqual([]);
@@ -1684,6 +1806,68 @@ describe('port calls', () => {
     };
     expect(portCallsOn([overnight], '2027-07-21')).toHaveLength(1);
     expect(portCallsOn([overnight], '2027-07-23')).toEqual([]);
+  });
+
+  it('reads an excursion sold on another clock on the port’s', () => {
+    // 07:00 on Vancouver time is 06:00 in Juneau, before the 06:30 arrival.
+    const excursion = {
+      ...ashore('2027-07-21T07:00', 60),
+      place: { id: 'place_tram', label: 'Tram', timeZone: 'America/Juneau' },
+      clockZone: 'America/Vancouver',
+    };
+    expect(portCallWarningFor(excursion, [cruise])).toBe(
+      'Starts before the ship arrives in Juneau at 6:30am.',
+    );
+  });
+
+  it('counts an excursion inside the cruise in real time when the cruise states its own clock', () => {
+    // Boarding at 15:00 on Vancouver time is 14:00 in Juneau, so a 14:30
+    // Juneau excursion is aboard-then-ashore, and running past 20:00 is late.
+    const embarkCall = {
+      checkInAt: '2027-07-17T15:00',
+      checkOutAt: '2027-07-24T07:30',
+      clockZone: 'America/Vancouver',
+      portCalls: [
+        {
+          kind: 'port' as const,
+          place: { id: 'place_tram', label: 'Juneau', timeZone: 'America/Juneau' },
+          arrivesAt: '2027-07-17T13:00',
+          departsAt: '2027-07-17T20:00',
+        },
+      ],
+    };
+    const late = {
+      ...ashore('2027-07-17T14:30', 360),
+      place: { id: 'place_tram', label: 'Tram', timeZone: 'America/Juneau' },
+    };
+    expect(portCallWarningFor(late, [embarkCall])).toBe(
+      'Ends after all aboard in Juneau at 8:00pm.',
+    );
+  });
+
+  it('reads a cruise with no clock of its own by wall clock, though it ends in another zone', () => {
+    // Its lodging zone is the embarkation port's; the 07:10 Seward plan is
+    // inside the 08:00 check-out by the clock, before the 07:30 arrival.
+    const endsInSeward = {
+      checkInAt: '2027-07-17T16:00',
+      checkOutAt: '2027-07-24T08:00',
+      lodging: { place: { id: 'p_ship', label: 'Ship', timeZone: 'America/Vancouver' } },
+      portCalls: [
+        {
+          kind: 'port' as const,
+          place: { id: 'place_tram', label: 'Seward', timeZone: 'America/Anchorage' },
+          arrivesAt: '2027-07-24T07:30',
+          departsAt: null,
+        },
+      ],
+    };
+    const early = {
+      ...ashore('2027-07-24T07:10', 30),
+      place: { id: 'place_tram', label: 'Tram', timeZone: 'America/Anchorage' },
+    };
+    expect(portCallWarningFor(early, [endsInSeward])).toBe(
+      'Starts before the ship arrives in Seward at 7:30am.',
+    );
   });
 
   it('flags an activity ashore outside the ship’s time in port', () => {
@@ -1808,5 +1992,156 @@ describe('port calls', () => {
     expect(
       portCallWarningFor(ashore('2027-07-18T16:00', 60, 'place_glacier'), [cruise]),
     ).toBeNull();
+  });
+});
+
+describe('instantOf', () => {
+  it('reads a wall clock on a known zone, and gives no instant for an unknown one', () => {
+    expect(instantOf('2027-07-08T08:55', 'America/Anchorage')).toBe(
+      Date.parse('2027-07-08T16:55Z'),
+    );
+    expect(instantOf('2027-07-08T08:55', null)).toBeNull();
+    expect(instantOf('2027-07-08T08:55', 'Not/AZone')).toBeNull();
+  });
+});
+
+describe('movedBy on the trip’s clock', () => {
+  // Leaves Los Angeles 10:00 PDT, reaches Anchorage 12:30 AKDT (an hour behind):
+  // from 12:30 on, a zone-less time reads on Anchorage's clock.
+  const clockOf = () => {
+    const data = minimalTripData();
+    pushMinimalTransit(data, {
+      departsAt: '2027-07-01T10:00',
+      arrivesAt: '2027-07-01T12:30',
+      from: { id: 'p_lax', label: 'LAX', timeZone: 'America/Los_Angeles' },
+      to: { id: 'p_anc', label: 'ANC', timeZone: 'America/Anchorage' },
+    });
+    return tripClock(data);
+  };
+
+  it('writes a zone-less time on the clock in effect at its new time', () => {
+    // 09:00 PDT plus six hours is 15:00 PDT, 14:00 on Anchorage's clock.
+    expect(movedBy({ at: '2027-07-01T09:00', zone: null }, 360, clockOf())).toBe(
+      '2027-07-01T14:00',
+    );
+  });
+
+  it('takes the later wall time in the hour the clock moves back over', () => {
+    // 13:00 PDT is 12:00 in Anchorage, which still reads on Los Angeles' clock;
+    // 13:00 reads on Anchorage's. Neither reads back exactly, so the later.
+    expect(movedBy({ at: '2027-07-01T09:00', zone: null }, 240, clockOf())).toBe(
+      '2027-07-01T13:00',
+    );
+  });
+});
+
+describe('zonedInstant', () => {
+  it('reads a wall clock on that date’s own offset in the zone', () => {
+    expect(zonedInstant('2027-07-08T08:55', 'America/Anchorage')).toBe(
+      Date.parse('2027-07-08T16:55Z'),
+    );
+    expect(zonedInstant('2027-01-08T08:55', 'America/Anchorage')).toBe(
+      Date.parse('2027-01-08T17:55Z'),
+    );
+  });
+
+  it('reads the hour after a spring-forward change on the new offset', () => {
+    // US clocks jump 02:00 → 03:00 on 2027-03-14; 03:30 PDT is 10:30 UTC.
+    expect(zonedInstant('2027-03-14T03:30', 'America/Los_Angeles')).toBe(
+      Date.parse('2027-03-14T10:30Z'),
+    );
+  });
+
+  it('reads a zone the browser doesn’t know on the reader’s clock', () => {
+    expect(zonedInstant('2027-07-08T08:55', 'Not/AZone')).toBe(
+      new Date('2027-07-08T08:55').getTime(),
+    );
+  });
+
+  it('reads a zone east of UTC', () => {
+    expect(zonedInstant('2027-07-08T08:55', 'Asia/Tokyo')).toBe(Date.parse('2027-07-07T23:55Z'));
+  });
+});
+
+describe('overlap warnings across time zones', () => {
+  const DENVER = 'America/Denver'; // UTC-6 in June
+  const PAGE = 'America/Phoenix'; // UTC-7
+  const at = (id: string, timeZone: string) => ({ id, label: id, timeZone });
+  const warningsOf = (data: TripData, id = 'test_activity') =>
+    buildTripView(data, TEST_TODAY).activitiesById.get(id)?.warnings ?? [];
+
+  it('flags an activity during a drive that crosses a zone line, on each end’s clock', () => {
+    const data = minimalTripData();
+    // Leaves Denver 22:00 (04:00 UTC), reaches Page 23:40 (06:40 UTC).
+    pushMinimalTransit(data, {
+      departsAt: '2027-06-28T22:00',
+      arrivesAt: '2027-06-28T23:40',
+      from: at('p_den', DENVER),
+      to: at('p_page', PAGE),
+    });
+    // 23:50 in Denver is 05:50 UTC: mid-drive, though it reads after 23:40.
+    pushMinimalActivity(data, { startAt: '2027-06-28T23:50', place: at('p_call', DENVER) });
+    expect(warningsOf(data)).toEqual([`During transit: p_den → p_page`]);
+  });
+
+  it('flags it in the live day too, with a zone-less activity read on the trip’s clock', () => {
+    const data = minimalTripData();
+    pushMinimalTransit(data, {
+      departsAt: '2027-06-28T22:00',
+      arrivesAt: '2027-06-28T23:40',
+      from: at('p_den', DENVER),
+      to: at('p_page', PAGE),
+    });
+    // No zone: read on the trip's clock at 23:30, Denver's (the departure, the
+    // latest zoned time before it), so 05:30 UTC, mid-drive.
+    pushMinimalActivity(data, { startAt: '2027-06-28T23:30' });
+    const view = buildTripView(data, TEST_TODAY);
+    const { days } = buildLiveDays(view, data, {
+      scenarioPicks: new Map(),
+      routeTones: new Map(),
+      mealOptionIndex: new Map(),
+    });
+    const day = days.find((d) => d.date === '2027-06-28')!;
+    expect(liveWarnings(view.activitiesById.get('test_activity')!, day)).toEqual([
+      'During transit: p_den → p_page',
+    ]);
+  });
+
+  it('flags a departure in the middle of an activity on another clock', () => {
+    const data = minimalTripData();
+    // Dinner in Page 21:00 to 23:00 is 04:00 to 06:00 UTC; the drive leaves
+    // Denver at 23:30, 05:30 UTC, before it ends.
+    pushMinimalActivity(data, {
+      startAt: '2027-06-28T21:00',
+      durationMinutes: 120,
+      place: at('p_page', PAGE),
+    });
+    pushMinimalTransit(data, {
+      departsAt: '2027-06-28T23:30',
+      arrivesAt: '2027-06-29T01:00',
+      from: at('p_den', DENVER),
+      to: at('p_page2', PAGE),
+    });
+    expect(warningsOf(data)).toEqual(['p_den departs before this ends.']);
+  });
+
+  it('doesn’t flag two activities whose clock times overlap but whose real times don’t', () => {
+    const data = minimalTripData();
+    // 10:00 to 10:45 in Page is 17:00 to 17:45 UTC; 10:30 to 11:00 at the
+    // canyon is 16:30 to 17:00 UTC: one ends as the other starts.
+    pushMinimalActivity(data, {
+      _id: 'page_walk',
+      startAt: '2027-06-28T10:00',
+      durationMinutes: 45,
+      place: at('p_page', PAGE),
+    });
+    pushMinimalActivity(data, {
+      _id: 'canyon_tour',
+      startAt: '2027-06-28T10:30',
+      durationMinutes: 30,
+      place: at('p_canyon', DENVER),
+    });
+    expect(warningsOf(data, 'page_walk')).toEqual([]);
+    expect(warningsOf(data, 'canyon_tour')).toEqual([]);
   });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { TEST_TODAY } from '../test/today';
 import { buildLiveDays } from './liveDays';
 import { buildTripView } from './tripModel';
 import type { Activity, DayRow, Scenario, Stay, Transit, TripData } from './types';
@@ -117,7 +118,7 @@ function sig(rows: DayRow[]): string[] {
 // The rows of one live day (the real pipeline: picks -> timeline -> layoutDay),
 // as a signature — with the top-level tab strip expanded to that day's tracks.
 function rowsOf(data: TripData, date: string, picks = new Map<string, string>()): string[] {
-  const view = buildTripView(data);
+  const view = buildTripView(data, TEST_TODAY);
   const { days } = buildLiveDays(view, data, {
     scenarioPicks: picks,
     routeTones: new Map(),
@@ -148,7 +149,7 @@ describe('layoutDay', () => {
       activity('fuzzy', null, { scenarioId: 'i', date: '2027-06-01', timeLabel: 'Morning' }),
       activity('other_day', '2027-06-02T09:00', { scenarioId: 'i' }),
     );
-    const view = buildTripView(data);
+    const view = buildTripView(data, TEST_TODAY);
     const { days } = buildLiveDays(view, data, {
       scenarioPicks: new Map(),
       routeTones: new Map(),
@@ -314,7 +315,7 @@ describe('layoutDay', () => {
       activity('a1', '2027-06-01T10:00', { scenarioId: 'a', place: at('a_only') }),
     );
     const headerOf = (picks: Map<string, string>) => {
-      const view = buildTripView(data);
+      const view = buildTripView(data, TEST_TODAY);
       const { days } = buildLiveDays(view, data, {
         scenarioPicks: picks,
         routeTones: new Map(),
@@ -325,5 +326,56 @@ describe('layoutDay', () => {
     };
     expect(headerOf(new Map())).toEqual(['p_i_first', 'p_i_last']);
     expect(headerOf(new Map([['a+i', 'a']]))).toEqual(['p_a_only', 'p_a_only']);
+  });
+});
+
+describe('layoutDay — time zones', () => {
+  const PAGE = 'America/Phoenix'; // Arizona: no daylight saving
+  const NAVAJO = 'America/Denver'; // an hour ahead of Page in summer
+  const placeIn = (id: string, timeZone: string) => ({ id, label: id, timeZone });
+
+  it('lists a day that crosses zones in the order things happen', () => {
+    const data = tripData();
+    data.activities.push(
+      // 10:30 in Page is 17:30 UTC; 11:00 at the canyon is 17:00 UTC.
+      activity('page_lunch', '2027-06-01T10:30', { place: placeIn('p_page', PAGE) }),
+      activity('canyon_tour', '2027-06-01T11:00', { place: placeIn('p_canyon', NAVAJO) }),
+    );
+    expect(rowsOf(data, '2027-06-01')).toEqual(['activity:canyon_tour', 'activity:page_lunch']);
+  });
+
+  it('anchors the day’s tab strip at the group whose anchor happens first', () => {
+    const data = tripData();
+    data.scenarios.push(
+      scenario('i', 'ideal'),
+      scenario('a', 'alternate'),
+      // A second group, gated on the first's ideal (which is active).
+      scenario('j', 'ideal', { requiresScenarioId: ['i'] }),
+      scenario('b', 'alternate', { requiresScenarioId: ['i'] }),
+    );
+    data.activities.push(
+      // 10:30 in Page is 17:30 UTC; 11:00 at the canyon is 17:00 UTC.
+      activity('i1', '2027-06-01T10:30', { scenarioId: 'i', place: placeIn('p_page', PAGE) }),
+      activity('a1', '2027-06-01T10:30', { scenarioId: 'a', place: placeIn('p_page', PAGE) }),
+      activity('j1', '2027-06-01T11:00', { scenarioId: 'j', place: placeIn('p_canyon', NAVAJO) }),
+      activity('b1', '2027-06-01T11:00', { scenarioId: 'b', place: placeIn('p_canyon', NAVAJO) }),
+    );
+    expect(rowsOf(data, '2027-06-01')[0]).toMatch(/^tabs@2027-06-01T11:00\[/);
+  });
+
+  it('places a scenario box where its anchor happens, on its own clock', () => {
+    const data = tripData();
+    data.scenarios.push(scenario('i', 'ideal'), scenario('a', 'alternate'));
+    data.activities.push(
+      activity('canyon_tour', '2027-06-01T11:00', { place: placeIn('p_canyon', NAVAJO) }),
+      // The box's 10:30 in Page comes after the canyon's 11:00.
+      activity('i1', '2027-06-01T10:30', { scenarioId: 'i', place: placeIn('p_page', PAGE) }),
+      activity('a1', '2027-06-01T10:30', { scenarioId: 'a', place: placeIn('p_page', PAGE) }),
+    );
+    expect(rowsOf(data, '2027-06-01')).toEqual([
+      'activity:canyon_tour',
+      'tabs@2027-06-01T10:30[i,a]',
+      '  activity:i1',
+    ]);
   });
 });

@@ -1,5 +1,6 @@
 import Typography from '@mui/material/Typography';
 
+import { clockSuffix } from '../../model/dayClocks';
 import { includedInLabel, PRIORITY_LABEL } from '../../model/entityDetails';
 import {
   DINING_FORMAT_LABEL,
@@ -10,14 +11,18 @@ import {
 import { mealOptionLabel, mealOptionTimeLabel } from '../../model/mealOptions';
 import {
   activityHeadline,
+  activityStart,
+  activityZone,
   optionShows,
   resolveActivityDate,
   sheetNotes,
 } from '../../model/tripModel';
 import type { Booking, EnrichedActivity, EnrichedMealOption, Place } from '../../model/types';
 import { useHeroImageSelect } from '../../state/useHeroImageSelect';
+import { useLiveDays } from '../../state/useLiveDays';
 import { useActivityPlaceImagePersist } from '../../state/usePlaceImagePersist';
 import { useTripData } from '../../state/useTripData';
+import { BookingClockNote } from '../day/BookingClockNote';
 import { BookingSection } from '../shared/BookingChip';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
@@ -94,6 +99,7 @@ export function ActivityDetailPanel({
   const onSelectImage = useHeroImageSelect('activity', activity?._id);
   const onAutoImage = useActivityPlaceImagePersist(activity, selectedOption);
   const { data } = useTripData();
+  const liveDays = useLiveDays();
 
   if (!activity) return null;
 
@@ -101,6 +107,9 @@ export function ActivityDetailPanel({
   const { booking, holderId } = selectedBooking(activity, selectedOption);
   const image = firstImage(activity, place);
   const date = resolveActivityDate(activity);
+  // The clock its time is on, on a day the clocks change, as its row says.
+  const day = date ? liveDays.byDate.get(date) : undefined;
+  const clock = day && activity.startAt ? clockSuffix(day, activityStart(activity)) : '';
   const includedIn = data
     ? includedInLabel(data, selectedOption ? selectedOption.includedIn : activity.includedIn)
     : null;
@@ -138,8 +147,14 @@ export function ActivityDetailPanel({
         {timeAndMealTypeLabel(
           activity,
           selectedOption ? mealOptionTimeLabel(activity, selectedOption) : undefined,
+          clock,
         )}
       </Typography>
+      <BookingClockNote
+        at={activity.startAt}
+        bookingZone={activityZone(activity)}
+        placeZone={place?.timeZone}
+      />
       {activity.priority && (
         <Typography variant="body2" color="text.secondary">
           {PRIORITY_LABEL[activity.priority]}

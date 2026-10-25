@@ -41,6 +41,23 @@ describe('pickedPlace', () => {
       images: [{ placePhoto: { placeId: 'place_diner' }, credit: null, caption: null }],
     });
   });
+
+  it('keeps the picked place’s own zone, never the previous place’s', () => {
+    const previous = { id: 'place_old', label: 'Old', timeZone: 'America/Phoenix' };
+    expect(
+      pickedPlace({ id: 'place_new', label: 'New', timeZone: 'America/Denver' }, previous).timeZone,
+    ).toBe('America/Denver');
+    expect(
+      pickedPlace({ id: 'place_new', label: 'New', timeZone: null }, previous),
+    ).not.toHaveProperty('timeZone');
+  });
+
+  it('keeps the zone of the same place picked again when the search reports none', () => {
+    const previous = { id: 'place_old', label: 'Old', timeZone: 'America/Juneau' };
+    expect(pickedPlace({ id: 'place_old', label: 'Old', timeZone: null }, previous).timeZone).toBe(
+      'America/Juneau',
+    );
+  });
 });
 
 describe('autoPlaceImage', () => {

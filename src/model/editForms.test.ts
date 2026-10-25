@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  activityFormFrom,
+  applyActivityForm,
   applyRouteForm,
   applyScenarioSave,
   applyStayForm,
   applyTransitForm,
   applyTripForm,
+  blankActivity,
   blankRouteVariant,
   blankStay,
   blankTransit,
@@ -311,10 +314,10 @@ describe('stay form: port calls', () => {
         ...form,
         portCalls: [{ ...call, arrivesAt: '2027-07-21T16:00', departsAt: '2027-07-21T07:00' }],
       }),
-    ).toMatch(/after the ship arrives/);
+    ).toBe('Juneau: leaves 2027-07-21T07:00, not after it arrives 2027-07-21T16:00.');
     expect(
       applyStayForm(stay, { ...form, portCalls: [{ ...call, arrivesAt: '2027-08-01T06:00' }] }),
-    ).toMatch(/between check-in and check-out/);
+    ).toMatch(/Juneau at .* is outside the cruise \(2027-07-17T16:00 to 2027-07-24T08:00\)\./);
   });
 });
 
@@ -331,5 +334,181 @@ describe('bookingCoverageLabels', () => {
     const data = { legs: [leg], stays: [ship, other], transits: [], activities: [] };
     expect(bookingCoverageLabels(data, 'b1', 'stay1')).toEqual(['Test leg']);
     expect(bookingCoverageLabels(data, 'b1')).toEqual(['Test leg', 'Test ship']);
+  });
+});
+
+describe('form times, held to the same rules as every AI proposal', () => {
+  const flight = (from?: string, to?: string) => {
+    const transit = blankTransit('leg_test', '2027-07-11');
+    transit.from = { id: 'p_hnd', label: 'Haneda', ...(from ? { timeZone: from } : {}) };
+    transit.to = { id: 'p_anc', label: 'Anchorage', ...(to ? { timeZone: to } : {}) };
+    return transit;
+  };
+  // Leaves Tokyo 23:30 (14:30 UTC); lands Anchorage 08:00 the same day (16:00 UTC).
+  const tokyoToAnchorage = (transit: Transit) =>
+    applyTransitForm(transit, {
+      ...transitFormFrom(transit, NO_BOOKINGS),
+      departsDate: '2027-07-11',
+      departsTime: '23:30',
+      arrivesDate: '2027-07-11',
+      arrivesTime: '08:00',
+    });
+
+  it('takes an arrival that reads earlier once both places’ zones are known', () => {
+    expect(tokyoToAnchorage(flight('Asia/Tokyo', 'America/Anchorage'))).toBeNull();
+  });
+
+  it('turns down an earlier-reading arrival without zones, saying how to give them', () => {
+    expect(tokyoToAnchorage(flight())).toBe(
+      'Arrives 2027-07-11T08:00, not after it departs 2027-07-11T23:30. If the two places keep different clocks, pick each one from the place search so its time zone is known.',
+    );
+  });
+
+  it('turns down a port-call time that isn’t a date-time, as the AI paths do', () => {
+    const stay = blankStay('leg_t', '2027-07-17');
+    const form = {
+      ...stayFormFrom(stay, NO_BOOKINGS),
+      checkInDate: '2027-07-17',
+      checkInTime: '16:00',
+      checkOutDate: '2027-07-24',
+      checkOutTime: '08:00',
+      portCalls: [
+        {
+          kind: 'port' as const,
+          place: { id: 'place_juneau', label: 'Juneau' },
+          arrivesAt: '2027-07-21T7:00',
+          departsAt: null,
+        },
+      ],
+    };
+    expect(applyStayForm(stay, form)).toBe('Juneau: times look like 2027-07-21T06:30.');
+  });
+
+  it('keeps a port call at the last port inside a cruise that ends in another zone', () => {
+    // The ship's zone is its embarkation port's (UTC-7); it checks out in Seward
+    // (UTC-8). The 07:30 Seward stop is before the 08:00 check-out on the clock.
+    const stay = blankStay('leg_t', '2027-07-17');
+    stay.lodging = { place: { id: 'p_ship', label: 'Ship', timeZone: 'America/Vancouver' } };
+    const form = {
+      ...stayFormFrom(stay, NO_BOOKINGS),
+      checkInDate: '2027-07-17',
+      checkInTime: '16:00',
+      checkOutDate: '2027-07-24',
+      checkOutTime: '08:00',
+      portCalls: [
+        {
+          kind: 'port' as const,
+          place: { id: 'p_seward', label: 'Seward', timeZone: 'America/Anchorage' },
+          arrivesAt: '2027-07-24T07:30',
+          departsAt: null,
+        },
+      ],
+    };
+    expect(applyStayForm(stay, form)).toBeNull();
+  });
+
+  it('turns down a check-out at or before check-in', () => {
+    const stay = blankStay('leg_t', '2027-07-17');
+    const form = {
+      ...stayFormFrom(stay, NO_BOOKINGS),
+      checkInDate: '2027-07-17',
+      checkInTime: '16:00',
+      checkOutDate: '2027-07-17',
+      checkOutTime: '16:00',
+    };
+    expect(applyStayForm(stay, form)).toBe(
+      'Checks out 2027-07-17T16:00, not after check-in 2027-07-17T16:00.',
+    );
+  });
+});
+
+describe("a booking's own clock in the forms", () => {
+  const tour = () => {
+    const activity = blankActivity('leg_t', '2027-07-11');
+    activity.startAt = '2027-07-11T10:00';
+    activity.date = null;
+    activity.text = 'Tour';
+    return activity;
+  };
+  const withClock = (clockZone: string, activity = tour()) => {
+    const error = applyActivityForm(activity, {
+      ...activityFormFrom(activity, NO_BOOKINGS),
+      clockZone,
+    });
+    return error ?? activity.clockZone;
+  };
+
+  it('stores any spelling of a known zone by its canonical name', () => {
+    expect(withClock('us/arizona')).toBe('America/Phoenix');
+  });
+
+  it("leaves it off when the form's clock is cleared", () => {
+    const activity = { ...tour(), clockZone: 'America/Phoenix' };
+    expect(withClock('', activity)).toBeUndefined();
+    expect('clockZone' in activity).toBe(false);
+  });
+
+  it('turns down a clock that is not a time zone', () => {
+    expect(withClock('Arizona time')).toMatch(/isn't a time zone/);
+  });
+
+  it('drops the clock when the activity moves to another place, unless the form restates it', () => {
+    const canyon = { id: 'p_canyon', label: 'Canyon' };
+    const at = (
+      place: { id: string | null; label: string } | null,
+      clockZone = 'America/Phoenix',
+    ) => {
+      const activity = { ...tour(), place: canyon, clockZone: 'America/Phoenix' };
+      applyActivityForm(activity, { ...activityFormFrom(activity, NO_BOOKINGS), place, clockZone });
+      return activity.clockZone;
+    };
+    expect(at({ id: 'p_lodge', label: 'Lodge' })).toBeUndefined();
+    expect(at({ ...canyon, label: 'Upper Canyon' })).toBe('America/Phoenix');
+    expect(at({ id: 'p_lodge', label: 'Lodge' }, 'America/Denver')).toBe('America/Denver');
+  });
+
+  it('drops the clock from a rough time of day', () => {
+    const activity = { ...tour(), clockZone: 'America/Phoenix' };
+    applyActivityForm(activity, {
+      ...activityFormFrom(activity, NO_BOOKINGS),
+      startsTime: null,
+      timeLabel: 'Morning',
+    });
+    expect(activity.clockZone).toBeUndefined();
+  });
+
+  it('keeps a stay’s clock when the lodging box is emptied, since the lodging stays', () => {
+    const stay = {
+      ...blankStay('leg_t', '2027-07-17'),
+      lodging: { place: { id: 'p_ship', label: 'Ship' } },
+      clockZone: 'America/Vancouver',
+    };
+    expect(applyStayForm(stay, { ...stayFormFrom(stay, NO_BOOKINGS), place: null })).toBeNull();
+    expect(stay.clockZone).toBe('America/Vancouver');
+  });
+
+  it("checks a cruise's port calls on the clock the form gives it", () => {
+    // Boarding at 16:00 on Vancouver time is 15:00 in Juneau, so a 15:30 call
+    // is inside the cruise only on that clock.
+    const stay = blankStay('leg_t', '2027-07-17');
+    const form = (clockZone: string) => ({
+      ...stayFormFrom(stay, NO_BOOKINGS),
+      checkInDate: '2027-07-17',
+      checkInTime: '16:00',
+      checkOutDate: '2027-07-24',
+      checkOutTime: '08:00',
+      clockZone,
+      portCalls: [
+        {
+          kind: 'port' as const,
+          place: { id: 'p_juneau', label: 'Juneau', timeZone: 'America/Juneau' },
+          arrivesAt: '2027-07-17T15:30',
+          departsAt: '2027-07-17T20:00',
+        },
+      ],
+    });
+    expect(applyStayForm(stay, form(''))).toMatch(/outside the cruise/);
+    expect(applyStayForm(stay, form('America/Vancouver'))).toBeNull();
+    expect(stay.clockZone).toBe('America/Vancouver');
   });
 });

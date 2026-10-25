@@ -15,7 +15,7 @@ import { persisted } from './idbCache';
 import { parseIsoDateUTC, parseMonthDayUTC } from './isoDate';
 import { fetchOpenMeteoJson } from './openMeteoClient';
 import { type Coordinates, coordKey, getCoordinates } from './placeCoordinates';
-import { addDaysStr, formatTime, todayDateStr } from './tripModel';
+import { addDaysStr, formatTime } from './tripModel';
 
 export interface DayWeather {
   sunrise: string | null;
@@ -85,11 +85,9 @@ const CACHE_VERSION = 'v3';
 // each new year's data reasonably promptly after it rolls in.
 const CLIMATE_CACHE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-// Whole-day difference between `date` and the real wall-clock "today" (via
-// tripModel's own todayDateStr, so this shares one definition of "today"
-// with the rest of the app rather than re-deriving it).
-function daysFromToday(date: string): number {
-  return Math.round((parseIsoDateUTC(date) - parseIsoDateUTC(todayDateStr())) / 86_400_000);
+// Whole-day difference between `date` and `today` (the caller's todayDateStr).
+function daysFromToday(date: string, today: string): number {
+  return Math.round((parseIsoDateUTC(date) - parseIsoDateUTC(today)) / 86_400_000);
 }
 
 interface DailyBlock {
@@ -196,8 +194,8 @@ function shiftMonthDayInYear(year: number, monthDay: string, offsetDays: number)
 async function fetchClimateYears(
   { lat, lng }: Coordinates,
   monthDay: string,
+  endYear: number,
 ): Promise<ClimateDay[]> {
-  const endYear = new Date().getUTCFullYear() - 1;
   const startYear = endYear - (CLIMATE_YEARS - 1);
   const years = Array.from({ length: CLIMATE_YEARS }, (_, i) => startYear + i);
   const perYear = await Promise.all(
@@ -223,14 +221,19 @@ async function fetchClimateYears(
   return perYear.flat();
 }
 
-function getClimateYears(coords: Coordinates, monthDay: string): Promise<ClimateDay[]> {
-  const key = `${coordKey(coords)}|${monthDay}`;
+function getClimateYears(
+  coords: Coordinates,
+  monthDay: string,
+  endYear: number,
+): Promise<ClimateDay[]> {
+  // The end year is in the key, so a new year's average is fetched fresh.
+  const key = `${coordKey(coords)}|${monthDay}|${endYear}`;
   // CLIMATE_YEARS and CLIMATE_WINDOW_DAYS are folded into the storage key so
   // that changing either invalidates old entries automatically instead of
   // serving a stale-shaped average under the new settings.
   const storageKey = `weather-climate:${CACHE_VERSION}:${key}:${CLIMATE_YEARS}:${CLIMATE_WINDOW_DAYS}`;
   return memoizeAsync(climateCache, key, () =>
-    persisted(storageKey, CLIMATE_CACHE_TTL_MS, () => fetchClimateYears(coords, monthDay)),
+    persisted(storageKey, CLIMATE_CACHE_TTL_MS, () => fetchClimateYears(coords, monthDay, endYear)),
   );
 }
 
@@ -272,15 +275,20 @@ function averageForMonthDay(years: ClimateDay[], monthDay: string): PlaceForecas
 // high/low temperature shown for a Day can each come from a *different*
 // place (see DayWeatherPlaces below), so this resolves just one of them;
 // getDayWeather composes the three.
-async function getPlaceWeather(placeId: string, date: string): Promise<PlaceForecast | null> {
+async function getPlaceWeather(
+  placeId: string,
+  date: string,
+  today: string,
+): Promise<PlaceForecast | null> {
   const coords = await getCoordinates(placeId);
-  const daysAway = daysFromToday(date);
+  const daysAway = daysFromToday(date, today);
   if (daysAway >= 0 && daysAway < FORECAST_WINDOW_DAYS) {
     const forecast = await fetchForecastDay(coords, date);
     if (forecast) return forecast;
   }
   const monthDay = date.slice(5);
-  const years = await getClimateYears(coords, monthDay);
+  // The climate average ends with the last full year.
+  const years = await getClimateYears(coords, monthDay, Number(today.slice(0, 4)) - 1);
   return averageForMonthDay(years, monthDay);
 }
 
@@ -297,9 +305,10 @@ export interface PlaceTemperature {
 export async function getPlaceTemperature(
   placeId: string,
   date: string,
+  today: string,
 ): Promise<PlaceTemperature | null> {
   if (!hasGoogleApiKey()) return null;
-  const weather = await getPlaceWeather(placeId, date);
+  const weather = await getPlaceWeather(placeId, date, today);
   if (!weather || weather.highF === null || weather.lowF === null) return null;
   return { highF: weather.highF, lowF: weather.lowF, isForecast: weather.isForecast };
 }
@@ -320,9 +329,10 @@ export interface PlaceSunriseSunset {
 export async function getPlaceSunriseSunset(
   placeId: string,
   date: string,
+  today: string,
 ): Promise<PlaceSunriseSunset | null> {
   if (!hasGoogleApiKey()) return null;
-  const weather = await getPlaceWeather(placeId, date);
+  const weather = await getPlaceWeather(placeId, date, today);
   if (!weather) return null;
   return { sunrise: weather.sunrise, sunset: weather.sunset };
 }
@@ -357,9 +367,13 @@ async function fetchAirQuality(coords: Coordinates, date: string): Promise<numbe
   });
 }
 
-async function getAirQuality(placeId: string | null, date: string): Promise<number | null> {
+async function getAirQuality(
+  placeId: string | null,
+  date: string,
+  today: string,
+): Promise<number | null> {
   if (!placeId || !hasGoogleApiKey()) return null;
-  const daysAway = daysFromToday(date);
+  const daysAway = daysFromToday(date, today);
   if (daysAway < 0 || daysAway >= AIR_QUALITY_FORECAST_WINDOW_DAYS) return null;
   const coords = await getCoordinates(placeId);
   return fetchAirQuality(coords, date);
@@ -394,9 +408,13 @@ function fetchWaveHeightFt(coords: Coordinates, date: string): Promise<number | 
   });
 }
 
-async function getWaveHeightFt(placeId: string | null, date: string): Promise<number | null> {
+async function getWaveHeightFt(
+  placeId: string | null,
+  date: string,
+  today: string,
+): Promise<number | null> {
   if (!placeId || !hasGoogleApiKey()) return null;
-  const daysAway = daysFromToday(date);
+  const daysAway = daysFromToday(date, today);
   if (daysAway < 0 || daysAway >= MARINE_FORECAST_WINDOW_DAYS) return null;
   const coords = await getCoordinates(placeId);
   return fetchWaveHeightFt(coords, date);
@@ -421,6 +439,7 @@ export interface DayWeatherPlaces {
 export async function getDayWeather(
   places: DayWeatherPlaces,
   date: string,
+  today: string,
 ): Promise<DayWeather | null> {
   if (!hasGoogleApiKey()) return null;
   const uniqueIds = [
@@ -440,9 +459,11 @@ export async function getDayWeather(
   // (not gated behind) the sunrise/sunset/temperature places resolving.
   const resolved = new Map<string, PlaceForecast | null>();
   const [settled, aqi, marine] = await Promise.all([
-    Promise.allSettled(uniqueIds.map(async (id) => [id, await getPlaceWeather(id, date)] as const)),
-    getAirQuality(places.airQualityPlaceId, date),
-    getWaveHeightFt(places.marinePlaceId, date),
+    Promise.allSettled(
+      uniqueIds.map(async (id) => [id, await getPlaceWeather(id, date, today)] as const),
+    ),
+    getAirQuality(places.airQualityPlaceId, date, today),
+    getWaveHeightFt(places.marinePlaceId, date, today),
   ]);
   for (const outcome of settled) {
     if (outcome.status === 'fulfilled') resolved.set(...outcome.value);

@@ -51,13 +51,21 @@ import type {
 } from './types';
 
 export type DayVisit =
-  | { kind: 'stay'; stay: EnrichedStay; relation: StayRelation; place: Place; key: string }
+  | {
+      kind: 'stay';
+      stay: EnrichedStay;
+      relation: StayRelation;
+      place: Place;
+      key: string;
+      order: number;
+    }
   | {
       kind: 'transit';
       transit: EnrichedTransit;
       phase: 'depart' | 'arrive';
       place: Place;
       key: string;
+      order: number;
     }
   | {
       kind: 'stage';
@@ -66,14 +74,15 @@ export type DayVisit =
       stageIndex: number;
       place: Place;
       key: string;
+      order: number;
     }
-  | { kind: 'activity'; activity: EnrichedActivity; place: Place; key: string };
+  | { kind: 'activity'; activity: EnrichedActivity; place: Place; key: string; order: number };
 
 export interface DayVisits {
   date: string;
   checkOuts: DayVisit[]; // unscoped Stay check-outs — always the day's first stops
   checkIns: DayVisit[]; // unscoped check-ins and stays in progress — always its last
-  rest: DayVisit[]; // everything else, in clock order
+  rest: DayVisit[]; // everything else, in the order it happens
 }
 
 export interface DayVisitsInput {
@@ -114,11 +123,28 @@ function rowVisits(row: DayRow): DayVisit[] {
     case 'stay': {
       const place = row.stay.lodging?.place;
       if (!place) return [];
-      return [{ kind: 'stay', stay: row.stay, relation: row.relation, place, key: row.key }];
+      return [
+        {
+          kind: 'stay',
+          stay: row.stay,
+          relation: row.relation,
+          place,
+          key: row.key,
+          order: row.order,
+        },
+      ];
     }
     case 'activity':
       return row.event.place
-        ? [{ kind: 'activity', activity: row.activity, place: row.event.place, key: row.key }]
+        ? [
+            {
+              kind: 'activity',
+              activity: row.activity,
+              place: row.event.place,
+              key: row.key,
+              order: row.order,
+            },
+          ]
         : [];
     case 'transit': {
       const place = row.event.place;
@@ -132,17 +158,27 @@ function rowVisits(row: DayRow): DayVisit[] {
               stageIndex: row.stageIndex,
               place,
               key: row.key,
+              order: row.order,
             },
           ]
-        : [{ kind: 'transit', transit: row.transit, phase: row.phase, place, key: row.key }];
+        : [
+            {
+              kind: 'transit',
+              transit: row.transit,
+              phase: row.phase,
+              place,
+              key: row.key,
+              order: row.order,
+            },
+          ];
     }
-    // A scenario box contributes only the branches on screen, in clock order
-    // (nested boxes flatten into the outermost one, as the list shows them).
+    // A scenario box contributes only the branches on screen, in the order they
+    // happen (nested boxes flatten into the outermost one, as the list shows them).
     case 'box':
       return row.tracks
         .filter((track) => track.active)
         .flatMap((track) => track.rows.flatMap(rowVisits))
-        .sort((a, b) => (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
+        .sort((a, b) => a.order - b.order);
   }
 }
 
@@ -168,12 +204,20 @@ function eventVisit(event: TimelineEvent, transit: EnrichedTransit): DayVisit | 
           stageIndex: event.stageIndex,
           place: event.place,
           key: event.at,
+          order: event.instant,
         }
       : null;
   }
   const phase = event.kind === 'depart' ? 'depart' : 'arrive';
   if (!transitPhaseOnMap(transit, phase)) return null;
-  return { kind: 'transit', transit, phase, place: event.place, key: event.at };
+  return {
+    kind: 'transit',
+    transit,
+    phase,
+    place: event.place,
+    key: event.at,
+    order: event.instant,
+  };
 }
 
 // The places a day touches, read off its own laid-out rows so the map, route

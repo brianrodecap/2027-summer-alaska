@@ -7,10 +7,11 @@ import {
   placeFromLodging,
   stayDetailBits,
 } from '../../model/formatting';
-import { dateOnly, sheetNotes, stayNights } from '../../model/tripModel';
+import { dateOnly, sheetNotes, stayNights, stayZone } from '../../model/tripModel';
 import type { EnrichedStay } from '../../model/types';
 import { useHeroImageSelect } from '../../state/useHeroImageSelect';
 import { useStayPlaceImagePersist } from '../../state/usePlaceImagePersist';
+import { BookingClockNote } from '../day/BookingClockNote';
 import { BookingSection } from '../shared/BookingChip';
 import { DetailSideSheet } from '../shared/DetailSideSheet';
 import { EntityHeroImage } from '../shared/EntityHeroImage';
@@ -52,6 +53,18 @@ export function StayDetailPanel({
     >
       <EntityHeroImage image={image} />
       <Typography variant="body1">{stayWhenLabel(stay)}</Typography>
+      <BookingClockNote
+        at={stay.checkInAt}
+        bookingZone={stayZone(stay)}
+        placeZone={place?.timeZone}
+        label="Check-in"
+      />
+      <BookingClockNote
+        at={stay.checkOutAt}
+        bookingZone={stayZone(stay)}
+        placeZone={place?.timeZone}
+        label="Check-out"
+      />
       {detailBits.length > 0 && (
         <Typography variant="body2" color="text.secondary">
           {detailBits.join(' · ')}

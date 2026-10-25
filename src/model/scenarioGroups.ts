@@ -13,15 +13,19 @@
 // member, the default (validateScenarioGroups; the edit UI keeps it true via
 // resolveScenarioToneChange/scenarioDeletionBlocker).
 import {
-  activityTimelineKey,
+  activityTimelineStart,
   addDaysStr,
   compareScenariosByToneAndLabel,
   dateOnly,
-  earliestKey,
+  earliestTime,
   resolveScenarioDates,
   resolveTransitRoute,
   type ScenarioDateInfo,
+  stayZone,
   transitTouchedDates,
+  type TripClock,
+  tripClock,
+  type ZonedTime,
 } from './tripModel';
 import type { Activity, Scenario, Stay, Transit, TripData } from './types';
 
@@ -300,7 +304,7 @@ export interface ScenarioGroup {
   // Where the group's box sits on each date it has content (or a placement
   // hint) — the same whichever member is selected, so the box never jumps
   // when the reader switches tabs.
-  anchorAtByDate: Record<string, string>;
+  anchorAtByDate: Record<string, ZonedTime>;
   // Which members have a tab on each date — the ones with content there (or
   // a still-empty member's own placement hint). A multi-day scenario's
   // sibling can be absent on the second day.
@@ -308,8 +312,8 @@ export interface ScenarioGroup {
 }
 
 interface MemberKeys {
-  real: string[]; // Activity/Transit keys
-  stay: string[]; // Stay check-in/out keys — "which hotel", not a moment
+  real: ZonedTime[]; // Activity/Transit keys
+  stay: ZonedTime[]; // Stay check-in/out keys — "which hotel", not a moment
   // The entities behind those keys — what a scenario owns on this date.
   activityIds: string[];
   transitIds: string[];
@@ -331,14 +335,15 @@ function keysByScenarioAndDate(data: ScenarioData): Map<string, Map<string, Memb
     return keys;
   };
   for (const a of data.activities as Activity[]) {
-    const key = a.scenarioId ? activityTimelineKey(a) : null;
-    if (a.scenarioId && key) {
-      const keys = bucket(a.scenarioId, key.date);
-      keys.real.push(key.at);
+    const start = a.scenarioId ? activityTimelineStart(a) : null;
+    if (a.scenarioId && start) {
+      const keys = bucket(a.scenarioId, dateOnly(start.at));
+      keys.real.push(start);
       keys.activityIds.push(a._id);
     }
   }
   const routesById = new Map((data.routes ?? []).map((r) => [r._id, r]));
+  const clock = tripClock(data);
   for (const t of data.transits as Transit[]) {
     if (!t.scenarioId) continue;
     // The scenario has rows on every date the Transit reaches (a stage or the
@@ -346,10 +351,14 @@ function keysByScenarioAndDate(data: ScenarioData): Map<string, Map<string, Memb
     // group has no box there and those rows would appear nowhere. Only the
     // departure is a real key that can anchor the box; a later date just
     // needs to exist.
-    const info = resolveTransitRoute(t, routesById, data.activities as Activity[]);
+    const info = resolveTransitRoute(t, routesById, data.activities as Activity[], clock);
     for (const date of transitTouchedDates(t, info)) {
       const keys = bucket(t.scenarioId, date);
-      keys.real.push(date === dateOnly(t.departsAt) ? t.departsAt : `${date}T00:00`);
+      keys.real.push(
+        date === dateOnly(t.departsAt)
+          ? { at: t.departsAt, zone: t.from.timeZone ?? null }
+          : { at: `${date}T00:00`, zone: null },
+      );
       keys.transitIds.push(t._id);
     }
   }
@@ -363,7 +372,8 @@ function keysByScenarioAndDate(data: ScenarioData): Map<string, Map<string, Memb
     for (let date = checkInDate; date <= checkOutDate; date = addDaysStr(date, 1)) {
       const key = date === checkInDate ? s.checkInAt : date === checkOutDate ? s.checkOutAt : null;
       const keys = bucket(s.scenarioId, date);
-      keys.stay.push(key ?? `${date}T00:00`);
+      // A night in between sits at the day's start, read on the trip's clock.
+      keys.stay.push(key ? { at: key, zone: stayZone(s) } : { at: `${date}T00:00`, zone: null });
       keys.stayIds.push(s._id);
     }
   }
@@ -375,22 +385,28 @@ function keysByScenarioAndDate(data: ScenarioData): Map<string, Map<string, Memb
 // regression test), unless that member has only a Stay boundary there, which
 // says "which hotel", not a moment the day is organized around — then the
 // earliest real content across every member wins.
+// "Earliest" is by when each key happens (orderInstant), each on its own clock.
 function anchorOn(
   memberKeys: Array<MemberKeys | undefined>,
   anchorIndex: number,
   date: string,
-): string {
+  clock: TripClock,
+): ZonedTime {
   const own = memberKeys[anchorIndex];
-  const ownReal = earliestKey(own?.real ?? []);
-  if (ownReal) return earliestKey([ownReal, ...(own?.stay ?? [])]) as string;
-  const siblingReal = earliestKey(memberKeys.flatMap((keys) => keys?.real ?? []));
-  return siblingReal ?? earliestKey(own?.stay ?? []) ?? `${date}T00:00`;
+  const ownReal = earliestTime(own?.real ?? [], clock);
+  if (ownReal) return earliestTime([ownReal, ...(own?.stay ?? [])], clock) as ZonedTime;
+  const siblingReal = earliestTime(
+    memberKeys.flatMap((keys) => keys?.real ?? []),
+    clock,
+  );
+  return siblingReal ?? earliestTime(own?.stay ?? [], clock) ?? { at: `${date}T00:00`, zone: null };
 }
 
 export function scenarioGroups(data: ScenarioData, resolved: ResolvedScenarios): ScenarioGroup[] {
   const byId = new Map(data.scenarios.map((s) => [s._id, s]));
   const defByKey = new Map(resolved.defs.map((d) => [d.key, d]));
   const keys = keysOf(data);
+  const clock = tripClock(data);
   const result: ScenarioGroup[] = [];
 
   for (const state of resolved.groups) {
@@ -406,7 +422,7 @@ export function scenarioGroups(data: ScenarioData, resolved: ResolvedScenarios):
       if (m.date && !keys.has(m._id)) dates.add(m.date);
     }
 
-    const anchorAtByDate: Record<string, string> = {};
+    const anchorAtByDate: Record<string, ZonedTime> = {};
     const membersByDate: Record<string, string[]> = {};
     for (const date of [...dates].sort()) {
       membersByDate[date] = members
@@ -422,10 +438,10 @@ export function scenarioGroups(data: ScenarioData, resolved: ResolvedScenarios):
             0,
             memberKeys.findIndex((k) => k !== undefined),
           );
-      anchorAtByDate[date] = anchorOn(memberKeys, anchorIndex, date);
+      anchorAtByDate[date] = anchorOn(memberKeys, anchorIndex, date, clock);
     }
     if (!Object.keys(anchorAtByDate).length && def.anchorDate) {
-      anchorAtByDate[def.anchorDate] = `${def.anchorDate}T00:00`;
+      anchorAtByDate[def.anchorDate] = { at: `${def.anchorDate}T00:00`, zone: null };
       membersByDate[def.anchorDate] = [...def.memberIds];
     }
 

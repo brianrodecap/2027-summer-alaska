@@ -6,6 +6,7 @@ import { useState } from 'react';
 import { type ActivityFormState, TIME_LABEL_OPTIONS } from '../../model/editForms';
 import type { TimeLabel } from '../../model/types';
 import { LabelWithTip } from '../shared/LabelWithTip';
+import { ClockZoneField } from './ClockZoneField';
 import { DateStringField, TimeStringField } from './DateTimeFieldPair';
 import { DurationSelect } from './DurationSelect';
 
@@ -94,6 +95,12 @@ export function ActivityWhenFields({
           label="Start time"
           value={form.startsTime}
           onChange={(v) => onChange({ ...form, startsTime: v })}
+        />
+      )}
+      {mode === 'exact' && (
+        <ClockZoneField
+          value={form.clockZone}
+          onChange={(clockZone) => onChange({ ...form, clockZone })}
         />
       )}
       <DurationSelect

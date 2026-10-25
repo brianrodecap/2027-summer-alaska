@@ -839,6 +839,11 @@
     place: { id: 'ChIJ...', label: 'Talkeetna Alaskan Lodge' },
     roomType: null, roomNumber: null, campsite: null,
   },
+  clockZone: null,         // optional IANA zone checkInAt/checkOutAt are stated
+                            // on when the booking's clock isn't the lodging's;
+                            // absent or null reads them on lodging.place.timeZone.
+                            // AI proposals set it as for Activity's; a new
+                            // lodging drops it unless restated
   bookingId: 'booking_stay_talkeetna',
   images: [],
 }</code></pre>
@@ -1648,6 +1653,13 @@
             storefront photo and a specific dish photo for a meal there are different pictures.
           </li>
           <li>
+            <strong>timeZone</strong> (optional) — the IANA zone the place keeps its clocks in
+            (<code>America/Anchorage</code>), as Google reported it when the place was picked or
+            searched. It's a fact about the place, so it's stored on the Place. Never set from what
+            an AI proposal states: a proposed place takes the zone of the search that returned its
+            id, or the trip's own copy. <code>RouteEndpoint</code> carries the same field.
+          </li>
+          <li>
             <strong>onboard</strong> (optional) — a venue aboard a cruise ship that nonetheless has
             a real <code>id</code>. Such a place is never ashore, so the port-call warnings (before
             arrival, after all aboard, scenic cruising) skip it. Set per occurrence, like
@@ -1733,6 +1745,15 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
   legId: 'leg_parks',
   scenarioId: 'scenario_denali_ideal',
   startAt: '2027-06-27T09:30',
+  clockZone: null,     // optional IANA zone startAt is stated on when the
+                       // booking's clock isn't its place's — a canyon tour sold
+                       // on Arizona time at a canyon on Navajo time. About this
+                       // occurrence, not the place; absent or null reads
+                       // startAt on place.timeZone. Set in the edit form
+                       // ("Booking's clock"), or by AI proposals (chat, day
+                       // plans, document import) when a document names the
+                       // clock. Moving to another place drops it unless the
+                       // change states one; a rough time (timeLabel) has none.
   durationMinutes: 120,   // null | minutes, one of a fixed set of 15-min/
                        // 30-min/hour steps (see the edit UI's Duration
                        // dropdown) — null means unknown/point-in-time

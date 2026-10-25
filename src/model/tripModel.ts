@@ -3,13 +3,13 @@
 // deliberately never stores: "what's happening on a given date." Nothing here
 // is content — the itinerary itself lives entirely in the JSON.
 //
-// All dates/timestamps are compared as plain ISO strings ('YYYY-MM-DD' /
-// 'YYYY-MM-DDTHH:MM'), never parsed into local-timezone Date objects — the
-// zero-padded format sorts and compares correctly as strings, which sidesteps
-// timezone drift entirely for a site with no timezone-sensitive behavior.
-// This is a hard boundary: nothing in this file should ever construct a
-// `Date`/`dayjs` object and hand it to a caller, or accept one as an input —
-// picker components convert to/from plain strings at their own edge instead.
+// All dates/timestamps are stored and passed as plain ISO strings ('YYYY-MM-DD'
+// / 'YYYY-MM-DDTHH:MM'): each place's own wall clock, never parsed into
+// local-timezone Date objects. Ordering across places reads each one on its
+// place's zone (orderInstant), never the reader's. This is a hard boundary:
+// nothing in this file should ever construct a `Date`/`dayjs` object and hand it
+// to a caller, or accept one as an input — picker components convert to/from
+// plain strings at their own edge instead.
 
 import {
   bookingById,
@@ -19,6 +19,7 @@ import {
   payableLines,
   sumMoney,
 } from './bookings';
+import { isDateTime } from './dateTime';
 import type { EditKind, Entity } from './editForms';
 import { firstImage, uniqueById } from './formatting';
 import { allPackages, packageHolders } from './packages';
@@ -605,6 +606,62 @@ export function resolveActivityDate(activity: Pick<Activity, 'startAt' | 'date'>
   return activity.date ?? null;
 }
 
+// A booking's own clock when it names a known one, else its place's.
+const bookingZone = (clockZone: string | null | undefined, placeZone: string | null | undefined) =>
+  isKnownZone(clockZone ?? null) ? (clockZone as string) : (placeZone ?? null);
+
+// The clock a Stay's check-in and checkout read on: its own clockZone, else its
+// lodging's.
+export const stayZone = (stay: Partial<Pick<Stay, 'lodging' | 'clockZone'>>): string | null =>
+  bookingZone(stay.clockZone, stay.lodging?.place.timeZone);
+
+// The clock an Activity's startAt reads on: its own clockZone, else its place's.
+export const activityZone = (activity: Pick<Activity, 'place' | 'clockZone'>): string | null =>
+  bookingZone(activity.clockZone, activity.place?.timeZone);
+
+// A booking's clock once a change is in, for every path that changes one (AI
+// proposals, the edit forms): the clock the change states (null: back to the
+// place's), else the one it had, unless it moved to another place, since a
+// clock is stated against its place. The same place is the same id, or for a
+// place with none, the same name.
+export function clockAfterChange(
+  had: string | null | undefined,
+  stated: string | null | undefined,
+  before: Pick<Place, 'id' | 'label'> | null | undefined,
+  after: Pick<Place, 'id' | 'label'> | null | undefined,
+): string | null {
+  if (stated !== undefined) return stated;
+  const same =
+    before && after
+      ? before.id || after.id
+        ? before.id === after.id
+        : before.label.trim() === after.label.trim()
+      : !before && !after;
+  return same ? (had ?? null) : null;
+}
+
+// Most bookings are on their place's clock, so the key is left off then.
+export function setClockZone(entity: { clockZone?: string | null }, zone: string | null): void {
+  if (zone) entity.clockZone = zone;
+  else delete entity.clockZone;
+}
+
+// A booking's time (on `zone`, its own clock) restated on its place's clock,
+// where the trip physically is, for what reads where the trip is (tripClock)
+// or compares with that place's own times by wall clock (port calls). Unchanged
+// unless both clocks are known.
+export function onPlaceClock(
+  at: string,
+  zone: string | null | undefined,
+  placeZone: string | null | undefined,
+): string {
+  if (!zone || zone === placeZone) return at;
+  const instant = instantOf(at, zone);
+  return instant !== null && isKnownZone(placeZone ?? null)
+    ? wallClockIn(instant, placeZone as string)
+    : at;
+}
+
 // An Activity's calendar date plus its position on that date's timeline (the
 // same key timeline events and scenario-box anchors both sort by), or null
 // while it's still undated. One shared rule so a box's anchor can never drift
@@ -620,9 +677,180 @@ export function activityTimelineKey(
   return { date, at };
 }
 
-// The lexicographically earliest of a set of timeline keys, or null when empty.
-export const earliestKey = (keys: string[]): string | null =>
-  keys.reduce<string | null>((min, key) => (min === null || key < min ? key : min), null);
+// That key's time on the Activity's own clock (activityZone): when the day list
+// orders it. Null while it's undated.
+export function activityTimelineStart(
+  activity: Pick<Activity, 'startAt' | 'date' | 'timeLabel' | 'place' | 'clockZone'>,
+): ZonedTime | null {
+  const key = activityTimelineKey(activity);
+  return key && { at: key.at, zone: activityZone(activity) };
+}
+
+// A wall clock and the zone it's read on (null when its place has none).
+export interface ZonedTime {
+  at: string;
+  zone: string | null;
+}
+
+// The zones the trip's clocks are on, in wall-clock order: for reading a time at
+// a place with no zone of its own, on the clock of the latest earlier time at a
+// place that has one (the first one's, before any). Built from every stay,
+// transit and dated activity, whatever scenario it's in, so every module reads
+// a time the same way.
+export interface TripClock {
+  at: string[];
+  zone: string[];
+}
+
+export function tripClock(data: Pick<TripData, 'stays' | 'transits' | 'activities'>): TripClock {
+  const times: ZonedTime[] = [];
+  const add = (at: string | null | undefined, zone: string | null | undefined) => {
+    if (at && isKnownZone(zone ?? null)) times.push({ at, zone: zone as string });
+  };
+  // Where the trip is: a booking on another clock (clockZone) is recorded on
+  // its place's, so a zone-less time near it reads on the place's clock.
+  // With no place zone known, the booking's own clock is the best guess.
+  const at = (time: ZonedTime | null, placeZone: string | null | undefined) =>
+    add(time && onPlaceClock(time.at, time.zone, placeZone), placeZone ?? time?.zone);
+  for (const s of data.stays) {
+    const lodging = s.lodging?.place.timeZone;
+    at({ at: s.checkInAt, zone: stayZone(s) }, lodging);
+    at({ at: s.checkOutAt, zone: stayZone(s) }, lodging);
+  }
+  for (const t of data.transits) {
+    add(t.departsAt, t.from.timeZone);
+    add(t.arrivesAt, t.to.timeZone);
+  }
+  for (const a of data.activities) at(activityTimelineStart(a), a.place?.timeZone);
+  times.sort((a, b) => (a.at < b.at ? -1 : a.at > b.at ? 1 : 0));
+  return { at: times.map((t) => t.at), zone: times.map((t) => t.zone as string) };
+}
+
+// The zone the trip's clock is on at wall clock `at` (see TripClock).
+export function tripZoneAt({ at: walls, zone }: TripClock, at: string): string | null {
+  let lo = 0;
+  let hi = walls.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (walls[mid] <= at) lo = mid + 1;
+    else hi = mid;
+  }
+  return zone[Math.max(lo - 1, 0)] ?? null;
+}
+
+// When a time happens, for ordering: its wall clock on its own zone, else on the
+// trip's clock at that time. The wall-clock fallback only applies to a trip whose
+// clock is empty, and then no time carries a zone either: a stay's, transit's or
+// activity's zone is in the clock, and a route stage only has one when its
+// departure does.
+export function orderInstant({ at, zone }: ZonedTime, clock: TripClock): number {
+  return instantOf(at, clockZoneOf({ at, zone }, clock)) ?? wallClockMs(at);
+}
+
+// The clock a time reads on: its own zone when the browser knows it, else the
+// trip's at that time (orderInstant reads it there); null in a trip with none.
+export const clockZoneOf = ({ at, zone }: ZonedTime, clock: TripClock): string | null =>
+  isKnownZone(zone) ? zone : tripZoneAt(clock, at);
+
+// Which of two times comes first: on their own clocks when both zones are known,
+// else by their wall clocks, so the answer never depends on the reader's.
+// Negative when `a` is earlier, positive when later, 0 when they're the same.
+export function compareTimes(a: ZonedTime, b: ZonedTime): number {
+  const at = instantOf(a.at, a.zone);
+  const bt = instantOf(b.at, b.zone);
+  if (at !== null && bt !== null) return at - bt;
+  return a.at < b.at ? -1 : a.at > b.at ? 1 : 0;
+}
+
+export const endsAfter = (start: ZonedTime, end: ZonedTime) => compareTimes(start, end) < 0;
+
+// What's wrong with a transit's arrival, for every path that sets one (the edit
+// forms, and every AI proposal): it must come after the departure, each read on
+// its own place's clock. A flight that lands "earlier" on its local clock (Tokyo
+// to Anchorage) is fine once both places' zones are known, which a search for
+// each records.
+// How the AI gives a place its zone; a person picks the place in the form instead.
+export const SEARCH_FOR_ZONES =
+  ' If the two places keep different clocks, give each its placeId from search_places so their time zones are known.';
+export const PICK_FOR_ZONES =
+  ' If the two places keep different clocks, pick each one from the place search so its time zone is known.';
+
+export function arrivalProblem(
+  transit: {
+    departsAt: string;
+    arrivesAt: string | null;
+    from: { timeZone?: string };
+    to: { timeZone?: string };
+  },
+  unknownZonesHint: string,
+): string | null {
+  const { departsAt, arrivesAt } = transit;
+  if (!arrivesAt) return null;
+  const zones = endpointZonesOf(transit);
+  const departs = { at: departsAt, zone: zones.from };
+  const arrives = { at: arrivesAt, zone: zones.to };
+  if (endsAfter(departs, arrives)) return null;
+  const zonesKnown = isKnownZone(zones.from) && isKnownZone(zones.to);
+  return `Arrives ${arrivesAt}, not after it departs ${departsAt}.${zonesKnown ? '' : unknownZonesHint}`;
+}
+
+// What's wrong with a stay's times, for every path that sets them: it checks out
+// after it checks in, and each port call's times are date-times, inside the stay,
+// and leave after they arrive. Leaving after arriving is read on the port's own
+// clock; check-in and check-out on the stay's (stayZone). Inside the stay is by wall
+// clock on the port's, with the stay's times restated there when it states its
+// own clock: a cruise starts and ends at different ports, and only one lodging
+// zone is stored. `outsideHint` follows an outside-the-stay problem.
+export function stayTimingProblems(
+  stay: Pick<Stay, 'checkInAt' | 'checkOutAt' | 'lodging' | 'clockZone' | 'portCalls'>,
+  outsideHint = '',
+): string[] {
+  const problems: string[] = [];
+  const zone = stayZone(stay);
+  if (!endsAfter({ at: stay.checkInAt, zone }, { at: stay.checkOutAt, zone })) {
+    problems.push(`Checks out ${stay.checkOutAt}, not after check-in ${stay.checkInAt}.`);
+  }
+  for (const call of stay.portCalls ?? []) {
+    const where = call.place?.label || 'A port call';
+    const zone = call.place?.timeZone ?? null;
+    const times = [call.arrivesAt, call.departsAt].filter((at) => at);
+    if (times.some((at) => !isDateTime(at))) {
+      problems.push(`${where}: times look like 2027-07-21T06:30.`);
+      continue;
+    }
+    // The stay's times restated on the port's clock, only when it states its
+    // own (clockZone): a lodging zone is just the embarkation port's.
+    const own = bookingZone(stay.clockZone, null);
+    const boards = onPlaceClock(stay.checkInAt, own, zone);
+    const leaves = onPlaceClock(stay.checkOutAt, own, zone);
+    for (const at of times as string[]) {
+      if (at < boards || at > leaves) {
+        problems.push(
+          `${where} at ${at} is outside the cruise (${stay.checkInAt} to ${stay.checkOutAt}).${outsideHint}`,
+        );
+      }
+    }
+    if (
+      call.arrivesAt &&
+      call.departsAt &&
+      !endsAfter({ at: call.arrivesAt, zone }, { at: call.departsAt, zone })
+    ) {
+      problems.push(`${where}: leaves ${call.departsAt}, not after it arrives ${call.arrivesAt}.`);
+    }
+  }
+  return problems;
+}
+
+// The earliest of a set of times by when they happen, or null when empty.
+export function earliestTime(times: ZonedTime[], clock: TripClock): ZonedTime | null {
+  let best: ZonedTime | null = null;
+  let bestAt = Infinity;
+  for (const time of times) {
+    const at = orderInstant(time, clock);
+    if (at < bestAt) [best, bestAt] = [time, at];
+  }
+  return best;
+}
 
 // ---------- Note.concerns matching — see docs/data-model.html's Ref type.
 // Notes are bucketed to exactly one drill-down level by which kind of ref they
@@ -919,6 +1147,192 @@ export function wallClockMs(iso: string): number {
   return Date.UTC(y, m - 1, d, hh, mm);
 }
 
+// One formatter per zone (building one is far slower than using it); null for a
+// zone this browser doesn't know.
+const zoneFormatters = new Map<string, Intl.DateTimeFormat | null>();
+function zoneFormatter(zone: string): Intl.DateTimeFormat | null {
+  if (!zoneFormatters.has(zone)) {
+    let formatter: Intl.DateTimeFormat | null = null;
+    try {
+      formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: zone,
+        hourCycle: 'h23',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZoneName: 'short', // for zoneShortName
+      });
+    } catch {
+      // An unknown zone reads as no zone.
+    }
+    zoneFormatters.set(zone, formatter);
+  }
+  return zoneFormatters.get(zone) ?? null;
+}
+
+// A clock's short name at an instant ('MST', 'AKDT'), as the browser says it;
+// the zone's own name for one it doesn't know.
+export function zoneShortName(zone: string, instant: number): string {
+  const parts = zoneFormatter(zone)?.formatToParts(instant);
+  return parts?.find((p) => p.type === 'timeZoneName')?.value ?? zone;
+}
+
+// Whether this browser can read clocks in `zone` (an IANA name).
+export const isKnownZone = (zone: string | null): zone is string =>
+  zone !== null && zoneFormatter(zone) !== null;
+
+// A zone name as stored: the canonical IANA name for any spelling the browser
+// knows ('america/phoenix', 'US/Arizona' → 'America/Phoenix'); null for
+// anything else, a fixed offset like '+05:00' included, since not every
+// browser reads one.
+export function canonicalZone(value: unknown): string | null {
+  if (typeof value !== 'string') return null;
+  const zone = zoneFormatter(value)?.resolvedOptions().timeZone;
+  return zone && (zone.includes('/') || zone === 'UTC') ? zone : null;
+}
+
+// How far `zone` (an IANA name) is ahead of UTC at `instant`, in ms; null when the
+// browser can't say.
+export function zoneOffsetMs(zone: string, instant: number): number | null {
+  const parts = zoneFormatter(zone)?.formatToParts(instant);
+  const part = (type: string) => parts?.find((p) => p.type === type)?.value;
+  const shown = `${part('year')}-${part('month')}-${part('day')}T${part('hour')}:${part('minute')}`;
+  if (!/^\d{4}-\d\d-\d\dT\d\d:\d\d$/.test(shown)) return null;
+  return wallClockMs(shown) - Math.floor(instant / 60_000) * 60_000;
+}
+
+// The IANA zones a Transit's two ends keep their clocks in; null when unknown.
+export interface EndpointZones {
+  from: string | null;
+  to: string | null;
+}
+// A Transit's two ends' zones, as their places store them.
+export function endpointZonesOf(transit: {
+  from: { timeZone?: string };
+  to: { timeZone?: string };
+}): EndpointZones {
+  return { from: transit.from.timeZone ?? null, to: transit.to.timeZone ?? null };
+}
+
+// zonedInstant, but null when the zone isn't known, so a rule built on it never
+// depends on the reader's own clock.
+export function instantOf(wall: string, zone: string | null | undefined): number | null {
+  const known = zone ?? null;
+  return isKnownZone(known) ? zonedInstant(wall, known) : null;
+}
+
+// The instant a wall clock ('YYYY-MM-DDTHH:MM') shows in `zone`, on that date's own
+// offset (daylight saving included). With no zone, or one the browser doesn't know,
+// it's read in the reader's own zone.
+// Each (zone, wall clock) pair's instant, so rebuilding a trip's timeline on every
+// pick doesn't redo the same Intl work; reset if it grows past a trip's worth.
+const zonedInstants = new Map<string, number>();
+export function zonedInstant(wall: string, zone: string | null): number {
+  if (!zone) return zonedInstantUncached(wall, zone);
+  const key = `${zone}|${wall}`;
+  let instant = zonedInstants.get(key);
+  if (instant === undefined) {
+    if (zonedInstants.size > 20_000) zonedInstants.clear();
+    zonedInstants.set(key, (instant = zonedInstantUncached(wall, zone)));
+  }
+  return instant;
+}
+
+// The wall clock `zone` shows at `instant`: zonedInstant's inverse.
+function wallClockIn(instant: number, zone: string): string {
+  return formatWallClock(instant + (zoneOffsetMs(zone, instant) ?? 0));
+}
+
+// orderInstant's inverse: the wall clock `zone` shows at `instant`. A time with
+// no known zone reads on the trip's clock at its own wall time, so it's the wall
+// time whose clock zone shows `instant`. Where the trip's clock moves back over
+// `instant`, no wall time reads back exactly, so it's the later one tried.
+export function wallClockAt(
+  instant: number,
+  zone: string | null | undefined,
+  clock: TripClock,
+): string {
+  if (isKnownZone(zone ?? null)) return wallClockIn(instant, zone as string);
+  const tried: string[] = [];
+  let read = tripZoneAt(clock, formatWallClock(instant));
+  while (read) {
+    const wall = wallClockIn(instant, read);
+    if (tried.includes(wall)) break;
+    tried.push(wall);
+    const next = tripZoneAt(clock, wall);
+    if (next === read) return wall;
+    read = next;
+  }
+  return tried.length ? tried.reduce((a, b) => (b > a ? b : a)) : formatWallClock(instant);
+}
+
+// `time`'s moment as a wall clock on `zone`'s clock, each read as orderInstant does.
+export const onClockOf = (time: ZonedTime, zone: string | null | undefined, clock: TripClock) =>
+  wallClockAt(orderInstant(time, clock), zone, clock);
+
+// `time` moved `minutes` of real time later (earlier when negative), on its own
+// clock, so a move across a daylight-saving change keeps its real length.
+export const movedBy = (time: ZonedTime, minutes: number, clock: TripClock) =>
+  wallClockAt(orderInstant(time, clock) + minutes * 60_000, time.zone, clock);
+
+// Real minutes from `from` to `to`, each read as orderInstant does.
+export const minutesBetween = (from: ZonedTime, to: ZonedTime, clock: TripClock) =>
+  (orderInstant(to, clock) - orderInstant(from, clock)) / 60_000;
+
+// An Activity's start on its own clock (activityZone), and a Transit's departure on its
+// origin's; read the way the day list orders them (orderInstant), they're what
+// the route walk, the overlap warnings and drag-reorder compare.
+export const activityStart = (
+  activity: Pick<Activity, 'startAt' | 'place' | 'clockZone'>,
+): ZonedTime => ({
+  at: activity.startAt as string,
+  zone: activityZone(activity),
+});
+export const departure = (transit: Pick<Transit, 'departsAt' | 'from'>): ZonedTime => ({
+  at: transit.departsAt,
+  zone: transit.from.timeZone ?? null,
+});
+const startInstant = (activity: Activity, clock: TripClock) =>
+  orderInstant(activityStart(activity), clock);
+const departInstant = (transit: Pick<Transit, 'departsAt' | 'from'>, clock: TripClock) =>
+  orderInstant(departure(transit), clock);
+
+// The clock a drive is walked on (stageTimesForVariant): starts and the
+// departure read as above, and each stage and the arrival shown on its place's
+// own clock, else the drive's: its departure's zone, or the trip's at that time.
+// A trip with no zones at all walks plain wall clocks.
+interface DriveClock {
+  departsMs: number;
+  startOf: (activity: Activity) => number; // an Activity's start, on its own clock
+  wallAt: (instant: number, zone: string | null | undefined) => ZonedTime;
+}
+
+function driveClock(transit: Pick<Transit, 'from' | 'departsAt'>, trip: TripClock): DriveClock {
+  const own = transit.from.timeZone ?? null;
+  const zone = isKnownZone(own) ? own : tripZoneAt(trip, transit.departsAt);
+  return {
+    departsMs: departInstant(transit, trip),
+    startOf: (activity) => startInstant(activity, trip),
+    wallAt: (instant, z) => {
+      // With no drive zone the instants are wall clocks, so no place zone applies.
+      const shown = zone ? (isKnownZone(z ?? null) ? (z as string) : zone) : null;
+      return shown
+        ? { at: wallClockIn(instant, shown), zone: shown }
+        : { at: formatWallClock(instant), zone: null };
+    },
+  };
+}
+
+function zonedInstantUncached(wall: string, zone: string | null): number {
+  const guess = wallClockMs(wall);
+  const firstOffset = zone ? zoneOffsetMs(zone, guess) : null;
+  if (firstOffset === null) return new Date(wall).getTime();
+  // Near a daylight-saving change the guess's offset can be the other side's.
+  return guess - (zoneOffsetMs(zone as string, guess - firstOffset) ?? firstOffset);
+}
+
 export function formatWallClock(ms: number): string {
   const dt = new Date(ms);
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -1014,8 +1428,11 @@ export function routePlaceStopMinutes(
 // way, which buildTripView reads back as the Transit's resolved arrivesAt
 // (a routed drive never authors one; see resolveTransitRoute, below).
 //
+// The walk runs on the drive's clock (driveClock): each stage's key and the
+// arrival are shown on that place's own clock and carry its zone.
+//
 // candidateActivities is every Activity that could fall inside the drive —
-// same leg and branch, starting after departsAt — sorted by startAt. The walk
+// same leg and branch, starting after departsAt — in the order they start. The walk
 // itself decides which actually do: one whose startAt comes before the clock
 // runs out is folded in (the clock drives up to its start, jumps to its
 // effective end — a real durationMinutes, or the meal-format estimate above —
@@ -1028,19 +1445,21 @@ function stageTimesForVariant(
   variant: Pick<RouteVariant, 'places' | 'finalTravel'>,
   transit: Transit,
   candidateActivities: Activity[],
+  clock: DriveClock,
   selectedMeals?: ReadonlyMap<string, MealOption>,
-): { stages: RouteStage[]; arrivesAt: string } {
-  let clockMs = wallClockMs(transit.departsAt);
+): { stages: RouteStage[]; arrivesAt: string; arrivesZone: string | null } {
+  let clockMs = clock.departsMs;
   const queue = [...candidateActivities];
+  const { startOf } = clock;
   // Spends `minutes` of drive or stop time, folding in every queued Activity
   // that starts before that time runs out. One that started while an earlier
   // folded Activity was still running (its start is already behind the
   // clock) just extends the clock to its own end, if later.
   const spend = (minutes: number) => {
     let remainingMs = minutes * 60000;
-    while (queue.length && wallClockMs(queue[0].startAt as string) < clockMs + remainingMs) {
+    while (queue.length && startOf(queue[0]) < clockMs + remainingMs) {
       const next = queue.shift() as Activity;
-      const startMs = wallClockMs(next.startAt as string);
+      const startMs = startOf(next);
       if (startMs > clockMs) {
         remainingMs -= startMs - clockMs;
         clockMs = startMs;
@@ -1058,10 +1477,14 @@ function stageTimesForVariant(
     // resolved (firstImage(seg.place)) from this exact same place moments
     // earlier.
     const image = firstImage(seg.place);
+    // The arrival at this place, on its own clock, else the departure's (or
+    // plain wall-clock arithmetic when the departure has no zone either).
+    const reached = clock.wallAt(clockMs, seg.place?.timeZone);
     stages.push({
       note: seg.note ?? null,
       kind: seg.kind,
-      key: formatWallClock(clockMs), // the arrival at this place
+      key: reached.at,
+      zone: reached.zone,
       place: {
         id: seg.place?.id ?? null,
         label: seg.label ?? (seg.place?.label as string),
@@ -1071,7 +1494,8 @@ function stageTimesForVariant(
     spend(routePlaceStopMinutes(seg));
   }
   spend(variant.finalTravel?.minutes ?? 0);
-  return { stages, arrivesAt: formatWallClock(clockMs) };
+  const arrival = clock.wallAt(clockMs, transit.to.timeZone);
+  return { stages, arrivesAt: arrival.at, arrivesZone: arrival.zone };
 }
 
 function truncateSummary(text: string): string {
@@ -1601,31 +2025,54 @@ function buildDayFrame(
 // timeline.ts's tieBreak), so startsAfterDeparture below is strictly after departsAt.
 //
 // A routed drive's arrivesAt is null until buildTripView fills in the walk's
-// resolved arrival, so activityFallsWithinTransit needs an enriched (or
-// unrouted) Transit; the walk's own candidates can't depend on an arrival it
-// hasn't computed yet, so they're everything after departsAt and the walk
-// stops consuming them once it arrives.
-function startsAfterDeparture(activity: Activity, transit: Transit): boolean {
+// resolved arrival, so activityFallsWithinTransit needs an enriched Transit; the
+// walk's own candidates can't depend on an arrival it hasn't computed yet, so
+// they're everything after departsAt and the walk stops consuming them once it
+// arrives. Both read times the way the day list orders them (orderInstant), so
+// the walk and the "during transit" warning agree on what's after leaving.
+const sameBranch = (activity: Activity, other: Pick<Activity, 'legId' | 'scenarioId'>) =>
+  activity.legId === other.legId && activity.scenarioId === other.scenarioId;
+
+function startsAfterDeparture(activity: Activity, transit: Transit, clock: DriveClock): boolean {
   return (
-    activity.legId === transit.legId &&
-    activity.scenarioId === transit.scenarioId &&
-    !!activity.startAt &&
-    activity.startAt > transit.departsAt
+    sameBranch(activity, transit) && !!activity.startAt && clock.startOf(activity) > clock.departsMs
   );
 }
 
-function activityFallsWithinTransit(activity: Activity, transit: Transit): boolean {
-  return (
-    startsAfterDeparture(activity, transit) &&
-    !!transit.arrivesAt &&
-    (activity.startAt as string) < transit.arrivesAt
-  );
+// The times the overlap checks compare: an arrival on the zone it was reached on,
+// read the way the drive clock above reads a start and a departure.
+const arriveInstant = (transit: EnrichedTransit, clock: TripClock) =>
+  transit.arrivesAt
+    ? orderInstant({ at: transit.arrivesAt, zone: transit.arrivesZone }, clock)
+    : null;
+
+// An Activity's [start, end] as instants: its start plus how long it runs.
+function spanInstants(
+  activity: Activity,
+  clock: TripClock,
+  selectedMeals?: ReadonlyMap<string, MealOption>,
+): [number, number] {
+  const start = startInstant(activity, clock);
+  return [start, start + (activityDurationMinutes(activity, selectedMeals) ?? 0) * 60_000];
 }
 
-function routeWalkCandidates(transit: Transit, activities: Activity[]): Activity[] {
+function activityFallsWithinTransit(
+  activity: Activity,
+  transit: EnrichedTransit,
+  clock: TripClock,
+): boolean {
+  if (!activity.startAt || !sameBranch(activity, transit)) return false;
+  const start = startInstant(activity, clock);
+  const arrives = arriveInstant(transit, clock);
+  return start > departInstant(transit, clock) && arrives !== null && start < arrives;
+}
+
+function routeWalkCandidates(transit: Transit, activities: Activity[], clock: DriveClock) {
   return activities
-    .filter((a) => startsAfterDeparture(a, transit))
-    .sort((a, b) => ((a.startAt as string) < (b.startAt as string) ? -1 : 1));
+    .filter((a) => startsAfterDeparture(a, transit, clock))
+    .map((a) => ({ a, start: clock.startOf(a) }))
+    .sort((x, y) => x.start - y.start)
+    .map(({ a }) => a);
 }
 
 // The reverse direction from activityFallsWithinTransit: a Transit's own
@@ -1641,16 +2088,13 @@ function routeWalkCandidates(transit: Transit, activities: Activity[]): Activity
 // just an explicit durationMinutes.
 function transitDepartsDuringActivity(
   activity: Activity,
-  activityEndsAt: string,
+  [startMs, endsMs]: [number, number],
   transit: Transit,
+  clock: TripClock,
 ): boolean {
-  return (
-    !!activity.startAt &&
-    activity.legId === transit.legId &&
-    activity.scenarioId === transit.scenarioId &&
-    transit.departsAt >= activity.startAt &&
-    transit.departsAt < activityEndsAt
-  );
+  if (!sameBranch(activity, transit)) return false;
+  const departs = departInstant(transit, clock);
+  return departs >= startMs && departs < endsMs;
 }
 
 // An Activity may land inside a Transit's own span — events happen along a
@@ -1666,37 +2110,27 @@ function transitDepartsDuringActivity(
 // "this transit leaves before you're done").
 function transitOverlapFor(
   activity: Activity,
-  transits: Transit[],
+  transits: EnrichedTransit[],
   exemptMealFromMidDrive: boolean,
+  clock: TripClock,
   selectedMeals?: ReadonlyMap<string, MealOption>,
-): { transit: Transit; departsMidActivity: boolean } | null {
-  // The Activity's own end is the same for every Transit compared against
+): { transit: EnrichedTransit; departsMidActivity: boolean } | null {
+  // The Activity's own span is the same for every Transit compared against
   // it, so it's worked out once here rather than per pair. No startAt or no
   // duration means there's no span for a departure to land inside.
   const minutes = activity.startAt ? activityDurationMinutes(activity, selectedMeals) : null;
-  const endsAt =
-    activity.startAt && minutes != null ? addMinutesIso(activity.startAt, minutes) : null;
-  const departing = endsAt
-    ? transits.find((t) => transitDepartsDuringActivity(activity, endsAt, t))
+  const span = minutes != null ? spanInstants(activity, clock, selectedMeals) : null;
+  const departing = span
+    ? transits.find((t) => transitDepartsDuringActivity(activity, span, t, clock))
     : undefined;
   if (departing) return { transit: departing, departsMidActivity: true };
   if (exemptMealFromMidDrive) return null;
-  const containing = transits.find((t) => activityFallsWithinTransit(activity, t));
+  const containing = transits.find((t) => activityFallsWithinTransit(activity, t, clock));
   return containing ? { transit: containing, departsMidActivity: false } : null;
 }
 
-// Two Activities aren't supposed to occupy the same clock-time on the same
-// leg/scenario branch at all — most often a meal authored as its own
-// Activity that actually happens during another one (a packed lunch eaten
-// mid-hike), which belongs modeled as diningFormat 'included-with-activity'
-// + includedIn pointing at that Activity instead of quietly overlapping it.
-// Only real-timed Activities can be compared — a fuzzy timeLabel-only one
-// has no clock-time span to check. A null-duration side (activityDurationMinutes'
-// own "point-in-time" case) is treated as zero-width, so it still flags
-// landing inside the other's span without needing a made-up length of its own.
-// spanEnd is that "startAt plus its own (possibly zero) length" moment, shared
-// by both sides of every comparison in activityOverlapFor below, and by the
-// port-call check's all-aboard test.
+// The port-call check's "startAt plus its own (possibly zero) length" moment,
+// on the wall clock its all-aboard test compares.
 function spanEnd(
   startAt: string,
   activity: Pick<Activity, '_id' | 'durationMinutes' | 'mealType' | 'diningFormat' | 'options'>,
@@ -1721,28 +2155,39 @@ function isIncludedWithActivity(activity: Activity, other: Activity): boolean {
   );
 }
 
+// Two Activities aren't supposed to occupy the same moment on the same
+// leg/scenario branch at all — most often a meal authored as its own
+// Activity that actually happens during another one (a packed lunch eaten
+// mid-hike), which belongs modeled as diningFormat 'included-with-activity'
+// + includedIn pointing at that Activity instead of quietly overlapping it.
+// Only real-timed Activities can be compared — a fuzzy timeLabel-only one
+// has no span to check. Spans are instants (spanInstants), so two Activities
+// on different clocks compare by real time. A null-duration side
+// (activityDurationMinutes' own "point-in-time" case) is treated as zero-width,
+// so it still flags landing inside the other's span without a made-up length.
 function activityOverlapFor(
   activity: Activity,
   activities: Activity[],
+  clock: TripClock,
   selectedMeals?: ReadonlyMap<string, MealOption>,
 ): Activity | null {
   if (!activity.startAt) return null;
-  const startAt = activity.startAt;
-  // Worked out once for `activity` rather than per candidate, and only for a
-  // candidate that's actually comparable (timed, same leg/scenario branch).
-  const endsAt = spanEnd(startAt, activity, selectedMeals);
+  // Worked out once for `activity`; a candidate's only once it's comparable
+  // (timed, same leg/scenario branch).
+  const [start, end] = spanInstants(activity, clock, selectedMeals);
   return (
-    activities.find(
-      (other) =>
-        other._id !== activity._id &&
-        !!other.startAt &&
-        other.legId === activity.legId &&
-        other.scenarioId === activity.scenarioId &&
-        startAt < spanEnd(other.startAt, other, selectedMeals) &&
-        other.startAt < endsAt &&
+    activities.find((other) => {
+      if (other._id === activity._id || !other.startAt || !sameBranch(activity, other)) {
+        return false;
+      }
+      const [otherStart, otherEnd] = spanInstants(other, clock, selectedMeals);
+      return (
+        start < otherEnd &&
+        otherStart < end &&
         !isIncludedWithActivity(activity, other) &&
-        !isIncludedWithActivity(other, activity),
-    ) ?? null
+        !isIncludedWithActivity(other, activity)
+      );
+    }) ?? null
   );
 }
 
@@ -1756,9 +2201,9 @@ const overlapBranchKey = (e: { legId: string; scenarioId: string | null }): stri
 
 function overlapPoolsByBranch(
   activities: Activity[],
-  transits: Transit[],
-): (activity: Activity) => { activities: Activity[]; transits: Transit[] } {
-  const pools = new Map<string, { activities: Activity[]; transits: Transit[] }>();
+  transits: EnrichedTransit[],
+): (activity: Activity) => { activities: Activity[]; transits: EnrichedTransit[] } {
+  const pools = new Map<string, { activities: Activity[]; transits: EnrichedTransit[] }>();
   const poolFor = (key: string) => {
     let pool = pools.get(key);
     if (!pool) pools.set(key, (pool = { activities: [], transits: [] }));
@@ -1779,16 +2224,18 @@ function overlapPoolsByBranch(
 export function overlapWarningsFor(
   activity: Activity,
   activities: Activity[],
-  transits: Transit[],
+  transits: EnrichedTransit[],
+  clock: TripClock,
   selectedMeals?: ReadonlyMap<string, MealOption>,
 ): string[] {
   const overlappingTransit = transitOverlapFor(
     activity,
     transits,
     Boolean(activity.mealType),
+    clock,
     selectedMeals,
   );
-  const overlappingActivity = activityOverlapFor(activity, activities, selectedMeals);
+  const overlappingActivity = activityOverlapFor(activity, activities, clock, selectedMeals);
   return [
     overlappingTransit
       ? overlappingTransit.departsMidActivity
@@ -1806,13 +2253,14 @@ export function overlapWarningsFor(
 export function activityWarnings(
   activity: Activity,
   activities: Activity[],
-  transits: Transit[],
+  transits: EnrichedTransit[],
   stays: Pick<Stay, 'portCalls' | 'checkInAt' | 'checkOutAt'>[],
+  clock: TripClock,
   selectedMeals?: ReadonlyMap<string, MealOption>,
 ): string[] {
   const portCall = portCallWarningFor(activity, stays, selectedMeals);
   return [
-    ...overlapWarningsFor(activity, activities, transits, selectedMeals),
+    ...overlapWarningsFor(activity, activities, transits, clock, selectedMeals),
     ...(portCall ? [portCall] : []),
   ];
 }
@@ -1858,20 +2306,43 @@ export function portCallsOn(stays: Pick<Stay, 'portCalls'>[], date: string): Por
 // Likewise a resolved place that isn't the day's stop is judged against the
 // stop it happens during, not matched to a port by place: an activity ashore
 // during a call is in that port, so naming it is deliberate, not a mix-up.
+// Times compare by wall clock, as stayTimingProblems' inside-the-stay check
+// does: an activity ashore is on its port's clock (restated there when its
+// booking states another), and a cruise starts and ends at different ports
+// while only one lodging zone is stored.
 export function portCallWarningFor(
   activity: Pick<
     Activity,
-    '_id' | 'startAt' | 'place' | 'durationMinutes' | 'mealType' | 'diningFormat' | 'options'
+    | '_id'
+    | 'startAt'
+    | 'place'
+    | 'clockZone'
+    | 'durationMinutes'
+    | 'mealType'
+    | 'diningFormat'
+    | 'options'
   >,
-  stays: Pick<Stay, 'portCalls' | 'checkInAt' | 'checkOutAt'>[],
+  stays: (Pick<Stay, 'portCalls' | 'checkInAt' | 'checkOutAt'> &
+    Partial<Pick<Stay, 'lodging' | 'clockZone'>>)[],
   selectedMeals?: ReadonlyMap<string, MealOption>,
 ): string | null {
-  const start = activity.startAt;
   const place = activity.place ?? selectedMeals?.get(activity._id)?.place;
-  if (!start || !place?.id || place.onboard) return null;
+  if (!activity.startAt || !place?.id || place.onboard) return null;
+  // On the port's clock even when the booking states another (clockZone).
+  const start = onPlaceClock(activity.startAt, activityZone(activity), place.timeZone);
   const placeId = place.id;
   for (const stay of stays) {
-    if (!stay.portCalls?.length || start < stay.checkInAt || start > stay.checkOutAt) continue;
+    // Inside the cruise in real time when the stay states its own clock
+    // (clockZone); by wall clock otherwise, as stayTimingProblems reads it.
+    const ashore = { at: start, zone: place.timeZone ?? null };
+    const zone = bookingZone(stay.clockZone, null);
+    if (
+      !stay.portCalls?.length ||
+      compareTimes(ashore, { at: stay.checkInAt, zone }) < 0 ||
+      compareTimes(ashore, { at: stay.checkOutAt, zone }) > 0
+    ) {
+      continue;
+    }
     const calls = portCallsOn([stay], dateOnly(start));
     if (!calls.length) continue;
     // Of several calls at this place on the day, the one the activity falls in,
@@ -1937,7 +2408,8 @@ export function portCallWarningFor(
 // computed key still gets sorted alongside every other event in the day by
 // buildTimeline. That sort only ever preserves the places list's authored
 // order because non-negative minutes keep stageTimesForVariant's running
-// clock non-decreasing as it walks places[]; a negative value
+// clock non-decreasing as it walks places[] (every stage is read on the
+// departure's zone, so their instants rise with it); a negative value
 // would make a stage's key land earlier than the one before it, and the
 // sort would then actually reorder it out of its authored position. Checked
 // once at load time, same reasoning as validateActivityTiming above: a bad
@@ -2030,20 +2502,17 @@ export function resolveTransitRoute(
   transit: Transit,
   routesById: Map<string, Route>,
   activities: Activity[],
+  trip: TripClock,
   live: LiveRouteOverrides = {},
 ): ResolvedRouteInfo | null {
   if (!transit.routeId) return null;
   const route = routesById.get(transit.routeId);
   if (!route) return null;
-  const candidates = routeWalkCandidates(transit, activities);
+  const clock = driveClock(transit, trip);
+  const candidates = routeWalkCandidates(transit, activities, clock);
   const variants: ResolvedRouteVariant[] = route.variants.map((v) => {
-    const { stages, arrivesAt } = stageTimesForVariant(v, transit, candidates, live.selectedMeals);
-    return {
-      tone: v.tone,
-      label: `${v.tone[0].toUpperCase()}${v.tone.slice(1)}`,
-      stages,
-      arrivesAt,
-    };
+    const walked = stageTimesForVariant(v, transit, candidates, clock, live.selectedMeals);
+    return { tone: v.tone, label: `${v.tone[0].toUpperCase()}${v.tone.slice(1)}`, ...walked };
   });
   if (!variants.length) return null;
   const requestedTone = live.routeVariant ?? transit.routeVariant;
@@ -2053,9 +2522,13 @@ export function resolveTransitRoute(
   const selectedTone = variants.some((v) => v.tone === requestedTone)
     ? (requestedTone as string)
     : DEFAULT_ROUTE_TONE;
-  const resolvedArrivesAt = (variants.find((v) => v.tone === selectedTone) as ResolvedRouteVariant)
-    .arrivesAt;
-  return { variants, selectedTone, resolvedArrivesAt };
+  const selected = variants.find((v) => v.tone === selectedTone) as ResolvedRouteVariant;
+  return {
+    variants,
+    selectedTone,
+    resolvedArrivesAt: selected.arrivesAt,
+    resolvedArrivesZone: selected.arrivesZone,
+  };
 }
 
 // ---------- Budget — a computed view over every booking already in the
@@ -2064,6 +2537,8 @@ export function resolveTransitRoute(
 // pricing plus, for the spent/pending split, each price line's own payable
 // (see data-model.html).
 
+// The reader's local calendar date. Model code takes `today` as an argument;
+// only the app's edges call this.
 export function todayDateStr(): string {
   const d = new Date();
   const pad = (n: number) => String(n).padStart(2, '0');
@@ -2474,8 +2949,8 @@ export function buildBudgetView(
   stays: EnrichedStay[],
   transits: EnrichedTransit[],
   activities: EnrichedActivity[],
+  today: string,
 ): BudgetView {
-  const today = todayDateStr();
   const lastDay = days.reduce<string | null>((l, d) => (l && l > d.date ? l : d.date), null);
   const rows = bucketedRows(bookingLineItems(legs, stays, transits, activities), today, lastDay);
   return {
@@ -2549,12 +3024,14 @@ function resolveExcursionTravelers(
 
 // Entries sharing one booking (connecting flights, a round trip, a cruise
 // cabin and its transfers) show it once in the day list: its chip and every
-// sharer's notes go on the first of them — by `start` (an activity's is its
-// place on the day's timeline), then id, never by array position. Sets
-// bookingShare on the freshly enriched entries in place.
+// sharer's notes go on the first of them, as the day list shows them: by the
+// date `start` falls on, then when it happens in real time (orderInstant; an
+// activity's is its place on the day's timeline), then id, never by array
+// position. A reader's picks only re-time arrivals, never a start, so this is
+// the live order too. Sets bookingShare on the freshly enriched entries in place.
 interface ShareCandidate {
   entry: SharesBooking & { bookingId?: string | null };
-  start: string;
+  start: { date: string; order: number };
   scenarioId: string | null;
   mealId?: string;
   notes: Note[];
@@ -2571,7 +3048,10 @@ function withSharedBookings(entries: ShareCandidate[]): void {
   for (const sharers of byBooking.values()) {
     if (sharers.length < 2) continue;
     sharers.sort(
-      (a, b) => a.start.localeCompare(b.start) || a.entry._id.localeCompare(b.entry._id),
+      (a, b) =>
+        a.start.date.localeCompare(b.start.date) ||
+        a.start.order - b.start.order ||
+        a.entry._id.localeCompare(b.entry._id),
     );
     const ordered = sharers.map((e) => ({
       id: e.entry._id,
@@ -2642,7 +3122,7 @@ export function optionShows(option: EnrichedMealOption): {
   };
 }
 
-export function buildTripView(data: TripData): TripView {
+export function buildTripView(data: TripData, today: string): TripView {
   const { trip, legs, stays, transits, activities, scenarios, notes, routes } = data;
   validateActivityTiming(activities);
   validateRoutes(routes);
@@ -2661,13 +3141,15 @@ export function buildTripView(data: TripData): TripView {
   // with no routeId at all. Resolved before the Activities are enriched,
   // because a routed drive's raw arrivesAt is null and the "during transit"
   // warning needs its real span.
+  const clock = tripClock(data);
   const routedTransits: EnrichedTransit[] = transits.map((t) => {
-    const routeInfo = resolveTransitRoute(t, routesById, activities);
+    const routeInfo = resolveTransitRoute(t, routesById, activities, clock);
     return {
       ...t,
       booking: bookingOf(data, t),
       routeInfo,
       arrivesAt: routeInfo ? routeInfo.resolvedArrivesAt : t.arrivesAt,
+      arrivesZone: routeInfo ? routeInfo.resolvedArrivesZone : (t.to.timeZone ?? null),
       notes: notesForEntity(noteIndex, 'transit', t._id),
       hasWarningNote: entityHasWarning(noteIndex, 'transit', t._id),
     };
@@ -2679,7 +3161,13 @@ export function buildTripView(data: TripData): TripView {
     // above for why that's normal, not a modeling mistake. A departure
     // scheduled mid-meal still isn't exempt (transitOverlapFor's own note).
     const pool = overlapPool(a);
-    const warnings = activityWarnings(a, pool.activities, pool.transits, staysInScope(stays, a));
+    const warnings = activityWarnings(
+      a,
+      pool.activities,
+      pool.transits,
+      staysInScope(stays, a),
+      clock,
+    );
     return {
       ...a,
       booking: bookingOf(data, a),
@@ -2713,9 +3201,13 @@ export function buildTripView(data: TripData): TripView {
     hasWarningNote: entityHasWarning(noteIndex, 'stay', s._id),
   }));
 
+  const startOf = (time: ZonedTime) => ({
+    date: dateOnly(time.at),
+    order: orderInstant(time, clock),
+  });
   const sharing = (
     entry: EnrichedTransit | EnrichedActivity | EnrichedStay,
-    start: string,
+    start: ShareCandidate['start'],
   ): ShareCandidate => ({
     entry,
     start,
@@ -2723,10 +3215,10 @@ export function buildTripView(data: TripData): TripView {
     notes: entry.notes,
   });
   withSharedBookings([
-    ...routedTransits.map((t) => sharing(t, t.departsAt)),
+    ...routedTransits.map((t) => sharing(t, startOf(departure(t)))),
     ...enrichedActivities.flatMap((a) => {
       // Every activity has a date by now: validateActivityTiming refuses one without.
-      const start = activityTimelineKey(a)!.at;
+      const start = startOf(activityTimelineStart(a)!);
       // A meal candidate's notes stay its own.
       const options = (a.options ?? []).map((o): ShareCandidate => ({
         entry: o,
@@ -2737,7 +3229,7 @@ export function buildTripView(data: TripData): TripView {
       }));
       return [sharing(a, start), ...options];
     }),
-    ...enrichedStays.map((s) => sharing(s, s.checkInAt)),
+    ...enrichedStays.map((s) => sharing(s, startOf({ at: s.checkInAt, zone: stayZone(s) }))),
   ]);
 
   const activitiesByDate = new Map<string, EnrichedActivity[]>();
@@ -2803,6 +3295,7 @@ export function buildTripView(data: TripData): TripView {
     enrichedStays,
     routedTransits,
     enrichedActivities,
+    today,
   );
 
   // The three by-id indexes are built from the enriched collections rather
@@ -2831,6 +3324,8 @@ export function buildTripView(data: TripData): TripView {
       scenarios.map((sc) => [sc._id, notesForEntity(noteIndex, 'scenario', sc._id)]),
     ),
     routesById,
+    today,
+    clock,
     budget,
     bookingProgress,
     bookingPercent,

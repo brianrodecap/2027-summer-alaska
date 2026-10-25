@@ -12,7 +12,7 @@ import {
   mealOptionTimeLabel,
   selectedMealOptionIndex,
 } from '../../model/mealOptions';
-import { activityHeadline, optionShows } from '../../model/tripModel';
+import { activityHeadline, activityStart, activityZone, optionShows } from '../../model/tripModel';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
 import { useMealOptionSelection } from '../../state/useTripSelections';
 import { BookingChip } from '../shared/BookingChip';
@@ -24,6 +24,8 @@ import { OverlapWarnings } from '../shared/OverlapWarnings';
 import { ROW_OVERLINE_SX } from '../shared/rowLeadingTokens';
 import { TravelerChips } from '../shared/TravelerChips';
 import { AvatarOrDotView } from './AvatarOrDot';
+import { BookingClockNote } from './BookingClockNote';
+import { useClockSuffix } from './dayClock';
 import { useSunAnchoredTime } from './useSunAnchoredTime';
 
 // Which candidate is "active" for a meal Activity — shared by the row's own
@@ -94,6 +96,7 @@ export function MealRow({
   // meal with no candidate picked yet.
   const sunAnchored = useSunAnchoredTime(activity, day, inView && !selected);
   const timeOverride = selected ? mealOptionTimeLabel(activity, selected) : sunAnchored;
+  const clock = useClockSuffix(activity.startAt ? activityStart(activity) : null);
 
   return (
     <Box sx={{ flexGrow: 1, minWidth: 0 }}>
@@ -105,8 +108,13 @@ export function MealRow({
       >
         <Box sx={{ flexGrow: 1, minWidth: 0 }}>
           <Typography variant="caption" color="text.secondary" sx={ROW_OVERLINE_SX}>
-            {timeAndMealTypeLabel(activity, timeOverride)}
+            {timeAndMealTypeLabel(activity, timeOverride, clock)}
           </Typography>
+          <BookingClockNote
+            at={activity.startAt}
+            bookingZone={activityZone(activity)}
+            placeZone={(selected?.place ?? activity.place)?.timeZone}
+          />
           <Typography variant="body1">
             {selected ? (
               mealOptionLabel(selected)

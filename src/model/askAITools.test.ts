@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { TEST_TODAY } from '../test/today';
 import { describeDay, runReadTool, ToolInputError } from './askAITools';
 import { noPlaceSearches } from './proposals';
 import type { Day, TripData, TripView } from './types';
@@ -76,6 +77,7 @@ const ctx = {
   } as unknown as TripData,
   view: { dateRange: { startDate: '2027-07-10', endDate: '2027-07-20' } } as TripView,
   byDate: new Map([[day.date, day]]),
+  today: TEST_TODAY,
   placeSearches: noPlaceSearches(),
   searchPlaces: async () => [],
 };
@@ -103,12 +105,14 @@ describe('describeDay', () => {
 });
 
 describe('search_places', () => {
-  it('records the ids it finds, and a query that finds nothing or can’t run', async () => {
+  it('records the ids it finds with their zones, and a query that finds nothing or can’t run', async () => {
     const searches = noPlaceSearches();
     // Google's answers by query; 'Keyless' fails the way a search with no key does.
     const searchPlaces = async (query: string) => {
       if (query === 'Keyless') throw new Error('Add your Google API key in Settings.');
-      return query === 'Found' ? [{ id: 'p_found', label: 'Found', address: 'Here' }] : [];
+      return query === 'Found'
+        ? [{ id: 'p_found', label: 'Found', address: 'Here', timeZone: 'America/Anchorage' }]
+        : [];
     };
     const run = (query: string) =>
       runReadTool('search_places', { query }, { ...ctx, placeSearches: searches, searchPlaces });
@@ -118,6 +122,7 @@ describe('search_places', () => {
     expect(searches).toEqual({
       placeIds: new Set(['p_found']),
       emptyQueries: new Set(['Nowhere', 'Keyless']),
+      timeZones: new Map([['p_found', 'America/Anchorage']]),
     });
   });
 });

@@ -52,6 +52,7 @@ export interface PlaceSearchResult {
   id: string;
   label: string;
   address: string;
+  timeZone: string | null;
 }
 
 // No "places." prefix here (unlike Text Search) — Place Details returns a
@@ -110,7 +111,12 @@ export function placeAlreadyRequested(id: string): Promise<PlaceDetails> | undef
 // Place Details hydration every activity's side sheet already runs on every
 // page load — this never runs outside the edit dialog, so it never touches
 // that per-visitor cost.
-const SEARCH_FIELD_MASK = ['places.id', 'places.displayName', 'places.formattedAddress'].join(',');
+const SEARCH_FIELD_MASK = [
+  'places.id',
+  'places.displayName',
+  'places.formattedAddress',
+  'places.timeZone',
+].join(',');
 
 // `includedType` restricts results to one Places type (e.g. 'airport'), strictly
 // — without it a query like "Kotzebue (OTZ)" can rank any business whose name
@@ -130,7 +136,12 @@ export function searchPlaces(query: string, includedType?: string): Promise<Plac
 
 async function fetchSearch(query: string, includedType?: string): Promise<PlaceSearchResult[]> {
   const { places } = await googleApiFetch<{
-    places?: { id: string; displayName?: { text?: string }; formattedAddress?: string }[];
+    places?: {
+      id: string;
+      displayName?: { text?: string };
+      formattedAddress?: string;
+      timeZone?: { id?: string };
+    }[];
   }>('Places API', 'https://places.googleapis.com/v1/places:searchText', SEARCH_FIELD_MASK, {
     body: {
       textQuery: query,
@@ -142,5 +153,6 @@ async function fetchSearch(query: string, includedType?: string): Promise<PlaceS
     id: p.id,
     label: p.displayName?.text ?? '',
     address: p.formattedAddress ?? '',
+    timeZone: p.timeZone?.id ?? null,
   }));
 }

@@ -23,6 +23,7 @@ import {
 } from 'react';
 
 import { useKeyedAsync } from '../../hooks/useKeyedAsync';
+import { clockSuffix, dayClocks, dayClocksOf } from '../../model/dayClocks';
 import { isScheduled, rowHop } from '../../model/dayMap';
 import { type DriveInfo, lookupTravelInfo } from '../../model/directions';
 import { applyTravelModeSelection, resolveTravelMode } from '../../model/editForms';
@@ -52,7 +53,9 @@ import {
   segmentKey,
   splitOutStayBoundaries,
   stayRelation,
+  stayZone,
   transitRowPlace,
+  type ZonedTime,
 } from '../../model/tripModel';
 import type {
   Day,
@@ -85,6 +88,9 @@ import { RowLeadingDot } from '../shared/RowLeadingDot';
 import { ROW_LEADING_SIZE, ROW_OVERLINE_SX } from '../shared/rowLeadingTokens';
 import { ActivityLeading, ActivityRow } from './ActivityRow';
 import { AvatarOrDot } from './AvatarOrDot';
+import { BookingClockNote } from './BookingClockNote';
+import { ClockChangeMarker } from './ClockChangeMarker';
+import { ClockSuffixContext, useClockSuffix } from './dayClock';
 import { MealRow, MealRowLeading } from './MealRow';
 import type { DayRowOpeners } from './openHandlers';
 import { PlaceConditionsLine } from './PlaceConditionsLine';
@@ -264,6 +270,8 @@ const StayNode = memo(function StayNode({
   travelFooter?: ReactNode;
 }) {
   const { stay } = item;
+  const checkInClock = useClockSuffix({ at: stay.checkInAt, zone: stayZone(stay) });
+  const checkOutClock = useClockSuffix({ at: stay.checkOutAt, zone: stayZone(stay) });
   const lodgingPlace = placeFromLodging(stay.lodging);
   const name = lodgingPlace?.label ?? 'Lodging still open';
   const detailBits = stayDetailBits(stay.lodging);
@@ -294,8 +302,17 @@ const StayNode = memo(function StayNode({
         </Typography>
         <Typography variant="subtitle1">{name}</Typography>
         <Typography variant="body2" color="text.secondary">
-          {formatTime(stay.checkInAt)} in · {formatTime(stay.checkOutAt)} out
+          {formatTime(stay.checkInAt)}
+          {checkInClock} in · {formatTime(stay.checkOutAt)}
+          {checkOutClock} out
         </Typography>
+        {item.relation === 'Check in' && (
+          <BookingClockNote
+            at={stay.checkInAt}
+            bookingZone={stayZone(stay)}
+            placeZone={stay.lodging?.place.timeZone}
+          />
+        )}
         {detailBits.length > 0 && (
           <Typography variant="body2" color="text.secondary">
             {detailBits.join(' · ')}
@@ -337,6 +354,7 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
   const endpointPlace = isDepart ? transit.from : transit.to;
   // The timeline event already resolved the selected route variant's time.
   const time = event.at;
+  const clock = useClockSuffix(time ? { at: time, zone: event.zone } : null);
   const modeIconName = transitModeIconName(transit);
   const image = firstImage(transit, endpointPlace);
   const { openEdit, deleteEntity } = useEdit();
@@ -347,7 +365,7 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
     <Box sx={{ minWidth: 0 }}>
       <Typography variant="caption" color="text.secondary" sx={ROW_OVERLINE_SX}>
         {time
-          ? `${formatTime(time)} · ${isDepart ? 'Depart' : 'Arrive'}`
+          ? `${formatTime(time)}${clock} · ${isDepart ? 'Depart' : 'Arrive'}`
           : isDepart
             ? 'Depart'
             : 'Arrive'}
@@ -406,6 +424,7 @@ const TransitStageNode = memo(function TransitStageNode({
   travelFooter?: ReactNode;
 }) {
   const { stage } = item;
+  const clock = useClockSuffix({ at: stage.key, zone: stage.zone });
   return (
     <TimelineRow
       dot={<AvatarOrDot image={stage.place.images?.[0] ?? null} icon="signpost" />}
@@ -413,7 +432,8 @@ const TransitStageNode = memo(function TransitStageNode({
       testId={rowTestId('transit-stage', item.key)}
     >
       <Typography variant="caption" color="text.secondary" sx={ROW_OVERLINE_SX}>
-        {formatTime(stage.key)} · {STAGE_KIND_LABEL[stage.kind] ?? 'Via'}
+        {formatTime(stage.key)}
+        {clock} · {STAGE_KIND_LABEL[stage.kind] ?? 'Via'}
       </Typography>
       <Typography variant="subtitle1" title={stage.note ?? undefined}>
         {stage.place.label}
@@ -984,10 +1004,22 @@ export const DayTimeline = memo(function DayTimeline({
   // one day recomputes every other day's buildDragMeta (including its own
   // scenario-group members walk) for nothing.
   const dragMeta = useMemo(
-    () => buildDragMeta(flattened, scenarioId, dayStart, day.leg._id),
-    [flattened, scenarioId, dayStart, day.leg._id],
+    () => buildDragMeta(flattened, scenarioId, dayStart, day.leg._id, day.clock),
+    [flattened, scenarioId, dayStart, day.leg._id, day.clock],
   );
   const dragMetaById = useMemo(() => new Map(dragMeta.map((d) => [d.id, d])), [dragMeta]);
+
+  // Where the clock moves, by the drag id of the row it moves before, among the
+  // rows the filter shows.
+  const clockChanges = useMemo(
+    () =>
+      (activeFilterTokens.size
+        ? dayClocks(day, (list) => filterRows(list, day, activeFilterTokens))
+        : dayClocksOf(day)
+      ).changes,
+    [day, activeFilterTokens],
+  );
+  const clockSuffixOf = useMemo(() => (time: ZonedTime) => clockSuffix(day, time), [day]);
 
   // Rebuilt only when this list's own rows change — an unrelated tab/meal/
   // route selection elsewhere in the trip hands this day back as the very
@@ -1249,6 +1281,7 @@ export const DayTimeline = memo(function DayTimeline({
       id: placeholderId,
       index: 0,
       endAt: null,
+      endZone: null,
       containerDayStart: dayStart,
       legId: day.leg._id,
       scenarioId,
@@ -1269,102 +1302,106 @@ export const DayTimeline = memo(function DayTimeline({
   }
 
   return (
-    <SortableContext
-      items={dragMeta.map((d) => d.id)}
-      strategy={verticalListSortingStrategy}
-      id={containerId}
-    >
-      <Timeline
-        sx={{
-          p: 0,
-          m: 0,
-          // MUI reserves a flex-basis gutter on TimelineItem's own ::before
-          // for the "opposite content" column even when nothing ever supplies
-          // one — kill it so the dot/connector column sits flush against the
-          // day block's own left edge instead of floating in the middle.
-          '& .MuiTimelineItem-root::before': { display: 'none !important' },
-          // TimelineContent is a flex item with no min-width override, so its
-          // default content-based automatic minimum size wins over its flex
-          // basis. A clamped note's `-webkit-box`/`-webkit-line-clamp` content
-          // (see Notes.tsx's CLAMPED_SX) reports its full unwrapped width as
-          // that minimum instead of a wrapped one, which forces this — and
-          // every ancestor up to the day block — wider than the viewport,
-          // producing horizontal overflow (extra whitespace to the right of
-          // everything else once scrolled). Reset it so flexbox can actually
-          // shrink the content to fit.
-          '& .MuiTimelineContent-root': { minWidth: 0 },
-        }}
+    <ClockSuffixContext.Provider value={clockSuffixOf}>
+      <SortableContext
+        items={dragMeta.map((d) => d.id)}
+        strategy={verticalListSortingStrategy}
+        id={containerId}
       >
-        {allNodes.map((node, i) => {
-          const meta = node.dragId ? dragMetaById.get(node.dragId) : undefined;
-          const isSelected = Boolean(meta && isRowSelected(selection, meta.id));
-          // What this row itself contributes to a group drag: the whole
-          // bundle for a scenario-tabs row, or its own single id for a
-          // plain Activity/Transit/Stay row — see RowSelectionMembers' own
-          // note in TripSelectionsContextObject.ts.
-          const rowMembers: RowSelectionMembers | null = meta ? rowMembersOf(meta) : null;
-          return (
-            <Fragment key={node.key}>
-              {node.dragId ? (
-                <SortableRow
-                  dragId={node.dragId}
-                  disabled={!node.draggable}
-                  droppable={node.droppable}
-                  dragMeta={meta}
-                >
-                  {(dragHandleProps, isOver) =>
-                    node.render({
-                      isLast: i === allNodes.length - 1,
-                      travelFooter: travelFooters[i],
-                      dragHandle: dragHandleProps ? (
-                        <Tooltip
-                          title={isSelected ? 'Selected — drag to move group' : 'Drag to reorder'}
-                        >
-                          <IconButton
-                            className={DRAG_HANDLE_HOVER_CLASS}
-                            size="small"
-                            aria-label={isSelected ? 'Selected, drag to move group' : 'Reorder'}
-                            color={isSelected ? 'primary' : 'default'}
-                            onClick={
-                              meta && rowMembers
-                                ? (event) => {
-                                    event.stopPropagation();
-                                    toggleRowSelection(
-                                      meta.id,
-                                      containerId,
-                                      rowMembers,
-                                      meta.source?.kind === 'scenario-group',
-                                    );
-                                  }
-                                : undefined
-                            }
-                            sx={{
-                              flexShrink: 0,
-                              cursor: 'grab',
-                              touchAction: 'none',
-                              opacity: isSelected ? 1 : 0,
-                              transition: 'opacity 0.15s',
-                              p: `${DRAG_HANDLE_PADDING_PX}px`,
-                            }}
-                            {...dragHandleProps.attributes}
-                            {...dragHandleProps.listeners}
+        <Timeline
+          sx={{
+            p: 0,
+            m: 0,
+            // MUI reserves a flex-basis gutter on TimelineItem's own ::before
+            // for the "opposite content" column even when nothing ever supplies
+            // one — kill it so the dot/connector column sits flush against the
+            // day block's own left edge instead of floating in the middle.
+            '& .MuiTimelineItem-root::before': { display: 'none !important' },
+            // TimelineContent is a flex item with no min-width override, so its
+            // default content-based automatic minimum size wins over its flex
+            // basis. A clamped note's `-webkit-box`/`-webkit-line-clamp` content
+            // (see Notes.tsx's CLAMPED_SX) reports its full unwrapped width as
+            // that minimum instead of a wrapped one, which forces this — and
+            // every ancestor up to the day block — wider than the viewport,
+            // producing horizontal overflow (extra whitespace to the right of
+            // everything else once scrolled). Reset it so flexbox can actually
+            // shrink the content to fit.
+            '& .MuiTimelineContent-root': { minWidth: 0 },
+          }}
+        >
+          {allNodes.map((node, i) => {
+            const meta = node.dragId ? dragMetaById.get(node.dragId) : undefined;
+            const isSelected = Boolean(meta && isRowSelected(selection, meta.id));
+            // What this row itself contributes to a group drag: the whole
+            // bundle for a scenario-tabs row, or its own single id for a
+            // plain Activity/Transit/Stay row — see RowSelectionMembers' own
+            // note in TripSelectionsContextObject.ts.
+            const rowMembers: RowSelectionMembers | null = meta ? rowMembersOf(meta) : null;
+            const clockChange = node.dragId ? clockChanges.get(node.dragId) : undefined;
+            return (
+              <Fragment key={node.key}>
+                {clockChange && <ClockChangeMarker change={clockChange} />}
+                {node.dragId ? (
+                  <SortableRow
+                    dragId={node.dragId}
+                    disabled={!node.draggable}
+                    droppable={node.droppable}
+                    dragMeta={meta}
+                  >
+                    {(dragHandleProps, isOver) =>
+                      node.render({
+                        isLast: i === allNodes.length - 1,
+                        travelFooter: travelFooters[i],
+                        dragHandle: dragHandleProps ? (
+                          <Tooltip
+                            title={isSelected ? 'Selected — drag to move group' : 'Drag to reorder'}
                           >
-                            <DragIndicatorIcon fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      ) : undefined,
-                      selected: isSelected,
-                      isOver,
-                    })
-                  }
-                </SortableRow>
-              ) : (
-                node.render({ isLast: i === allNodes.length - 1, travelFooter: travelFooters[i] })
-              )}
-            </Fragment>
-          );
-        })}
-      </Timeline>
-    </SortableContext>
+                            <IconButton
+                              className={DRAG_HANDLE_HOVER_CLASS}
+                              size="small"
+                              aria-label={isSelected ? 'Selected, drag to move group' : 'Reorder'}
+                              color={isSelected ? 'primary' : 'default'}
+                              onClick={
+                                meta && rowMembers
+                                  ? (event) => {
+                                      event.stopPropagation();
+                                      toggleRowSelection(
+                                        meta.id,
+                                        containerId,
+                                        rowMembers,
+                                        meta.source?.kind === 'scenario-group',
+                                      );
+                                    }
+                                  : undefined
+                              }
+                              sx={{
+                                flexShrink: 0,
+                                cursor: 'grab',
+                                touchAction: 'none',
+                                opacity: isSelected ? 1 : 0,
+                                transition: 'opacity 0.15s',
+                                p: `${DRAG_HANDLE_PADDING_PX}px`,
+                              }}
+                              {...dragHandleProps.attributes}
+                              {...dragHandleProps.listeners}
+                            >
+                              <DragIndicatorIcon fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        ) : undefined,
+                        selected: isSelected,
+                        isOver,
+                      })
+                    }
+                  </SortableRow>
+                ) : (
+                  node.render({ isLast: i === allNodes.length - 1, travelFooter: travelFooters[i] })
+                )}
+              </Fragment>
+            );
+          })}
+        </Timeline>
+      </SortableContext>
+    </ClockSuffixContext.Provider>
   );
 });

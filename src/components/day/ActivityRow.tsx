@@ -4,7 +4,7 @@ import Typography from '@mui/material/Typography';
 
 import { firstImage, timeAndMealTypeLabel } from '../../model/formatting';
 import { liveWarnings } from '../../model/mealOptions';
-import { activityHeadline, rowShows } from '../../model/tripModel';
+import { activityHeadline, activityStart, activityZone, rowShows } from '../../model/tripModel';
 import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
 import { BookingChip } from '../shared/BookingChip';
 import { LinkifiedText } from '../shared/LinkifiedText';
@@ -14,6 +14,8 @@ import { OverlapWarnings } from '../shared/OverlapWarnings';
 import { ROW_OVERLINE_SX } from '../shared/rowLeadingTokens';
 import { TravelerChips } from '../shared/TravelerChips';
 import { AvatarOrDotView } from './AvatarOrDot';
+import { BookingClockNote } from './BookingClockNote';
+import { useClockSuffix } from './dayClock';
 import { PlaceConditionsLine } from './PlaceConditionsLine';
 import { useSunAnchoredTime } from './useSunAnchoredTime';
 
@@ -49,6 +51,7 @@ export function ActivityRow({
   buttonRef: (node: HTMLButtonElement | null) => void;
 }) {
   const timeText = useSunAnchoredTime(activity, day, inView);
+  const clock = useClockSuffix(activity.startAt ? activityStart(activity) : null);
   const { booking } = rowShows({ type: 'activity', activity });
 
   return (
@@ -66,8 +69,13 @@ export function ActivityRow({
     >
       <Box sx={{ flexGrow: 1, minWidth: 0 }}>
         <Typography variant="caption" color="text.secondary" sx={ROW_OVERLINE_SX}>
-          {timeAndMealTypeLabel(activity, timeText)}
+          {timeAndMealTypeLabel(activity, timeText, clock)}
         </Typography>
+        <BookingClockNote
+          at={activity.startAt}
+          bookingZone={activityZone(activity)}
+          placeZone={activity.place?.timeZone}
+        />
         <Typography variant="body1">
           <LinkifiedText text={activityHeadline(activity)} />
         </Typography>

@@ -1,14 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
 import { applyBatch } from './askAIDrafts';
+import { isDateTime } from './dateTime';
 import { blankActivity, blankPackage, blankStay, blankTransit } from './editForms';
 import {
   addTraveler,
   type ChangeProposal,
   checkedChanges,
-  isDateTime,
   mergePackages,
   noPlaceSearches,
+  type PlaceSearches,
+  placeSearchesFrom,
   proposalState,
   queueFromProposals,
   validateFinish,
@@ -124,7 +126,9 @@ describe('validateProposal', () => {
     expect(errors.join('\n')).toMatch(/search for "Somewhere"/);
     expect(
       validateProposal({ ...flight, changes: { arrivesAt: '2027-07-11T08:00' } }, state),
-    ).toEqual(['Arrives 2027-07-11T08:00, not after it departs 2027-07-11T08:30.']);
+    ).toEqual([
+      'Arrives 2027-07-11T08:00, not after it departs 2027-07-11T08:30. If the two places keep different clocks, give each its placeId from search_places so their time zones are known.',
+    ]);
   });
 
   it('accepts a place id from a search this import made', () => {
@@ -1272,10 +1276,11 @@ describe('validation of malformed tool input', () => {
     kind: 'stay',
     changes: {
       checkOutAt: '2027-06-30T08:00',
+      clockZone: 'America/Vancouver',
       portCalls: [
         {
           kind: 'port',
-          place: { placeId: 'place_port', label: 'Port' },
+          place: { placeId: 'place_port', label: 'Port', timeZone: 'America/Juneau' },
           arrivesAt: '2027-06-28T07:00',
           departsAt: '2027-06-28T17:00',
         },
@@ -1296,6 +1301,7 @@ describe('validation of malformed tool input', () => {
     kind: 'activity',
     changes: {
       mealOptions: [{ place: { label: 'Cafe', notOnGoogle: true }, diningFormat: 'sit-down' }],
+      clockZone: 'America/Phoenix',
       travelers: ['t1'],
     },
     addOption: {
@@ -1341,7 +1347,7 @@ describe('validation of malformed tool input', () => {
           // The entry point the callers use (it remaps travelers first), then
           // what passes is queued at finish, which must hold too.
           const checked = checkedChanges([mutated as ChangeProposal], trip(), {
-            searches: { placeIds: new Set(['place_port']), emptyQueries: new Set() },
+            searches: placeSearchesFrom({ placeIds: ['place_port'], emptyQueries: [] }),
             travelers: [{ id: 't1', name: 'Someone New' }],
           });
           if ('state' in checked) queueFromProposals(checked.state);
@@ -1676,12 +1682,18 @@ describe('entry point parity', () => {
     ['a text that is a number', { text: 5 }],
     ['a place that is a bare string', { text: 'x', place: 'Anchorage' }],
     ['a duration that is text', { text: 'x', durationMinutes: '90' }],
+    ['a clock that is not a zone', { text: 'x', clockZone: 'Arizona time' }],
+    ['a clock that is a list', { text: 'x', clockZone: ['America/Phoenix'] }],
     ['an empty traveler list', { text: 'x', travelers: [] }],
     ['packages that are not a list', { text: 'x', packages: { name: 'p' } }],
     ['a start on another day', { text: 'x', startAt: '2027-07-12T19:00' }],
     ['a covered meal with nothing covering it', { text: 'x', diningFormat: 'included' }],
     ['a new place with no placeId', { text: 'x', place: { label: 'Somewhere' } }],
     ['a place with a placeId that is not text', { text: 'x', place: { label: 'x', placeId: 5 } }],
+    [
+      'a place zone that is not text',
+      { text: 'x', place: { label: 'x', placeId: 'place_x', timeZone: 5 } },
+    ],
     [
       'a package costing less than nothing',
       {
@@ -1696,6 +1708,67 @@ describe('entry point parity', () => {
     const checked = checkedChanges([proposal], trip(), { searches: noPlaceSearches() });
     expect('errors' in checked).toBe(true);
     expect('error' in applyBatch(trip(), [proposal])).toBe(true);
+  });
+
+  it('stores a clockZone that names a zone, or null for the place’s clock, and turns down any other', () => {
+    const stored = (clockZone: unknown) => {
+      const at = onNewActivity({ text: 'Tour', startAt: '2027-07-11T10:00', clockZone });
+      const checked = checkedChanges([at], trip(), { searches: noPlaceSearches() });
+      if (!('state' in checked)) return checked.errors.join();
+      const applied = applyBatch(trip(), checked.changes);
+      if (!('data' in applied)) throw new Error(applied.error);
+      return applied.data.activities.find((a) => a.text === 'Tour')?.clockZone;
+    };
+    expect(stored('America/Phoenix')).toBe('America/Phoenix');
+    expect(stored(null)).toBeUndefined();
+    expect(stored(undefined)).toBeUndefined();
+    expect(stored('Arizona time')).toMatch(/clockZone must be an IANA zone name/);
+    expect(stored('+05:00')).toMatch(/clockZone must be an IANA zone name/);
+    // Any spelling the browser knows is stored by its canonical name.
+    expect(stored('us/arizona')).toBe('America/Phoenix');
+  });
+
+  it('drops an activity’s clockZone when its place changes, unless restated', () => {
+    const data = trip();
+    data.activities = data.activities.map((a) =>
+      a._id === 'act_lunch' ? { ...a, clockZone: 'America/Phoenix' } : a,
+    );
+    const moved = (changes: object) => {
+      const edit = { entityId: 'act_lunch', kind: 'activity', changes, why: 's' } as ChangeProposal;
+      const checked = checkedChanges([edit], data, {
+        searches: placeSearchesFrom({ placeIds: ['place_port'], emptyQueries: [] }),
+      });
+      if (!('state' in checked)) throw new Error(checked.errors.join());
+      return (queueFromProposals(checked.state)[0].entity as Activity).clockZone;
+    };
+    const port = { label: 'Port', placeId: 'place_port' };
+    expect(moved({ place: port })).toBeUndefined();
+    expect(moved({ place: port, clockZone: 'America/Phoenix' })).toBe('America/Phoenix');
+    expect(moved({ text: 'Picnic' })).toBe('America/Phoenix');
+  });
+
+  it('sets, clears and refuses a stay’s clockZone, and a new lodging drops it unless restated', () => {
+    const onClock = (): TripData => {
+      const data = trip();
+      data.stays = data.stays.map((st) =>
+        st._id === 'stay_hotel' ? { ...st, clockZone: 'America/Vancouver' } : st,
+      );
+      return data;
+    };
+    const queued = (changes: object, data = onClock()) => {
+      const edit = { entityId: 'stay_hotel', kind: 'stay', changes, why: 's' } as ChangeProposal;
+      const checked = checkedChanges([edit], data, {
+        searches: placeSearchesFrom({ placeIds: ['place_port'], emptyQueries: [] }),
+      });
+      if (!('state' in checked)) return checked.errors.join();
+      return (queueFromProposals(checked.state)[0].entity as Stay).clockZone;
+    };
+    expect(queued({ clockZone: 'America/Juneau' }, trip())).toBe('America/Juneau');
+    expect(queued({ clockZone: null })).toBeUndefined();
+    expect(queued({ clockZone: 'Ship time' })).toMatch(/clockZone must be an IANA zone name/);
+    const port = { label: 'Port', placeId: 'place_port' };
+    expect(queued({ lodging: port })).toBeUndefined();
+    expect(queued({ lodging: port, clockZone: 'America/Vancouver' })).toBe('America/Vancouver');
   });
 
   it('turns down a seller that is not text everywhere, and takes its name', () => {
@@ -1730,6 +1803,128 @@ describe('entry point parity', () => {
       true,
     );
     expect('data' in applyBatch(trip(), [restated])).toBe(true);
+  });
+
+  // The place a new Walk at `place` is stored with, once proposed against
+  // `searches` and applied.
+  const storedWalkPlace = (
+    place: Record<string, unknown>,
+    searches: PlaceSearches,
+    data = trip(),
+  ) => {
+    const at = onNewActivity({ text: 'Walk', startAt: '2027-07-11T10:00', place });
+    const checked = checkedChanges([at], data, { searches });
+    if (!('state' in checked)) throw new Error(checked.errors.join());
+    const applied = applyBatch(data, checked.changes);
+    if (!('data' in applied)) throw new Error(applied.error);
+    return applied.data.activities.find((a) => a.text === 'Walk')?.place;
+  };
+  const stated = { label: 'Trailhead', placeId: 'place_trailhead', timeZone: 'Fake/Zone' };
+
+  it('stores a searched place with the zone its search reported, never one the proposal states', () => {
+    const searches = placeSearchesFrom({
+      placeIds: ['place_trailhead'],
+      emptyQueries: [],
+      timeZones: [['place_trailhead', 'America/Anchorage']],
+    });
+    expect(storedWalkPlace(stated, searches)).toMatchObject({
+      id: 'place_trailhead',
+      timeZone: 'America/Anchorage',
+    });
+  });
+
+  it('stores a place the trip already has with the zone the trip stores for it', () => {
+    const data = trip();
+    const out = data.transits.find((t) => t._id === 'ph_out');
+    if (!out) throw new Error('no ph_out');
+    out.to = { ...out.to, timeZone: 'America/Anchorage' };
+    const place = { label: out.to.label, placeId: out.to.id };
+    expect(storedWalkPlace(place, noPlaceSearches(), data)?.timeZone).toBe('America/Anchorage');
+  });
+
+  it('stores a place named without its id with the zone the trip knows for it', () => {
+    const data = trip();
+    const out = data.transits.find((t) => t._id === 'ph_out');
+    if (!out) throw new Error('no ph_out');
+    out.to = { ...out.to, timeZone: 'America/Anchorage' };
+    // A second copy of the same place, stored before zones were, is the one matched.
+    const { timeZone: _zone, ...unzoned } = out.to;
+    data.activities.push({ ...data.activities[0], _id: 'act_copy', place: unzoned });
+    expect(storedWalkPlace({ label: out.to.label }, noPlaceSearches(), data)).toMatchObject({
+      id: out.to.id,
+      timeZone: 'America/Anchorage',
+    });
+  });
+
+  it('knows no zone for a place whose copies on the trip disagree', () => {
+    const data = trip();
+    const out = data.transits.find((t) => t._id === 'ph_out');
+    if (!out) throw new Error('no ph_out');
+    out.to = { ...out.to, timeZone: 'America/Anchorage' };
+    data.activities.push({
+      ...data.activities[0],
+      _id: 'act_copy',
+      place: { ...out.to, timeZone: 'America/Juneau' },
+    });
+    const place = { label: out.to.label, placeId: out.to.id };
+    expect(storedWalkPlace(place, noPlaceSearches(), data)).not.toHaveProperty('timeZone');
+  });
+
+  it('stores no zone for a searched place whose search reported none, whatever the proposal says', () => {
+    const searches = placeSearchesFrom({ placeIds: ['place_trailhead'], emptyQueries: [] });
+    expect(storedWalkPlace(stated, searches)).not.toHaveProperty('timeZone');
+  });
+
+  describe('a flight that arrives after it departs, each on its own clock', () => {
+    // Tokyo (UTC+9) 23:30 is 14:30 UTC; Anchorage (UTC-8) 08:00 the same day is
+    // 16:00 UTC, so it lands two and a half hours later, "earlier" on the clock.
+    const flight = (from: string, to: string, arrivesAt: string): ChangeProposal => ({
+      entityId: 'ph_out',
+      kind: 'transit',
+      changes: {
+        departsAt: '2027-07-11T23:30',
+        arrivesAt,
+        from: { label: 'Haneda', placeId: from },
+        to: { label: 'Anchorage', placeId: to },
+      },
+      why: 's',
+    });
+    const zoned = placeSearchesFrom({
+      placeIds: ['p_hnd', 'p_anc', 'p_x', 'p_y'],
+      emptyQueries: [],
+      timeZones: [
+        ['p_hnd', 'Asia/Tokyo'],
+        ['p_anc', 'America/Anchorage'],
+      ],
+    });
+    // Proposed against `zoned`, then applied as queued: both halves agree.
+    const outcome = (proposal: ChangeProposal) => {
+      const checked = checkedChanges([proposal], trip(), { searches: zoned });
+      if ('errors' in checked) return checked.errors.join(' ');
+      const applied = applyBatch(trip(), checked.changes);
+      return 'error' in applied ? applied.error : 'ok';
+    };
+
+    it('takes an arrival later on the clock, zones or not', () => {
+      expect(outcome(flight('p_x', 'p_y', '2027-07-12T08:00'))).toBe('ok');
+    });
+
+    it('takes a local arrival that reads earlier once both zones are known', () => {
+      expect(outcome(flight('p_hnd', 'p_anc', '2027-07-11T08:00'))).toBe('ok');
+    });
+
+    it('turns down an earlier-reading arrival without zones, saying how to give them', () => {
+      expect(outcome(flight('p_x', 'p_y', '2027-07-11T08:00'))).toBe(
+        'Arrives 2027-07-11T08:00, not after it departs 2027-07-11T23:30. If the two places keep different clocks, give each its placeId from search_places so their time zones are known.',
+      );
+    });
+
+    it('turns down an arrival before the departure on their own clocks', () => {
+      // 05:00 in Anchorage is 13:00 UTC, before the 14:30 UTC departure.
+      expect(outcome(flight('p_hnd', 'p_anc', '2027-07-11T05:00'))).toBe(
+        'Arrives 2027-07-11T05:00, not after it departs 2027-07-11T23:30.',
+      );
+    });
   });
 
   it('takes a new place by its searched id, or as notOnGoogle after an empty search, through both', () => {

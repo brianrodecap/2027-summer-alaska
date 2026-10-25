@@ -16,17 +16,28 @@ import { DINING_FORMAT_LABEL, placeFromLodging } from './formatting';
 import { resolveScenarioToneChange } from './scenarioGroups';
 import {
   activityHeadline,
+  activityTimelineStart,
   addDaysStr,
+  arrivalProblem,
+  canonicalZone,
+  clockAfterChange,
   dateOnly,
   DEFAULT_ROUTE_TONE,
+  departure,
   directVariantProblem,
   entityLabel,
   hasDirectVariant,
   isNonNegativeNumber,
   mealOptionLabel,
+  orderInstant,
+  PICK_FOR_ZONES,
   resolveActivityDate,
-  todayDateStr,
+  setClockZone,
+  stayTimingProblems,
+  stayZone,
   transitRouteLabel,
+  tripClock,
+  type ZonedTime,
 } from './tripModel';
 import type {
   Activity,
@@ -323,7 +334,7 @@ export interface IncludedInOption {
   value: string;
   label: string;
   date: string; // ISO date, for grouping
-  sortKey: string; // ISO datetime, for chronological order within a group
+  at: ZonedTime; // when it happens, on its own clock: ordered as the day list orders it
 }
 
 // A meal candidate as the edit form holds it: the stored MealOption, with its
@@ -390,11 +401,11 @@ export function entityStartAt(
 // actually is — used by EditEventWizard to seed the *other* two kinds'
 // otherwise-unused blank forms; every entity always carries a real date,
 // unlike '' — which addDaysStr's Date math can't parse and throws on; see
-// blankStay's checkOutAt).
-export function entityDateOnly(kind: EditKind, entity: Entity): string {
+// blankStay's checkOutAt). An undated Activity falls back to `today`.
+export function entityDateOnly(kind: EditKind, entity: Entity, today: string): string {
   if (kind === 'stay') return dateOnly((entity as Stay).checkInAt);
   if (kind === 'transit') return dateOnly((entity as Transit).departsAt);
-  return resolveActivityDate(entity as Activity) ?? todayDateStr();
+  return resolveActivityDate(entity as Activity) ?? today;
 }
 
 // Finds an existing Activity that the wizard's in-progress meal would
@@ -533,8 +544,9 @@ export const EXTRACTABLE_DINING_FORMATS: DiningFormat[] = (
 // must pass the current diningFormat to keep the dropdown from mixing
 // unrelated entity kinds together. Labels are bare names (no "Included
 // with"/"Package:" prefix) — the date grouping disambiguates instead.
-// Options come back sorted chronologically, which also keeps each date's
-// entries contiguous for grouping.
+// Options come back grouped by date, each date's in real time on their own
+// clocks (orderInstant, as the day list orders them), so each date's entries
+// are contiguous for grouping even when clocks differ.
 export function includedInOptions(
   diningFormat: DiningFormat | '',
   stays: Stay[],
@@ -548,34 +560,33 @@ export function includedInOptions(
         value: `stay:${stay._id}`,
         label: stay.lodging?.place.label ?? stay._id,
         date: dateOnly(stay.checkInAt),
-        sortKey: stay.checkInAt,
+        at: { at: stay.checkInAt, zone: stayZone(stay) },
       });
     }
   } else if (diningFormat === 'package') {
-    const holders: { packages?: Package[] | null; date: string; sortKey: string }[] = [
-      ...stays.map((s) => ({ ...s, date: dateOnly(s.checkInAt), sortKey: s.checkInAt })),
-      ...transits.map((t) => ({ ...t, date: dateOnly(t.departsAt), sortKey: t.departsAt })),
+    const holders: { packages?: Package[] | null; date: string; at: ZonedTime }[] = [
+      ...stays.map((s) => ({
+        ...s,
+        date: dateOnly(s.checkInAt),
+        at: { at: s.checkInAt, zone: stayZone(s) },
+      })),
+      ...transits.map((t) => ({ ...t, date: dateOnly(t.departsAt), at: departure(t) })),
       ...activities.flatMap((a) => {
-        const date = resolveActivityDate(a);
-        return date == null ? [] : [{ ...a, date, sortKey: a.startAt ?? `${date}T00:00` }];
+        const on = activityOn(a);
+        return on ? [{ ...a, ...on }] : [];
       }),
     ];
-    for (const { packages, date, sortKey } of holders) {
+    for (const { packages, date, at } of holders) {
       for (const pkg of packages ?? []) {
-        options.push({ value: `package:${pkg._id}`, label: pkg.name, date, sortKey });
+        options.push({ value: `package:${pkg._id}`, label: pkg.name, date, at });
       }
     }
   } else if (diningFormat === 'included-with-activity') {
     for (const activity of activities) {
       if (activity.mealType) continue;
-      const date = resolveActivityDate(activity);
-      if (date == null) continue;
-      options.push({
-        value: `activity:${activity._id}`,
-        label: activityHeadline(activity),
-        date,
-        sortKey: activity.startAt ?? `${date}T00:00`,
-      });
+      const on = activityOn(activity);
+      if (!on) continue;
+      options.push({ value: `activity:${activity._id}`, label: activityHeadline(activity), ...on });
     }
   } else if (diningFormat === 'included-with-transit') {
     for (const transit of transits) {
@@ -583,12 +594,23 @@ export function includedInOptions(
         value: `transit:${transit._id}`,
         label: transitRouteLabel(transit),
         date: dateOnly(transit.departsAt),
-        sortKey: transit.departsAt,
+        at: departure(transit),
       });
     }
   }
-  options.sort((a, b) => a.sortKey.localeCompare(b.sortKey));
-  return options;
+  if (options.length < 2) return options;
+  const clock = tripClock({ stays, activities, transits });
+  return options
+    .map((option) => ({ option, order: orderInstant(option.at, clock) }))
+    .sort((a, b) => a.option.date.localeCompare(b.option.date) || a.order - b.order)
+    .map(({ option }) => option);
+}
+
+// An Activity's date and when it happens, as the day list orders it
+// (activityTimelineStart, whose time is on that date); null while it has no date.
+function activityOn(activity: Activity): { date: string; at: ZonedTime } | null {
+  const at = activityTimelineStart(activity);
+  return at && { date: dateOnly(at.at), at };
 }
 
 export function includedInValue(includedIn: Ref | null): string {
@@ -615,6 +637,7 @@ export interface ActivityFormState {
   mealType: MealType | '';
   diningFormat: DiningFormat | '';
   place: Place | null;
+  clockZone: string; // the booking's own clock (Activity.clockZone); '' for the place's
   includedIn: Ref | null;
   options: MealOptionForm[];
   travelerIds: string[];
@@ -637,6 +660,7 @@ export function activityFormFrom(activity: Activity, source: BookingSource): Act
     mealType: activity.mealType ?? '',
     diningFormat: activity.diningFormat ?? '',
     place: activity.place,
+    clockZone: activity.clockZone ?? '',
     includedIn: activity.includedIn,
     options: (activity.options ?? []).map((o) => mealOptionFormFrom(o, source)),
     travelerIds: activity.travelers ?? [],
@@ -692,6 +716,10 @@ export function optionFromDecided(meal: Activity): MealOption {
 export function applyActivityForm(activity: Activity, form: ActivityFormState): string | null {
   const text = form.text.trim();
   if (!hasDescriptionOrPlace(form)) return 'Needs a description.';
+  const clock = clockZoneFromForm(form.clockZone);
+  if (clock === undefined) return CLOCK_ZONE_ERROR;
+  const stated = form.clockZone === (activity.clockZone ?? '') ? undefined : clock;
+  const placeBefore = activity.place;
   const startAt =
     form.startsDate && form.startsTime ? `${form.startsDate}T${form.startsTime}` : null;
   activity.text = text || null;
@@ -726,7 +754,23 @@ export function applyActivityForm(activity: Activity, form: ActivityFormState): 
   }
   activity.travelers = form.travelerIds.length ? form.travelerIds : null;
   setPackages(activity, form.packages);
+  // A rough time has no clock time to state on another clock.
+  const zone = clockAfterChange(activity.clockZone, stated, placeBefore, activity.place);
+  setClockZone(activity, activity.startAt ? zone : null);
   return null;
+}
+
+// A form's booking clock: its canonical IANA name (canonicalZone, as an AI
+// proposal's is stored), null for the place's own ('' in the form), or
+// undefined for one the browser doesn't know.
+//
+// The form states a clock only when it was changed from the stored one;
+// otherwise clockAfterChange keeps it, or drops it for a new place, as it
+// does for a proposal.
+const CLOCK_ZONE_ERROR =
+  "The booking's clock isn't a time zone: pick one from the list, or clear it for the place's clock.";
+function clockZoneFromForm(value: string): string | null | undefined {
+  return value.trim() ? (canonicalZone(value.trim()) ?? undefined) : null;
 }
 
 // Who a per-person price covers: the entry's own travelers when it names
@@ -845,6 +889,7 @@ export interface StayFormState {
   checkInTime: string | null;
   checkOutDate: string | null;
   checkOutTime: string | null;
+  clockZone: string; // the booking's own clock (Stay.clockZone); '' for the lodging's
   booking: BookingFormValue;
   roomType: string;
   bedConfiguration: string;
@@ -862,6 +907,7 @@ export function stayFormFrom(stay: Stay, source: BookingSource): StayFormState {
     checkInTime: stay.checkInAt.slice(11, 16),
     checkOutDate: dateOnly(stay.checkOutAt),
     checkOutTime: stay.checkOutAt.slice(11, 16),
+    clockZone: stay.clockZone ?? '',
     booking: bookingFormFor(source, stay.bookingId),
     roomType: stay.lodging?.roomType ?? '',
     bedConfiguration: stay.lodging?.bedConfiguration ?? '',
@@ -879,6 +925,15 @@ export function applyStayForm(stay: Stay, form: StayFormState): string | null {
   const checkOutAt =
     form.checkOutDate && form.checkOutTime ? `${form.checkOutDate}T${form.checkOutTime}` : null;
   if (!checkInAt || !checkOutAt) return 'Needs both check-in and check-out times.';
+  const clock = clockZoneFromForm(form.clockZone);
+  if (clock === undefined) return CLOCK_ZONE_ERROR;
+  const lodging = form.place?.label.trim() ? { place: form.place } : stay.lodging;
+  const zone = clockAfterChange(
+    stay.clockZone,
+    form.clockZone === (stay.clockZone ?? '') ? undefined : clock,
+    stay.lodging?.place,
+    lodging?.place,
+  );
   // A port call with no place and no times is an unfinished row, not a stop; one
   // with times but no place would lose them silently, so it's an error. A named
   // one needs a time, inside the stay, or no day would ever show it.
@@ -887,17 +942,16 @@ export function applyStayForm(stay: Stay, form: StayFormState): string | null {
   }
   const portCalls = form.portCalls.filter((call) => call.place.label.trim());
   for (const call of portCalls) {
-    const times = [call.arrivesAt, call.departsAt].filter((at): at is string => !!at);
-    if (!times.length) return `${call.place.label}: give an arrival or departure time.`;
-    if (call.arrivesAt && call.departsAt && call.departsAt <= call.arrivesAt) {
-      return `${call.place.label}: all aboard must be after the ship arrives.`;
-    }
-    if (times.some((at) => at < checkInAt || at > checkOutAt)) {
-      return `${call.place.label}: times must fall between check-in and check-out.`;
+    if (!call.arrivesAt && !call.departsAt) {
+      return `${call.place.label}: give an arrival or departure time.`;
     }
   }
+  // The same timing rules every AI proposal is held to.
+  const timing = stayTimingProblems({ checkInAt, checkOutAt, lodging, clockZone: zone, portCalls });
+  if (timing.length) return timing[0];
   stay.checkInAt = checkInAt;
   stay.checkOutAt = checkOutAt;
+  setClockZone(stay, zone);
   const label = form.place?.label.trim();
   if (label && form.place) {
     stay.lodging = { ...stay.lodging, place: { ...form.place, label } };
@@ -1005,10 +1059,15 @@ export function applyTransitForm(transit: Transit, form: TransitFormState): stri
       : null;
   if (!departsAt || (!form.routeId && !arrivesAt))
     return 'Needs both a departure and arrival time.';
+  const from = form.from.label.trim() ? form.from : transit.from;
+  const to = form.to.label.trim() ? form.to : transit.to;
+  // The same arrival rule every AI proposal is held to.
+  const arrival = arrivalProblem({ departsAt, arrivesAt, from, to }, PICK_FOR_ZONES);
+  if (arrival) return arrival;
   transit.departsAt = departsAt;
   transit.arrivesAt = arrivesAt;
-  transit.from = form.from.label.trim() ? form.from : transit.from;
-  transit.to = form.to.label.trim() ? form.to : transit.to;
+  transit.from = from;
+  transit.to = to;
   transit.routeId = form.routeId;
   transit.routeVariant = form.routeId ? form.routeVariant : null;
   // Only meaningful for a routed drive (transitPhaseOnMap) — dropped

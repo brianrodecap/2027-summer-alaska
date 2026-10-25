@@ -20,6 +20,7 @@ import { NOTE_KINDS } from './formatting';
 import { withPrimaryImage } from './placePhotos';
 import { searchPlaces } from './places';
 import {
+  acceptProposal,
   ADD_TRAVELER_TOOL,
   addTraveler,
   type ChangeProposal,
@@ -34,7 +35,6 @@ import {
   type RefundTerms,
   validateFinish,
   validateNote,
-  validateProposal,
 } from './proposals';
 import type { Activity, Booking, Note, Stay, Transit, Traveler, TripData, TripView } from './types';
 
@@ -243,6 +243,7 @@ export async function importByProposals(
             data,
             view,
             byDate: new Map(),
+            today: view.today,
             placeSearches: state.placeSearches,
             searchPlaces: searchPlacesFor,
           }).then(
@@ -279,13 +280,9 @@ export async function importByProposals(
         const { text, isError } = await lookups.get(call.id)!;
         reply(text, isError);
       } else if (call.name === 'propose_change') {
-        const proposal = call.input as ChangeProposal;
-        const errors = validateProposal(proposal, state);
+        const errors = acceptProposal(call.input as ChangeProposal, state);
         if (errors.length) fail(errors);
-        else {
-          state.accepted.push(proposal);
-          reply('Accepted.');
-        }
+        else reply('Accepted.');
       } else if (call.name === 'add_traveler') {
         const added = addTraveler(call.input as { name?: string; age?: number }, state);
         if ('errors' in added) fail(added.errors);

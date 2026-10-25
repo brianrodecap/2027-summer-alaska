@@ -38,7 +38,7 @@ import {
   type StagedTripEntities,
 } from '../../model/proposalImport';
 import { slugify } from '../../model/slug';
-import { buildTripView } from '../../model/tripModel';
+import { buildTripView, todayDateStr } from '../../model/tripModel';
 import type { Leg, Trip } from '../../model/types';
 import { LegFormFields } from '../legs/LegFormFields';
 
@@ -143,7 +143,7 @@ export function TripEditDialog({
       // A new trip has nothing on it yet; the document is read against an
       // empty draft of it — the travelers entered so far and the pets setting.
       const draft = draftTripData(trip?.travelers ?? [], form.pets);
-      const result = await importByProposals(file, draft, buildTripView(draft), {
+      const result = await importByProposals(file, draft, buildTripView(draft, todayDateStr()), {
         newTrip: true,
       });
       if (!form.name.trim() && result.tripName) handleNameChange(result.tripName);

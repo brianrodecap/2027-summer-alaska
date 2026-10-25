@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { fakeAnthropic, fakeMessage } from '../test/fakeAnthropic';
+import { type Block, fakeAnthropic, fakeMessage } from '../test/fakeAnthropic';
+import { TEST_TODAY } from '../test/today';
 import type { SendMessage } from './anthropicClient';
 import { DocumentImportError } from './documentImport';
 import { blankTransit } from './editForms';
@@ -15,7 +16,7 @@ import type { Transit, TripData } from './types';
 
 // A client answering each request with the next canned reply (the last one again
 // once they run out), and each request as it was sent; nothing reaches the API.
-function stubTurns(...replies: unknown[][]) {
+function stubTurns(...replies: Block[][]) {
   const bodies: Record<string, unknown>[] = [];
   const create: SendMessage = async (request) => {
     bodies.push(structuredClone(request) as Record<string, unknown>);
@@ -28,7 +29,12 @@ function stubTurns(...replies: unknown[][]) {
   return { bodies, create };
 }
 
-const call = (id: string, name: string, input: unknown) => ({ type: 'tool_use', id, name, input });
+const call = (id: string, name: string, input: unknown) => ({
+  type: 'tool_use' as const,
+  id,
+  name,
+  input,
+});
 const confirmation = () =>
   new File(['Booking confirmation (synthetic)'], 'booking.eml', { type: 'message/rfc822' });
 
@@ -74,7 +80,9 @@ describe('importByProposals', () => {
       }),
     ]);
     const data = trip();
-    const result = await importByProposals(confirmation(), data, buildTripView(data), { create });
+    const result = await importByProposals(confirmation(), data, buildTripView(data, TEST_TODAY), {
+      create,
+    });
 
     const [body] = bodies;
     expect((body.tools as { name: string }[]).map((t) => t.name)).toEqual([
@@ -99,7 +107,9 @@ describe('importByProposals', () => {
       call('a', 'propose_change', proposal),
     ]);
     const data = trip();
-    const result = await importByProposals(confirmation(), data, buildTripView(data), { create });
+    const result = await importByProposals(confirmation(), data, buildTripView(data, TEST_TODAY), {
+      create,
+    });
     expect(result.requests).toBe(1);
     expect(result.queue).toHaveLength(1);
     expect(result.rejected).toEqual([]);
@@ -117,7 +127,9 @@ describe('importByProposals', () => {
       ],
     );
     const data = trip();
-    const result = await importByProposals(confirmation(), data, buildTripView(data), { create });
+    const result = await importByProposals(confirmation(), data, buildTripView(data, TEST_TODAY), {
+      create,
+    });
     expect(result.requests).toBe(2);
     expect(result.queue).toHaveLength(1);
     expect(result.rejected.map((r) => r.tool)).toEqual(['propose_change', 'finish']);
@@ -132,7 +144,9 @@ describe('importByProposals', () => {
       ],
     );
     const data = trip();
-    const result = await importByProposals(confirmation(), data, buildTripView(data), { create });
+    const result = await importByProposals(confirmation(), data, buildTripView(data, TEST_TODAY), {
+      create,
+    });
 
     const turned = (bodies[1].messages as { content: unknown }[]).at(-1)?.content as {
       is_error?: boolean;
@@ -174,10 +188,15 @@ describe('a new trip from a document', () => {
       ],
     );
     const draft = draftTripData([], false);
-    const result = await importByProposals(confirmation(), draft, buildTripView(draft), {
-      newTrip: true,
-      create,
-    });
+    const result = await importByProposals(
+      confirmation(),
+      draft,
+      buildTripView(draft, TEST_TODAY),
+      {
+        newTrip: true,
+        create,
+      },
+    );
     expect(result.tripName).toBe('Catalina');
     expect(result.newTravelers).toEqual([{ id: 'trav_pat_guest', name: 'Pat Guest' }]);
 

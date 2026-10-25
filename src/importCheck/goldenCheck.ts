@@ -24,7 +24,7 @@ import {
   withTripTravelers,
 } from '../model/editForms';
 import { uniqueById } from '../model/formatting';
-import { buildTripView, entityLabel } from '../model/tripModel';
+import { buildTripView, entityLabel, todayDateStr } from '../model/tripModel';
 import type { Booking, BookingStatus, BudgetRow, Payable, TripData } from '../model/types';
 
 // What a person entered from one document. Field paths are dotted
@@ -294,7 +294,7 @@ export function checkDocument(
   // Built once, and only when a document checks package totals.
   let rows: BudgetRow[] | null = null;
   const budgetRows = () =>
-    (rows ??= buildTripView(after).budget.byLeg.flatMap((group) => group.rows));
+    (rows ??= buildTripView(after, todayDateStr()).budget.byLeg.flatMap((group) => group.rows));
   for (const [id, expected] of Object.entries(golden.packageTotals ?? {})) {
     const found = findEntity(after, id);
     if (found) findings.push(...packageFindings(id, found.entity, expected, budgetRows()));

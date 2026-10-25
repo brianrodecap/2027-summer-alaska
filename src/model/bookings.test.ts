@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
+import { TEST_TODAY } from '../test/today';
 import {
   bookingFormValueFrom,
   hasVaryingFares,
@@ -129,14 +130,14 @@ describe('a booking shared by two flights', () => {
   });
 
   it('is counted once in the budget, on the first flight’s day, labeled with both', () => {
-    const { budget } = buildTripView(roundTripData());
+    const { budget } = buildTripView(roundTripData(), TEST_TODAY);
     expect(budget.totals.spent).toBeCloseTo(500.3);
     expect(budget.byDay.map((g) => g.day.date)).toEqual(['2027-07-08']);
     expect(budget.byDay[0].rows[0].label).toContain(' + ');
   });
 
   it('credits each traveler exactly their own fare', () => {
-    const { budget } = buildTripView(roundTripData());
+    const { budget } = buildTripView(roundTripData(), TEST_TODAY);
     const byName = Object.fromEntries(budget.byTraveler.map((g) => [g.name, g.totals.spent]));
     expect(byName['Alex Test']).toBeCloseTo(300.1);
     expect(byName['Sam Test']).toBeCloseTo(200.2);
@@ -175,7 +176,7 @@ describe('a booking shared by two flights', () => {
   });
 
   it('is enriched onto each flight', () => {
-    const view = buildTripView(roundTripData());
+    const view = buildTripView(roundTripData(), TEST_TODAY);
     expect(view.transitsById.get('flight_back')?.booking?._id).toBe('booking_rt');
   });
 });

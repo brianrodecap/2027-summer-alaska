@@ -2,6 +2,7 @@ import type { BetaMessage } from '@anthropic-ai/sdk/resources/beta/messages/mess
 import { describe, expect, it } from 'vitest';
 
 import { fakeAnthropic, fakeMessage, streamedBody } from '../test/fakeAnthropic';
+import { TEST_TODAY } from '../test/today';
 import type { StreamMessage } from './anthropicClient';
 import {
   applyDayPlan,
@@ -22,18 +23,6 @@ import type { Booking, Day, Route, Transit, TripData, TripView } from './types';
 
 // Each queued reply is one request's whole response, handed back by a stub stream;
 // nothing reaches the API.
-
-type Block =
-  | { type: 'text'; text: string }
-  | { type: 'thinking'; thinking: string }
-  | { type: 'tool_use'; id: string; name: string; input: unknown };
-
-function apiReply(blocks: Block[], stopReason: string): BetaMessage {
-  return fakeMessage(
-    blocks.map((b) => (b.type === 'thinking' ? { ...b, signature: 'sig' } : b)),
-    stopReason,
-  );
-}
 
 // A stream answering each request with the next reply, and each request as it was
 // sent; the stream hands each reply's text and thinking to the handlers.
@@ -100,6 +89,7 @@ function tools(data: TripData): AskAITurnInput['tools'] {
     data,
     view: { dateRange: { startDate: '2027-07-14', endDate: '2027-07-14' } } as TripView,
     byDate: new Map([[DAY.date, DAY]]),
+    today: TEST_TODAY,
   };
 }
 
@@ -115,9 +105,9 @@ function turn(
 describe('runAskAITurn', () => {
   it('hands the streamed answer and progress notes to the turn’s events', async () => {
     const { stream } = stubTurns(
-      apiReply(
+      fakeMessage(
         [
-          { type: 'thinking', thinking: 'Checking the 14th.' },
+          { type: 'thinking', thinking: 'Checking the 14th.', signature: 'sig' },
           { type: 'text', text: 'Bring rain gear.' },
         ],
         'end_turn',
@@ -138,14 +128,14 @@ describe('runAskAITurn', () => {
 
   it('runs a lookup, feeds the result back, and passes thinking blocks back unchanged', async () => {
     const { bodies, stream } = stubTurns(
-      apiReply(
+      fakeMessage(
         [
-          { type: 'thinking', thinking: 'Checking the 14th.' },
+          { type: 'thinking', thinking: 'Checking the 14th.', signature: 'sig' },
           { type: 'tool_use', id: 'tu_1', name: 'get_day', input: { date: '2027-07-14' } },
         ],
         'tool_use',
       ),
-      apiReply([{ type: 'text', text: 'Bring rain gear on the 14th.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Bring rain gear on the 14th.' }], 'end_turn'),
     );
     const start = startConversation(tripData());
     const lookups: string[] = [];
@@ -183,7 +173,7 @@ describe('runAskAITurn', () => {
 
   it('queues a proposal for review instead of applying anything', async () => {
     const { bodies, stream } = stubTurns(
-      apiReply(
+      fakeMessage(
         [
           {
             type: 'tool_use',
@@ -199,7 +189,10 @@ describe('runAskAITurn', () => {
         ],
         'tool_use',
       ),
-      apiReply([{ type: 'text', text: 'I proposed moving the kayak tour to 10am.' }], 'end_turn'),
+      fakeMessage(
+        [{ type: 'text', text: 'I proposed moving the kayak tour to 10am.' }],
+        'end_turn',
+      ),
     );
     const after = await turn(stream, startConversation(tripData()), 'Move the kayak later');
 
@@ -219,7 +212,7 @@ describe('runAskAITurn', () => {
 
   it('queues alternatives and meal-option adds as data, not text', async () => {
     const { stream } = stubTurns(
-      apiReply(
+      fakeMessage(
         [
           {
             type: 'tool_use',
@@ -261,7 +254,7 @@ describe('runAskAITurn', () => {
         ],
         'tool_use',
       ),
-      apiReply([{ type: 'text', text: 'Proposed both.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Proposed both.' }], 'end_turn'),
     );
     const searched = {
       ...startConversation(tripData()),
@@ -286,7 +279,9 @@ describe('runAskAITurn', () => {
   });
 
   it('starts the conversation itself when there is none yet, with no itinerary update', async () => {
-    const { bodies, stream } = stubTurns(apiReply([{ type: 'text', text: 'Hello.' }], 'end_turn'));
+    const { bodies, stream } = stubTurns(
+      fakeMessage([{ type: 'text', text: 'Hello.' }], 'end_turn'),
+    );
     const after = await turn(stream, null, 'Hi');
     expect(after.system).toBe(startConversation(tripData()).system);
     const sent = bodies[0].messages as { role: string }[];
@@ -295,11 +290,11 @@ describe('runAskAITurn', () => {
 
   it('returns a malformed tool input to the model as an error it can correct', async () => {
     const { bodies, stream } = stubTurns(
-      apiReply(
+      fakeMessage(
         [{ type: 'tool_use', id: 'tu_1', name: 'get_day', input: { date: 'July 14' } }],
         'tool_use',
       ),
-      apiReply([{ type: 'text', text: 'Sorry, which day?' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Sorry, which day?' }], 'end_turn'),
     );
     await turn(stream, startConversation(tripData()), 'What about that day?');
 
@@ -312,8 +307,8 @@ describe('runAskAITurn', () => {
 
   it('keeps history append-only and announces trip edits in an appended system message', async () => {
     const { bodies, stream } = stubTurns(
-      apiReply([{ type: 'text', text: 'First answer.' }], 'end_turn'),
-      apiReply([{ type: 'text', text: 'Second answer.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'First answer.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Second answer.' }], 'end_turn'),
     );
     const first = await turn(stream, startConversation(tripData()), 'First question');
     const edited = tripData('Glacier kayak tour');
@@ -335,8 +330,8 @@ describe('runAskAITurn', () => {
 
   it('sends no itinerary update when the trip is unchanged', async () => {
     const { bodies, stream } = stubTurns(
-      apiReply([{ type: 'text', text: 'One.' }], 'end_turn'),
-      apiReply([{ type: 'text', text: 'Two.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'One.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Two.' }], 'end_turn'),
     );
     const first = await turn(stream, startConversation(tripData()), 'Q1');
     await turn(stream, first, 'Q2');
@@ -345,13 +340,13 @@ describe('runAskAITurn', () => {
   });
 
   it('tells the model to stop looking things up once the request limit is reached', async () => {
-    const lookup = apiReply(
+    const lookup = fakeMessage(
       [{ type: 'tool_use', id: 'tu', name: 'get_day', input: { date: '2027-07-14' } }],
       'tool_use',
     );
     const { bodies, stream } = stubTurns(
       ...Array.from({ length: 7 }, () => lookup),
-      apiReply([{ type: 'text', text: 'Here is what I found.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Here is what I found.' }], 'end_turn'),
     );
     const after = await turn(stream, startConversation(tripData()), 'Dig deep');
     expect(bodies).toHaveLength(8);
@@ -427,6 +422,44 @@ describe('propose_edit with a route', () => {
     expect(resolved).toMatchObject({
       draft: { routeId: null, routeVariant: null, arrivesAt: '2027-07-14T11:30' },
     });
+  });
+
+  it('checks an arrival taken off the route on each end’s own clock, as every path does', () => {
+    const routed = { ...drive, routeId: 'route_a', routeVariant: 'scenic', arrivesAt: null };
+    // Reads earlier than the departure on the clock.
+    const offRoute = edit({ routeId: '' }, { arrivesAt: `${drive.departsAt.slice(0, 10)}T06:00` });
+    const unzoned = resolveProposalDraft(offRoute, { ...data, transits: [routed] });
+    expect('error' in unzoned && unzoned.error).toMatch(
+      /not after it departs .* give each its placeId from search_places/,
+    );
+    // From UTC+9 to UTC-8, 06:00 lands well after the departure.
+    const zoned = {
+      ...routed,
+      from: { ...routed.from, timeZone: 'Asia/Tokyo' },
+      to: { ...routed.to, timeZone: 'America/Anchorage' },
+    };
+    expect(resolveProposalDraft(offRoute, { ...data, transits: [zoned] })).toHaveProperty('draft');
+  });
+
+  it('checks an off-route arrival against the places the edit leaves, not the ones it replaces', () => {
+    const zoned = {
+      ...drive,
+      routeId: 'route_a',
+      routeVariant: 'scenic',
+      arrivesAt: null,
+      from: { ...drive.from, timeZone: 'Asia/Tokyo' },
+      to: { ...drive.to, timeZone: 'America/Anchorage' },
+    };
+    // The new start has no zone, so 06:00 reads before the 08:00 departure.
+    const swapped = edit(
+      { routeId: '' },
+      {
+        arrivesAt: `${drive.departsAt.slice(0, 10)}T06:00`,
+        from: { label: 'Somewhere new', notOnGoogle: true },
+      },
+    );
+    const resolved = resolveProposalDraft(swapped, { ...data, transits: [zoned] });
+    expect('error' in resolved && resolved.error).toMatch(/not after it departs/);
   });
 
   it('turns down an arrival on a drive that stays on its route', () => {
@@ -610,7 +643,7 @@ describe('place ids from earlier turns', () => {
       ],
     };
     const { stream } = stubTurns(
-      apiReply(
+      fakeMessage(
         [
           {
             type: 'tool_use',
@@ -626,7 +659,7 @@ describe('place ids from earlier turns', () => {
         ],
         'tool_use',
       ),
-      apiReply([{ type: 'text', text: 'Proposed.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Proposed.' }], 'end_turn'),
     );
     const after = await turn(stream, earlier, 'Use that café');
     expect(after.messages.at(-1)?.proposals).toHaveLength(1);
@@ -636,7 +669,7 @@ describe('place ids from earlier turns', () => {
 describe('add_traveler in the chat', () => {
   it('adds someone new and hands a proposal naming them their real id', async () => {
     const { stream } = stubTurns(
-      apiReply(
+      fakeMessage(
         [
           { type: 'tool_use', id: 'tu_1', name: 'add_traveler', input: { name: 'Pat Guest' } },
           {
@@ -653,7 +686,7 @@ describe('add_traveler in the chat', () => {
         ],
         'tool_use',
       ),
-      apiReply([{ type: 'text', text: 'Proposed.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Proposed.' }], 'end_turn'),
     );
     const after = await turn(stream, startConversation(tripData()), 'Pat Guest is coming kayaking');
     const [proposal] = after.messages.at(-1)?.proposals ?? [];
@@ -671,7 +704,7 @@ describe('add_traveler in the chat', () => {
 describe('a day plan', () => {
   it('turns down a place id no search found, so the model can look it up', async () => {
     const { bodies, stream } = stubTurns(
-      apiReply(
+      fakeMessage(
         [
           {
             type: 'tool_use',
@@ -695,7 +728,7 @@ describe('a day plan', () => {
         ],
         'tool_use',
       ),
-      apiReply([{ type: 'text', text: 'Let me search.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Let me search.' }], 'end_turn'),
     );
     const after = await turn(stream, startConversation(tripData()), 'Add lunch');
     expect(after.messages.at(-1)?.proposals ?? []).toEqual([]);
@@ -708,7 +741,7 @@ describe('a day plan', () => {
 
   it('turns down a plan that both changes and removes one activity', async () => {
     const { bodies, stream } = stubTurns(
-      apiReply(
+      fakeMessage(
         [
           {
             type: 'tool_use',
@@ -725,7 +758,7 @@ describe('a day plan', () => {
         ],
         'tool_use',
       ),
-      apiReply([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
     );
     await turn(stream, startConversation(tripData()), 'Shuffle');
     const result = (
@@ -737,7 +770,7 @@ describe('a day plan', () => {
 
   it('turns down removing an activity that is on another day', async () => {
     const { bodies, stream } = stubTurns(
-      apiReply(
+      fakeMessage(
         [
           {
             type: 'tool_use',
@@ -748,7 +781,7 @@ describe('a day plan', () => {
         ],
         'tool_use',
       ),
-      apiReply([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
     );
     await turn(stream, startConversation(tripData()), 'Clear');
     const result = (
@@ -760,7 +793,7 @@ describe('a day plan', () => {
 
   it('turns down changing an activity that is on another day', async () => {
     const { bodies, stream } = stubTurns(
-      apiReply(
+      fakeMessage(
         [
           {
             type: 'tool_use',
@@ -776,7 +809,7 @@ describe('a day plan', () => {
         ],
         'tool_use',
       ),
-      apiReply([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
     );
     await turn(stream, startConversation(tripData()), 'Shuffle');
     const result = (
@@ -788,7 +821,7 @@ describe('a day plan', () => {
 
   it('turns down an alternative whose ideal entries are on another day', async () => {
     const { bodies, stream } = stubTurns(
-      apiReply(
+      fakeMessage(
         [
           {
             type: 'tool_use',
@@ -807,7 +840,7 @@ describe('a day plan', () => {
         ],
         'tool_use',
       ),
-      apiReply([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
     );
     await turn(stream, startConversation(tripData()), 'Rainy day');
     const result = (
@@ -819,7 +852,7 @@ describe('a day plan', () => {
 
   it('turns down a new plan entry dated on another day', async () => {
     const { bodies, stream } = stubTurns(
-      apiReply(
+      fakeMessage(
         [
           {
             type: 'tool_use',
@@ -835,7 +868,7 @@ describe('a day plan', () => {
         ],
         'tool_use',
       ),
-      apiReply([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
     );
     await turn(stream, startConversation(tripData()), 'Add dinner');
     const result = (
@@ -853,7 +886,7 @@ describe('a day plan', () => {
       includedIn: { entity: 'activity', id: 'act_1' },
     });
     const { bodies, stream } = stubTurns(
-      apiReply(
+      fakeMessage(
         [
           {
             type: 'tool_use',
@@ -864,7 +897,7 @@ describe('a day plan', () => {
         ],
         'tool_use',
       ),
-      apiReply([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+      fakeMessage([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
     );
     await turn(stream, startConversation(data), 'Clear', data);
     const result = (
@@ -872,6 +905,40 @@ describe('a day plan', () => {
     ).at(-1)!.content[0];
     expect(result.is_error).toBe(true);
     expect(result.content).toMatch(/act_meal is covered by act_1, which is being removed/);
+  });
+
+  it('names a new clock in the review line, since it moves the start', () => {
+    const plan = (changes: object): ProposedDayPlan => ({
+      date: '2027-07-14',
+      legId: 'leg_a',
+      summary: 'Clock',
+      changes: [{ kind: 'activity', entityId: 'act_1', changes, why: 's' }],
+      remove: [],
+    });
+    const line = (changes: object) => describeDayPlan(plan(changes), tripData())[0];
+    expect(line({ clockZone: 'America/Phoenix' })).toMatch(/ on America\/Phoenix time$/);
+    expect(line({ startAt: '2027-07-14T10:00', clockZone: 'America/Phoenix' })).toMatch(
+      /^Move .* 10:00am on America\/Phoenix time$/,
+    );
+    // Restating no clock on an activity that has none changes nothing.
+    expect(line({ startAt: '2027-07-14T10:00', clockZone: null })).not.toMatch(/clock/);
+    expect(
+      describeDayPlan(
+        {
+          ...plan({}),
+          changes: [
+            {
+              kind: 'activity',
+              legId: 'leg_a',
+              date: '2027-07-14',
+              changes: { text: 'Tour', startAt: '2027-07-14T10:00', clockZone: 'America/Phoenix' },
+              why: 's',
+            },
+          ],
+        },
+        tripData(),
+      )[0],
+    ).toBe('+ Add "Tour" at 10:00am on America/Phoenix time');
   });
 
   it('applies only the items left checked: a move, an addition, a removal', () => {
@@ -934,6 +1001,145 @@ describe('a day plan', () => {
 // tool-call tests above) and again when its checked items are applied, so what
 // the user reviews and what is applied can't disagree. Each hostile plan must be
 // refused on apply, with the rule's own message.
+describe('place id parity', () => {
+  const stop = { label: 'Scenic Overlook', placeId: 'ChIJmadeUp' };
+  const message = (placeId: string, label: string) =>
+    `placeId ${placeId} didn't come from search_places or the trip; search for "${label}"`;
+  const route = (overrides: Record<string, unknown> = {}) => ({
+    summary: 'Scenic drive',
+    from: { label: 'Anchorage', placeId: 'p_anc' },
+    to: { label: 'Seward', placeId: 'p_seward' },
+    variants: [{ tone: 'scenic', label: 'Coastal', places: [{ kind: 'waypoint', ...stop }] }],
+    ...overrides,
+  });
+  // One turn proposing `uses`, then a closing reply.
+  const proposing = (...uses: { name: string; input: unknown }[]) =>
+    stubTurns(
+      fakeMessage(
+        uses.map(({ name, input }, i) => ({ type: 'tool_use', id: `tu_${i}`, name, input })),
+        'tool_use',
+      ),
+      fakeMessage([{ type: 'text', text: 'Done.' }], 'end_turn'),
+    );
+  const searched = (placeIds: string[], data = tripData()) => ({
+    ...startConversation(data),
+    placeSearches: { placeIds, emptyQueries: [] },
+  });
+  const results = (bodies: Record<string, unknown>[]) =>
+    (bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[])[2].content;
+  const editPlace = {
+    name: 'propose_edit',
+    input: { kind: 'activity', entityId: 'act_1', changes: { place: stop }, summary: 's' },
+  };
+
+  it('turns down an id from no search the same way in an edit and a route', async () => {
+    const { bodies, stream } = proposing(editPlace, { name: 'propose_route', input: route() });
+    const after = await turn(stream, searched(['p_anc', 'p_seward']), 'Plan a drive');
+    expect(after.messages.at(-1)?.proposals ?? []).toEqual([]);
+    const refusal = expect.objectContaining({
+      is_error: true,
+      content: expect.stringContaining(message('ChIJmadeUp', 'Scenic Overlook')),
+    });
+    expect(results(bodies)).toEqual([refusal, refusal]);
+  });
+
+  it('turns down a route whose end has an id from no search', async () => {
+    const { bodies, stream } = proposing({
+      name: 'propose_route',
+      input: route({ from: { label: 'Somewhere', placeId: 'ChIJfakeEnd' } }),
+    });
+    await turn(stream, searched(['p_seward', 'ChIJmadeUp']), 'Plan a drive');
+    expect(results(bodies)[0].content).toContain(message('ChIJfakeEnd', 'Somewhere'));
+  });
+
+  it('names an unsearched id once, however many variants stop there', async () => {
+    const twice = route({
+      variants: ['scenic', 'direct'].map((tone) => ({
+        tone,
+        label: tone,
+        places: [{ kind: 'waypoint', ...stop }],
+      })),
+    });
+    const { bodies, stream } = proposing({ name: 'propose_route', input: twice });
+    await turn(stream, searched(['p_anc', 'p_seward']), 'Plan a drive');
+    expect(results(bodies)[0].content.split('ChIJmadeUp didn').length - 1).toBe(1);
+  });
+
+  it('takes an id that came from a search, in an edit and a route', async () => {
+    const { stream } = proposing(editPlace, { name: 'propose_route', input: route() });
+    const after = await turn(stream, searched(['p_anc', 'p_seward', 'ChIJmadeUp']), 'Plan a drive');
+    expect(after.messages.at(-1)?.proposals).toEqual([
+      expect.objectContaining({ type: 'edit' }),
+      expect.objectContaining({ type: 'route' }),
+    ]);
+  });
+
+  it('queues an edit, a day plan and an alternative with the searched zone, never one the AI states', async () => {
+    const stated = { ...stop, timeZone: 'Fake/Zone' };
+    const { stream } = proposing(
+      {
+        name: 'propose_edit',
+        input: { kind: 'activity', entityId: 'act_1', changes: { place: stated }, summary: 's' },
+      },
+      {
+        name: 'propose_day_plan',
+        input: {
+          date: '2027-07-14',
+          legId: 'leg_a',
+          summary: 'Overlook',
+          changes: [{ changes: { text: 'Overlook', startAt: '2027-07-14T15:00', place: stated } }],
+        },
+      },
+      {
+        name: 'propose_alternative',
+        input: {
+          date: '2027-07-14',
+          legId: 'leg_a',
+          summary: 'If it rains',
+          label: 'Rain',
+          idealLabel: 'Dry',
+          idealEntityIds: ['act_1'],
+          entries: [{ text: 'Overlook', startAt: '2027-07-14T13:00', place: stated }],
+        },
+      },
+    );
+    const conversation = {
+      ...startConversation(tripData()),
+      placeSearches: {
+        placeIds: ['ChIJmadeUp'],
+        emptyQueries: [],
+        timeZones: [['ChIJmadeUp', 'America/Denver']] as [string, string][],
+      },
+    };
+    const after = await turn(stream, conversation, 'Plan the overlook');
+    const queued = after.messages.at(-1)?.proposals ?? [];
+    const zones = queued.map((p) =>
+      p.type === 'edit'
+        ? p.edit.change.changes.place?.timeZone
+        : p.type === 'dayPlan'
+          ? p.plan.changes[0].changes.place?.timeZone
+          : p.type === 'alternative'
+            ? p.alternative.entries[0].place?.timeZone
+            : undefined,
+    );
+    expect(zones).toEqual(['America/Denver', 'America/Denver', 'America/Denver']);
+  });
+
+  it('takes an id the trip already has, in an edit and a route', async () => {
+    const data = tripData();
+    (data.activities[0] as { place: unknown }).place = {
+      id: 'ChIJmadeUp',
+      label: 'Scenic Overlook',
+    };
+    const { stream } = proposing(editPlace, { name: 'propose_route', input: route() });
+    const after = await turn(stream, searched(['p_anc', 'p_seward'], data), 'Plan a drive', data);
+    expect(after.messages.at(-1)?.proposals).toEqual([
+      expect.objectContaining({ type: 'edit' }),
+      expect.objectContaining({ type: 'route' }),
+    ]);
+  });
+});
+
 describe('day plan parity', () => {
   const data = () => {
     const d = tripData();

@@ -2,14 +2,25 @@
 // SDK never counts against a test's timeout.
 import '@anthropic-ai/sdk';
 
-import type { BetaMessage } from '@anthropic-ai/sdk/resources/beta/messages/messages';
+import type {
+  BetaMessage,
+  BetaTextBlock,
+  BetaThinkingBlock,
+  BetaToolUseBlock,
+} from '@anthropic-ai/sdk/resources/beta/messages/messages';
 
 import { MODEL_ID } from '../model/anthropicClient';
 import type { ClientOptions } from '../model/clientOptions';
 
+// A content block as the API returns it, with the fields the code reads.
+export type Block =
+  | Pick<BetaTextBlock, 'type' | 'text'>
+  | Pick<BetaThinkingBlock, 'type' | 'thinking' | 'signature'>
+  | Pick<BetaToolUseBlock, 'type' | 'id' | 'name' | 'input'>;
+
 // An Anthropic API reply carrying `content`, for a stubbed message client or API.
 export function fakeMessage(
-  content: unknown[],
+  content: Block[],
   stopReason = 'end_turn',
   overrides: Partial<Record<keyof BetaMessage, unknown>> = {},
 ): BetaMessage {
@@ -25,11 +36,6 @@ export function fakeMessage(
     ...overrides,
   } as unknown as BetaMessage;
 }
-
-type Block =
-  | { type: 'text'; text: string }
-  | { type: 'thinking'; thinking: string; signature: string }
-  | { type: 'tool_use'; id: string; name: string; input: unknown };
 
 // `message` as the API streams it: server-sent events, one delta per block.
 export function streamedBody(message: BetaMessage): string {
@@ -64,7 +70,7 @@ export function streamedBody(message: BetaMessage): string {
         index,
         delta: { type: 'signature_delta', signature: block.signature },
       });
-    } else {
+    } else if (block.type === 'tool_use') {
       events.push({
         type: 'content_block_start',
         index,
@@ -75,6 +81,8 @@ export function streamedBody(message: BetaMessage): string {
         index,
         delta: { type: 'input_json_delta', partial_json: JSON.stringify(block.input) },
       });
+    } else {
+      throw new Error(`streamedBody can't stream a ${(block as { type: string }).type} block.`);
     }
     events.push({ type: 'content_block_stop', index });
   });

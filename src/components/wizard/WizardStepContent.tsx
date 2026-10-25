@@ -23,7 +23,7 @@ import {
   PRIORITY_OPTIONS,
   WIZARD_CATEGORY_META,
 } from '../../model/editForms';
-import { bookingNoun, DINING_FORMAT_LABEL } from '../../model/formatting';
+import { bookingNoun, DINING_FORMAT_LABEL, zoneLabel } from '../../model/formatting';
 import { isMealActivity } from '../../model/mealOptions';
 import {
   activityHeadline,
@@ -588,6 +588,7 @@ export function ActivityReview({
     <ReviewSection>
       <Typography variant="subtitle1">{form.text || form.place?.label || 'Untitled'}</Typography>
       <ReviewRow label="When" value={when} />
+      <ReviewRow label="Clock" value={form.clockZone ? zoneLabel(form.clockZone) : null} />
       {category === 'meal' && <ReviewRow label="Meal" value={form.mealType || null} />}
       {form.options.length > 0 ? (
         <ReviewRow label="Candidates" value={`${form.options.length} still being considered`} />
@@ -612,6 +613,7 @@ export function StayReview({ form }: { form: StayFormState }) {
       <Typography variant="subtitle1">{form.place?.label || 'Untitled stay'}</Typography>
       <ReviewRow label="Check-in" value={whenLabel(form.checkInDate, form.checkInTime)} />
       <ReviewRow label="Check-out" value={whenLabel(form.checkOutDate, form.checkOutTime)} />
+      <ReviewRow label="Clock" value={form.clockZone ? zoneLabel(form.clockZone) : null} />
       <BookingReviewRow booking={form.booking} />
     </ReviewSection>
   );

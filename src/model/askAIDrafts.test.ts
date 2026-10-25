@@ -14,6 +14,7 @@ import {
   withPlaceImagesInData,
 } from './askAIDrafts';
 import { blankActivity } from './editForms';
+import { placeSearchesFrom } from './proposals';
 import { applyMealOptions, type ChangeProposal, proposalState } from './proposals';
 import type { Activity, Image, Note, Route, Scenario, TripData } from './types';
 
@@ -438,18 +439,61 @@ describe('routes', () => {
     images: [],
   };
   const data = { ...trip([]), routes: [existing] };
+  // Every id these routes name, as search_places results.
+  const searched = {
+    data,
+    placeSearches: placeSearchesFrom({
+      placeIds: ['a', 'p_a', 'p_b', 'p_beluga', 'p_cafe', 'p_diner', 'p_stop'],
+      emptyQueries: [],
+    }),
+  };
+  const parse = (input: unknown) => parseRoute(input, searched);
+
+  it('keeps each stop’s and end’s searched zone, never one the proposal states', () => {
+    const zoned = {
+      data,
+      placeSearches: placeSearchesFrom({
+        placeIds: ['p_a', 'p_b', 'p_stop'],
+        emptyQueries: [],
+        timeZones: [
+          ['p_a', 'America/Phoenix'],
+          ['p_stop', 'America/Denver'],
+        ],
+      }),
+    };
+    const proposal = parseRoute(
+      {
+        summary: 's',
+        from: { label: 'A', placeId: 'p_a' },
+        to: { label: 'B', placeId: 'p_b', timeZone: 'Fake/Zone' },
+        variants: [
+          {
+            tone: 'direct',
+            label: 'Direct',
+            places: [{ kind: 'waypoint', label: 'Stop', placeId: 'p_stop' }],
+          },
+        ],
+      },
+      zoned,
+    );
+    const resolved = resolveRouteProposal(proposal, data);
+    if (!('route' in resolved)) throw new Error(resolved.error);
+    expect(resolved.route.from.timeZone).toBe('America/Phoenix');
+    expect(resolved.route.to).not.toHaveProperty('timeZone');
+    expect(resolved.route.variants[0].places[0].place?.timeZone).toBe('America/Denver');
+  });
 
   it('needs endpoints and variants for a new route', () => {
-    expect(() => parseRoute({ summary: 's', variants: [] })).toThrow();
+    expect(() => parse({ summary: 's', variants: [] })).toThrow();
     expect(() =>
-      parseRoute({
+      parse({
         summary: 's',
         from: { label: 'A', placeId: 'p_a' },
         to: { label: 'B', placeId: 'p_b' },
       }),
     ).toThrow(/new route/);
     expect(() =>
-      parseRoute({
+      parse({
         summary: 's',
         routeId: 'route_a',
         variants: [{ tone: 'direct', label: 'x', places: [{ kind: 'stop', label: 'y' }] }],
@@ -458,7 +502,7 @@ describe('routes', () => {
   });
 
   it('drafts a new route with a fresh id and zeroed travel for recomputing', () => {
-    const proposal = parseRoute({
+    const proposal = parse({
       summary: 's',
       from: { label: 'A', placeId: 'p_a' },
       to: { label: 'B', placeId: 'p_b' },
@@ -484,7 +528,7 @@ describe('routes', () => {
   });
 
   it("keeps a revised stop's stored place, duration and note, and the endpoints left out", () => {
-    const proposal = parseRoute({
+    const proposal = parse({
       summary: 's',
       routeId: 'route_a',
       variants: [
@@ -508,7 +552,7 @@ describe('routes', () => {
   });
 
   it('matches a scenic variant by label, never by position', () => {
-    const proposal = parseRoute({
+    const proposal = parse({
       summary: 's',
       routeId: 'route_a',
       variants: [{ tone: 'scenic', label: 'Pass', places: [] }],
@@ -521,7 +565,7 @@ describe('routes', () => {
 
   const revise = (variants: unknown[]) => {
     const resolved = resolveRouteProposal(
-      parseRoute({ summary: 's', routeId: 'route_a', variants }),
+      parse({ summary: 's', routeId: 'route_a', variants }),
       data,
     );
     if ('error' in resolved) throw new Error(resolved.error);
@@ -559,7 +603,7 @@ describe('routes', () => {
   });
 
   it('reports a routeId that does not exist', () => {
-    const proposal = parseRoute({
+    const proposal = parse({
       summary: 's',
       routeId: 'nope',
       from: { label: 'A', placeId: 'a' },

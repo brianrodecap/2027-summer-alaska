@@ -10,7 +10,7 @@ import {
   SHARED_COLLECTIONS,
 } from '../model/changeLog';
 import { NOTE_TARGET_COLLECTIONS, withoutOrphanNotes } from '../model/notes';
-import { buildTripView, loadTripData } from '../model/tripModel';
+import { buildTripView, loadTripData, todayDateStr } from '../model/tripModel';
 import type { TripData } from '../model/types';
 import { createLocalStorageTripStore } from './store/localStorageTripStore';
 import { SHARED_SCOPE, type TripStore } from './store/TripStore';
@@ -139,7 +139,7 @@ export function TripDataProvider({
   const changes = loading ? EMPTY_LOAD_RESULT.changes : result.changes;
   const dirtyCollections = useMemo(() => changedCollections(changes), [changes]);
 
-  const view = useMemo(() => (data ? buildTripView(data) : null), [data]);
+  const view = useMemo(() => (data ? buildTripView(data, todayDateStr()) : null), [data]);
 
   // Which collections an edit touched isn't passed in — diffTripData finds it.
   const setData = useCallback(

@@ -46,6 +46,7 @@ import {
 import { bookingOf } from './bookings';
 import { hashDoc } from './changeLog';
 import type { ClientOptions } from './clientOptions';
+import { isDateTime } from './dateTime';
 import { EDIT_KINDS, type EditKind, findByKind } from './editForms';
 import { searchPlaces } from './places';
 import {
@@ -55,7 +56,6 @@ import {
   checkedChanges,
   dayPlanErrors,
   IMPORT_CONVENTIONS,
-  isDateTime,
   noPlaceSearches,
   type PlaceSearches,
   placeSearchesFrom,
@@ -67,8 +67,15 @@ import {
   type SavedPlaceSearches,
   savedPlaceSearches,
   shapeErrors,
+  withStampedZones,
 } from './proposals';
-import { activityHeadline, formatTime, transitRouteLabel } from './tripModel';
+import {
+  activityHeadline,
+  arrivalProblem,
+  formatTime,
+  SEARCH_FOR_ZONES,
+  transitRouteLabel,
+} from './tripModel';
 import type { Activity, Booking, Route, Stay, Transit, Traveler, TripData } from './types';
 
 export class AskAIError extends Error {}
@@ -185,6 +192,11 @@ function routeTag(t: Transit): string {
   return ` [route: ${t.routeId}${t.routeVariant ? `, variant ${t.routeVariant}` : ''}]`;
 }
 
+// The entry's own clock, when its times are stated on one (clockZone).
+function clockTag(entry: { clockZone?: string | null }): string {
+  return entry.clockZone ? ` [clockZone ${entry.clockZone}]` : '';
+}
+
 // The entry's booking status, when it has a booking.
 function bookingTag(data: TripData, entry: { bookingId?: string | null }): string {
   const booking = bookingOf(data, entry);
@@ -222,7 +234,7 @@ export function buildTripContext(data: TripData): string {
     );
     for (const s of stays) {
       lines.push(
-        `  Stay ${s._id}: ${s.lodging?.place.label || '(unnamed)'} — ${s.checkInAt} to ${s.checkOutAt}${bookingTag(data, s)}`,
+        `  Stay ${s._id}: ${s.lodging?.place.label || '(unnamed)'} — ${s.checkInAt} to ${s.checkOutAt}${clockTag(s)}${bookingTag(data, s)}`,
       );
     }
     for (const t of transits) {
@@ -241,7 +253,7 @@ export function buildTripContext(data: TripData): string {
           : ` — ${a.mealType}${a.diningFormat ? ` (${a.diningFormat})` : ''}`
         : '';
       lines.push(
-        `  Activity ${a._id}: ${activityHeadline(a) || '(untitled)'} — ${when}${place}${meal}${bookingTag(data, a)}${scenarioTag(a.scenarioId)}`,
+        `  Activity ${a._id}: ${activityHeadline(a) || '(untitled)'} — ${when}${place}${meal}${clockTag(a)}${bookingTag(data, a)}${scenarioTag(a.scenarioId)}`,
       );
     }
   }
@@ -375,11 +387,13 @@ function checkedEdit(
         );
       }
     } else {
-      const departsAt = edit.change.changes.departsAt ?? existing?.departsAt;
       if (!isDateTime(arrivesAt)) {
         problems.push('arrivesAt must be a local date-time like 2027-07-11T08:00.');
-      } else if (departsAt && arrivesAt <= departsAt) {
-        problems.push(`Arrives ${arrivesAt}, not after it departs ${departsAt}.`);
+      } else if (!('errors' in checked)) {
+        // The transit the draft is built from (resolveProposalDraft), with this arrival.
+        const saved = queueFromProposals(checked.state)[0]?.entity as Transit | undefined;
+        const arrival = saved && arrivalProblem({ ...saved, arrivesAt }, SEARCH_FOR_ZONES);
+        if (arrival) problems.push(arrival);
       }
     }
   }
@@ -445,17 +459,18 @@ function parseProposal(input: unknown, ctx: ProposalContext): ProposedEdit {
   };
   const checked = checkedEdit(edit, ctx.data, ctx.placeSearches);
   if ('errors' in checked) throw new ToolInputError(checked.errors.join('\n'));
-  return edit;
+  return { ...edit, change: withStampedZones(edit.change, ctx.placeSearches, ctx.data) };
 }
 
 // Checks a batch's changes together (proposals.ts's checkedChanges) — a
 // ToolInputError naming which one goes back to the model to fix. Returns the
-// travelers add_traveler added this turn whom the batch names.
+// changes as they're queued (their places' zones stamped) and the travelers
+// add_traveler added this turn whom the batch names.
 function checkChanges(
   changes: ChangeProposal[],
   ctx: ProposalContext,
   removed?: ReadonlySet<string>,
-): Traveler[] | undefined {
+): { changes: ChangeProposal[]; newTravelers: Traveler[] | undefined } {
   const empty = emptyUpdates(changes);
   if (empty.length) throw new ToolInputError(empty.join('\n'));
   const travelers = travelersNamedIn(changes, ctx);
@@ -465,7 +480,10 @@ function checkChanges(
     removed,
   });
   if ('errors' in checked) throw new ToolInputError(checked.errors.join('\n'));
-  return travelers.length ? travelers : undefined;
+  return {
+    changes: changes.map((change) => withStampedZones(change, ctx.placeSearches, ctx.data)),
+    newTravelers: travelers.length ? travelers : undefined,
+  };
 }
 
 function parseDayPlan(input: unknown, ctx: ProposalContext): ProposedDayPlan {
@@ -503,8 +521,9 @@ function parseDayPlan(input: unknown, ctx: ProposalContext): ProposedDayPlan {
   // has none, so what applying would break is reported once these are fixed.
   const errors = dayPlanErrors({ date: raw.date, legId: raw.legId, changes, remove }, ctx.data);
   let newTravelers: Traveler[] | undefined;
+  let queued = changes;
   try {
-    newTravelers = checkChanges(changes, ctx, new Set(remove));
+    ({ changes: queued, newTravelers } = checkChanges(changes, ctx, new Set(remove)));
   } catch (err) {
     if (!(err instanceof ToolInputError)) throw err;
     errors.push(err.message);
@@ -513,11 +532,18 @@ function parseDayPlan(input: unknown, ctx: ProposalContext): ProposedDayPlan {
   // is found by applying it, as the user's Apply will. The place ids were
   // checked above; a check with none given skips them.
   if (!errors.length) {
-    const dry = applyBatch(ctx.data, changes, newTravelers ?? [], new Set(remove));
+    const dry = applyBatch(ctx.data, queued, newTravelers ?? [], new Set(remove));
     if ('error' in dry) errors.push(dry.error);
   }
   if (errors.length) throw new ToolInputError(errors.join('\n'));
-  return { date: raw.date, legId: raw.legId, summary: raw.summary, changes, remove, newTravelers };
+  return {
+    date: raw.date,
+    legId: raw.legId,
+    summary: raw.summary,
+    changes: queued,
+    remove,
+    newTravelers,
+  };
 }
 
 const PROPOSE_DAY_PLAN_TOOL: BetaTool = {
@@ -641,16 +667,18 @@ const PROPOSAL_PARSERS: Record<string, (input: unknown, ctx: ProposalContext) =>
     const badIdeal = idealEntityError(alternative, ctx.data);
     if (badIdeal) throw new ToolInputError(badIdeal);
     // Its branch doesn't exist until it's applied, so it's checked without one.
-    const newTravelers = checkChanges(
-      alternative.entries.map((changes) =>
-        alternativeEntry(alternative, changes, alternative.legId, null),
+    const { changes, newTravelers } = checkChanges(
+      alternative.entries.map((entry) =>
+        alternativeEntry(alternative, entry, alternative.legId, null),
       ),
       ctx,
     );
-    return { type: 'alternative', alternative: { ...alternative, newTravelers } };
+    // Queued with the zones the check stamped on their places.
+    const entries = changes.map((change) => change.changes);
+    return { type: 'alternative', alternative: { ...alternative, entries, newTravelers } };
   },
   [PROPOSE_NOTE_TOOL.name]: (input) => ({ type: 'note', note: parseNote(input) }),
-  [PROPOSE_ROUTE_TOOL.name]: (input) => ({ type: 'route', route: parseRoute(input) }),
+  [PROPOSE_ROUTE_TOOL.name]: (input, ctx) => ({ type: 'route', route: parseRoute(input, ctx) }),
 };
 
 const QUEUED_FOR_REVIEW =
@@ -920,11 +948,12 @@ export function applyDayPlan(
 export function describeNewActivity(c: ChangeProposal['changes']): string {
   const what = c.text ?? c.place?.label ?? c.mealType ?? 'activity';
   const when = c.startAt ? ` at ${formatTime(c.startAt)}` : '';
+  const clock = c.clockZone ? ` on ${c.clockZone} time` : '';
   const choices =
     c.mealOptions && c.mealOptions.length > 1
       ? ` — choosing between ${c.mealOptions.map((o) => o.place.label).join(', ')}`
       : '';
-  return `+ Add "${what}"${when}${choices}`;
+  return `+ Add "${what}"${when}${clock}${choices}`;
 }
 
 // One line per item, shown in the review list before Apply all. Entity ids
@@ -941,12 +970,21 @@ export function describeDayPlan(plan: ProposedDayPlan, data: TripData): string[]
     const fields = Object.keys(change.changes);
     if (!fields.length) return `Update ${label}`;
     const to = change.changes.startAt ? formatTime(change.changes.startAt) : null;
-    if (fields.every((f) => f === 'startAt' || f === 'durationMinutes')) {
+    // A new clock moves the start, so the line names it; restating the same
+    // one changes nothing.
+    const { clockZone } = change.changes;
+    const newClock =
+      clockZone !== undefined && (clockZone ?? null) !== (existing?.clockZone ?? null);
+    const clock = !newClock ? '' : clockZone ? ` on ${clockZone} time` : " on its place's clock";
+    const moves = fields.filter((f) => f !== 'clockZone' || newClock);
+    if (!moves.length) return `Update ${label}`;
+    if (moves.every((f) => f === 'startAt' || f === 'durationMinutes' || f === 'clockZone')) {
       const from = existing?.startAt ? formatTime(existing.startAt) : null;
-      if (from && to && from !== to) return `Move ${label} ${from} → ${to}`;
-      return to ? `Move ${label} to ${to}` : `Change ${label}'s length`;
+      if (from && to && from !== to) return `Move ${label} ${from} → ${to}${clock}`;
+      if (to) return `Move ${label} to ${to}${clock}`;
+      return newClock ? `Put ${label}${clock}` : `Change ${label}'s length`;
     }
-    return `Change ${label}${to ? ` (at ${to})` : ''}`;
+    return `Change ${label}${to ? ` (at ${to})` : ''}${clock}`;
   };
   return [
     ...plan.changes.map(changeLine),
