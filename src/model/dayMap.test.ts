@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { TEST_TODAY } from '../test/today';
 import {
+  isAboardHop,
   mapEmbedUrls,
   mapRouteNodes,
   mapStopLabels,
@@ -705,6 +706,75 @@ describe('route nodes', () => {
     // The stay in progress closes the day's markers; as a stay it has no row key.
     expect(nodes[0]).toBe('activity:p_Cafe:');
     expect(nodes[nodes.length - 1]).toBe('stay:p_Lodge:2027-06-02T00:00');
+  });
+});
+
+describe('hops a flight carries', () => {
+  const hopsOf = (data: TripData) => {
+    const nodes = mapRouteNodes(live(data, '2027-06-02').visits);
+    return nodes
+      .slice(0, -1)
+      .map(
+        (n, i) => `${n.place.label}>${nodes[i + 1].place.label}:${isAboardHop(n, nodes[i + 1])}`,
+      );
+  };
+  const flight = (extra: Partial<Transit> = {}) =>
+    transit('fly', 'Home', 'Anchorage', {
+      mode: 'flight',
+      departsAt: '2027-06-02T06:00',
+      arrivesAt: '2027-06-02T12:00',
+      ...extra,
+    });
+
+  it('are not drawn between the flight’s Depart and Arrive', () => {
+    const data = tripData();
+    data.transits.push(flight());
+    expect(hopsOf(data)).toContain('Home>Anchorage:true');
+  });
+
+  it('are not drawn to or from an activity aboard', () => {
+    const data = tripData();
+    data.activities.push(activity('a_lounge', '2027-06-02T09:00', 'Lounge'));
+    data.transits.push(flight());
+    expect(hopsOf(data)).toEqual(['Home>Lounge:true', 'Lounge>Anchorage:true']);
+  });
+
+  it('are not drawn between route stages', () => {
+    const data = tripData();
+    data.routes.push({
+      _id: 'r1',
+      from: place('p_Home', 'Home'),
+      to: place('p_Anchorage', 'Anchorage'),
+      variants: [
+        {
+          tone: 'direct',
+          label: 'Direct',
+          places: [
+            { kind: 'waypoint', place: place('p_Hub', 'Hub'), travel: { minutes: 60 } },
+            { kind: 'waypoint', place: place('p_Stop', 'Stop'), travel: { minutes: 60 } },
+          ],
+          finalTravel: { minutes: 120 },
+        },
+      ],
+      images: [],
+    });
+    data.transits.push(flight({ routeId: 'r1', showEndpointsOnMap: true }));
+    expect(hopsOf(data)).toEqual(['Home>Hub:true', 'Hub>Stop:true', 'Stop>Anchorage:true']);
+  });
+
+  it('still draws the drive from where it lands, and a drive’s own legs', () => {
+    const data = tripData();
+    data.activities.push(activity('a_rental', '2027-06-02T14:00', 'Rental Center'));
+    data.transits.push(
+      flight(),
+      transit('drive', 'Rental Center', 'Lodge', {
+        departsAt: '2027-06-02T15:00',
+        arrivesAt: '2027-06-02T17:00',
+      }),
+    );
+    const hops = hopsOf(data);
+    expect(hops).toContain('Anchorage>Rental Center:false');
+    expect(hops).toContain('Rental Center>Lodge:false');
   });
 });
 

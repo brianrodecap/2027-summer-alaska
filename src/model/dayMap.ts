@@ -407,6 +407,19 @@ export function rowHop<R extends HopRow>(
   return { kind: 'travel', from, to, next };
 }
 
+// Whether the party is carried between two adjacent map nodes by a scheduled
+// transit (isScheduled), not driven: it leaves from that transit's Depart or
+// one of its route stages, or arrives at its Arrive. The map draws no route
+// line there, the same way rowHop shows no travel footer.
+export function isAboardHop(from: DayMapRouteNode, to: DayMapRouteNode): boolean {
+  const { ref: out } = from;
+  const { ref: into } = to;
+  const boardedAt =
+    out.kind === 'transit-stage' || (out.kind === 'transit' && out.phase === 'depart');
+  const arrivesAt = into.kind === 'transit' && into.phase === 'arrive';
+  return (boardedAt && isScheduled(out.entity)) || (arrivesAt && isScheduled(into.entity));
+}
+
 // ---------- queries ----------
 
 // Only a place with a resolved Google place id is ever a map stop, in every

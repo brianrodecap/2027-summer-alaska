@@ -16,7 +16,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { GOOGLE_MAPS_MAP_ID } from '../../config/places';
 import { EMPTY_MAP, useKeyedAsync } from '../../hooks/useKeyedAsync';
 import { useSegmentLookup } from '../../hooks/useSegmentLookup';
-import { mapRouteNodes } from '../../model/dayMap';
+import { isAboardHop, mapRouteNodes } from '../../model/dayMap';
 import {
   type DriveInfo,
   type LatLngPoint,
@@ -134,14 +134,12 @@ function dayTimelineNodeKey(ref: DayMapPlaceRef, date: string): string | null {
 
 // The travel mode this adjacent pair should route with — the reader's own
 // override for this exact segment (set via DayTimeline's TravelInfoControl),
-// or DRIVE by default. Every adjacent pair gets a real route attempt at
-// whatever mode this resolves to, matching TravelInfoControl's own
-// universal treatment: it shows a travel-time footer (and a mode picker)
-// between *any* two consecutive place-bearing rows, including two plain
-// Activities with no Transit between them at all ("pick up rental car" →
-// "Walmart Supercenter") and even a flight/ferry Transit's own depart/
-// arrive — a Transit is this trip's record of a *booked* journey, not the
-// only way two places in a day end up connected by a real route.
+// or DRIVE by default. Every adjacent pair not carried by a flight or ferry
+// (isAboardHop) gets a real route attempt at whatever mode this resolves to,
+// matching TravelInfoControl's own universal treatment: it shows a
+// travel-time footer (and a mode picker) between *any* two consecutive
+// place-bearing rows, including two plain Activities with no Transit between
+// them at all ("pick up rental car" → "Walmart Supercenter").
 function segmentTravelMode(
   a: DayMapRouteNode,
   b: DayMapRouteNode,
@@ -171,9 +169,9 @@ interface RouteSegment {
 // own comment. Deliberately not one flat path through all of them either,
 // since each segment gets its own real, mode-specific route (useRoutePaths)
 // rather than one path drawn straight through every stop. Same-place
-// neighbors are skipped entirely (no edge at all), matching
-// TravelInfoControl's own "no footer between two rows at the same place"
-// rule.
+// neighbors (matching TravelInfoControl's own "no footer between two rows at
+// the same place" rule) and hops a flight or ferry carries (isAboardHop) are
+// skipped entirely: no edge at all.
 function buildRouteSegments(
   nodes: DayMapRouteNode[],
   coords: Map<string, Coordinates>,
@@ -184,7 +182,7 @@ function buildRouteSegments(
   for (let i = 0; i < nodes.length - 1; i++) {
     const fromPlaceId = nodes[i].place.id as string;
     const toPlaceId = nodes[i + 1].place.id as string;
-    if (fromPlaceId === toPlaceId) continue;
+    if (fromPlaceId === toPlaceId || isAboardHop(nodes[i], nodes[i + 1])) continue;
     const fromPoint = coords.get(fromPlaceId);
     const toPoint = coords.get(toPlaceId);
     if (!fromPoint || !toPoint) continue;
