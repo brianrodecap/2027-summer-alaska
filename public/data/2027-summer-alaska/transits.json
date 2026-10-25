@@ -944,7 +944,8 @@
           "caption": null
         }
       ],
-      "showWeather": false
+      "showWeather": false,
+      "timeZone": "America/New_York"
     },
     "to": {
       "id": "ChIJ82J3aie0D4gRS61ZAgdHF1E",
@@ -958,7 +959,8 @@
           "caption": null
         }
       ],
-      "showWeather": true
+      "showWeather": true,
+      "timeZone": "America/Chicago"
     },
     "departsAt": "2027-06-26T06:15",
     "arrivesAt": "2027-06-26T08:37",
@@ -1009,7 +1011,8 @@
           "credit": null,
           "caption": null
         }
-      ]
+      ],
+      "timeZone": "America/Chicago"
     },
     "to": {
       "id": "ChIJERqXa7WiyFYRr2-9pzRat5Y",
@@ -1023,7 +1026,8 @@
           "caption": null
         }
       ],
-      "showWeather": true
+      "showWeather": true,
+      "timeZone": "America/Anchorage"
     },
     "departsAt": "2027-06-26T09:45",
     "arrivesAt": "2027-06-26T13:35",
