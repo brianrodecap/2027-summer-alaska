@@ -34,6 +34,9 @@ export interface DayClocks {
   // Each clock name the day's times show, in order ('MDT', 'MST'): its first,
   // then each one that differs from the one before, a move or not.
   names: string[];
+  // The row instants on the same clock as the row before, whose times needn't
+  // name it again. A time that isn't a row's (a route stage's) always does.
+  continued: Set<number>;
   // Each move, by the drag id of the row it happens before.
   changes: Map<string, ClockChange>;
   // The places the day's rows are at that have a Google place id but no zone
@@ -58,6 +61,8 @@ export function dayClocks(
   shown: (list: DayRow[]) => DayRow[] = (list) => list,
 ): DayClocks {
   const names: string[] = [];
+  const continued = new Set<number>();
+  const named = new Set<number>(); // instants of rows that name their clock
   const changes = new Map<string, ClockChange>();
   const unzoned = new Map<string, string>(); // place id → label
   let previous: { zone: string; instant: number; offset: number } | null = null;
@@ -76,7 +81,12 @@ export function dayClocks(
       const here = clockAt(row, clock);
       if (!here) continue;
       const name = zoneShortName(here.zone, here.instant);
-      if (names.at(-1) !== name) names.push(name);
+      if (names.at(-1) !== name) {
+        names.push(name);
+        named.add(here.instant);
+      } else if (!named.has(here.instant)) {
+        continued.add(here.instant);
+      }
       if (previous && here.offset !== previous.offset) {
         changes.set(dragIdOf(row, date), {
           minutes: here.offset - previous.offset,
@@ -88,7 +98,7 @@ export function dayClocks(
     }
   };
   walk(rows);
-  return { names, changes, unzoned: [...unzoned.values()] };
+  return { names, continued, changes, unzoned: [...unzoned.values()] };
 }
 
 // The place a row is at, as the timeline resolved it (a still-open meal's is its
@@ -132,11 +142,17 @@ export function dayClocksOf(day: ClockDay): DayClocks {
 }
 
 // The clock `time` is on, to follow it (' MST'), on a day the clock moves on,
-// where a bare 10:00am could be on either side; '' on a day on one clock.
-export function clockSuffix(day: ClockDay, time: ZonedTime): string {
-  if (!dayClocksOf(day).changes.size) return '';
+// where a bare 10:00am could be on either side; '' on a day on one clock, and
+// (unless `always`, for a time shown apart from its row) on a row's time on the
+// same clock as the row before it.
+export function clockSuffix(day: ClockDay, time: ZonedTime, always = false): string {
+  const clocks = dayClocksOf(day);
+  if (!clocks.changes.size) return '';
   const zone = clockZoneOf(time, day.clock);
-  return zone ? ` ${zoneShortName(zone, orderInstant(time, day.clock))}` : '';
+  const instant = orderInstant(time, day.clock);
+  return zone && (always || !clocks.continued.has(instant))
+    ? ` ${zoneShortName(zone, instant)}`
+    : '';
 }
 
 // "Clocks go back 1 hour" / "Clocks go forward 30 min".

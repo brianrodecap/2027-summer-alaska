@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { TEST_TODAY } from '../test/today';
-import { bookingClockNote, clockChangeLabel, dayClocks } from './dayClocks';
+import { bookingClockNote, clockChangeLabel, clockSuffix, dayClocks } from './dayClocks';
 import { buildLiveDays } from './liveDays';
 import { activityNodeKey, buildTripView, transitBoundaryKey } from './tripModel';
 import type { Activity, Day, Place, TripData } from './types';
@@ -173,11 +173,34 @@ describe('a day’s clocks', () => {
     expect(dayClocks(dayOf(data, '2027-06-28')).names).toEqual(['MST']);
   });
 
+  it('names a clock on the first time and where it changes, not on each time after', () => {
+    const data = trip();
+    data.activities.push(
+      activity('a', '2027-06-28T08:00', DENVER),
+      activity('b', '2027-06-28T10:00', DENVER),
+      activity('c', '2027-06-28T12:00', PAGE),
+      activity('d', '2027-06-28T14:00', PAGE),
+    );
+    const day = dayOf(data, '2027-06-28');
+    const at = (time: string, place: Place) =>
+      clockSuffix(day, { at: `2027-06-28T${time}`, zone: place.timeZone ?? null });
+    expect([
+      at('08:00', DENVER),
+      at('10:00', DENVER),
+      at('12:00', PAGE),
+      at('14:00', PAGE),
+    ]).toEqual([' MDT', '', ' MST', '']);
+    // A time that isn't a row's, or one shown apart from its row, still names it.
+    expect(at('13:00', PAGE)).toBe(' MST');
+    expect(clockSuffix(day, { at: '2027-06-28T14:00', zone: PAGE.timeZone }, true)).toBe(' MST');
+  });
+
   it('names no clock in a trip with no zones', () => {
     const data = trip();
     data.activities.push(activity('a', '2027-06-28T09:00'));
     expect(dayClocks(dayOf(data, '2027-06-28'))).toEqual({
       names: [],
+      continued: new Set(),
       changes: new Map(),
       unzoned: [],
     });

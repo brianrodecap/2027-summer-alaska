@@ -109,7 +109,7 @@ export function ActivityDetailPanel({
   const date = resolveActivityDate(activity);
   // The clock its time is on, on a day the clocks change, as its row says.
   const day = date ? liveDays.byDate.get(date) : undefined;
-  const clock = day && activity.startAt ? clockSuffix(day, activityStart(activity)) : '';
+  const clock = day && activity.startAt ? clockSuffix(day, activityStart(activity), true) : '';
   const includedIn = data
     ? includedInLabel(data, selectedOption ? selectedOption.includedIn : activity.includedIn)
     : null;
