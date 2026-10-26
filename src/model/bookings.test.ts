@@ -13,6 +13,7 @@ import {
   faresByTraveler,
   finalPaymentDue,
   fixedCost,
+  namedBookedThrough,
   perTravelerCost,
   travelerPrices,
   withoutOrphanBookings,
@@ -522,22 +523,49 @@ describe('booking form: booked through', () => {
     bookedThrough: { name: 'Expedia', confirmationNumber: '7261' },
   };
 
-  it('keeps the seller’s own confirmation number while its name is unchanged', () => {
+  it('round-trips the seller’s own confirmation number through the form', () => {
     const value = bookingFormValueFrom(base);
     expect(value.bookedThrough).toBe('Expedia');
+    expect(value.bookedThroughNumber).toBe('7261');
     expect(readBookingFormValue(value, [])?.bookedThrough).toEqual(base.bookedThrough);
-    expect(
-      readBookingFormValue({ ...value, bookedThrough: ' expedia ' }, [])?.bookedThrough,
-    ).toEqual({ name: 'expedia', confirmationNumber: '7261' });
   });
 
-  it('drops that number for a different seller, and the seller once cleared', () => {
+  it('keeps the number through a rename, and edits or clears it directly', () => {
     const value = bookingFormValueFrom(base);
-    expect(readBookingFormValue({ ...value, bookedThrough: 'Viator' }, [])?.bookedThrough).toBe(
-      'Viator',
+    expect(readBookingFormValue({ ...value, bookedThrough: 'Viator' }, [])?.bookedThrough).toEqual({
+      name: 'Viator',
+      confirmationNumber: '7261',
+    });
+    expect(readBookingFormValue({ ...value, bookedThroughNumber: '9' }, [])?.bookedThrough).toEqual(
+      { name: 'Expedia', confirmationNumber: '9' },
     );
+    expect(readBookingFormValue({ ...value, bookedThroughNumber: ' ' }, [])?.bookedThrough).toBe(
+      'Expedia',
+    );
+  });
+
+  it('drops the seller, number included, once the name is cleared', () => {
+    const value = bookingFormValueFrom(base);
     expect(readBookingFormValue({ ...value, bookedThrough: ' ' }, [])).not.toHaveProperty(
       'bookedThrough',
     );
+  });
+
+  it('saves no seller for a number typed without a name', () => {
+    const value = { ...bookingFormValueFrom(base), bookedThrough: '', bookedThroughNumber: '9999' };
+    expect(readBookingFormValue(value, [])).not.toHaveProperty('bookedThrough');
+  });
+});
+
+describe('namedBookedThrough', () => {
+  const stored: Booking['bookedThrough'] = { name: 'Expedia', confirmationNumber: '7261' };
+
+  it('keeps the stored number when an edit names the same seller, and drops it for another', () => {
+    expect(namedBookedThrough(stored, ' expedia ')).toEqual({
+      name: 'expedia',
+      confirmationNumber: '7261',
+    });
+    expect(namedBookedThrough(stored, 'Viator')).toBe('Viator');
+    expect(namedBookedThrough(stored, ' ')).toBeUndefined();
   });
 });

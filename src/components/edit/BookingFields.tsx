@@ -184,6 +184,14 @@ export function BookingFields({
             onChange={(e) => onChange({ ...value, bookedThrough: e.target.value })}
             fullWidth
           />
+          {(value.bookedThrough.trim() || value.bookedThroughNumber) && (
+            <TextField
+              label="Seller's confirmation #"
+              value={value.bookedThroughNumber}
+              onChange={(e) => onChange({ ...value, bookedThroughNumber: e.target.value })}
+              fullWidth
+            />
+          )}
         </>
       )}
     </Stack>

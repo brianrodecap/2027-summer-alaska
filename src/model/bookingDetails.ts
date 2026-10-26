@@ -2,7 +2,12 @@
 // paid and what is still due, each line's own payment state, and who sold it.
 // Pure — the sheet's BookingDetails renders these. Payment states come from
 // the budget's lineBucket, so the sheet and the budget always agree.
-import { bookedThroughName, bookingFixedCharges, travelerPrices } from './bookings';
+import {
+  bookedThroughName,
+  bookedThroughNumber,
+  bookingFixedCharges,
+  travelerPrices,
+} from './bookings';
 import {
   type BookingPaymentSummary,
   bookingPaymentSummary,
@@ -63,7 +68,7 @@ export function priceLineLabel(
 export function bookedThroughLabel(bookedThrough: Booking['bookedThrough']): string | null {
   const name = bookedThroughName(bookedThrough);
   if (!name) return null;
-  const conf = typeof bookedThrough === 'object' ? bookedThrough.confirmationNumber : null;
+  const conf = bookedThroughNumber(bookedThrough);
   return conf ? `${name} · Conf# ${conf}` : name;
 }
 

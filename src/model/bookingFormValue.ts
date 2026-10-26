@@ -1,11 +1,12 @@
 import {
   bookedThroughName,
+  bookedThroughNumber,
   bookingCost,
   bookingFares,
   bookingFixedCharges,
   fareLinesByTraveler,
-  namedBookedThrough,
   payableDueBy,
+  sellerBookedThrough,
 } from './bookings';
 import type { Booking, BookingStatus, FixedCharge, Money, PassengerFare, Payable } from './types';
 
@@ -47,6 +48,10 @@ export interface BookingFormValue {
   payable: Payable | undefined;
   paymentsDue: PaymentDue[];
   bookedThrough: string;
+  bookedThroughNumber: string;
+  // How `base`'s fares read as a per-person amount, worked out once when the
+  // form is seeded; null when they can't (see fareLayout).
+  layout: FareLayout | null;
 }
 
 // An amount each traveler still owes by a date, on top of the per-person
@@ -114,13 +119,15 @@ export function bookingFormValueFrom(
     confirmationNumber: booking?.confirmationNumber ?? '',
     perPersonAmount: layout ? String(layout.mains[0].fare.amount) : '',
     fixedAmount: fixed.length === 1 ? String(fixed[0].amount.amount) : '',
-    payable: commonPayable([...paymentFares(booking), ...fixed]),
+    payable: commonPayable([...paymentFares(booking, layout), ...fixed]),
     paymentsDue: (layout?.due ?? []).map((d) => ({
       ...blankPaymentDue(),
       amount: String(d.fare.fare.amount),
       dueBy: d.dueBy,
     })),
     bookedThrough: bookedThroughName(booking?.bookedThrough),
+    bookedThroughNumber: bookedThroughNumber(booking?.bookedThrough),
+    layout,
   };
 }
 
@@ -160,9 +167,12 @@ function farePartsAsStored(lines: PassengerFare[]): { main: PassengerFare; due: 
 // traveler: each traveler's Payment line, and the payments due they all
 // share. null when the travelers' fares differ (a cruise's adult and child
 // fares) or are split some other way.
-function fareLayout(
-  booking: Booking | null | undefined,
-): { mains: PassengerFare[]; due: DueLine[] } | null {
+interface FareLayout {
+  mains: PassengerFare[];
+  due: DueLine[];
+}
+
+function fareLayout(booking: Booking | null | undefined): FareLayout | null {
   const parts: NonNullable<ReturnType<typeof fareParts>>[] = [];
   for (const lines of fareLinesByTraveler(booking)) {
     const p = fareParts(lines);
@@ -177,8 +187,11 @@ function fareLayout(
 
 // The fare lines the Payment choice covers: each traveler's Payment line, or
 // every line when the form can't read them that way.
-function paymentFares(booking: Booking | null | undefined): PassengerFare[] {
-  return fareLayout(booking)?.mains ?? bookingFares(booking) ?? [];
+function paymentFares(
+  booking: Booking | null | undefined,
+  layout: FareLayout | null,
+): PassengerFare[] {
+  return layout?.mains ?? bookingFares(booking) ?? [];
 }
 
 // Fares that differ by traveler (a cruise's adult and child fares), or are
@@ -186,13 +199,16 @@ function paymentFares(booking: Booking | null | undefined): PassengerFare[] {
 // number, so BookingFields shows them read-only and Save keeps them as they
 // are; likewise several itemized fixed charges.
 export function hasVaryingFares(value: BookingFormValue): boolean {
-  return !!bookingFares(value.base) && !fareLayout(value.base);
+  return !!bookingFares(value.base) && !value.layout;
 }
 
 // Lines paid at different times (a fare paid now, a fee at the property)
 // can't share one Payment choice, so the form leaves each as it is.
 export function hasMixedPayables(value: BookingFormValue): boolean {
-  const lines = [...paymentFares(value.base), ...(bookingFixedCharges(value.base) ?? [])];
+  const lines = [
+    ...paymentFares(value.base, value.layout),
+    ...(bookingFixedCharges(value.base) ?? []),
+  ];
   return lines.some((l) => payableKey(l.payable) !== payableKey(lines[0].payable));
 }
 
@@ -216,7 +232,7 @@ export function readBookingFormValue(
   if (!value.status) return null;
   const base = value.base;
   const currency = bookingCost(base)?.currency;
-  const baseFares = paymentFares(base);
+  const baseFares = paymentFares(base, value.layout);
   const baseFixed = bookingFixedCharges(base) ?? [];
   const perPerson = moneyFromAmountInput(value.perPersonAmount, currency);
   const varying = hasVaryingFares(value);
@@ -264,7 +280,7 @@ export function readBookingFormValue(
     pricing,
     confirmationNumber: value.confirmationNumber || null,
   };
-  const bookedThrough = namedBookedThrough(base?.bookedThrough, value.bookedThrough);
+  const bookedThrough = sellerBookedThrough(value.bookedThrough, value.bookedThroughNumber);
   if (bookedThrough) booking.bookedThrough = bookedThrough;
   else delete booking.bookedThrough;
   return booking;

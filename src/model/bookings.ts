@@ -149,6 +149,12 @@ export function bookedThroughName(bookedThrough: Booking['bookedThrough']): stri
   return typeof bookedThrough === 'string' ? bookedThrough : bookedThrough.name;
 }
 
+export function bookedThroughNumber(bookedThrough: Booking['bookedThrough']): string {
+  return bookedThrough && typeof bookedThrough === 'object'
+    ? (bookedThrough.confirmationNumber ?? '')
+    : '';
+}
+
 // The seller an edit names, as stored. Naming the stored seller again, in any
 // case or spacing, keeps its own confirmation number. Undefined for a blank
 // name.
@@ -156,10 +162,20 @@ export function namedBookedThrough(
   stored: Booking['bookedThrough'],
   name: string,
 ): Booking['bookedThrough'] {
+  const same = bookedThroughName(stored).trim().toLowerCase() === name.trim().toLowerCase();
+  return sellerBookedThrough(name, same ? bookedThroughNumber(stored) : '');
+}
+
+// The seller as the booking form names it: the seller's own confirmation
+// number rides with it as written. Undefined for a blank name.
+export function sellerBookedThrough(
+  name: string,
+  confirmationNumber: string,
+): Booking['bookedThrough'] {
   const trimmed = name.trim();
   if (!trimmed) return undefined;
-  const same = bookedThroughName(stored).trim().toLowerCase() === trimmed.toLowerCase();
-  return same && typeof stored === 'object' ? { ...stored, name: trimmed } : trimmed;
+  const number = confirmationNumber.trim();
+  return number ? { name: trimmed, confirmationNumber: number } : trimmed;
 }
 
 export function bookingFixedCharges(booking: Booking | null | undefined): FixedCharge[] | null {
