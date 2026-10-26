@@ -1,13 +1,14 @@
 // Live status for a flight Transit (status, gates, delays, baggage, position) from
-// AviationStack's /v1/flights, looked up only around the day it flies: the free
-// plan answers for flights near today and allows 100 requests a month. Never
-// written back into the trip's JSON; it's only as of when the page asked.
-import { getAviationstackApiKey } from '../config/apiKeys';
+// the flight-status sources in `providers`, looked up only around the day it flies:
+// the free plans answer for flights near today and allow few requests a month.
+// Never written back into the trip's JSON; it's only as of when the page asked.
+import { airlabs } from './airlabsFlights';
+import { aviationstack } from './aviationstackFlights';
 import type { ClientOptions } from './clientOptions';
-import { persisted } from './idbCache';
+import { type FlightEnd, type FlightProvider, type FlightStatus } from './flightStatusTypes';
+import { type CacheEntry, persistedEntry } from './idbCache';
 import {
   addMinutesIso,
-  dateOnly,
   diffMinutesIso,
   type EndpointZones,
   endpointZonesOf,
@@ -15,31 +16,6 @@ import {
   zonedInstant,
 } from './tripModel';
 import type { Transit } from './types';
-
-const PHASES = ['scheduled', 'active', 'landed', 'cancelled', 'incident', 'diverted'] as const;
-export type FlightPhase = (typeof PHASES)[number];
-
-// One end of the flight. Times are the airport's local wall clock,
-// 'YYYY-MM-DDTHH:MM', like Transit.departsAt.
-export interface FlightEnd {
-  airport: string | null;
-  iata: string | null;
-  timeZone: string | null;
-  terminal: string | null;
-  gate: string | null;
-  delayMinutes: number | null;
-  scheduled: string | null;
-  estimated: string | null;
-  actual: string | null;
-}
-
-export interface FlightStatus {
-  phase: FlightPhase | null;
-  departure: FlightEnd;
-  arrival: FlightEnd & { baggage: string | null };
-  // Where the plane is, while AviationStack is tracking it.
-  live: { lat: number; lng: number; altitudeM: number | null; updatedAt: string | null } | null;
-}
 
 // "AS 273" / "as273" → "AS273"; null when the Transit has no usable flight number.
 export function flightCode(transit: Pick<Transit, 'flightNumber'>): string | null {
@@ -73,7 +49,7 @@ type WindowSide = 'before' | 'within' | 'after';
 const sideOf = ([opens, closes]: [number, number], now: number): WindowSide =>
   now < opens ? 'before' : now > closes ? 'after' : 'within';
 
-// The latest arrival AviationStack has reported, when it's later than planned: its
+// The latest arrival the source has reported, when it's later than planned: its
 // actual or estimated arrival, or the planned one pushed back by the departure
 // delay. The window stays open an hour past it, so a delay doesn't close it early.
 export function withReportedArrival(
@@ -105,83 +81,8 @@ export function isWorthLookingUp(times: FlightTimes, now: number): boolean {
   return zonedSide(times, now) === 'within';
 }
 
-// AviationStack writes each airport's local time with a "+00:00" offset that isn't
-// real (an 08:55 departure from Tokyo reads "08:55:00+00:00"), so only the wall
-// clock part is kept.
-function wallClock(value: unknown): string | null {
-  return typeof value === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d/.test(value)
-    ? value.slice(0, 16)
-    : null;
-}
-
-const text = (value: unknown): string | null =>
-  typeof value === 'string' && value.trim() ? value.trim() : null;
-const number = (value: unknown): number | null =>
-  typeof value === 'number' && Number.isFinite(value) ? value : null;
-const record = (value: unknown): Record<string, unknown> | null =>
-  value && typeof value === 'object' && !Array.isArray(value)
-    ? (value as Record<string, unknown>)
-    : null;
-
-function flightEnd(raw: Record<string, unknown>): FlightEnd {
-  return {
-    airport: text(raw.airport),
-    iata: text(raw.iata),
-    timeZone: text(raw.timezone),
-    terminal: text(raw.terminal),
-    gate: text(raw.gate),
-    delayMinutes: number(raw.delay),
-    scheduled: wallClock(raw.scheduled),
-    estimated: wallClock(raw.estimated),
-    actual: wallClock(raw.actual),
-  };
-}
-
-// One entry of the response's `data`, or null when it lacks the fields a match
-// needs. Every other field is optional: AviationStack leaves many of them null.
-function parseFlight(value: unknown): { flightDate: string; status: FlightStatus } | null {
-  const raw = record(value);
-  const departure = record(raw?.departure);
-  const arrival = record(raw?.arrival);
-  const flightDate = text(raw?.flight_date);
-  if (!raw || !departure || !arrival || !flightDate) return null;
-  const live = record(raw.live);
-  const lat = number(live?.latitude);
-  const lng = number(live?.longitude);
-  const phase = text(raw.flight_status);
-  return {
-    flightDate,
-    status: {
-      phase: (PHASES as readonly string[]).includes(phase ?? '') ? (phase as FlightPhase) : null,
-      departure: flightEnd(departure),
-      arrival: { ...flightEnd(arrival), baggage: text(arrival.baggage) },
-      live:
-        live && lat !== null && lng !== null
-          ? { lat, lng, altitudeM: number(live.altitude), updatedAt: text(live.updated) }
-          : null,
-    },
-  };
-}
-
-// The response's entry for this Transit: the one scheduled to leave at its
-// departsAt, or the only one on its date. A code can return several days' flights,
-// and an airline code can be shared ("AS" is also another carrier), so an entry is
-// never picked by its place in the list.
-export function matchFlight(
-  json: unknown,
-  transit: Pick<Transit, 'departsAt'>,
-): FlightStatus | null {
-  const data = record(json)?.data;
-  if (!Array.isArray(data)) throw new Error('AviationStack sent a reply this site can’t read.');
-  const flights = data.map(parseFlight).filter((f) => f !== null);
-  const onTime = flights.filter((f) => f.status.departure.scheduled === transit.departsAt);
-  if (onTime.length === 1) return onTime[0].status;
-  const onDate = flights.filter((f) => f.flightDate === dateOnly(transit.departsAt));
-  return onDate.length === 1 ? onDate[0].status : null;
-}
-
 // What the detail sheet says about a flight's status: a headline, its tone, and a
-// line per end with whatever AviationStack has posted.
+// line per end with whatever the source has posted.
 export interface FlightStatusSummary {
   headline: string;
   tone: 'ok' | 'warning' | 'problem';
@@ -248,8 +149,9 @@ export function summarizeFlightStatus(status: FlightStatus): FlightStatusSummary
 }
 
 // Airlines' ICAO codes by IATA code, for FlightAware, which only finds a flight by
-// its ICAO callsign ("ASA273", not "AS273"). The trips' carriers, plus the usual
-// North American ones.
+// its ICAO callsign ("ASA273", not "AS273"). Used whenever no source has reported
+// the flight's own callsign: before the day it flies, or when none lists it. The
+// trips' carriers, plus the usual North American ones.
 const AIRLINE_ICAO: Record<string, string> = {
   AA: 'AAL',
   AC: 'ACA',
@@ -270,17 +172,17 @@ const AIRLINE_ICAO: Record<string, string> = {
 };
 
 // Public trackers for a flight code, which need no key and work any day.
-// FlightAware is left out for an airline whose ICAO code isn't known.
-export function flightTrackerLinks(code: string): { label: string; url: string }[] {
+// FlightAware uses the callsign a source reported, else the airline's ICAO code
+// from the table, and is left out when neither is known.
+export function flightTrackerLinks(
+  code: string,
+  reportedCallsign: string | null = null,
+): { label: string; url: string }[] {
   const icao = AIRLINE_ICAO[code.slice(0, 2)];
+  const callsign = reportedCallsign ?? (icao ? `${icao}${code.slice(2)}` : null);
   return [
-    ...(icao
-      ? [
-          {
-            label: 'FlightAware',
-            url: `https://www.flightaware.com/live/flight/${icao}${code.slice(2)}`,
-          },
-        ]
+    ...(callsign
+      ? [{ label: 'FlightAware', url: `https://www.flightaware.com/live/flight/${callsign}` }]
       : []),
     {
       label: 'Flightradar24',
@@ -290,10 +192,11 @@ export function flightTrackerLinks(code: string): { label: string; url: string }
 }
 
 // What a lookup found: the flight's status (final once it can't change), or why
-// there is none.
+// there is none. `asOf` is when the source was asked (epoch ms), which on a reload
+// is when an earlier visit did.
 export type FlightLookup =
-  | { kind: 'status'; status: FlightStatus; final: boolean }
-  | { kind: 'notListed' }
+  | { kind: 'status'; status: FlightStatus; final: boolean; asOf: number }
+  | { kind: 'notListed'; asOf: number }
   | { kind: 'notYet' }
   | { kind: 'over' }
   | { kind: 'noFlightNumber' };
@@ -304,7 +207,7 @@ export function flightLookupNote(lookup: FlightLookup): string | null {
     case 'notYet':
       return `Gate, delay and baggage news shows here from ${OPENS_BEFORE_DEPARTURE_MS / HOUR_MS} hours before departure.`;
     case 'notListed':
-      return 'AviationStack doesn’t list this flight right now.';
+      return 'This flight isn’t listed right now.';
     default:
       return null;
   }
@@ -314,23 +217,11 @@ export function flightLookupNote(lookup: FlightLookup): string | null {
 export const canChange = (lookup: FlightLookup): boolean =>
   (lookup.kind === 'status' && !lookup.final) || lookup.kind === 'notListed';
 
-// AviationStack's error codes, as what the reader can do about them.
-function errorMessage(error: Record<string, unknown>): string {
-  switch (error.code) {
-    case 'invalid_access_key':
-    case 'missing_access_key':
-      return 'AviationStack didn’t accept the key in Settings.';
-    case 'usage_limit_reached':
-      return 'This month’s AviationStack lookups are used up.';
-    case 'rate_limit_reached':
-      return 'Too many flight lookups at once; try again in a minute.';
-    default:
-      return `AviationStack: ${text(error.message) ?? 'the lookup failed.'}`;
-  }
-}
-
-// How long one answer stands. Each lookup spends a request from the month's 100.
+// How long one answer stands. Each lookup spends a request from a source's free
+// plan; AviationStack's is 100 a month, so it is asked only when AirLabs has none.
 const STATUS_TTL_MS = 15 * 60 * 1000;
+// How long an answer that can't change is kept across visits: past the day it flies.
+const FINAL_TTL_MS = 24 * 60 * 60 * 1000;
 // How often an open sheet asks again: just past STATUS_TTL_MS, so each ask gets a
 // fresh answer rather than the one it already has.
 export const FLIGHT_STATUS_REFRESH_MS = STATUS_TTL_MS + 60 * 1000;
@@ -346,39 +237,66 @@ function isFinal(status: FlightStatus | null): boolean {
 }
 
 export interface FlightStatusEnv extends Required<Pick<ClientOptions, 'fetch'>> {
-  key: () => string;
+  // In the order they are asked: the first to know the flight answers.
+  providers: FlightProvider[];
   now: () => number;
-  // Keeps an answer for ttlMs across page loads (idbCache's `persisted`).
-  cached: <T>(key: string, ttlMs: number, compute: () => Promise<T>) => Promise<T>;
+  // Keeps an answer across page loads for the ttl its value gives, and says when it
+  // was computed (idbCache's `persistedEntry`).
+  cached: <T>(
+    key: string,
+    ttlMs: (value: T) => number,
+    compute: () => Promise<T>,
+  ) => Promise<CacheEntry<T>>;
 }
 
 export function createFlightStatusClient(env: FlightStatusEnv) {
   // The latest answer per flight, shared by every row and sheet showing it: reused
   // for STATUS_TTL_MS after it was asked, for the rest of the visit once final, and
   // after the window closes. A failed lookup isn't kept, so it's asked again.
+  type Answer = CacheEntry<FlightStatus | null>;
   interface Lookup {
     startedAt: number;
-    status: Promise<FlightStatus | null>;
+    status: Promise<Answer>;
     answer: FlightStatus | null;
   }
   const lookups = new Map<string, Lookup>();
 
-  async function fetchStatus(code: string, transit: Transit): Promise<FlightStatus | null> {
-    const key = env.key();
-    if (!key) throw new Error('Add your AviationStack API key in Settings.');
-    const url =
-      `https://api.aviationstack.com/v1/flights?access_key=${encodeURIComponent(key)}` +
-      `&flight_iata=${code}`;
-    const res = await env.fetch(url);
+  async function ask(provider: FlightProvider, key: string, code: string, departsAt: string) {
+    const res = await env.fetch(provider.url(key, code));
     const json: unknown = await res.json().catch(() => null);
-    const error = record(record(json)?.error);
-    if (error) throw new Error(errorMessage(error));
-    if (!res.ok) throw new Error(`AviationStack error ${res.status}`);
-    return matchFlight(json, transit);
+    return provider.read({ ok: res.ok, status: res.status, json }, departsAt);
   }
 
-  const toLookup = (answer: FlightStatus | null): FlightLookup =>
-    answer ? { kind: 'status', status: answer, final: isFinal(answer) } : { kind: 'notListed' };
+  // The first status a provider with a key finds. A provider that fails is skipped
+  // for the next. If none finds the flight, a failure is thrown (so a bad key or a
+  // dropped request is shown and the miss isn't kept); otherwise it isn't listed.
+  async function fetchStatus(code: string, transit: Transit): Promise<FlightStatus | null> {
+    const keyed = env.providers
+      .map((provider) => ({ provider, key: provider.key() }))
+      .filter(({ key }) => key);
+    if (!keyed.length) {
+      const names = new Intl.ListFormat('en', { type: 'disjunction' }).format(
+        env.providers.map((provider) => provider.name),
+      );
+      throw new Error(`Add your ${names} API key in Settings.`);
+    }
+    let failure: unknown = null;
+    for (const { provider, key } of keyed) {
+      try {
+        const status = await ask(provider, key, code, transit.departsAt);
+        if (status) return status;
+      } catch (err) {
+        failure ??= err;
+      }
+    }
+    if (failure) throw failure;
+    return null;
+  }
+
+  const toLookup = ({ value, savedAt }: Answer): FlightLookup =>
+    value
+      ? { kind: 'status', status: value, final: isFinal(value), asOf: savedAt }
+      : { kind: 'notListed', asOf: savedAt };
 
   // The flight's status, or why there is none. Only a lookup inside the window
   // spends a request; an answer already held is kept after the window closes.
@@ -403,12 +321,18 @@ export function createFlightStatusClient(env: FlightStatusEnv) {
     const lookup: Lookup = {
       startedAt: now,
       answer: null,
-      status: env.cached(`flight-status:v1:${flight}`, STATUS_TTL_MS, () =>
-        fetchStatus(code, transit),
+      status: env.cached(
+        `flight-status:v2:${flight}`,
+        (answer: FlightStatus | null) => (isFinal(answer) ? FINAL_TTL_MS : STATUS_TTL_MS),
+        () => fetchStatus(code, transit),
       ),
     };
     lookup.status.then(
-      (answer) => (lookup.answer = answer),
+      ({ value, savedAt }) => {
+        lookup.answer = value;
+        // An answer kept from an earlier visit is as old as it was then.
+        lookup.startedAt = savedAt;
+      },
       () => {
         if (lookups.get(flight) !== lookup) return;
         if (held) lookups.set(flight, held);
@@ -424,9 +348,9 @@ export function createFlightStatusClient(env: FlightStatusEnv) {
 
 export const { getFlightStatus } = createFlightStatusClient({
   fetch: (...args) => globalThis.fetch(...args),
-  key: getAviationstackApiKey,
+  providers: [airlabs, aviationstack],
   now: () => Date.now(),
-  cached: persisted,
+  cached: persistedEntry,
 });
 
 // What a watched flight shows: the latest lookup, and the last failure's message
@@ -438,6 +362,7 @@ export interface FlightWatchState {
 
 export interface FlightWatchEnv {
   getFlightStatus: (transit: Transit) => Promise<FlightLookup>;
+  now: () => number;
   setTimeout: (run: () => void, ms: number) => unknown;
   clearTimeout: (timer: unknown) => void;
   // Whether the page is on screen, and a way to hear when it comes back.
@@ -465,7 +390,12 @@ export function watchFlightStatus(
   };
   const scheduleNext = () => {
     if (stopped || !state.lookup || !canChange(state.lookup)) return;
-    timer = env.setTimeout(whenVisible, FLIGHT_STATUS_REFRESH_MS);
+    // Counted from when the answer was asked, so one kept from an earlier visit is
+    // refreshed on time. An answer already older than that (a failed refresh left
+    // the last one showing) waits a whole interval rather than asking in a loop.
+    const age = 'asOf' in state.lookup ? Math.max(0, env.now() - state.lookup.asOf) : 0;
+    const wait = FLIGHT_STATUS_REFRESH_MS - age;
+    timer = env.setTimeout(whenVisible, wait > 0 ? wait : FLIGHT_STATUS_REFRESH_MS);
   };
   function whenVisible() {
     if (env.visible()) return void run();

@@ -3,7 +3,8 @@ import { safeGetItem } from './safeStorage';
 // The API keys this static site calls out with. Each is entered in Settings and
 // kept in this browser's localStorage, never hardcoded or committed. Each is read
 // where its request goes out (anthropicClient.ts; googleApiFetch.ts, placePhotos.ts
-// and the day map's APIProvider), so nothing between the UI and
+// and the day map's APIProvider; airlabsFlights.ts and
+// aviationstackFlights.ts for the flight sources), so nothing between the UI and
 // the request carries a key; hasGoogleApiKey only says whether there is one.
 //
 // localStorage is plaintext-readable by any script running on this page (including
@@ -51,14 +52,24 @@ const KEYS = {
     help: 'For maps, place details, photos and weather. Sent only to Google.',
     reload: true,
   },
-  // AviationStack: live flight status. The key goes in the request URL (over HTTPS;
+  // AirLabs: live flight status, asked first. The key goes in the request URL (over
+  // HTTPS, CORS open) and has no referrer restriction, so, like Anthropic's, it must
+  // never ship in the bundle. Read per request.
+  airlabs: {
+    store: storedKey('airlabsApiKey'),
+    label: 'AirLabs',
+    help: 'For live flight status on the day you fly. Sent only to airlabs.co.',
+    reload: false,
+  },
+  // AviationStack: live flight status, asked when AirLabs has no answer or no key.
+  // The key goes in the request URL (over HTTPS;
   // a free-plan key was checked to work on https://api.aviationstack.com, with CORS
   // open) and has no referrer restriction, so, like Anthropic's, it must never ship
   // in the bundle. Read per request.
   aviationstack: {
     store: storedKey('aviationstackApiKey'),
     label: 'AviationStack',
-    help: 'For live flight status on the day you fly. Sent only to api.aviationstack.com.',
+    help: 'Backup for live flight status. Sent only to api.aviationstack.com.',
     reload: false,
   },
 };
@@ -76,6 +87,7 @@ export const getAnthropicApiKey = KEYS.anthropic.store.get;
 export const setAnthropicApiKey = KEYS.anthropic.store.set;
 export const getGoogleApiKey = KEYS.google.store.get;
 export const setGoogleApiKey = KEYS.google.store.set;
+export const getAirlabsApiKey = KEYS.airlabs.store.get;
 export const getAviationstackApiKey = KEYS.aviationstack.store.get;
 
 // Whether Google lookups can run at all.

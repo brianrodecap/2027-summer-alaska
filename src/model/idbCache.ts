@@ -12,7 +12,7 @@
 const DB_NAME = 'itinerary-cache';
 const STORE = 'entries';
 
-interface Entry<T> {
+export interface CacheEntry<T> {
   value: T;
   savedAt: number;
 }
@@ -115,18 +115,18 @@ export function createIdbCache(env: IdbCacheEnv) {
     return dbPromise;
   }
 
-  async function readEntry<T>(key: string): Promise<Entry<T> | null> {
+  async function readEntry<T>(key: string): Promise<CacheEntry<T> | null> {
     const db = await openDb();
     if (!db) return null;
     try {
       const entry = await requestResult(db.transaction(STORE).objectStore(STORE).get(key));
-      return (entry as Entry<T> | undefined) ?? null;
+      return (entry as CacheEntry<T> | undefined) ?? null;
     } catch {
       return null;
     }
   }
 
-  async function writeEntries(entries: [string, Entry<unknown>][]): Promise<void> {
+  async function writeEntries(entries: [string, CacheEntry<unknown>][]): Promise<void> {
     const db = await openDb();
     if (!db) throw new Error('IndexedDB is unavailable.');
     const tx = db.transaction(STORE, 'readwrite');
@@ -148,11 +148,11 @@ export function createIdbCache(env: IdbCacheEnv) {
       if (key !== null) keys.push(key);
     }
     const retired = keys.filter((k) => RETIRED_CACHE_PREFIXES.some((p) => k.startsWith(p)));
-    const legacy: [string, Entry<unknown>][] = [];
+    const legacy: [string, CacheEntry<unknown>][] = [];
     for (const key of keys) {
       if (!LEGACY_CACHE_PREFIXES.some((p) => key.startsWith(p))) continue;
       try {
-        const entry = JSON.parse(storage.getItem(key) ?? '') as Entry<unknown>;
+        const entry = JSON.parse(storage.getItem(key) ?? '') as CacheEntry<unknown>;
         if (entry && typeof entry.savedAt === 'number' && 'value' in entry) {
           legacy.push([key, entry]);
         } else {
@@ -175,20 +175,35 @@ export function createIdbCache(env: IdbCacheEnv) {
   // Get-or-compute: a fresh-enough cached value resolves without calling `compute`;
   // otherwise `compute` runs and its result is saved (a failed save is ignored).
   // The legacy migration runs once first, so nothing already cached is refetched.
-  async function persisted<T>(key: string, ttlMs: number, compute: () => Promise<T>): Promise<T> {
+  // `ttlMs` may depend on the cached value (one that can no longer change can be kept
+  // longer); `savedAt` is when the value was computed, so a caller can tell how
+  // old a cached one is.
+  async function persistedEntry<T>(
+    key: string,
+    ttlMs: number | ((value: T) => number),
+    compute: () => Promise<T>,
+  ): Promise<CacheEntry<T>> {
     await (legacyMigration ??= migrateLegacyCaches().catch(() => {}));
     const cached = await readEntry<T>(key);
-    if (cached && env.now() - cached.savedAt <= ttlMs) return cached.value;
+    if (cached) {
+      const ttl = typeof ttlMs === 'function' ? ttlMs(cached.value) : ttlMs;
+      if (env.now() - cached.savedAt <= ttl) return cached;
+    }
     const value = await compute();
-    const save = writeEntries([[key, { value, savedAt: env.now() }]]).catch(() => {});
+    const entry = { value, savedAt: env.now() };
+    const save = writeEntries([[key, entry]]).catch(() => {});
     saves = Promise.all([saves, save]).then(() => {});
-    return value;
+    return entry;
   }
 
-  return { persisted, savesSettled: () => saves };
+  async function persisted<T>(key: string, ttlMs: number, compute: () => Promise<T>): Promise<T> {
+    return (await persistedEntry(key, ttlMs, compute)).value;
+  }
+
+  return { persisted, persistedEntry, savesSettled: () => saves };
 }
 
-export const { persisted } = createIdbCache({
+export const { persisted, persistedEntry } = createIdbCache({
   indexedDB: () => globalThis.indexedDB,
   storage: () => localStorage,
   now: () => Date.now(),

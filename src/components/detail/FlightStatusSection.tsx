@@ -27,6 +27,7 @@ const CHIP_COLOR: Record<FlightStatusSummary['tone'], 'success' | 'warning' | 'e
 // The browser's timers and page visibility, for watchFlightStatus.
 const browserWatch = {
   getFlightStatus,
+  now: () => Date.now(),
   setTimeout: (run: () => void, ms: number) => window.setTimeout(run, ms),
   clearTimeout: (timer: unknown) => window.clearTimeout(timer as number),
   visible: () => document.visibilityState === 'visible',
@@ -90,11 +91,13 @@ export function FlightStatusSection({
         open && !state && <Skeleton width="60%" />
       )}
       <Stack direction="row" spacing={2}>
-        {flightTrackerLinks(code).map(({ label, url }) => (
-          <Link key={label} href={url} target="_blank" rel="noopener" variant="body2">
-            {label}
-          </Link>
-        ))}
+        {flightTrackerLinks(code, lookup?.kind === 'status' ? lookup.status.callsign : null).map(
+          ({ label, url }) => (
+            <Link key={label} href={url} target="_blank" rel="noopener" variant="body2">
+              {label}
+            </Link>
+          ),
+        )}
       </Stack>
     </DetailSection>
   );

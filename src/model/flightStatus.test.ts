@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 
+import { entry } from '../test/aviationstackFixtures';
+import { airlabs } from './airlabsFlights';
+import { aviationstack, matchFlight } from './aviationstackFlights';
 import {
   canChange,
   createFlightStatusClient,
@@ -9,45 +12,16 @@ import {
   flightLookupNote,
   flightTrackerLinks,
   isWorthLookingUp,
-  matchFlight,
   summarizeFlightStatus,
   watchFlightStatus,
 } from './flightStatus';
 import type { Transit } from './types';
 
-// One /v1/flights entry, as AviationStack sends it: local wall clocks with a
-// "+00:00" offset that isn't real.
-function entry(flightDate: string, departs: string, overrides: Record<string, unknown> = {}) {
-  return {
-    flight_date: flightDate,
-    flight_status: 'scheduled',
-    departure: {
-      airport: 'Anchorage',
-      timezone: 'America/Anchorage',
-      iata: 'ANC',
-      terminal: 'S',
-      gate: 'C3',
-      delay: 12,
-      scheduled: `${flightDate}T${departs}:00+00:00`,
-      estimated: `${flightDate}T${departs}:00+00:00`,
-      actual: null,
-    },
-    arrival: {
-      airport: 'Kotzebue',
-      timezone: 'America/Anchorage',
-      iata: 'OTZ',
-      terminal: null,
-      gate: null,
-      baggage: '2',
-      scheduled: `${flightDate}T10:33:00+00:00`,
-      delay: null,
-      estimated: null,
-      actual: null,
-    },
-    live: null,
-    ...overrides,
-  };
-}
+// The part of an AirLabs /flight reply the lookups read.
+const airlabsReply = {
+  dep_time: '2027-07-08 08:55',
+  arr_time: '2027-07-08 10:33',
+};
 
 const transit = { departsAt: '2027-07-08T08:55' };
 
@@ -60,71 +34,6 @@ describe('flightCode', () => {
   it('has no code for a missing or unreadable flight number', () => {
     expect(flightCode({})).toBeNull();
     expect(flightCode({ flightNumber: 'Floatplane' })).toBeNull();
-  });
-});
-
-describe('matchFlight', () => {
-  it('reads the airport’s own clock, not the offset AviationStack labels it with', () => {
-    const status = matchFlight({ data: [entry('2027-07-08', '08:55')] }, transit);
-    expect(status?.departure).toMatchObject({
-      scheduled: '2027-07-08T08:55',
-      gate: 'C3',
-      delayMinutes: 12,
-      timeZone: 'America/Anchorage',
-    });
-    expect(status?.arrival.baggage).toBe('2');
-  });
-
-  it('picks the flight scheduled at the transit’s departure, wherever it is listed', () => {
-    const status = matchFlight(
-      {
-        data: [
-          entry('2027-07-08', '16:10', { flight_status: 'active' }),
-          entry('2027-07-08', '08:55', { flight_status: 'landed' }),
-        ],
-      },
-      transit,
-    );
-    expect(status?.phase).toBe('landed');
-  });
-
-  it('falls back to the only flight on the date when the time has moved', () => {
-    const status = matchFlight(
-      { data: [entry('2027-07-07', '08:55'), entry('2027-07-08', '09:20')] },
-      transit,
-    );
-    expect(status?.departure.scheduled).toBe('2027-07-08T09:20');
-  });
-
-  it('matches nothing when two flights that day could be it', () => {
-    expect(
-      matchFlight({ data: [entry('2027-07-08', '07:00'), entry('2027-07-08', '19:00')] }, transit),
-    ).toBeNull();
-  });
-
-  it('keeps the plane’s position only when it has one', () => {
-    const live = { latitude: 61.2, longitude: -149.9, altitude: 9000, updated: '2027-07-08T17:20' };
-    expect(matchFlight({ data: [entry('2027-07-08', '08:55', { live })] }, transit)?.live).toEqual({
-      lat: 61.2,
-      lng: -149.9,
-      altitudeM: 9000,
-      updatedAt: '2027-07-08T17:20',
-    });
-  });
-
-  it('treats an unknown status as no status, not a reason to drop the flight', () => {
-    const status = matchFlight(
-      { data: [entry('2027-07-08', '08:55', { flight_status: 'boarding' })] },
-      transit,
-    );
-    expect(status).not.toBeNull();
-    expect(status?.phase).toBeNull();
-  });
-
-  it('rejects a reply that has no flight list', () => {
-    expect(() => matchFlight({ pagination: {} }, transit)).toThrow(
-      'AviationStack sent a reply this site can’t read.',
-    );
   });
 });
 
@@ -210,15 +119,26 @@ describe('getFlightStatus', () => {
     let clock = at(nowIso);
     let currentKey = key;
     let reply = body;
+    // An answer an earlier visit kept, which the cache hands back instead of asking.
+    let kept: { value: unknown; savedAt: number } | null = null;
+    const ttls: ((value: unknown) => number)[] = [];
     const urls: string[] = [];
     const { getFlightStatus } = createFlightStatusClient({
       fetch: async (url) => {
         urls.push(String(url));
         return new Response(JSON.stringify(reply), { status: 200 });
       },
-      key: () => currentKey,
+      providers: [{ ...aviationstack, key: () => currentKey }],
       now: () => clock,
-      cached: (_key, _ttl, compute) => compute(),
+      cached: async (_key, ttl, compute) => {
+        ttls.push(ttl as (value: unknown) => number);
+        return (
+          (kept as { value: Awaited<ReturnType<typeof compute>>; savedAt: number } | null) ?? {
+            value: await compute(),
+            savedAt: clock,
+          }
+        );
+      },
     });
     return {
       getFlightStatus,
@@ -226,6 +146,9 @@ describe('getFlightStatus', () => {
       advance: (ms: number) => (clock += ms),
       setKey: (next: string) => (currentKey = next),
       setReply: (next: unknown) => (reply = next),
+      ttls,
+      keep: (value: unknown, savedAt: number) => (kept = { value, savedAt }),
+      forget: () => (kept = null),
     };
   }
   const listed = { data: [entry('2027-07-08', '08:55', { flight_status: 'active' })] };
@@ -348,12 +271,12 @@ describe('getFlightStatus', () => {
     expect(c.urls).toEqual([]);
   });
 
-  it('says AviationStack doesn’t list the flight, and that asking again may change that', async () => {
+  it('says the flight isn’t listed, and that asking again may change that', async () => {
     const c = client('2027-07-08T16:00Z', { data: [] });
     const lookup = await c.getFlightStatus(asFlight);
-    expect(lookup).toEqual({ kind: 'notListed' });
+    expect(lookup).toEqual({ kind: 'notListed', asOf: at('2027-07-08T16:00Z') });
     expect(canChange(lookup)).toBe(true);
-    expect(flightLookupNote(lookup)).toBe('AviationStack doesn’t list this flight right now.');
+    expect(flightLookupNote(lookup)).toBe('This flight isn’t listed right now.');
   });
 
   it('marks a landed flight with its baggage claim as final, so it isn’t asked again', async () => {
@@ -391,6 +314,131 @@ describe('getFlightStatus', () => {
     await expect(c.getFlightStatus(asFlight)).resolves.toMatchObject({ final: true });
   });
 
+  describe('answers kept across reloads', () => {
+    const landedWithBags = entry('2027-07-08', '08:55', { flight_status: 'landed' });
+    const landedNoBags = entry('2027-07-08', '08:55', {
+      flight_status: 'landed',
+      arrival: { ...landedWithBags.arrival, baggage: null },
+    });
+
+    it('keeps a final answer for a day, and any other for 15 minutes', async () => {
+      const c = client('2027-07-08T18:40Z', { data: [landedWithBags] });
+      await c.getFlightStatus(asFlight);
+      const finalAnswer = matchFlight({ data: [landedWithBags] }, asFlight.departsAt);
+      const openAnswer = matchFlight({ data: [landedNoBags] }, asFlight.departsAt);
+      expect(c.ttls[0](finalAnswer)).toBe(24 * 60 * 60 * 1000);
+      expect(c.ttls[0](openAnswer)).toBe(15 * 60 * 1000);
+      expect(c.ttls[0](null)).toBe(15 * 60 * 1000);
+    });
+
+    it('counts an answer’s age from when it was asked, not from the reload', async () => {
+      const c = client('2027-07-08T16:14Z', listed);
+      const kept = matchFlight(listed, asFlight.departsAt);
+      // Asked 14 minutes ago in an earlier visit.
+      c.keep(kept, at('2027-07-08T16:00Z'));
+      await expect(c.getFlightStatus(asFlight)).resolves.toMatchObject({
+        status: { phase: 'active' },
+        asOf: at('2027-07-08T16:00Z'),
+      });
+      c.advance(2 * 60 * 1000);
+      c.forget();
+      await c.getFlightStatus(asFlight);
+      expect(c.urls).toHaveLength(1);
+    });
+  });
+
+  describe('with AirLabs asked first and AviationStack behind it', () => {
+    const airlabsKey = (key: string) => ({ ...airlabs, key: () => key });
+    const found = { response: { ...airlabsReply, status: 'en-route' } };
+    const notFound = { error: { code: 'not_found' } };
+    const quota = { error: { code: 'limit_exceeded' } };
+
+    // Both providers over a fetch that answers each from its own reply.
+    function both(
+      replies: { airlabs: unknown; aviationstack: unknown },
+      keys = { airlabs: 'al-key', aviationstack: 'as-key' },
+    ) {
+      const urls: string[] = [];
+      const { getFlightStatus } = createFlightStatusClient({
+        fetch: async (url) => {
+          urls.push(String(url));
+          const reply = String(url).includes('airlabs.co')
+            ? replies.airlabs
+            : replies.aviationstack;
+          return new Response(JSON.stringify(reply), { status: 200 });
+        },
+        providers: [airlabsKey(keys.airlabs), { ...aviationstack, key: () => keys.aviationstack }],
+        now: () => at('2027-07-08T16:00Z'),
+        cached: async (_key, _ttl, compute) => ({
+          value: await compute(),
+          savedAt: at('2027-07-08T16:00Z'),
+        }),
+      });
+      return { getFlightStatus: () => getFlightStatus(asFlight), urls };
+    }
+
+    it('answers from AirLabs without spending an AviationStack request', async () => {
+      const c = both({ airlabs: found, aviationstack: listed });
+      await expect(c.getFlightStatus()).resolves.toMatchObject({ status: { phase: 'active' } });
+      expect(c.urls).toHaveLength(1);
+      expect(c.urls[0]).toContain('airlabs.co');
+    });
+
+    it('asks AviationStack when AirLabs doesn’t know the flight', async () => {
+      const c = both({
+        airlabs: notFound,
+        aviationstack: { data: [entry('2027-07-08', '08:55', { flight_status: 'landed' })] },
+      });
+      await expect(c.getFlightStatus()).resolves.toMatchObject({ status: { phase: 'landed' } });
+      expect(c.urls).toHaveLength(2);
+    });
+
+    it('asks AviationStack when AirLabs fails', async () => {
+      const c = both({ airlabs: quota, aviationstack: listed });
+      await expect(c.getFlightStatus()).resolves.toMatchObject({ status: { phase: 'active' } });
+    });
+
+    it('shows a failure, and keeps no answer, when the other source says it isn’t listed', async () => {
+      const c = both({
+        airlabs: { error: { code: 'unknown_api_key' } },
+        aviationstack: { data: [] },
+      });
+      await expect(c.getFlightStatus()).rejects.toThrow(
+        'AirLabs didn’t accept the key in Settings.',
+      );
+    });
+
+    it('says the flight isn’t listed when every source answers that it is not', async () => {
+      const c = both({ airlabs: notFound, aviationstack: { data: [] } });
+      await expect(c.getFlightStatus()).resolves.toMatchObject({ kind: 'notListed' });
+    });
+
+    it('reports the first failure when neither source can answer', async () => {
+      const c = both({ airlabs: quota, aviationstack: { error: { code: 'usage_limit_reached' } } });
+      await expect(c.getFlightStatus()).rejects.toThrow(
+        'This month’s AirLabs lookups are used up.',
+      );
+    });
+
+    it('skips a source with no key, without calling it', async () => {
+      const c = both(
+        { airlabs: found, aviationstack: listed },
+        { airlabs: '', aviationstack: 'as-key' },
+      );
+      await c.getFlightStatus();
+      expect(c.urls).toHaveLength(1);
+      expect(c.urls[0]).toContain('aviationstack.com');
+    });
+
+    it('asks for a key to either source when neither has one', async () => {
+      const c = both({ airlabs: found, aviationstack: listed }, { airlabs: '', aviationstack: '' });
+      await expect(c.getFlightStatus()).rejects.toThrow(
+        'Add your AirLabs or AviationStack API key in Settings.',
+      );
+      expect(c.urls).toEqual([]);
+    });
+  });
+
   it('says when the month’s lookups are used up', async () => {
     const c = client('2027-07-08T16:00Z', { error: { code: 'usage_limit_reached' } });
     await expect(c.getFlightStatus(asFlight)).rejects.toThrow(
@@ -402,9 +450,10 @@ describe('getFlightStatus', () => {
 describe('summarizeFlightStatus', () => {
   const base = entry('2027-07-08', '08:55');
   const statusOf = (overrides: Record<string, unknown>) =>
-    matchFlight({ data: [entry('2027-07-08', '08:55', overrides)] }, transit) as NonNullable<
-      ReturnType<typeof matchFlight>
-    >;
+    matchFlight(
+      { data: [entry('2027-07-08', '08:55', overrides)] },
+      transit.departsAt,
+    ) as NonNullable<ReturnType<typeof matchFlight>>;
 
   it('calls a flight on time until its delay is worth mentioning', () => {
     const { departure } = base;
@@ -457,19 +506,31 @@ describe('flightTrackerLinks', () => {
     ]);
   });
 
+  it('links FlightAware by the callsign a source reported, over the airline table', () => {
+    expect(flightTrackerLinks('AS273', 'ASA2731').map((l) => l.url)[0]).toBe(
+      'https://www.flightaware.com/live/flight/ASA2731',
+    );
+    expect(flightTrackerLinks('ZZ12', 'ZZZ12').map((l) => l.label)).toEqual([
+      'FlightAware',
+      'Flightradar24',
+    ]);
+  });
+
   it('leaves FlightAware out for an airline whose ICAO code isn’t known', () => {
     expect(flightTrackerLinks('ZZ12').map((l) => l.label)).toEqual(['Flightradar24']);
   });
 });
 
 describe('watchFlightStatus', () => {
+  const NOW = at('2027-07-08T16:00Z');
   const flight = { _id: 'transit_test', flightNumber: 'AS 273' } as Transit;
   const live: FlightLookup = {
     kind: 'status',
-    status: matchFlight({ data: [entry('2027-07-08', '08:55')] }, transit) as NonNullable<
+    status: matchFlight({ data: [entry('2027-07-08', '08:55')] }, transit.departsAt) as NonNullable<
       ReturnType<typeof matchFlight>
     >,
     final: false,
+    asOf: NOW,
   };
   const flush = () => new Promise((resolve) => setImmediate(resolve));
 
@@ -481,12 +542,14 @@ describe('watchFlightStatus', () => {
     let visible = true;
     const onVisible: (() => void)[] = [];
     let asked = 0;
+    let elapsed = 0;
     const stop = watchFlightStatus(flight, (state) => shown.push(state), {
       getFlightStatus: async () => {
         const answer = answers[Math.min(asked++, answers.length - 1)];
         if (answer instanceof Error) throw answer;
         return answer;
       },
+      now: () => NOW + elapsed,
       setTimeout: (run, ms) => timers.push({ run, ms }),
       clearTimeout: () => timers.splice(0),
       visible: () => visible,
@@ -504,6 +567,7 @@ describe('watchFlightStatus', () => {
         timers.shift()?.run();
         await flush();
       },
+      advance: (ms: number) => (elapsed += ms),
       hide: () => (visible = false),
       show: async () => {
         visible = true;
@@ -519,6 +583,29 @@ describe('watchFlightStatus', () => {
     expect(w.timers.map((t) => t.ms)).toEqual([FLIGHT_STATUS_REFRESH_MS]);
     await w.tick();
     expect(w.asked()).toBe(2);
+  });
+
+  it('asks again an interval after the answer was asked, not after it was shown', async () => {
+    const fourteenMinutes = 14 * 60 * 1000;
+    const w = watch([{ ...live, asOf: NOW - fourteenMinutes }]);
+    await flush();
+    expect(w.timers.map((t) => t.ms)).toEqual([FLIGHT_STATUS_REFRESH_MS - fourteenMinutes]);
+  });
+
+  it('waits a whole interval, not zero, on an answer already older than the interval', async () => {
+    const w = watch([{ ...live, asOf: NOW - 2 * FLIGHT_STATUS_REFRESH_MS }]);
+    await flush();
+    expect(w.timers.map((t) => t.ms)).toEqual([FLIGHT_STATUS_REFRESH_MS]);
+  });
+
+  it('keeps to the interval when a refresh fails and the last answer has aged', async () => {
+    const w = watch([{ ...live, asOf: NOW - 14 * 60 * 1000 }, new Error('offline')]);
+    await flush();
+    // The refresh comes due 2 minutes on, and fails.
+    w.advance(2 * 60 * 1000);
+    await w.tick();
+    expect(w.shown.at(-1)?.error).toBe('offline');
+    expect(w.timers.map((t) => t.ms)).toEqual([FLIGHT_STATUS_REFRESH_MS]);
   });
 
   it('stops asking once the answer is final, or there is nothing to watch for', async () => {

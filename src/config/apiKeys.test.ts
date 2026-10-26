@@ -20,11 +20,12 @@ describe('a stored API key', () => {
 });
 
 describe('saving keys from Settings', () => {
-  const none = { anthropic: '', google: '', aviationstack: '' };
+  const none = { anthropic: '', google: '', airlabs: '', aviationstack: '' };
   // Each key's store over its own storage; keys not named get working storage.
   const storesOver = (storage: Partial<Record<KeyName, Storage>> = {}) => ({
     anthropic: storedKey('aiApiKey', storage.anthropic ?? new MemoryStorage()),
     google: storedKey('googleApiKey', storage.google ?? new MemoryStorage()),
+    airlabs: storedKey('airlabsApiKey', storage.airlabs ?? new MemoryStorage()),
     aviationstack: storedKey('aviationstackApiKey', storage.aviationstack ?? new MemoryStorage()),
   });
 

@@ -50,6 +50,31 @@ describe('persisted', () => {
     expect(await persisted('k', 30_000, async () => 'fresh')).toBe('fresh');
   });
 
+  it('says when the value it serves was computed', async () => {
+    const { persistedEntry, savesSettled, advance } = cacheOver();
+    expect(await persistedEntry('k', Infinity, async () => 'v')).toEqual({
+      value: 'v',
+      savedAt: 1_000_000,
+    });
+    await savesSettled();
+    advance(60_000);
+    expect(await persistedEntry('k', Infinity, async () => 'fresh')).toEqual({
+      value: 'v',
+      savedAt: 1_000_000,
+    });
+  });
+
+  it('lets the cached value choose how long it is kept', async () => {
+    const { persistedEntry, savesSettled, advance } = cacheOver();
+    const ttl = (value: string) => (value === 'final' ? Infinity : 1000);
+    await persistedEntry('final', ttl, async () => 'final');
+    await persistedEntry('open', ttl, async () => 'open');
+    await savesSettled();
+    advance(60_000);
+    expect((await persistedEntry('final', ttl, async () => 'new')).value).toBe('final');
+    expect((await persistedEntry('open', ttl, async () => 'new')).value).toBe('new');
+  });
+
   it('repairs a database that exists without its store', async () => {
     const indexedDB = new IDBFactory();
     // Something else opened the name first, creating an empty version-1 database.
