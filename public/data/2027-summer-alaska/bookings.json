@@ -668,5 +668,11 @@
       "fixed": []
     },
     "bookedThrough": "Capital One Travel (H-N-LDUYRX)"
+  },
+  {
+    "_id": "cac7072f-cdc9-4a8c-a302-520e5a5f8642",
+    "status": "planning",
+    "pricing": null,
+    "confirmationNumber": null
   }
 ]

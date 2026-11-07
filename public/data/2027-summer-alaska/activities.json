@@ -1462,7 +1462,15 @@
         "place": {
           "id": "ChIJ8ebVISVFMlER9pLnqbLpNZM",
           "label": "The Cookie Jar",
-          "images": []
+          "images": [
+            {
+              "placePhoto": {
+                "placeId": "ChIJ8ebVISVFMlER9pLnqbLpNZM"
+              },
+              "credit": null,
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "bookingId": null
@@ -1593,17 +1601,11 @@
         },
         "includedIn": null,
         "bookingId": null
-      },
-      {
-        "_id": "act_jul2_6_opt1",
-        "diningFormat": "sit-down",
-        "place": null,
-        "includedIn": null,
-        "bookingId": null
       }
     ],
     "travelers": null,
-    "images": []
+    "images": [],
+    "date": null
   },
   {
     "_id": "act_jul3_1",
@@ -1654,7 +1656,15 @@
         "place": {
           "id": "ChIJna2oB3aEs1YRg9AANGrlbnE",
           "label": "The Potato",
-          "images": []
+          "images": [
+            {
+              "placePhoto": {
+                "placeId": "ChIJna2oB3aEs1YRg9AANGrlbnE"
+              },
+              "credit": null,
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "bookingId": null
@@ -1927,7 +1937,15 @@
         "place": {
           "id": "ChIJFY-zlXGFs1YRhZ9_0rBMPTI",
           "label": "McCarthy Lodge Resort",
-          "images": []
+          "images": [
+            {
+              "placePhoto": {
+                "placeId": "ChIJFY-zlXGFs1YRhZ9_0rBMPTI"
+              },
+              "credit": null,
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "bookingId": null
@@ -2772,7 +2790,15 @@
     "place": {
       "id": "ChIJld4P2Xecx1YR6isB_nwgqYU",
       "label": "Chinooks Restaurant",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJld4P2Xecx1YR6isB_nwgqYU"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": "lunch",
@@ -3386,7 +3412,15 @@
     "place": {
       "id": "ChIJs0Y9MR8eAVQRQxmi943PqIU",
       "label": "Icy Strait Point",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJs0Y9MR8eAVQRQxmi943PqIU"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -3408,7 +3442,15 @@
     "place": {
       "id": "ChIJl4v5-dNvAVQRy4RVQ5_1IGI",
       "label": "Icy Strait Zipline",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJl4v5-dNvAVQRy4RVQ5_1IGI"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": "booking_act_jul20_3",
     "mealType": null,
@@ -3439,7 +3481,15 @@
         "place": {
           "id": "ChIJ1U12nHVxAVQRIb4IT-DflHY",
           "label": "The Cookhouse",
-          "images": []
+          "images": [
+            {
+              "placePhoto": {
+                "placeId": "ChIJ1U12nHVxAVQRIb4IT-DflHY"
+              },
+              "credit": null,
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "bookingId": null
@@ -3591,7 +3641,15 @@
     "place": {
       "id": "ChIJVymutYkfAVQRAaE6CPxZfvI",
       "label": "Harv and Marv's Outback Alaska Whale Watching",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJVymutYkfAVQRAaE6CPxZfvI"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": "booking_act_jul21_2",
     "mealType": null,
@@ -3622,7 +3680,15 @@
         "place": {
           "id": "ChIJAc3KfHjfAFQR-OoxNY_1kR0",
           "label": "Tracy's King Crab Shack",
-          "images": []
+          "images": [
+            {
+              "placePhoto": {
+                "placeId": "ChIJAc3KfHjfAFQR-OoxNY_1kR0"
+              },
+              "credit": null,
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "bookingId": null
@@ -3654,7 +3720,15 @@
     "place": {
       "id": "ChIJRyojKjPfAFQRBhHoZxTLgb4",
       "label": "Mount Roberts Tramway",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJRyojKjPfAFQRBhHoZxTLgb4"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": "booking_act_jul21_3",
     "mealType": null,
@@ -3749,7 +3823,15 @@
     "place": {
       "id": "ChIJZZP6cCslDFQRkuufviWZqAc",
       "label": "Saxman Totem Park",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJZZP6cCslDFQRkuufviWZqAc"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -4477,7 +4559,15 @@
         "place": {
           "id": "ChIJQcnnU4G9yFYRRfrr7uDX1Rs",
           "label": "Snow City Cafe",
-          "images": []
+          "images": [
+            {
+              "placePhoto": {
+                "placeId": "ChIJQcnnU4G9yFYRRfrr7uDX1Rs"
+              },
+              "credit": null,
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "bookingId": null
@@ -4754,7 +4844,15 @@
     "place": {
       "id": "ChIJa0B1BT2UyFYR4Uq-O1L3LBw",
       "label": "Alaska Native Heritage Center",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJa0B1BT2UyFYR4Uq-O1L3LBw"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": "booking_act_jul11_1",
     "mealType": null,
@@ -4796,7 +4894,15 @@
     "place": {
       "id": "ChIJ00sQ8ny9yFYRGCr4QjH5c_E",
       "label": "Westchester Lagoon",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ00sQ8ny9yFYRGCr4QjH5c_E"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -4819,7 +4925,15 @@
     "place": {
       "id": "ChIJZ9R_CrJ2yFYRc0c7bqahWdk",
       "label": "Alaska Wildlife Conservation Center",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJZ9R_CrJ2yFYRc0c7bqahWdk"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": "booking_act_jul11_3",
     "mealType": null,
@@ -4839,7 +4953,20 @@
     "timeLabel": null,
     "priority": null,
     "text": "Breakfast at Middle Way Cafe",
-    "place": null,
+    "place": {
+      "id": "ChIJH666iNuXyFYRNH0w9oXIJQ8",
+      "label": "Middle Way Café",
+      "timeZone": "America/Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJH666iNuXyFYRNH0w9oXIJQ8"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
+    },
     "bookingId": null,
     "mealType": "breakfast",
     "diningFormat": "sit-down",
@@ -5114,7 +5241,18 @@
     "includedIn": null,
     "options": null,
     "travelers": null,
-    "images": [],
+    "images": [
+      {
+        "placePhoto": {
+          "placeId": "ChIJm08IkFHfzFYRR1motg0wk64",
+          "author": "Beth Karassik",
+          "widthPx": 3024,
+          "heightPx": 4032
+        },
+        "credit": null,
+        "caption": null
+      }
+    ],
     "date": null
   },
   {

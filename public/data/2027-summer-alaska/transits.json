@@ -921,7 +921,7 @@
     "arrivesAt": null,
     "routeId": "route_new_13",
     "routeVariant": "direct",
-    "bookingId": null,
+    "bookingId": "cac7072f-cdc9-4a8c-a302-520e5a5f8642",
     "images": [],
     "showEndpointsOnMap": true
   },

@@ -1036,18 +1036,6 @@
     "images": []
   },
   {
-    "_id": "note_act_jul2_6_opt1",
-    "kind": "footnote",
-    "text": "More casual, also at the lodge.",
-    "concerns": [
-      {
-        "entity": "mealOption",
-        "id": "act_jul2_6_opt1"
-      }
-    ],
-    "images": []
-  },
-  {
     "_id": "note_act_jul3_lunch_opt0",
     "kind": "footnote",
     "text": "A McCarthy staple that started as a food truck; the potato-head burrito is the signature order.",
@@ -1727,6 +1715,30 @@
       {
         "entity": "activity",
         "id": "act_jun30_ideal_3"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "7844f396-87d8-498f-925c-3dabc62f8661",
+    "kind": "warning",
+    "text": "Accepting reservations for the 2027 season on December 1, 2026.",
+    "concerns": [
+      {
+        "entity": "transit",
+        "id": "073e15c0-5d67-442d-b89e-0011a5cab44b"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "80075801-c64e-4f7d-93fd-0797b7572657",
+    "kind": "warning",
+    "text": "Accepting reservations for the 2027 season on December 1, 2026.",
+    "concerns": [
+      {
+        "entity": "transit",
+        "id": "eb04b638-d598-4b88-abd8-50d494d1c88a"
       }
     ],
     "images": []
