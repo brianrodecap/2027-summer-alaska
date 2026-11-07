@@ -804,11 +804,21 @@
     "durationMinutes": null,
     "timeLabel": "Morning",
     "priority": "high",
-    "text": "Gates of the Arctic Tour flight to Frigid Crags and Boreal Mountain via Holmes Pass",
+    "text": "Gates of the Continental Divide Tour",
     "place": {
       "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
       "label": "Coyote Air",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ_0I_bsnBKFERI4b1NuS8eVM"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ],
+      "timeZone": "America/Anchorage",
+      "showWeather": true
     },
     "bookingId": "booking_act_jun30_ideal_3",
     "mealType": null,
@@ -1258,13 +1268,23 @@
     "durationMinutes": 120,
     "timeLabel": null,
     "priority": "high",
-    "text": "Gates of the Arctic Tour flight",
+    "text": "Gates of the Continental Divide Tour",
     "place": {
       "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
       "label": "Coyote Air",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ_0I_bsnBKFERI4b1NuS8eVM"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ],
+      "timeZone": "America/Anchorage",
+      "showWeather": true
     },
-    "bookingId": "booking_act_jul1_alt_2",
+    "bookingId": "booking_act_jun30_ideal_3",
     "mealType": null,
     "diningFormat": null,
     "includedIn": null,
@@ -1276,7 +1296,8 @@
         "credit": "U.S. Fish and Wildlife Service, public domain",
         "caption": "Aerial view of the Brooks Range, Gates of the Arctic"
       }
-    ]
+    ],
+    "date": null
   },
   {
     "_id": "act_jul1_alt_lunch_flew",
@@ -4170,7 +4191,7 @@
     "_id": "act_jun30_ideal_2",
     "legId": "leg_parks",
     "scenarioId": null,
-    "startAt": "2027-06-30T09:00",
+    "startAt": "2027-06-30T08:00",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -4180,11 +4201,15 @@
       "label": "Coyote Air",
       "images": [
         {
-          "uri": "https://flycoyote.com/wp-content/uploads/2021/03/coyote-air-22022557-1024x569.jpg",
-          "credit": "Courtesy of Coyote Air",
-          "caption": "Coyote Air bush flying operation, Coldfoot Airport"
+          "placePhoto": {
+            "placeId": "ChIJ_0I_bsnBKFERI4b1NuS8eVM"
+          },
+          "credit": null,
+          "caption": null
         }
-      ]
+      ],
+      "timeZone": "America/Anchorage",
+      "showWeather": true
     },
     "bookingId": null,
     "mealType": null,

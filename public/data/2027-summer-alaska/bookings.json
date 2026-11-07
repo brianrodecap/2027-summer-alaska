@@ -335,15 +335,53 @@
   },
   {
     "_id": "booking_act_jun30_ideal_3",
-    "status": "planning",
-    "pricing": null,
-    "confirmationNumber": null
-  },
-  {
-    "_id": "booking_act_jul1_alt_2",
-    "status": "planning",
-    "pricing": null,
-    "confirmationNumber": null
+    "status": "booked",
+    "pricing": {
+      "perTraveler": [
+        {
+          "travelerId": "trav_brian",
+          "fare": {
+            "amount": 1030,
+            "currency": "USD"
+          },
+          "payable": {
+            "paidAt": "2026-10-31"
+          }
+        },
+        {
+          "travelerId": "trav_stacy",
+          "fare": {
+            "amount": 1030,
+            "currency": "USD"
+          },
+          "payable": {
+            "dueBy": "2027-06-30"
+          }
+        },
+        {
+          "travelerId": "trav_lorelei",
+          "fare": {
+            "amount": 1030,
+            "currency": "USD"
+          },
+          "payable": {
+            "dueBy": "2027-06-30"
+          }
+        },
+        {
+          "travelerId": "trav_redding",
+          "fare": {
+            "amount": 1030,
+            "currency": "USD"
+          },
+          "payable": {
+            "dueBy": "2027-06-30"
+          }
+        }
+      ],
+      "fixed": []
+    },
+    "confirmationNumber": "203209"
   },
   {
     "_id": "booking_act_jul4_2",

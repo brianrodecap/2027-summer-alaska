@@ -1718,5 +1718,17 @@
       }
     ],
     "images": []
+  },
+  {
+    "_id": "71df4b48-56b0-4970-bf50-cecbcd6f461a",
+    "kind": "info",
+    "text": "Only the $1,030 deposit is paid; the $3,090 balance is still owed (no due date printed). Confirm with Coyote Air ((907) 687-3993).",
+    "concerns": [
+      {
+        "entity": "activity",
+        "id": "act_jun30_ideal_3"
+      }
+    ],
+    "images": []
   }
 ]
