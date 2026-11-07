@@ -90,5 +90,17 @@
   {
     "segmentKey": "segment:transit-transit_flight_anc_otz-arrive->activity-act_jul6_2",
     "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:activity-act_jul9_breakfast->box-scenario_jul8_alt+scenario_jul8_ideal-2027-07-10",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:box-scenario_jul8_alt+scenario_jul8_ideal-2027-07-10->activity-act_jul9_lunch",
+    "mode": "WALK"
+  },
+  {
+    "segmentKey": "segment:activity-4880055f-3e62-4d2a-8f02-ef36d76ddecb->activity-act_jul8_2",
+    "mode": "WALK"
   }
 ]

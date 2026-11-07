@@ -106,7 +106,7 @@
     "_id": "stay_kotzebue",
     "legId": "leg_parks",
     "scenarioId": null,
-    "checkInAt": "2027-07-08T11:00",
+    "checkInAt": "2027-07-08T15:00",
     "checkOutAt": "2027-07-10T11:00",
     "lodging": {
       "place": {
@@ -120,15 +120,39 @@
             "credit": null,
             "caption": null
           }
-        ]
+        ],
+        "timeZone": "America/Anchorage",
+        "showElevation": false
       },
-      "roomType": null,
+      "roomType": "Standard Queen Queen Room",
       "roomNumber": null,
-      "campsite": null
+      "campsite": null,
+      "bedConfiguration": "2 Queen"
     },
     "bookingId": "booking_stay_kotzebue",
     "packages": null,
-    "images": []
+    "images": [
+      {
+        "placePhoto": {
+          "placeId": "ChIJo6lg1JGXyFYR5CruzmerxY8",
+          "author": "Ethan Shubert",
+          "widthPx": 4000,
+          "heightPx": 3000
+        },
+        "credit": null,
+        "caption": null
+      },
+      {
+        "placePhoto": {
+          "placeId": "ChIJo6lg1JGXyFYR5CruzmerxY8",
+          "author": "Marcel Marchon",
+          "widthPx": 4032,
+          "heightPx": 2268
+        },
+        "credit": null,
+        "caption": null
+      }
+    ]
   },
   {
     "_id": "stay_anchorage_2",

@@ -115,9 +115,27 @@
   },
   {
     "_id": "booking_stay_kotzebue",
-    "status": "planning",
-    "pricing": null,
-    "confirmationNumber": null
+    "status": "booked",
+    "pricing": {
+      "perTraveler": [],
+      "fixed": [
+        {
+          "label": "Room (2 nights × $329)",
+          "amount": {
+            "amount": 658,
+            "currency": "USD"
+          }
+        },
+        {
+          "label": "Tax",
+          "amount": {
+            "amount": 78.96,
+            "currency": "USD"
+          }
+        }
+      ]
+    },
+    "confirmationNumber": "160050"
   },
   {
     "_id": "booking_stay_anchorage_2",

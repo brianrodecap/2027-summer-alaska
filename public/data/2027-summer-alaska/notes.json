@@ -1742,5 +1742,41 @@
       }
     ],
     "images": []
+  },
+  {
+    "_id": "d9755368-c125-4a54-84bb-93e492abbad6",
+    "kind": "info",
+    "text": "Free cancellation until 48 hours before arrival (3:00pm Jul 6, 2027); after that, one night's room and tax is charged to the card.",
+    "concerns": [
+      {
+        "entity": "stay",
+        "id": "stay_kotzebue"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "a89b10f7-d5ea-4b71-9ede-8faa46cf5e66",
+    "kind": "info",
+    "text": "Check-in is 3:00pm. The plan drops bags at 11:00, so call 907-442-3331 to ask about early check-in or bag storage.",
+    "concerns": [
+      {
+        "entity": "stay",
+        "id": "stay_kotzebue"
+      }
+    ],
+    "images": []
+  },
+  {
+    "_id": "996813f6-e4cc-4e65-96cf-8deea1a95353",
+    "kind": "info",
+    "text": "Alcohol isn't allowed on the property, and that includes empty containers. Fines run $132.50–$1,000. It's also a no-smoking, no-vaping property.",
+    "concerns": [
+      {
+        "entity": "stay",
+        "id": "stay_kotzebue"
+      }
+    ],
+    "images": []
   }
 ]
