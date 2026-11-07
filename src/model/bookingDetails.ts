@@ -5,6 +5,7 @@
 import {
   bookedThroughName,
   bookedThroughNumber,
+  bookingCost,
   bookingFixedCharges,
   travelerPrices,
 } from './bookings';
@@ -68,8 +69,19 @@ export function priceLineLabel(
 export function bookedThroughLabel(bookedThrough: Booking['bookedThrough']): string | null {
   const name = bookedThroughName(bookedThrough);
   if (!name) return null;
-  const conf = bookedThroughNumber(bookedThrough);
+  const conf = bookedThroughNumber(bookedThrough).trim();
   return conf ? `${name} · Conf# ${conf}` : name;
+}
+
+// The chip's facts after the status: the cost, then the confirmation number.
+// A blank number (empty or spaces) is left out.
+export function bookingChipDetails(booking: Booking): string[] {
+  const bits: string[] = [];
+  const cost = formatMoney(bookingCost(booking));
+  if (cost) bits.push(cost);
+  const conf = booking.confirmationNumber?.trim();
+  if (conf) bits.push(`Conf# ${conf}`);
+  return bits;
 }
 
 // What the booking details panel lists — the payment summary, the seller, each

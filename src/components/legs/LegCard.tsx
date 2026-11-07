@@ -55,7 +55,7 @@ export function LegCard({
             {leg.name}
           </Typography>
           {booking ? (
-            <BookingChip booking={booking} />
+            <BookingChip booking={booking} detailsOnMobile />
           ) : (
             <Typography variant="body2" color="text.secondary">
               Booked piece by piece — no single reservation.

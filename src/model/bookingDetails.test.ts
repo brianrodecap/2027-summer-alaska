@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   bookedThroughLabel,
+  bookingChipDetails,
   bookingPanel,
   paymentSummaryLine,
   priceLineLabel,
@@ -194,6 +195,27 @@ describe('bookedThroughLabel', () => {
     expect(bookedThroughLabel({ name: 'Expedia', confirmationNumber: '7261' })).toBe(
       'Expedia · Conf# 7261',
     );
+  });
+});
+
+describe('bookingChipDetails', () => {
+  it('lists the cost, then the confirmation number', () => {
+    const [cost, conf] = bookingChipDetails({ ...fare, confirmationNumber: 'ABC123' });
+    expect(cost).toMatch(/\$/);
+    expect(conf).toBe('Conf# ABC123');
+  });
+
+  it('leaves out a blank confirmation number', () => {
+    for (const confirmationNumber of ['', '   ', null]) {
+      expect(bookingChipDetails({ ...fare, confirmationNumber })).toEqual(
+        bookingChipDetails({ ...fare, confirmationNumber: null }),
+      );
+      expect(bookingChipDetails({ ...fare, confirmationNumber }).join(' ')).not.toContain('Conf#');
+    }
+  });
+
+  it("leaves out a seller's blank confirmation number", () => {
+    expect(bookedThroughLabel({ name: 'Expedia', confirmationNumber: '  ' })).toBe('Expedia');
   });
 });
 

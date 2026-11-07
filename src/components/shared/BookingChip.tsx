@@ -3,8 +3,7 @@ import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import type { SxProps, Theme } from '@mui/material/styles';
 
-import { bookingCost } from '../../model/bookings';
-import { formatMoney } from '../../model/tripModel';
+import { bookingChipDetails } from '../../model/bookingDetails';
 import type { Booking, BookingStatus } from '../../model/types';
 import { BookingDetails } from './BookingDetails';
 
@@ -27,21 +26,38 @@ export function BookingStatusChip({ status }: { status: BookingStatus }) {
 }
 
 // Booking is optional on Leg/Stay/Transit/Activity — present only when an
-// actual reservation applies (see docs/data-model.html, principle 4).
-export function BookingChip({ booking }: { booking: Booking | null | undefined }) {
+// actual reservation applies (see docs/data-model.html, principle 4). On a
+// phone the chip is just the status ("Booked") unless `detailsOnMobile`; the
+// full facts are a tap away in the detail sheet.
+export function BookingChip({
+  booking,
+  detailsOnMobile = false,
+}: {
+  booking: Booking | null | undefined;
+  detailsOnMobile?: boolean;
+}) {
   if (!booking) return null;
-  const bits: string[] = [];
-  const cost = formatMoney(bookingCost(booking));
-  if (cost) bits.push(cost);
-  if (booking.confirmationNumber) bits.push(`Conf# ${booking.confirmationNumber}`);
-  const label = [statusLabel(booking.status), ...bits].join(' · ');
+  const details = bookingChipDetails(booking);
+  const label = (
+    <>
+      {statusLabel(booking.status)}
+      {details.length > 0 && (
+        <Box
+          component="span"
+          sx={{ display: { xs: detailsOnMobile ? 'inline' : 'none', sm: 'inline' } }}
+        >
+          {` · ${details.join(' · ')}`}
+        </Box>
+      )}
+    </>
+  );
   return (
     <Chip
       size="small"
       icon={<ConfirmationNumberIcon />}
       label={label}
       color={STATUS_COLOR[booking.status]}
-      sx={{ alignSelf: 'flex-start' }}
+      sx={{ alignSelf: 'flex-start', maxWidth: '100%' }}
     />
   );
 }
@@ -65,7 +81,7 @@ export function BookingSection({
   if (!booking) return null;
   return (
     <Box sx={sx}>
-      <BookingChip booking={booking} />
+      <BookingChip booking={booking} detailsOnMobile />
       {/* Keyed so a sheet reopened on another booking re-reads its default open state. */}
       <BookingDetails key={booking._id} booking={booking} date={date} entityId={entityId} />
     </Box>
