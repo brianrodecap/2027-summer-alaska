@@ -166,7 +166,9 @@ export function VariantCards({
                 )}
                 {backs && <WarningBadge title="Doubles back" />}
               </Box>
-              <Tooltip title="Solid: driving. Hatched: time at stops.">
+              <Tooltip
+                title={`Solid: ${formatMinutes(drive)} driving. Hatched: ${formatMinutes(minutes - drive)} at stops.`}
+              >
                 <Box
                   sx={{
                     height: 6,
