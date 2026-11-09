@@ -206,7 +206,7 @@ function bookingTag(data: TripData, entry: { bookingId?: string | null }): strin
 // Routes are shared reference data, not owned by a Leg, so they get their own section.
 function describeRoute(route: Route): string {
   const variants = route.variants
-    .map((v) => `${v.tone} "${v.label}" (${v.places.length} stops)`)
+    .map((v) => `${v.id}: ${v.tone} "${v.label}" (${v.places.length} stops)`)
     .join(', ');
   return `  Route ${route._id}: ${transitRouteLabel(route)} — ${variants || 'no variants'}`;
 }
@@ -330,7 +330,7 @@ const PROPOSE_EDIT_TOOL: BetaTool = {
       routeVariant: {
         type: 'string',
         description:
-          "Transits only — the tone of the route variant the drive defaults to (e.g. 'direct', 'scenic'). " +
+          'Transits only — the id of the route variant (from the Routes listing) the drive defaults to. ' +
           'Omit for the direct one.',
       },
       summary: {
@@ -1030,13 +1030,14 @@ function withRoute(transit: Transit, proposal: ProposedEdit, data: TripData): st
       ? "Couldn't find the route the AI was referring to."
       : 'The AI picked a route variant for a drive that has no route.';
   }
-  if (routeVariant && !route.variants.some((v) => v.tone === routeVariant)) {
-    return `That route has no "${routeVariant}" variant.`;
+  if (routeVariant && !route.variants.some((v) => v.id === routeVariant)) {
+    const ids = route.variants.map((v) => `"${v.id}"`).join(', ');
+    return `That route has no variant with id "${routeVariant}" (its variant ids: ${ids}).`;
   }
   // Keep the drive's current variant when it's still on the same route and nothing new
   // was asked for; otherwise null, which falls back to the direct variant.
   const keepVariant =
-    transit.routeId === route._id && route.variants.some((v) => v.tone === transit.routeVariant);
+    transit.routeId === route._id && route.variants.some((v) => v.id === transit.routeVariant);
   transit.routeVariant = routeVariant ?? (keepVariant ? transit.routeVariant : null);
   transit.routeId = route._id;
   transit.arrivesAt = null;

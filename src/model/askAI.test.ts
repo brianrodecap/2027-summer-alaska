@@ -362,8 +362,20 @@ describe('propose_edit with a route', () => {
     from: { id: 'p_anc', label: 'Anchorage' },
     to: { id: 'p_sew', label: 'Seward' },
     variants: [
-      { tone: 'direct', label: 'Seward Hwy', places: [], finalTravel: { minutes: 150 } },
-      { tone: 'scenic', label: 'With stops', places: [], finalTravel: { minutes: 150 } },
+      {
+        id: 'direct',
+        tone: 'direct',
+        label: 'Seward Hwy',
+        places: [],
+        finalTravel: { minutes: 150 },
+      },
+      {
+        id: 'scenic',
+        tone: 'scenic',
+        label: 'With stops',
+        places: [],
+        finalTravel: { minutes: 150 },
+      },
     ],
     images: [],
   };
@@ -494,6 +506,19 @@ describe('propose_edit with a route', () => {
         to: { id: 'place_whit', label: 'Whittier' },
       },
     });
+  });
+
+  it('picks a variant by its id, not its tone', () => {
+    const ided = {
+      ...data,
+      routes: [{ ...route, variants: route.variants.map((v) => ({ ...v, id: `id_${v.tone}` })) }],
+    };
+    expect(
+      resolveProposalDraft(edit({ routeId: 'route_a', routeVariant: 'id_scenic' }), ided),
+    ).toMatchObject({ draft: { routeVariant: 'id_scenic' } });
+    expect(
+      resolveProposalDraft(edit({ routeId: 'route_a', routeVariant: 'scenic' }), ided),
+    ).toHaveProperty('error', expect.stringContaining('its variant ids: "id_direct", "id_scenic"'));
   });
 
   it('rejects an unknown route or variant', () => {

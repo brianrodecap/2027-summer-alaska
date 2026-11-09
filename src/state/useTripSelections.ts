@@ -4,8 +4,8 @@ import {
   type FilterSelectionValue,
   MealOptionSelectionContext,
   type MealOptionSelectionValue,
-  RouteToneSelectionContext,
-  type RouteToneSelectionValue,
+  RouteVariantSelectionContext,
+  type RouteVariantSelectionValue,
   RowSelectionContext,
   type RowSelectionValue,
   ScenarioSelectionContext,
@@ -20,8 +20,8 @@ export function useScenarioSelection(): ScenarioSelectionValue {
   return useRequired(ScenarioSelectionContext, 'useScenarioSelection');
 }
 
-export function useRouteToneSelection(): RouteToneSelectionValue {
-  return useRequired(RouteToneSelectionContext, 'useRouteToneSelection');
+export function useRouteVariantSelection(): RouteVariantSelectionValue {
+  return useRequired(RouteVariantSelectionContext, 'useRouteVariantSelection');
 }
 
 export function useMealOptionSelection(): MealOptionSelectionValue {

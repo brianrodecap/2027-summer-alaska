@@ -4,6 +4,7 @@ import {
   activityFormFrom,
   applyActivityForm,
   applyRouteForm,
+  applyRouteSave,
   applyScenarioSave,
   applyStayForm,
   applyTransitForm,
@@ -16,11 +17,12 @@ import {
   NO_BOOKINGS,
   packagesFromForm,
   routeFormFrom,
+  routeVariantOptions,
   stayFormFrom,
   transitFormFrom,
   tripFormFrom,
 } from './editForms';
-import type { Leg, Package, Route, Scenario, Transit, Trip } from './types';
+import type { Leg, Package, Route, Scenario, Transit, Trip, TripData } from './types';
 
 // Synthetic fixture only — never the real public/data/routes.json, which is the
 // site's live, actively-edited reference data rather than a fixed test fixture.
@@ -31,6 +33,7 @@ function syntheticRoute(): Route {
     to: { id: 'place_b', label: 'Town B' },
     variants: [
       {
+        id: 'direct',
         tone: 'direct',
         label: 'Highway',
         places: [
@@ -43,6 +46,7 @@ function syntheticRoute(): Route {
         finalTravel: { minutes: 25 },
       },
       {
+        id: 'scenic',
         tone: 'scenic',
         label: 'Back road',
         places: [{ kind: 'via', place: { id: 'place_v', label: 'Pass' }, travel: { minutes: 15 } }],
@@ -83,6 +87,7 @@ describe('Route edit form apply logic', () => {
       to: { id: null, label: 'B' },
       variants: [
         {
+          id: 'direct',
           tone: 'direct',
           label: 'Direct',
           places: [
@@ -102,7 +107,9 @@ describe('Route edit form apply logic', () => {
       _id: 'x',
       from: { id: null, label: 'A' },
       to: { id: null, label: 'B' },
-      variants: [{ tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: -1 } }],
+      variants: [
+        { id: 'direct', tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: -1 } },
+      ],
       images: [],
     };
     const message = applyRouteForm(structuredClone(form), form);
@@ -114,6 +121,31 @@ describe('Route edit form apply logic', () => {
     expect(applyRouteForm(structuredClone(form), form)).toBeNull();
     form.variants[0].places[0].durationMinutes = -5;
     expect(applyRouteForm(structuredClone(form), form)).toMatch(/stop duration/);
+  });
+});
+
+describe('route variant ids in the route form', () => {
+  it('rejects a variant with no id and two variants that share one', () => {
+    const shared = syntheticRoute();
+    shared.variants[1].id = shared.variants[0].id;
+    expect(applyRouteForm(structuredClone(shared), shared)).toBe(
+      "Two variants share the id 'direct'.",
+    );
+    const missing = syntheticRoute();
+    missing.variants[1].id = '';
+    expect(applyRouteForm(structuredClone(missing), missing)).toBe('Every variant needs an id.');
+    const fine = syntheticRoute();
+    expect(applyRouteForm(structuredClone(fine), fine)).toBeNull();
+  });
+
+  it('gives each new variant its own id, and offers variants by id', () => {
+    const route = syntheticRoute();
+    const added = blankRouteVariant(route.variants);
+    expect(added.id).toBeTruthy();
+    expect(route.variants.map((v) => v.id)).not.toContain(added.id);
+    expect(blankRouteVariant(route.variants).id).not.toBe(added.id);
+    const renamed = { ...route, variants: route.variants.map((v) => ({ ...v, id: `id_${v.id}` })) };
+    expect(routeVariantOptions(renamed).map((o) => o.value)).toEqual(['id_direct', 'id_scenic']);
   });
 });
 
@@ -510,5 +542,37 @@ describe("a booking's own clock in the forms", () => {
     expect(applyStayForm(stay, form(''))).toMatch(/outside the cruise/);
     expect(applyStayForm(stay, form('America/Vancouver'))).toBeNull();
     expect(stay.clockZone).toBe('America/Vancouver');
+  });
+});
+
+describe('saving a route with a variant removed', () => {
+  const drive = (routeId: string | null, routeVariant: string | null) =>
+    ({ _id: `t_${routeId}_${routeVariant}`, routeId, routeVariant }) as unknown as Transit;
+  const data = (transits: Transit[]) =>
+    ({ routes: [syntheticRoute()], transits }) as unknown as TripData;
+
+  it('clears the pointer of a drive that followed the removed variant, and no other', () => {
+    const gone = drive('route_test', 'scenic');
+    const stays = drive('route_test', 'direct');
+    const none = drive('route_test', null);
+    const elsewhere = drive('other_route', 'scenic');
+    const route = syntheticRoute();
+    route.variants = route.variants.filter((v) => v.id !== 'scenic');
+    const saved = applyRouteSave(data([gone, stays, none, elsewhere]), route);
+    expect(saved.routes[0].variants.map((v) => v.id)).toEqual(['direct']);
+    expect(saved.transits.map((t) => t.routeVariant)).toEqual([null, 'direct', null, 'scenic']);
+    expect([saved.transits[1], saved.transits[2], saved.transits[3]]).toEqual([
+      stays,
+      none,
+      elsewhere,
+    ]);
+    expect(saved.transits[1]).toBe(stays);
+    expect(saved.transits[2]).toBe(none);
+    expect(saved.transits[3]).toBe(elsewhere);
+  });
+
+  it('leaves the transits themselves alone when nothing dangles', () => {
+    const before = data([drive('route_test', 'scenic')]);
+    expect(applyRouteSave(before, syntheticRoute()).transits).toBe(before.transits);
   });
 });

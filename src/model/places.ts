@@ -53,6 +53,8 @@ export interface PlaceSearchResult {
   label: string;
   address: string;
   timeZone: string | null;
+  // Google lists it as closed for good.
+  closed?: boolean;
 }
 
 // No "places." prefix here (unlike Text Search) — Place Details returns a
@@ -116,6 +118,7 @@ const SEARCH_FIELD_MASK = [
   'places.displayName',
   'places.formattedAddress',
   'places.timeZone',
+  'places.businessStatus',
 ].join(',');
 
 // `includedType` restricts results to one Places type (e.g. 'airport'), strictly
@@ -141,6 +144,7 @@ async function fetchSearch(query: string, includedType?: string): Promise<PlaceS
       displayName?: { text?: string };
       formattedAddress?: string;
       timeZone?: { id?: string };
+      businessStatus?: string;
     }[];
   }>('Places API', 'https://places.googleapis.com/v1/places:searchText', SEARCH_FIELD_MASK, {
     body: {
@@ -154,5 +158,6 @@ async function fetchSearch(query: string, includedType?: string): Promise<PlaceS
     label: p.displayName?.text ?? '',
     address: p.formattedAddress ?? '',
     timeZone: p.timeZone?.id ?? null,
+    ...(p.businessStatus === 'CLOSED_PERMANENTLY' ? { closed: true } : {}),
   }));
 }

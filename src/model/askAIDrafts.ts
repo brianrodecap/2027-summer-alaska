@@ -17,6 +17,7 @@ import { findEntity, ToolInputError } from './askAITools';
 import {
   applyScenarioSave,
   blankScenario,
+  newVariantId,
   nextRouteId,
   upsertById,
   withTripTravelers,
@@ -642,12 +643,13 @@ function buildVariant(spec: ProposedRouteVariant, existing?: RouteVariant): Rout
     const durationMinutes = p.durationMinutes ?? match?.durationMinutes;
     return {
       kind: p.kind,
-      place: {
+      // A new stop shows its primary photo, like one picked from a search.
+      place: withPrimaryImage({
         ...match?.place,
         id: p.placeId,
         label: p.label,
         ...(p.timeZone ? { timeZone: p.timeZone } : {}),
-      },
+      }),
       travel: match?.travel ?? { minutes: 0 },
       // A via is a pass-through, so it never carries a stop duration.
       ...(p.kind === 'waypoint' && durationMinutes !== undefined ? { durationMinutes } : {}),
@@ -655,6 +657,8 @@ function buildVariant(spec: ProposedRouteVariant, existing?: RouteVariant): Rout
     };
   });
   return {
+    // A variant the proposal revises keeps its id; a new one gets its own.
+    id: existing?.id ?? newVariantId(),
     tone: spec.tone,
     label: spec.label,
     places,
@@ -681,14 +685,20 @@ function matchingVariant(
 // revises nothing is added at the end, and every variant it doesn't mention stays.
 // The assistant never removes a variant — that's done in the route editor. `proposed`
 // is already built (matched stops keep their stored data).
-function mergeRouteVariants(existing: RouteVariant[], proposed: RouteVariant[]): RouteVariant[] {
+function mergeRouteVariants(
+  existing: RouteVariant[],
+  proposed: RouteVariant[],
+  addOnly: boolean,
+): RouteVariant[] {
+  if (addOnly) return [...existing.map((v) => structuredClone(v)), ...proposed];
   const replacements = new Map<RouteVariant, RouteVariant>();
   const added: RouteVariant[] = [];
   for (const variant of proposed) {
     const match = matchingVariant(existing, variant);
-    // Two proposals revising the same variant: the first replaces it, the second is new.
+    // Two proposals revising the same variant: the first replaces it, the second is new,
+    // and takes an id of its own rather than the one it was built with.
     if (match && !replacements.has(match)) replacements.set(match, variant);
-    else added.push(variant);
+    else added.push(match ? { ...variant, id: newVariantId() } : variant);
   }
   return [...existing.map((v) => replacements.get(v) ?? structuredClone(v)), ...added];
 }
@@ -696,7 +706,13 @@ function mergeRouteVariants(existing: RouteVariant[], proposed: RouteVariant[]):
 type ResolvedRoute = { route: Route; isNew: boolean } | { error: string };
 
 // The draft RouteEditDialog opens with — travel times not yet recomputed.
-export function resolveRouteProposal(proposal: ProposedRoute, data: TripData): ResolvedRoute {
+// `addOnly` takes every proposed variant as new, beside the route's own, instead of
+// matching it to one it revises: what a request for one more variant wants.
+export function resolveRouteProposal(
+  proposal: ProposedRoute,
+  data: TripData,
+  { addOnly = false }: { addOnly?: boolean } = {},
+): ResolvedRoute {
   const existing = proposal.routeId
     ? data.routes.find((r) => r._id === proposal.routeId)
     : undefined;
@@ -708,7 +724,7 @@ export function resolveRouteProposal(proposal: ProposedRoute, data: TripData): R
       ? { id: e.placeId, label: e.label, ...(e.timeZone ? { timeZone: e.timeZone } : {}) }
       : fallback!;
   const built = proposal.variants?.map((spec) =>
-    buildVariant(spec, existing && matchingVariant(existing.variants, spec)),
+    buildVariant(spec, existing && !addOnly ? matchingVariant(existing.variants, spec) : undefined),
   );
   const route: Route = {
     _id: existing?._id ?? nextRouteId(data.routes),
@@ -716,7 +732,7 @@ export function resolveRouteProposal(proposal: ProposedRoute, data: TripData): R
     to: endpoint(proposal.to, existing?.to),
     variants: existing
       ? built
-        ? mergeRouteVariants(existing.variants, built)
+        ? mergeRouteVariants(existing.variants, built, addOnly)
         : structuredClone(existing.variants)
       : built!,
     images: existing?.images ?? [],

@@ -31,7 +31,7 @@ import type {
 
 export interface LiveSelections {
   scenarioPicks: ScenarioPicks;
-  routeTones: ReadonlyMap<string, string>;
+  routeVariantIds: ReadonlyMap<string, string>;
   mealOptionIndex: ReadonlyMap<string, number>;
 }
 
@@ -68,7 +68,7 @@ function groupsSignature(groups: ScenarioGroup[], date: string): string {
 
 // buildTripView's Transits carry their default route variant, walked with
 // default meal formats. This swaps in the timeline's live walk — routeInfo
-// (selectedTone = the picked tab, stages timed with the meals actually
+// (selectedId = the picked tab, stages timed with the meals actually
 // picked) and arrivesAt — so every reader of a Transit (its rows, the header,
 // day.transits' overlap checks, the detail sheet) sees one live answer
 // instead of choosing between a default copy and a live lookup. A Transit
@@ -170,7 +170,7 @@ export function buildLiveDays(
     data,
     {
       activeScenarioIds: resolved.activeIds,
-      routeTones: selections.routeTones,
+      routeVariantIds: selections.routeVariantIds,
       mealOptionIndex: selections.mealOptionIndex,
     },
     clock,
@@ -191,7 +191,7 @@ export function buildLiveDays(
     const events = index.byDate.get(day.date) ?? [];
     const tones = events
       .filter((e) => e.source.kind === 'transit')
-      .map((e) => `${e.source.id}=${selections.routeTones.get(e.source.id) ?? ''}`);
+      .map((e) => `${e.source.id}=${selections.routeVariantIds.get(e.source.id) ?? ''}`);
     // Each still-open meal's chosen dining format, place and onboard flag — a
     // candidate switch can change any of them without moving an event's place.
     // Part of the signature below, so a new selected-meal field goes here.

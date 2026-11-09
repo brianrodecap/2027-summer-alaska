@@ -5,8 +5,8 @@ import {
   type FilterSelectionValue,
   MealOptionSelectionContext,
   type MealOptionSelectionValue,
-  RouteToneSelectionContext,
-  type RouteToneSelectionValue,
+  RouteVariantSelectionContext,
+  type RouteVariantSelectionValue,
   type RowSelection,
   RowSelectionContext,
   type RowSelectionValue,
@@ -46,7 +46,7 @@ function useMapSlot<K, V>(): [Map<K, V>, (key: K, value: V) => void] {
 
 export function TripSelectionsProvider({ children }: { children: ReactNode }) {
   const [scenarioPicks, setScenarioPicks] = useMapSlot<string, string>();
-  const [routeTones, setRouteTones] = useMapSlot<string, string>();
+  const [routeVariantIds, setRouteVariantIds] = useMapSlot<string, string>();
   const [mealOptionIndex, setMealOptionIndex] = useMapSlot<string, number>();
   const [activeFilterTokens, setActiveFilterTokens] = useState<Set<string>>(new Set());
   const [rowSelection, setRowSelection] = useState<RowSelection | null>(null);
@@ -56,9 +56,9 @@ export function TripSelectionsProvider({ children }: { children: ReactNode }) {
     [scenarioPicks, setScenarioPicks],
   );
 
-  const routeToneValue = useMemo<RouteToneSelectionValue>(
-    () => ({ routeTones, selectRouteTone: setRouteTones }),
-    [routeTones, setRouteTones],
+  const routeVariantValue = useMemo<RouteVariantSelectionValue>(
+    () => ({ routeVariantIds, selectRouteVariant: setRouteVariantIds }),
+    [routeVariantIds, setRouteVariantIds],
   );
 
   const mealOptionValue = useMemo<MealOptionSelectionValue>(
@@ -97,7 +97,7 @@ export function TripSelectionsProvider({ children }: { children: ReactNode }) {
 
   return (
     <ScenarioSelectionContext.Provider value={scenarioValue}>
-      <RouteToneSelectionContext.Provider value={routeToneValue}>
+      <RouteVariantSelectionContext.Provider value={routeVariantValue}>
         <MealOptionSelectionContext.Provider value={mealOptionValue}>
           <FilterSelectionContext.Provider value={filterValue}>
             <RowSelectionContext.Provider value={rowSelectionValue}>
@@ -105,7 +105,7 @@ export function TripSelectionsProvider({ children }: { children: ReactNode }) {
             </RowSelectionContext.Provider>
           </FilterSelectionContext.Provider>
         </MealOptionSelectionContext.Provider>
-      </RouteToneSelectionContext.Provider>
+      </RouteVariantSelectionContext.Provider>
     </ScenarioSelectionContext.Provider>
   );
 }

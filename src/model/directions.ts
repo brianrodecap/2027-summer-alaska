@@ -10,7 +10,7 @@
 import { memoizeAsync } from './asyncCache';
 import { googleApiFetch } from './googleApiFetch';
 import { persisted } from './idbCache';
-import type { Place, Route, RouteVariant, TravelMode } from './types';
+import type { Route, RouteVariant, TravelMode } from './types';
 
 const METERS_PER_MILE = 1609.344;
 
@@ -168,29 +168,40 @@ export async function recomputeVariant(
   };
 }
 
-// A variant with the stage at `index` set to `place`, its travel recomputed from there on.
-export function replaceRouteStagePlace(
-  variant: RouteVariant,
-  index: number,
-  place: Place,
-  fromId: string | null,
-  toId: string | null,
-  lookup: DriveLookup = lookupDriveInfo,
-): Promise<RouteVariant> {
-  const places = variant.places.map((p, i) => (i === index ? { ...p, place } : p));
-  return recomputeVariant({ ...variant, places }, fromId, toId, index, lookup);
+// Recomputed travel laid onto the route as it stands now. The lookups take a
+// while, and edits made meanwhile (a rename, a note) must survive, so only the
+// travel numbers are taken, and only for a variant whose places, and a route
+// whose ends, are still the ones those numbers were worked out for.
+export function applyTravel(latest: Route, computed: Route): Route {
+  if (latest.from.id !== computed.from.id || latest.to.id !== computed.to.id) return latest;
+  const ids = (v: RouteVariant) => JSON.stringify(v.places.map((p) => p.place?.id ?? null));
+  return {
+    ...latest,
+    variants: latest.variants.map((v) => {
+      const c = computed.variants.find((o) => o.id === v.id);
+      if (!c || ids(c) !== ids(v)) return v;
+      return {
+        ...v,
+        places: v.places.map((p, k) => ({ ...p, travel: c.places[k].travel })),
+        finalTravel: c.finalTravel,
+      };
+    }),
+  };
 }
 
-// A variant without the stage at `index`, its travel recomputed from there on.
-export function removeRouteStage(
+// A variant with its places in `order` (each entry the index of the place that
+// goes there), its travel recomputed from the first position that changed.
+export function reorderRouteStages(
   variant: RouteVariant,
-  index: number,
+  order: number[],
   fromId: string | null,
   toId: string | null,
   lookup: DriveLookup = lookupDriveInfo,
 ): Promise<RouteVariant> {
-  const places = variant.places.filter((_, i) => i !== index);
-  return recomputeVariant({ ...variant, places }, fromId, toId, index, lookup);
+  const first = order.findIndex((from, to) => from !== to);
+  if (first === -1) return Promise.resolve(variant);
+  const places = order.map((i) => variant.places[i]);
+  return recomputeVariant({ ...variant, places }, fromId, toId, first, lookup);
 }
 
 // Every variant recomputed from scratch — after a Route's From/To changes, or for a

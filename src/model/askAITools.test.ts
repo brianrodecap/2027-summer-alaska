@@ -127,6 +127,50 @@ describe('search_places', () => {
   });
 });
 
+describe('search_places and a place that has closed for good', () => {
+  const stub = (results: object[]) => async () =>
+    results as Awaited<ReturnType<typeof ctx.searchPlaces>>;
+  const place = (id: string, label: string, closed?: boolean) => ({
+    id,
+    label,
+    address: 'Here',
+    timeZone: null,
+    ...(closed ? { closed } : {}),
+  });
+
+  it('tells the assistant it is closed, and records only the places still open', async () => {
+    const searches = noPlaceSearches();
+    const text = await runReadTool(
+      'search_places',
+      { query: 'Roadhouse' },
+      {
+        ...ctx,
+        placeSearches: searches,
+        searchPlaces: stub([
+          place('p_gone', 'Gone Roadhouse', true),
+          place('p_open', 'Open Lodge'),
+        ]),
+      },
+    );
+    expect(text).toContain("Gone Roadhouse — Here (permanently closed, so don't propose it)");
+    expect(text).toContain('Open Lodge — Here (placeId p_open)');
+    expect(text).not.toContain('placeId p_gone');
+    expect(searches.placeIds).toEqual(new Set(['p_open']));
+    expect(searches.emptyQueries.size).toBe(0);
+  });
+
+  it('counts a search whose every result is closed as finding nothing to propose', async () => {
+    const searches = noPlaceSearches();
+    await runReadTool(
+      'search_places',
+      { query: 'Roadhouse' },
+      { ...ctx, placeSearches: searches, searchPlaces: stub([place('p_gone', 'Gone', true)]) },
+    );
+    expect(searches.placeIds.size).toBe(0);
+    expect(searches.emptyQueries).toEqual(new Set(['Roadhouse']));
+  });
+});
+
 describe('runReadTool', () => {
   it('reports the trip span for a date outside it', async () => {
     await expect(runReadTool('get_day', { date: '2027-08-01' }, ctx)).rejects.toThrow(

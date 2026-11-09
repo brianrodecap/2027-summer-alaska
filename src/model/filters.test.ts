@@ -71,7 +71,7 @@ describe('filters', () => {
   const view = buildTripView(data, TEST_TODAY);
   const { days } = buildLiveDays(view, data, {
     scenarioPicks: new Map(),
-    routeTones: new Map(),
+    routeVariantIds: new Map(),
     mealOptionIndex: new Map(),
   });
 
@@ -123,7 +123,7 @@ describe('filters', () => {
     const tripView = buildTripView(trip, TEST_TODAY);
     const live = buildLiveDays(tripView, trip, {
       scenarioPicks: new Map(),
-      routeTones: new Map(),
+      routeVariantIds: new Map(),
       mealOptionIndex: new Map(),
     }).days.find((d) => d.date === '2027-06-01')!;
     const entities = { activities: tripView.activitiesById, transits: tripView.transitsById };
@@ -154,7 +154,7 @@ describe('filters', () => {
     const lunchFlagged = (index: number) => {
       const day = buildLiveDays(tripView, trip, {
         scenarioPicks: new Map(),
-        routeTones: new Map(),
+        routeVariantIds: new Map(),
         mealOptionIndex: new Map([['lunch', index]]),
       }).days.find((d) => d.date === '2027-06-01')!;
       return filterRows(day.rows, day, new Set(['attr:attention'])).some(
@@ -224,7 +224,7 @@ describe('filters match what a row shows of a shared booking', () => {
   const view = buildTripView(data, TEST_TODAY);
   const { days } = buildLiveDays(view, data, {
     scenarioPicks: new Map(),
-    routeTones: new Map(),
+    routeVariantIds: new Map(),
     mealOptionIndex: new Map(),
   });
   const day = days.find((d) => d.date === '2027-06-01')!;

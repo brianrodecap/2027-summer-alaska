@@ -58,11 +58,15 @@ declare module '@mui/material/styles' {
     // the color *depicts* (sunrise gold, road brown), so each mode can tune its
     // own value where the other's would be illegible on its ground.
     conditions: ConditionsPalette;
+    // The route planner's variant line colors: direct, then the scenic ones in
+    // turn. Brighter than primary so side-by-side lines stay apart on a map.
+    routeVariants: [string, string, string];
   }
   interface PaletteOptions {
     tertiary?: PaletteColorOptions & { container?: string; onContainer?: string };
     gold?: PaletteColorOptions;
     conditions?: ConditionsPalette;
+    routeVariants?: [string, string, string];
     surfaceContainer?: {
       lowest: string;
       low: string;
@@ -109,6 +113,7 @@ const DARK_PALETTE: PaletteOptions = {
     alertExtreme: '#c62828',
     alertSevere: '#e64a19',
   },
+  routeVariants: ['#4da3ff', '#ffc94d', '#2dd4bf'],
   background: {
     default: '#1a140c',
     paper: '#221a10',
@@ -169,6 +174,7 @@ const LIGHT_PALETTE: PaletteOptions = {
     alertExtreme: '#b71c1c',
     alertSevere: '#c43e12',
   },
+  routeVariants: ['#1565c0', '#b77900', '#00796b'],
   background: {
     default: '#f6efe0',
     paper: '#fffaf0',

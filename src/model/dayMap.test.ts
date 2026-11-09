@@ -105,12 +105,12 @@ const scenario = (id: string, tone: 'ideal' | 'alternate', extra: Partial<Scenar
 function live(
   data: TripData,
   date: string,
-  options: { picks?: Map<string, string>; routeTones?: Map<string, string> } = {},
+  options: { picks?: Map<string, string>; routeVariantIds?: Map<string, string> } = {},
 ) {
   const view = buildTripView(data, TEST_TODAY);
   const { days } = buildLiveDays(view, data, {
     scenarioPicks: options.picks ?? new Map(),
-    routeTones: options.routeTones ?? new Map(),
+    routeVariantIds: options.routeVariantIds ?? new Map(),
     mealOptionIndex: new Map(),
   });
   const visits = days.find((d) => d.date === date)!.visits!;
@@ -334,6 +334,7 @@ describe('a Transit that crosses midnight', () => {
       to: place('p_Dest', 'Dest'),
       variants: [
         {
+          id: 'direct',
           tone: 'direct',
           label: 'Direct',
           places:
@@ -393,8 +394,20 @@ describe('route variants that arrive on different days', () => {
       from: place('p_From', 'From'),
       to: place('p_To', 'To'),
       variants: [
-        { tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 100 } },
-        { tone: 'scenic', label: 'Scenic', places: [], finalTravel: { minutes: 240 } },
+        {
+          id: 'direct',
+          tone: 'direct',
+          label: 'Direct',
+          places: [],
+          finalTravel: { minutes: 100 },
+        },
+        {
+          id: 'scenic',
+          tone: 'scenic',
+          label: 'Scenic',
+          places: [],
+          finalTravel: { minutes: 240 },
+        },
       ],
       images: [],
     });
@@ -411,10 +424,10 @@ describe('route variants that arrive on different days', () => {
 
   it("widens the arrival day's map to the full trip only for the variant that spans midnight", () => {
     const data = twoVariants();
-    const scenic = live(data, '2027-06-03', { routeTones: new Map([['t1', 'scenic']]) });
+    const scenic = live(data, '2027-06-03', { routeVariantIds: new Map([['t1', 'scenic']]) });
     expect(scenic.stops.flat()).toEqual(['From', 'To']);
     // Direct never reaches Jun 3, so nothing on that day belongs to it.
-    const direct = live(data, '2027-06-03', { routeTones: new Map([['t1', 'direct']]) });
+    const direct = live(data, '2027-06-03', { routeVariantIds: new Map([['t1', 'direct']]) });
     expect(direct.stops.flat()).toEqual([]);
   });
 });
@@ -434,6 +447,7 @@ describe("a routed drive's own endpoints", () => {
       to: place('p_Fairbanks', 'Fairbanks'),
       variants: [
         {
+          id: 'direct',
           tone: 'direct',
           label: 'Direct',
           places: [{ kind: 'waypoint', place: place('p_View', 'View'), travel: { minutes: 120 } }],
@@ -747,6 +761,7 @@ describe('hops a flight carries', () => {
       to: place('p_Anchorage', 'Anchorage'),
       variants: [
         {
+          id: 'direct',
           tone: 'direct',
           label: 'Direct',
           places: [

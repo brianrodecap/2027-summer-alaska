@@ -8,7 +8,16 @@
     "lodging": {
       "place": {
         "id": "ChIJKXBYEtzAKFERMTb-h_NwAtE",
-        "label": "Slate Creek Inn (Coldfoot Camp)"
+        "label": "Slate Creek Inn (Coldfoot Camp)",
+        "images": [
+          {
+            "placePhoto": {
+              "placeId": "ChIJKXBYEtzAKFERMTb-h_NwAtE"
+            },
+            "credit": null,
+            "caption": null
+          }
+        ]
       },
       "roomType": null,
       "roomNumber": null,
@@ -33,7 +42,16 @@
     "lodging": {
       "place": {
         "id": "ChIJ_aR34k5FMlERqYeOQVWen5I",
-        "label": "Westmark Fairbanks"
+        "label": "Westmark Fairbanks",
+        "images": [
+          {
+            "placePhoto": {
+              "placeId": "ChIJ_aR34k5FMlERqYeOQVWen5I"
+            },
+            "credit": null,
+            "caption": null
+          }
+        ]
       },
       "roomType": null,
       "roomNumber": null,
@@ -58,7 +76,16 @@
     "lodging": {
       "place": {
         "id": "ChIJmb_m9FyFtVYRza-EUEqwdfU",
-        "label": "Copper River Princess Wilderness Lodge"
+        "label": "Copper River Princess Wilderness Lodge",
+        "images": [
+          {
+            "placePhoto": {
+              "placeId": "ChIJmb_m9FyFtVYRza-EUEqwdfU"
+            },
+            "credit": null,
+            "caption": null
+          }
+        ]
       },
       "roomType": null,
       "roomNumber": null,

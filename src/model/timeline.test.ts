@@ -82,7 +82,7 @@ function stay(extra: Partial<Stay> = {}): Stay {
 
 const none: TimelineSelections = {
   activeScenarioIds: new Set(),
-  routeTones: new Map(),
+  routeVariantIds: new Map(),
   mealOptionIndex: new Map(),
 };
 const ids = (events: { id: string }[]) => events.map((e) => e.id);
@@ -230,8 +230,15 @@ describe('buildTimeline — route variants', () => {
       from: { id: 'p_from', label: 'From' },
       to: { id: 'p_to', label: 'To' },
       variants: [
-        { tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 100 } },
         {
+          id: 'direct',
+          tone: 'direct',
+          label: 'Direct',
+          places: [],
+          finalTravel: { minutes: 100 },
+        },
+        {
+          id: 'scenic',
           tone: 'scenic',
           label: 'Scenic',
           places: [
@@ -245,7 +252,10 @@ describe('buildTimeline — route variants', () => {
     data.transits.push(transit({ departsAt: '2027-06-02T22:00', arrivesAt: null, routeId: 'r1' }));
     return data;
   }
-  const tone = (t: string): TimelineSelections => ({ ...none, routeTones: new Map([['t1', t]]) });
+  const tone = (t: string): TimelineSelections => ({
+    ...none,
+    routeVariantIds: new Map([['t1', t]]),
+  });
 
   // routed() with each place on a clock: Page is UTC-7, Denver UTC-6 in June.
   const zonedRoute = (from: string, to: string) => {
@@ -375,7 +385,15 @@ describe('buildTimeline — Activities around a routed drive', () => {
       _id: 'r1',
       from: { id: 'p_from', label: 'From' },
       to: { id: 'p_to', label: 'To' },
-      variants: [{ tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 120 } }],
+      variants: [
+        {
+          id: 'direct',
+          tone: 'direct',
+          label: 'Direct',
+          places: [],
+          finalTravel: { minutes: 120 },
+        },
+      ],
       images: [],
     });
     data.transits.push(transit({ arrivesAt: null, routeId: 'r1' }));

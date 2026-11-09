@@ -316,6 +316,9 @@ export interface RoutePlaceEntry {
 }
 
 export interface RouteVariant {
+  // Names this variant within its route, for good: a Transit's routeVariant points at it,
+  // so it never changes when the variant is relabeled, retoned or moved.
+  id: string;
   tone: string; // e.g. 'scenic' | 'direct' — a route choice, not a go/no-go branch
   label: string;
   places: RoutePlaceEntry[];
@@ -556,6 +559,7 @@ export interface RouteStage {
 }
 
 export interface ResolvedRouteVariant {
+  id: string;
   tone: string;
   label: string;
   stages: RouteStage[];
@@ -565,7 +569,7 @@ export interface ResolvedRouteVariant {
 
 export interface ResolvedRouteInfo {
   variants: ResolvedRouteVariant[];
-  selectedTone: string;
+  selectedId: string;
   resolvedArrivesAt: string;
   resolvedArrivesZone: string | null;
 }

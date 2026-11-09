@@ -1,16 +1,31 @@
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
 import FormControlLabel from '@mui/material/FormControlLabel';
 import MenuItem from '@mui/material/MenuItem';
+import Stack from '@mui/material/Stack';
+import { useTheme } from '@mui/material/styles';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
+import Tooltip from '@mui/material/Tooltip';
+import Typography from '@mui/material/Typography';
+import { useState } from 'react';
 
 import {
   routeSelectOptions,
   routeVariantOptions,
   type TransitFormState,
 } from '../../model/editForms';
-import { DEFAULT_ROUTE_TONE } from '../../model/tripModel';
+import { formatMinutes } from '../../model/formatting';
+import { variantColorIndex, variantSummary } from '../../model/routePlanner';
+import { isReverseDrive } from '../../model/routeReverse';
+import { directVariantId, pickVariant } from '../../model/tripModel';
 import type { Route } from '../../model/types';
+import { useTripEdits } from '../daysview/useTripEdits';
 import { LabelWithTip } from '../shared/LabelWithTip';
+import { materialIcon } from '../shared/materialIcon';
+import { RoutesDialog } from './RoutesDialog';
+
+const NearMeIcon = materialIcon('near_me');
 
 // The route picker, its variant picker, and the routed drive's own
 // show-endpoints-on-maps opt-in (see tripModel.ts's transitPhaseOnMap) —
@@ -25,16 +40,30 @@ export function TransitRouteFields({
   onChange: (form: TransitFormState) => void;
   routes: Route[];
 }) {
+  const { saveRoute, deleteRoute } = useTripEdits();
+  const [plannerOpen, setPlannerOpen] = useState(false);
   const selectedRoute = routes.find((r) => r._id === form.routeId) ?? null;
+  const { palette } = useTheme();
+  // A chosen route can always be opened; without one, the drive's two places must be known.
+  const canPlan = !!selectedRoute || (!!form.from.id && !!form.to.id);
+  // The places the planner works from: the drive's own, else the route's.
+  const driveFrom = form.from.id || !selectedRoute ? form.from : selectedRoute.from;
+  const driveTo = form.to.id || !selectedRoute ? form.to : selectedRoute.to;
+  // The variant the drive follows: the one named, else the route's direct one.
+  const chosen = (selectedRoute && pickVariant(selectedRoute.variants, form.routeVariant)) ?? null;
   return (
     <>
       <TextField
         select
         label="Route"
         value={form.routeId ?? ''}
+        helperText={
+          selectedRoute && isReverseDrive(selectedRoute, form) ? 'Driven in reverse' : undefined
+        }
         onChange={(e) => {
           const routeId = e.target.value || null;
-          onChange({ ...form, routeId, routeVariant: routeId ? DEFAULT_ROUTE_TONE : null });
+          const route = routes.find((r) => r._id === routeId);
+          onChange({ ...form, routeId, routeVariant: directVariantId(route) });
         }}
       >
         {routeSelectOptions(routes).map((o) => (
@@ -43,12 +72,78 @@ export function TransitRouteFields({
           </MenuItem>
         ))}
       </TextField>
+      <Stack
+        direction="row"
+        spacing={1.5}
+        sx={{
+          alignItems: 'center',
+          border: 1,
+          borderColor: 'divider',
+          borderRadius: 1,
+          px: 1.5,
+          py: 0.75,
+        }}
+      >
+        {chosen ? (
+          <>
+            <Box
+              sx={{
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
+                flexShrink: 0,
+                bgcolor:
+                  palette.routeVariants[
+                    variantColorIndex(
+                      selectedRoute!.variants,
+                      selectedRoute!.variants.indexOf(chosen),
+                    )
+                  ],
+              }}
+            />
+            <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0 }}>
+              {chosen.label} · {formatMinutes(variantSummary(chosen).minutes)}
+            </Typography>
+          </>
+        ) : (
+          <Typography variant="body2" color="text.secondary" sx={{ flex: 1 }}>
+            No route chosen
+          </Typography>
+        )}
+        <Tooltip title={canPlan ? '' : 'Choose the From and To places first, or pick a route.'}>
+          <span>
+            <Button
+              size="small"
+              disabled={!canPlan}
+              startIcon={<NearMeIcon />}
+              onClick={() => setPlannerOpen(true)}
+            >
+              {selectedRoute ? 'Open planner' : 'Plan route'}
+            </Button>
+          </span>
+        </Tooltip>
+      </Stack>
+      <RoutesDialog
+        routes={routes}
+        open={plannerOpen}
+        onClose={() => setPlannerOpen(false)}
+        onSave={saveRoute}
+        onDelete={deleteRoute}
+        drive={{
+          from: driveFrom,
+          to: driveTo,
+          routeId: form.routeId,
+          variantId: form.routeVariant,
+          onUse: (route, variantId) =>
+            onChange({ ...form, routeId: route._id, routeVariant: variantId }),
+        }}
+      />
       {selectedRoute && (
         <>
           <TextField
             select
             label="Route variant"
-            value={form.routeVariant ?? ''}
+            value={chosen?.id ?? ''}
             onChange={(e) => onChange({ ...form, routeVariant: e.target.value || null })}
           >
             {routeVariantOptions(selectedRoute).map((o) => (

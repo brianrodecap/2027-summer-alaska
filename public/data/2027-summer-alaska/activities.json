@@ -127,7 +127,16 @@
     "text": null,
     "place": {
       "id": "ChIJ-9r9Su3GzlYRd2bK5bTAhq0",
-      "label": "Alaska Birch Syrup & Wild Harvest: Shop"
+      "label": "Alaska Birch Syrup & Wild Harvest: Shop",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ-9r9Su3GzlYRd2bK5bTAhq0"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -345,7 +354,15 @@
     "place": {
       "id": "ChIJl5APv_m5zlYRInGU8O6jjLM",
       "label": "AK Sled Dog Tours",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJl5APv_m5zlYRInGU8O6jjLM"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -377,7 +394,15 @@
     "place": {
       "id": "ChIJRcDJfvyVzlYRIOTHFeZRV_Q",
       "label": "Talkeetna River Walk",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJRcDJfvyVzlYRIOTHFeZRV_Q"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -409,7 +434,15 @@
     "place": {
       "id": "ChIJjYhX8Ta-zlYRzKKo9L1hVRM",
       "label": "Talkeetna Lakes Trailhead",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJjYhX8Ta-zlYRzKKo9L1hVRM"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -492,7 +525,16 @@
     "text": null,
     "place": {
       "id": "ChIJoQxNrpKVzlYRE3yIXLzxvcs",
-      "label": "Talkeetna Spinach Bread"
+      "label": "Talkeetna Spinach Bread",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJoQxNrpKVzlYRE3yIXLzxvcs"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": "snack",
@@ -515,7 +557,7 @@
     "_id": "act_jun28_breakfast",
     "legId": "leg_parks",
     "scenarioId": "scenario_jun27_alt",
-    "startAt": "2027-06-28T06:00",
+    "startAt": "2027-06-28T05:30",
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
@@ -550,7 +592,8 @@
               "credit": null,
               "caption": null
             }
-          ]
+          ],
+          "timeZone": "America/Anchorage"
         },
         "includedIn": null,
         "bookingId": null
@@ -779,7 +822,15 @@
     "place": {
       "id": "ChIJmYs44d3AKFERJq-Pgp3qfhY",
       "label": "Arctic Interagency Visitor Center",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJmYs44d3AKFERJq-Pgp3qfhY"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -876,7 +927,15 @@
     "place": {
       "id": "ChIJmYs44d3AKFERJq-Pgp3qfhY",
       "label": "Arctic Interagency Visitor Center",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJmYs44d3AKFERJq-Pgp3qfhY"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": "lunch",
@@ -926,7 +985,15 @@
     "place": {
       "id": "ChIJmYs44d3AKFERJq-Pgp3qfhY",
       "label": "Arctic Interagency Visitor Center",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJmYs44d3AKFERJq-Pgp3qfhY"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -955,7 +1022,15 @@
     "place": {
       "id": "ChIJrUTVpIu9KFER9GaZSNV8EQI",
       "label": "Wiseman, Alaska",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJrUTVpIu9KFER9GaZSNV8EQI"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -983,7 +1058,15 @@
     "place": {
       "id": "ChIJzcj7G0CgKFERgydRvLmUvgg",
       "label": "Sukakpak Mountain",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJzcj7G0CgKFERgydRvLmUvgg"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -1091,7 +1174,15 @@
     "place": {
       "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
       "label": "Coyote Air",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ_0I_bsnBKFERI4b1NuS8eVM"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -1222,7 +1313,15 @@
     "place": {
       "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
       "label": "Coldfoot Camp Cafe",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJifpoSNzAKFERJLZv8umH-cw"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": "breakfast",
@@ -1347,7 +1446,15 @@
     "place": {
       "id": "ChIJ_aR34k5FMlERqYeOQVWen5I",
       "label": "Westmark Fairbanks Hotel & Conference Center",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ_aR34k5FMlERqYeOQVWen5I"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -1403,7 +1510,15 @@
     "place": {
       "id": "ChIJ_aR34k5FMlERqYeOQVWen5I",
       "label": "Westmark Fairbanks Hotel & Conference Center",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ_aR34k5FMlERqYeOQVWen5I"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -1693,7 +1808,15 @@
     "place": {
       "id": "ChIJR97PyS2Cs1YRyQEw4Y-6jOY",
       "label": "Kennecott Mines National Historic Landmark",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJR97PyS2Cs1YRyQEw4Y-6jOY"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -2058,7 +2181,15 @@
     "place": {
       "id": "ChIJo6lg1JGXyFYR5CruzmerxY8",
       "label": "Nullaġvik Hotel",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJo6lg1JGXyFYR5CruzmerxY8"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -2232,7 +2363,15 @@
     "place": {
       "id": "ChIJHxwWQVIXzVARXZHgjj-LZwU",
       "label": "Bison Store & Restaurant",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJHxwWQVIXzVARXZHgjj-LZwU"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": "dinner",
@@ -2260,7 +2399,15 @@
     "place": {
       "id": "ChIJo6lg1JGXyFYR5CruzmerxY8",
       "label": "Nullaġvik Hotel",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJo6lg1JGXyFYR5CruzmerxY8"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": "breakfast",
@@ -2482,7 +2629,15 @@
     "place": {
       "id": "ChIJg65tX1cXzVAR9z2Gr7xJSN4",
       "label": "Northwest Arctic Heritage Center",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJg65tX1cXzVAR9z2Gr7xJSN4"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -2542,7 +2697,15 @@
     "place": {
       "id": "ChIJg65tX1cXzVAR9z2Gr7xJSN4",
       "label": "Northwest Arctic Heritage Center",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJg65tX1cXzVAR9z2Gr7xJSN4"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -2762,7 +2925,15 @@
     "place": {
       "id": "ChIJe9tDyguix1YRXW7BK2pUkS0",
       "label": "Kenai Fjords National Park Exit Glacier Nature Center",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJe9tDyguix1YRXW7BK2pUkS0"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -3135,7 +3306,15 @@
     "place": {
       "id": "ChIJg_jo6m9VrFYRPcarxgmpnks",
       "label": "Hubbard Glacier",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJg_jo6m9VrFYRPcarxgmpnks"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -3258,7 +3437,15 @@
     "place": {
       "id": "ChIJpwhC0wkNqlYRYD228-ekk-I",
       "label": "Glacier Bay National Park and Preserve",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJpwhC0wkNqlYRYD228-ekk-I"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -3384,7 +3571,15 @@
     "place": {
       "id": "ChIJWfzzDQBxAVQR4FXR2r1AMDE",
       "label": "Icy Strait Point",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJWfzzDQBxAVQR4FXR2r1AMDE"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": "booking_act_jul20_1",
     "mealType": null,
@@ -3500,7 +3695,15 @@
         "place": {
           "id": "ChIJtwYD87xxAVQRb7yqV9Vw3zE",
           "label": "Duck Point Smokehouse",
-          "images": []
+          "images": [
+            {
+              "placePhoto": {
+                "placeId": "ChIJtwYD87xxAVQRb7yqV9Vw3zE"
+              },
+              "credit": null,
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "bookingId": null
@@ -3608,7 +3811,15 @@
     "place": {
       "id": "ChIJQR9sz4fhAFQRzEZzbh9t7xI",
       "label": "Mendenhall Glacier Visitor Center",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJQR9sz4fhAFQRzEZzbh9t7xI"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": "booking_act_jul21_1",
     "mealType": null,
@@ -3699,7 +3910,15 @@
         "place": {
           "id": "ChIJS0pWh4LfAFQRgXq8CZxSCHU",
           "label": "Deckhand Dave's Fish Tacos",
-          "images": []
+          "images": [
+            {
+              "placePhoto": {
+                "placeId": "ChIJS0pWh4LfAFQRgXq8CZxSCHU"
+              },
+              "credit": null,
+              "caption": null
+            }
+          ]
         },
         "includedIn": null,
         "bookingId": null
@@ -3911,7 +4130,15 @@
     "place": {
       "id": "ChIJx5WfGqglDFQRKYbEUxtB_40",
       "label": "Family Air Tours & Hook Up Fly Shop",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJx5WfGqglDFQRKYbEUxtB_40"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": "booking_act_jul22_2",
     "mealType": null,
@@ -4193,7 +4420,15 @@
     "place": {
       "id": "ChIJA-6x0YJxhlQRGOI1wy_va1g",
       "label": "Canada Place Cruise Ship Terminal",
-      "images": []
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJA-6x0YJxhlQRGOI1wy_va1g"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -4598,7 +4833,16 @@
     "text": "Bonus day in Kotzebue",
     "place": {
       "id": "ChIJNbpwJOYWzVARtRutEpMtQE4",
-      "label": "Kotzebue"
+      "label": "Kotzebue",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJNbpwJOYWzVARtRutEpMtQE4"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -4987,8 +5231,18 @@
     "priority": null,
     "text": "Drive to Homer (~4.5 hrs via Seward Highway/Sterling Highway)",
     "place": {
-      "id": null,
-      "label": "Homer, Alaska"
+      "id": "ChIJz1qGp-4twVYRu3Pnce2ULh8",
+      "label": "Homer, Alaska",
+      "timeZone": "America/Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJz1qGp-4twVYRu3Pnce2ULh8"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -5009,8 +5263,18 @@
     "priority": "high",
     "text": "Explore the Homer Spit — shops, beach, boardwalk",
     "place": {
-      "id": null,
-      "label": "Homer Spit"
+      "id": "ChIJa0dFWDYswVYRmDWslCfG1O4",
+      "label": "Homer Spit",
+      "timeZone": "America/Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJa0dFWDYswVYRmDWslCfG1O4"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -5031,8 +5295,18 @@
     "priority": null,
     "text": "Lunch in Homer — choosing where",
     "place": {
-      "id": null,
-      "label": "Homer, Alaska"
+      "id": "ChIJz1qGp-4twVYRu3Pnce2ULh8",
+      "label": "Homer, Alaska",
+      "timeZone": "America/Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJz1qGp-4twVYRu3Pnce2ULh8"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -5084,8 +5358,18 @@
     "priority": null,
     "text": "Begin drive back to Anchorage (~4.5 hrs)",
     "place": {
-      "id": null,
-      "label": "Homer, Alaska"
+      "id": "ChIJz1qGp-4twVYRu3Pnce2ULh8",
+      "label": "Homer, Alaska",
+      "timeZone": "America/Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJz1qGp-4twVYRu3Pnce2ULh8"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -5106,8 +5390,18 @@
     "priority": null,
     "text": "Late dinner in Anchorage — choosing where",
     "place": {
-      "id": null,
-      "label": "Anchorage"
+      "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
+      "label": "Anchorage",
+      "timeZone": "America/Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJQT-zBHaRyFYR42iEp1q6fSU"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "bookingId": null,
     "mealType": null,
@@ -5938,6 +6232,38 @@
     "bookingId": null,
     "mealType": "lunch",
     "diningFormat": "self-catered",
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": []
+  },
+  {
+    "_id": "f6e1f940-cbf9-4519-aaab-8a9d58e7acce",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "startAt": null,
+    "durationMinutes": null,
+    "timeLabel": "Evening",
+    "date": "2027-07-16",
+    "priority": null,
+    "text": null,
+    "place": {
+      "id": "ChIJAaBdSrp0yFYR8MKE-44BQIw",
+      "label": "Byron Glacier Trailhead",
+      "timeZone": "America/Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJAaBdSrp0yFYR8MKE-44BQIw"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
+    },
+    "bookingId": null,
+    "mealType": null,
+    "diningFormat": null,
     "includedIn": null,
     "options": null,
     "travelers": null,

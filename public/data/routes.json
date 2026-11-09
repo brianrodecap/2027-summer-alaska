@@ -3,14 +3,33 @@
     "_id": "route_anchorage_talkeetna",
     "from": {
       "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
-      "label": "Anchorage"
+      "label": "Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJQT-zBHaRyFYR42iEp1q6fSU"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
       "id": "ChIJoy8lnw_vy1YRc8fyP3dIJVE",
-      "label": "Talkeetna"
+      "label": "Talkeetna",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJoy8lnw_vy1YRc8fyP3dIJVE"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "variants": [
       {
+        "id": "direct",
         "tone": "direct",
         "label": "Glenn Highway and George Parks Highway",
         "places": [],
@@ -20,6 +39,7 @@
         }
       },
       {
+        "id": "scenic",
         "tone": "scenic",
         "label": "Old Glenn Highway and George Parks Highway",
         "places": [
@@ -62,22 +82,43 @@
     "_id": "route_kennecott_anchorage",
     "from": {
       "id": "ChIJ8X09aHSEs1YRhpKnyjO0wT4",
-      "label": "McCarthy"
+      "label": "McCarthy",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ8X09aHSEs1YRhpKnyjO0wT4"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
       "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
-      "label": "Anchorage"
+      "label": "Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJQT-zBHaRyFYR42iEp1q6fSU"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "variants": [
       {
+        "id": "direct",
         "tone": "direct",
         "label": "Richardson Highway and Glenn Highway",
         "places": [],
         "finalTravel": {
-          "minutes": 345
+          "minutes": 383,
+          "miles": 306.8
         }
       },
       {
+        "id": "scenic",
         "tone": "scenic",
         "label": "Richardson Highway and Old Glenn Highway",
         "places": [
@@ -85,7 +126,16 @@
             "kind": "via",
             "place": {
               "id": "ChIJe9iB48DiyFYR0c3w5-2X6No",
-              "label": "Butte"
+              "label": "Butte",
+              "images": [
+                {
+                  "placePhoto": {
+                    "placeId": "ChIJe9iB48DiyFYR0c3w5-2X6No"
+                  },
+                  "credit": null,
+                  "caption": null
+                }
+              ]
             },
             "travel": {
               "minutes": 337,
@@ -111,26 +161,76 @@
     "_id": "route_seward_highway",
     "from": {
       "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
-      "label": "Anchorage"
+      "label": "Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJQT-zBHaRyFYR42iEp1q6fSU"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
       "id": "ChIJxf8q8m6bx1YRvxHSNsJg4Vs",
-      "label": "Seward"
+      "label": "Seward",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJxf8q8m6bx1YRvxHSNsJg4Vs"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "variants": [
       {
+        "id": "direct",
         "tone": "direct",
         "label": "Seward Highway",
         "places": [
           {
             "kind": "waypoint",
             "place": {
-              "id": "ChIJd8zQE4t3yFYR6ON3mmwv0mw",
-              "label": "Turnagain Pass"
+              "id": "ChIJwb6jzn6EyFYRmSSFgayKSWw",
+              "label": "Beluga Point",
+              "timeZone": "America/Anchorage",
+              "images": [
+                {
+                  "placePhoto": {
+                    "placeId": "ChIJwb6jzn6EyFYRmSSFgayKSWw"
+                  },
+                  "credit": null,
+                  "caption": null
+                }
+              ]
             },
             "travel": {
-              "minutes": 65,
-              "miles": 58.3
+              "minutes": 25,
+              "miles": 18.2
+            }
+          },
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJd8zQE4t3yFYR6ON3mmwv0mw",
+              "label": "Turnagain Pass",
+              "timeZone": "America/Anchorage",
+              "images": [
+                {
+                  "placePhoto": {
+                    "placeId": "ChIJd8zQE4t3yFYR6ON3mmwv0mw"
+                  },
+                  "credit": null,
+                  "caption": null
+                }
+              ]
+            },
+            "travel": {
+              "minutes": 42,
+              "miles": 40.2
             }
           }
         ],
@@ -152,14 +252,33 @@
     "_id": "route_dalton_highway",
     "from": {
       "id": "ChIJqWX9Z09FMlEROvf-CeAF2LM",
-      "label": "Fairbanks"
+      "label": "Fairbanks",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJqWX9Z09FMlEROvf-CeAF2LM"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
       "id": "ChIJNRitFufAKFERJ0iug2SKplA",
-      "label": "Coldfoot"
+      "label": "Coldfoot",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJNRitFufAKFERJ0iug2SKplA"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "variants": [
       {
+        "id": "direct",
         "tone": "direct",
         "label": "Elliott Highway and Dalton Highway",
         "places": [
@@ -179,7 +298,7 @@
               ]
             },
             "travel": {
-              "minutes": 250,
+              "minutes": 234,
               "miles": 176.9
             }
           },
@@ -205,7 +324,7 @@
           }
         ],
         "finalTravel": {
-          "minutes": 88,
+          "minutes": 83,
           "miles": 59.9
         }
       }
@@ -221,19 +340,6 @@
   {
     "_id": "route_parks_highway",
     "from": {
-      "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
-      "label": "Denali Visitor Center",
-      "images": [
-        {
-          "placePhoto": {
-            "placeId": "ChIJlwIYyVPfzFYR5iw_rFsr6xc"
-          },
-          "credit": null,
-          "caption": null
-        }
-      ]
-    },
-    "to": {
       "id": "ChIJqWX9Z09FMlEROvf-CeAF2LM",
       "label": "Fairbanks",
       "images": [
@@ -246,8 +352,22 @@
         }
       ]
     },
+    "to": {
+      "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
+      "label": "Denali Visitor Center",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJlwIYyVPfzFYR5iw_rFsr6xc"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
+    },
     "variants": [
       {
+        "id": "direct",
         "tone": "direct",
         "label": "George Parks Highway",
         "places": [
@@ -267,14 +387,14 @@
               ]
             },
             "travel": {
-              "minutes": 45,
-              "miles": 40.4
+              "minutes": 89,
+              "miles": 82.9
             }
           }
         ],
         "finalTravel": {
-          "minutes": 89,
-          "miles": 82.9
+          "minutes": 45,
+          "miles": 40.4
         }
       }
     ],
@@ -289,18 +409,133 @@
   {
     "_id": "route_richardson_highway",
     "from": {
-      "label": "Fairbanks"
+      "label": "Fairbanks",
+      "id": "ChIJqWX9Z09FMlEROvf-CeAF2LM",
+      "timeZone": "America/Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJqWX9Z09FMlEROvf-CeAF2LM"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Copper Center"
+      "label": "Copper Center",
+      "id": "ChIJdT2A7HyWtVYRNWI7kTDhePA",
+      "timeZone": "America/Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJdT2A7HyWtVYRNWI7kTDhePA"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "variants": [
       {
+        "id": "direct",
         "tone": "direct",
         "label": "Richardson Highway",
-        "places": [],
+        "places": [
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJufLF1VFNMlERZInZ2RR3Gto",
+              "label": "North Pole",
+              "timeZone": "America/Anchorage",
+              "images": [
+                {
+                  "placePhoto": {
+                    "placeId": "ChIJufLF1VFNMlERZInZ2RR3Gto"
+                  },
+                  "credit": null,
+                  "caption": null
+                }
+              ]
+            },
+            "travel": {
+              "minutes": 17,
+              "miles": 13.8
+            },
+            "note": "Christmas-themed town just outside Fairbanks, a quick first stretch break",
+            "durationMinutes": 30
+          },
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJ-9IaX0jqNFERS0whssyOSec",
+              "label": "Big Delta State Historic Park",
+              "timeZone": "America/Anchorage",
+              "images": [
+                {
+                  "placePhoto": {
+                    "placeId": "ChIJ-9IaX0jqNFERS0whssyOSec"
+                  },
+                  "credit": null,
+                  "caption": null
+                }
+              ]
+            },
+            "travel": {
+              "minutes": 73,
+              "miles": 73.2
+            },
+            "note": null,
+            "durationMinutes": 15
+          },
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJuVVJ8qyLNFERKcbyalTgOIc",
+              "label": "Delta Visitors' Center",
+              "timeZone": "America/Anchorage",
+              "images": [
+                {
+                  "placePhoto": {
+                    "placeId": "ChIJuVVJ8qyLNFERKcbyalTgOIc"
+                  },
+                  "credit": null,
+                  "caption": null
+                }
+              ]
+            },
+            "travel": {
+              "minutes": 11,
+              "miles": 9.2
+            },
+            "note": "Official end of the Alaska Highway (Milepost 1422 marker)"
+          },
+          {
+            "kind": "waypoint",
+            "place": {
+              "id": "ChIJexGAn7HNylYRnUw9zkN6ZZk",
+              "label": "Summit Lake (Isabel Pass)",
+              "timeZone": "America/Anchorage",
+              "images": [
+                {
+                  "placePhoto": {
+                    "placeId": "ChIJexGAn7HNylYRnUw9zkN6ZZk"
+                  },
+                  "credit": null,
+                  "caption": null
+                }
+              ]
+            },
+            "travel": {
+              "minutes": 75,
+              "miles": 71.3
+            },
+            "note": "Alpine lake at the highway's high point, with views toward Gulkana Glacier"
+          }
+        ],
         "finalTravel": {
-          "minutes": 275
+          "minutes": 102,
+          "miles": 93.1
         }
       }
     ],
@@ -316,14 +551,33 @@
     "_id": "route_new_8",
     "from": {
       "id": "ChIJoy8lnw_vy1YRc8fyP3dIJVE",
-      "label": "Talkeetna"
+      "label": "Talkeetna",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJoy8lnw_vy1YRc8fyP3dIJVE"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
       "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
-      "label": "Denali Visitor Center"
+      "label": "Denali Visitor Center",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJlwIYyVPfzFYR5iw_rFsr6xc"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "variants": [
       {
+        "id": "direct",
         "tone": "direct",
         "label": "Direct route",
         "places": [
@@ -373,20 +627,48 @@
           "miles": 75.5
         }
       }
+    ],
+    "images": [
+      {
+        "placePhoto": {
+          "placeId": "ChIJlwIYyVPfzFYR5iw_rFsr6xc"
+        },
+        "credit": null,
+        "caption": null
+      }
     ]
   },
   {
     "_id": "route_anchorage_whittier",
     "from": {
       "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
-      "label": "Anchorage"
+      "label": "Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJQT-zBHaRyFYR42iEp1q6fSU"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
       "id": "ChIJU5WSntkauFYR4i5djg8b1_Y",
-      "label": "Whittier"
+      "label": "Whittier",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJU5WSntkauFYR4i5djg8b1_Y"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "variants": [
       {
+        "id": "direct",
         "tone": "direct",
         "label": "Seward Highway and Whittier Access Road",
         "places": [
@@ -427,81 +709,36 @@
     ]
   },
   {
-    "_id": "route_new_10",
-    "from": {
-      "id": "ChIJNRitFufAKFERJ0iug2SKplA",
-      "label": "Coldfoot"
-    },
-    "to": {
-      "id": "ChIJqWX9Z09FMlEROvf-CeAF2LM",
-      "label": "Fairbanks"
-    },
-    "variants": [
-      {
-        "tone": "direct",
-        "label": "Dalton Highway",
-        "places": [
-          {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJq1OY5MlJKVERzomrV_shh1E",
-              "label": "Arctic Circle Sign",
-              "images": [
-                {
-                  "placePhoto": {
-                    "placeId": "ChIJq1OY5MlJKVERzomrV_shh1E"
-                  },
-                  "credit": null,
-                  "caption": null
-                }
-              ]
-            },
-            "travel": {
-              "minutes": 83,
-              "miles": 59.9
-            }
-          },
-          {
-            "kind": "waypoint",
-            "place": {
-              "id": "ChIJq1HFuXaxLlERly-xPwd2LII",
-              "label": "Finger Mountain",
-              "images": [
-                {
-                  "placePhoto": {
-                    "placeId": "ChIJq1HFuXaxLlERly-xPwd2LII"
-                  },
-                  "credit": null,
-                  "caption": null
-                }
-              ]
-            },
-            "travel": {
-              "minutes": 27,
-              "miles": 17.4
-            }
-          }
-        ],
-        "finalTravel": {
-          "minutes": 234,
-          "miles": 176.9
-        }
-      }
-    ],
-    "images": []
-  },
-  {
     "_id": "route_new_11",
     "from": {
       "id": "ChIJ8X09aHSEs1YRhpKnyjO0wT4",
-      "label": "McCarthy"
+      "label": "McCarthy",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ8X09aHSEs1YRhpKnyjO0wT4"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
       "id": "ChIJOXUaDwNEtlYRT6GRye20VB8",
-      "label": "Valdez"
+      "label": "Valdez",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJOXUaDwNEtlYRT6GRye20VB8"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "variants": [
       {
+        "id": "direct",
         "tone": "direct",
         "label": "Edgerton Highway and Richardson Highway",
         "places": [
@@ -509,7 +746,16 @@
             "kind": "waypoint",
             "place": {
               "id": "ChIJR4vyQQVhtlYRFITVHZkXzZQ",
-              "label": "Scenic Pullover"
+              "label": "Scenic Pullover",
+              "images": [
+                {
+                  "placePhoto": {
+                    "placeId": "ChIJR4vyQQVhtlYRFITVHZkXzZQ"
+                  },
+                  "credit": null,
+                  "caption": null
+                }
+              ]
             },
             "travel": {
               "minutes": 202,
@@ -523,20 +769,47 @@
         }
       }
     ],
-    "images": []
+    "images": [
+      {
+        "placePhoto": {
+          "placeId": "ChIJOXUaDwNEtlYRT6GRye20VB8"
+        },
+        "credit": null,
+        "caption": null
+      }
+    ]
   },
   {
     "_id": "route_new_12",
     "from": {
       "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
-      "label": "Anchorage"
+      "label": "Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJQT-zBHaRyFYR42iEp1q6fSU"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
       "id": "ChIJ-0i_GVHfzFYRRg-PNt-u2nw",
-      "label": "Denali Park"
+      "label": "Denali Park",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJ-0i_GVHfzFYRRg-PNt-u2nw"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "variants": [
       {
+        "id": "direct",
         "tone": "direct",
         "label": "George Parks Highway",
         "places": [
@@ -556,7 +829,7 @@
               ]
             },
             "travel": {
-              "minutes": 142,
+              "minutes": 143,
               "miles": 135.9
             }
           },
@@ -582,12 +855,20 @@
           }
         ],
         "finalTravel": {
-          "minutes": 66,
+          "minutes": 67,
           "miles": 67.7
         }
       }
     ],
-    "images": []
+    "images": [
+      {
+        "placePhoto": {
+          "placeId": "ChIJ-0i_GVHfzFYRRg-PNt-u2nw"
+        },
+        "credit": null,
+        "caption": null
+      }
+    ]
   },
   {
     "_id": "route_new_13",
@@ -619,6 +900,7 @@
     },
     "variants": [
       {
+        "id": "direct",
         "tone": "direct",
         "label": "Mile 66",
         "places": [
@@ -749,6 +1031,14 @@
         }
       }
     ],
-    "images": []
+    "images": [
+      {
+        "placePhoto": {
+          "placeId": "ChIJh0yE6LLYzFYRkQ2PsoJ3EBk"
+        },
+        "credit": null,
+        "caption": null
+      }
+    ]
   }
 ]

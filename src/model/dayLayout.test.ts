@@ -121,7 +121,7 @@ function rowsOf(data: TripData, date: string, picks = new Map<string, string>())
   const view = buildTripView(data, TEST_TODAY);
   const { days } = buildLiveDays(view, data, {
     scenarioPicks: picks,
-    routeTones: new Map(),
+    routeVariantIds: new Map(),
     mealOptionIndex: new Map(),
   });
   return sig(days.find((d) => d.date === date)!.rows);
@@ -152,7 +152,7 @@ describe('layoutDay', () => {
     const view = buildTripView(data, TEST_TODAY);
     const { days } = buildLiveDays(view, data, {
       scenarioPicks: new Map(),
-      routeTones: new Map(),
+      routeVariantIds: new Map(),
       mealOptionIndex: new Map(),
     });
     const box = days.find((d) => d.date === '2027-06-01')!.rows.find((r) => r.type === 'box');
@@ -203,6 +203,7 @@ describe('layoutDay', () => {
       to: { id: 'p_to', label: 'To' },
       variants: [
         {
+          id: 'scenic',
           tone: 'scenic',
           label: 'Scenic',
           places: [
@@ -210,7 +211,13 @@ describe('layoutDay', () => {
           ],
           finalTravel: { minutes: 120 },
         },
-        { tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 100 } },
+        {
+          id: 'direct',
+          tone: 'direct',
+          label: 'Direct',
+          places: [],
+          finalTravel: { minutes: 100 },
+        },
       ],
       images: [],
     });
@@ -318,7 +325,7 @@ describe('layoutDay', () => {
       const view = buildTripView(data, TEST_TODAY);
       const { days } = buildLiveDays(view, data, {
         scenarioPicks: picks,
-        routeTones: new Map(),
+        routeVariantIds: new Map(),
         mealOptionIndex: new Map(),
       });
       const day = days.find((d) => d.date === '2027-06-01')!;

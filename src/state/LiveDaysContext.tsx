@@ -6,7 +6,7 @@ import { LiveDaysContext, type LiveDaysValue } from './LiveDaysContextObject';
 import { useTripData } from './useTripData';
 import {
   useMealOptionSelection,
-  useRouteToneSelection,
+  useRouteVariantSelection,
   useScenarioSelection,
 } from './useTripSelections';
 
@@ -71,12 +71,12 @@ class LazyLiveDays {
 export function LiveDaysProvider({ children }: { children: ReactNode }) {
   const { view, data } = useTripData();
   const { scenarioPicks } = useScenarioSelection();
-  const { routeTones } = useRouteToneSelection();
+  const { routeVariantIds } = useRouteVariantSelection();
   const { mealOptionIndex } = useMealOptionSelection();
 
   const lazy = useMemo(
-    () => new LazyLiveDays(view, data, { scenarioPicks, routeTones, mealOptionIndex }),
-    [view, data, scenarioPicks, routeTones, mealOptionIndex],
+    () => new LazyLiveDays(view, data, { scenarioPicks, routeVariantIds, mealOptionIndex }),
+    [view, data, scenarioPicks, routeVariantIds, mealOptionIndex],
   );
 
   useEffect(() => {

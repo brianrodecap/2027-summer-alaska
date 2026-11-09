@@ -7,10 +7,30 @@
     "mode": "drive",
     "travelers": null,
     "from": {
-      "label": "Denali National Park"
+      "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
+      "label": "Denali National Park",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJlwIYyVPfzFYR5iw_rFsr6xc"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Fairbanks"
+      "id": "ChIJqWX9Z09FMlEROvf-CeAF2LM",
+      "label": "Fairbanks",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJqWX9Z09FMlEROvf-CeAF2LM"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-06-28T17:00",
     "arrivesAt": null,
@@ -33,10 +53,30 @@
     "mode": "drive",
     "travelers": null,
     "from": {
-      "label": "Fairbanks"
+      "id": "ChIJqWX9Z09FMlEROvf-CeAF2LM",
+      "label": "Fairbanks",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJqWX9Z09FMlEROvf-CeAF2LM"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Coldfoot"
+      "id": "ChIJNRitFufAKFERJ0iug2SKplA",
+      "label": "Coldfoot",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJNRitFufAKFERJ0iug2SKplA"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-06-29T06:30",
     "arrivesAt": null,
@@ -59,10 +99,32 @@
     "mode": "drive",
     "travelers": null,
     "from": {
-      "label": "Fairbanks"
+      "label": "Fairbanks",
+      "id": "ChIJqWX9Z09FMlEROvf-CeAF2LM",
+      "timeZone": "America/Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJqWX9Z09FMlEROvf-CeAF2LM"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Copper Center"
+      "label": "Copper Center",
+      "id": "ChIJdT2A7HyWtVYRNWI7kTDhePA",
+      "timeZone": "America/Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJdT2A7HyWtVYRNWI7kTDhePA"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-07-02T09:00",
     "arrivesAt": null,
@@ -238,10 +300,30 @@
     "mode": "drive",
     "travelers": null,
     "from": {
-      "label": "Anchorage"
+      "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
+      "label": "Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJQT-zBHaRyFYR42iEp1q6fSU"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Seward"
+      "id": "ChIJxf8q8m6bx1YRvxHSNsJg4Vs",
+      "label": "Seward",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJxf8q8m6bx1YRvxHSNsJg4Vs"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-07-15T07:00",
     "arrivesAt": null,
@@ -264,14 +346,34 @@
     "mode": "drive",
     "travelers": null,
     "from": {
-      "label": "Coldfoot"
+      "id": "ChIJNRitFufAKFERJ0iug2SKplA",
+      "label": "Coldfoot",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJNRitFufAKFERJ0iug2SKplA"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Fairbanks"
+      "id": "ChIJqWX9Z09FMlEROvf-CeAF2LM",
+      "label": "Fairbanks",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJqWX9Z09FMlEROvf-CeAF2LM"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-07-01T09:00",
     "arrivesAt": null,
-    "routeId": "route_new_10",
+    "routeId": "route_dalton_highway",
     "routeVariant": "direct",
     "bookingId": null,
     "images": [
@@ -290,14 +392,34 @@
     "mode": "drive",
     "travelers": null,
     "from": {
-      "label": "Coldfoot"
+      "id": "ChIJNRitFufAKFERJ0iug2SKplA",
+      "label": "Coldfoot",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJNRitFufAKFERJ0iug2SKplA"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Fairbanks"
+      "id": "ChIJqWX9Z09FMlEROvf-CeAF2LM",
+      "label": "Fairbanks",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJqWX9Z09FMlEROvf-CeAF2LM"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-07-01T10:00",
     "arrivesAt": null,
-    "routeId": "route_new_10",
+    "routeId": "route_dalton_highway",
     "routeVariant": "direct",
     "bookingId": null,
     "images": [
@@ -316,14 +438,34 @@
     "mode": "drive",
     "travelers": null,
     "from": {
-      "label": "Coldfoot"
+      "id": "ChIJNRitFufAKFERJ0iug2SKplA",
+      "label": "Coldfoot",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJNRitFufAKFERJ0iug2SKplA"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Fairbanks"
+      "id": "ChIJqWX9Z09FMlEROvf-CeAF2LM",
+      "label": "Fairbanks",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJqWX9Z09FMlEROvf-CeAF2LM"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-07-01T07:30",
     "arrivesAt": null,
-    "routeId": "route_new_10",
+    "routeId": "route_dalton_highway",
     "routeVariant": "direct",
     "bookingId": null,
     "images": [
@@ -665,10 +807,30 @@
     "mode": "drive",
     "travelers": null,
     "from": {
-      "label": "Anchorage"
+      "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
+      "label": "Anchorage",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJQT-zBHaRyFYR42iEp1q6fSU"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "to": {
-      "label": "Talkeetna"
+      "id": "ChIJoy8lnw_vy1YRc8fyP3dIJVE",
+      "label": "Talkeetna",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJoy8lnw_vy1YRc8fyP3dIJVE"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ]
     },
     "departsAt": "2027-06-27T00:15",
     "arrivesAt": null,
@@ -756,7 +918,7 @@
         }
       ]
     },
-    "departsAt": "2027-06-27T07:00",
+    "departsAt": "2027-06-27T06:00",
     "arrivesAt": null,
     "routeId": "route_new_13",
     "routeVariant": "direct",
@@ -917,7 +1079,7 @@
         }
       ]
     },
-    "departsAt": "2027-06-28T07:00",
+    "departsAt": "2027-06-28T06:00",
     "arrivesAt": null,
     "routeId": "route_new_13",
     "routeVariant": "direct",

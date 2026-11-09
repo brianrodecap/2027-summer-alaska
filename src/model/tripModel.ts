@@ -23,6 +23,7 @@ import { isDateTime } from './dateTime';
 import type { EditKind, Entity } from './editForms';
 import { firstImage, uniqueById } from './formatting';
 import { allPackages, packageHolders } from './packages';
+import { isReverseDrive, reverseVariant } from './routeReverse';
 import type {
   Activity,
   ActivityRow,
@@ -2439,6 +2440,33 @@ export function directVariantProblem(route: Pick<Route, 'variants'>): string | n
   return null;
 }
 
+// Every variant has an id, and no two in a route share one: a Transit points at a
+// variant by it. Shared by validateRoutes (load time) and applyRouteForm, like
+// directVariantProblem; null when the route satisfies it.
+export function variantIdProblem(route: Pick<Route, 'variants'>): string | null {
+  const seen = new Set<string>();
+  for (const v of route.variants) {
+    if (typeof v.id !== 'string' || !v.id) return 'Every variant needs an id.';
+    if (seen.has(v.id)) return `Two variants share the id '${v.id}'.`;
+    seen.add(v.id);
+  }
+  return null;
+}
+
+// The variant a drive follows: the one with this id, else the route's direct one
+// (every Route has exactly one), never whichever happens to be first.
+export function pickVariant<V extends { id: string; tone: string }>(
+  variants: V[],
+  id: string | null | undefined,
+): V | undefined {
+  return variants.find((v) => v.id === id) ?? variants.find((v) => v.tone === DEFAULT_ROUTE_TONE);
+}
+
+// The id of a route's direct variant — what a drive on the route defaults to.
+export function directVariantId(route: Pick<Route, 'variants'> | null | undefined): string | null {
+  return route?.variants.find((v) => v.tone === DEFAULT_ROUTE_TONE)?.id ?? null;
+}
+
 // Whether any of these variants is already the direct one — what the route
 // editor checks before offering 'direct' to another variant.
 export function hasDirectVariant(variants: Pick<RouteVariant, 'tone'>[]): boolean {
@@ -2453,6 +2481,8 @@ function validateRoutes(routes: Route[]): void {
   for (const route of routes ?? []) {
     const directProblem = directVariantProblem({ variants: route.variants ?? [] });
     if (directProblem) problems.push(`${route._id}: ${directProblem}`);
+    const idProblem = variantIdProblem({ variants: route.variants ?? [] });
+    if (idProblem) problems.push(`${route._id}: ${idProblem}`);
     for (const variant of route.variants ?? []) {
       for (const place of variant.places ?? []) {
         const where = `${route._id} (${variant.tone}) place ${place.place?.label ?? place.label ?? '?'}`;
@@ -2487,7 +2517,7 @@ function validateRoutes(routes: Route[]): void {
 // stageTimesForVariant) rather than trusted from the Transit's authored
 // field — a real stop along the way (a lunch break with no fixed duration
 // of its own, say) means the true arrival isn't known until the walk
-// actually accounts for it. selectedTone picks which variant's resolved
+// actually accounts for it. selectedId picks which variant's resolved
 // arrival is read back as the Transit's own arrivesAt.
 //
 // `live`, when given, is what makes this callable a second way: not just
@@ -2510,22 +2540,31 @@ export function resolveTransitRoute(
   if (!route) return null;
   const clock = driveClock(transit, trip);
   const candidates = routeWalkCandidates(transit, activities, clock);
+  // A drive that runs the route backwards walks each variant the other way.
+  const reversed = isReverseDrive(route, transit);
   const variants: ResolvedRouteVariant[] = route.variants.map((v) => {
-    const walked = stageTimesForVariant(v, transit, candidates, clock, live.selectedMeals);
-    return { tone: v.tone, label: `${v.tone[0].toUpperCase()}${v.tone.slice(1)}`, ...walked };
+    const walked = stageTimesForVariant(
+      reversed ? reverseVariant(v) : v,
+      transit,
+      candidates,
+      clock,
+      live.selectedMeals,
+    );
+    // Tabs read "Direct" / "Scenic"; a route with two of a tone tells them apart by label.
+    const shared = route.variants.filter((o) => o.tone === v.tone).length > 1;
+    const label = shared ? v.label : `${v.tone[0].toUpperCase()}${v.tone.slice(1)}`;
+    return { id: v.id, tone: v.tone, label, ...walked };
   });
   if (!variants.length) return null;
-  const requestedTone = live.routeVariant ?? transit.routeVariant;
+  const requestedId = live.routeVariant ?? transit.routeVariant;
   // Falls back to the direct variant (every Route has exactly one —
   // validateRoutes/applyRouteForm enforce directVariantProblem), never to
   // whichever variant is first in the array.
-  const selectedTone = variants.some((v) => v.tone === requestedTone)
-    ? (requestedTone as string)
-    : DEFAULT_ROUTE_TONE;
-  const selected = variants.find((v) => v.tone === selectedTone) as ResolvedRouteVariant;
+  const selected = pickVariant(variants, requestedId) as ResolvedRouteVariant;
+  const selectedId = selected.id;
   return {
     variants,
-    selectedTone,
+    selectedId,
     resolvedArrivesAt: selected.arrivesAt,
     resolvedArrivesZone: selected.arrivesZone,
   };

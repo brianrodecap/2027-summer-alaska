@@ -9,12 +9,11 @@ import {
   Map as GoogleMap,
   Polyline,
   useAdvancedMarkerRef,
-  useMap,
 } from '@vis.gl/react-google-maps';
 import { useEffect, useMemo, useState } from 'react';
 
 import { GOOGLE_MAPS_MAP_ID } from '../../config/places';
-import { EMPTY_MAP, useKeyedAsync } from '../../hooks/useKeyedAsync';
+import { usePlaceCoordinates } from '../../hooks/usePlaceCoordinates';
 import { useSegmentLookup } from '../../hooks/useSegmentLookup';
 import { isAboardHop, mapRouteNodes } from '../../model/dayMap';
 import {
@@ -25,7 +24,7 @@ import {
 } from '../../model/directions';
 import { resolveTravelMode } from '../../model/editForms';
 import { firstImage, formatTravel, STAGE_KIND_LABEL } from '../../model/formatting';
-import { type Coordinates, getCoordinates } from '../../model/placeCoordinates';
+import type { Coordinates } from '../../model/placeCoordinates';
 import {
   activityHeadline,
   activityNodeKey,
@@ -42,6 +41,7 @@ import {
 } from '../../model/tripModel';
 import type { Day, TravelMode, TravelModeOverride } from '../../model/types';
 import { useTripData } from '../../state/useTripData';
+import { FitBoundsToPoints } from '../shared/FitBoundsToPoints';
 import {
   activityRowIconName,
   DEFAULT_PLACE_ICON,
@@ -93,23 +93,6 @@ function openRef(ref: DayMapPlaceRef, handlers: DayRowOpeners): void {
   else if (ref.kind === 'transit' || ref.kind === 'transit-stage')
     handlers.onOpenTransit(ref.entity);
   else handlers.onOpenActivity(ref.entity);
-}
-
-// Coordinates are resolved async (a Places API round-trip, cached forever —
-// see placeCoordinates.ts) and independently per place id, so markers pop in
-// as each one resolves rather than the whole map waiting on the slowest one.
-// Keyed on the joined id list (not the array itself, which is a fresh
-// reference every render) so this only re-fetches when the actual set of
-// places changes, e.g. a scenario-tab switch — the same cancel-stale-fetch
-// shape useKeyedAsync already generalizes for a single key.
-function usePlaceCoordinates(placeIds: string[]): Map<string, Coordinates> {
-  const key = placeIds.join('|');
-  const { value } = useKeyedAsync(key, true, () =>
-    Promise.all(placeIds.map((id) => getCoordinates(id).then((c) => [id, c] as const))).then(
-      (entries) => new Map(entries),
-    ),
-  );
-  return value ?? (EMPTY_MAP as Map<string, Coordinates>);
 }
 
 // Matches DayTimeline's own dragId scheme for a Stay/Transit-boundary/
@@ -328,28 +311,6 @@ function useVisibleDayMapEntries(
     ),
     visibleRouteNodes: nodes.filter((node) => visibleTestIds.has(domTestIdForRef(node.ref))),
   };
-}
-
-// Frames every resolved point once (or re-centers on the one point when
-// there's only one) rather than on every render, so a reader who's since
-// panned/zoomed by hand doesn't get snapped back — see pointsKey below.
-function FitBoundsToPoints({ points, pointsKey }: { points: Coordinates[]; pointsKey: string }) {
-  const map = useMap();
-  useEffect(() => {
-    if (!map || points.length === 0) return;
-    if (points.length === 1) {
-      map.setCenter(points[0]);
-      map.setZoom(14);
-      return;
-    }
-    const bounds = new google.maps.LatLngBounds();
-    points.forEach((point) => bounds.extend(point));
-    map.fitBounds(bounds, 32);
-    // points itself is a fresh array every render; pointsKey is the stable
-    // "which places, resolved" identity this should actually react to.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [map, pointsKey]);
-  return null;
 }
 
 // What a marker's InfoWindow reports about the leg leaving from this stop —

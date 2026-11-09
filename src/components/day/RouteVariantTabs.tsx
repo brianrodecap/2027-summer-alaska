@@ -1,9 +1,11 @@
+import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
+import { useTheme } from '@mui/material/styles';
 
+import { variantColorIndex } from '../../model/routePlanner';
 import type { EnrichedTransit } from '../../model/types';
-import { useRouteToneSelection } from '../../state/useTripSelections';
-import { renderMaterialIcon, ROUTE_TONE_ICON } from '../shared/materialIcon';
+import { useRouteVariantSelection } from '../../state/useTripSelections';
 
 // A Route with 2+ variants (e.g. the New vs. Old Glenn Highway) is a
 // genuinely undecided choice, anchored to the Depart row — the one place in
@@ -11,10 +13,11 @@ import { renderMaterialIcon, ROUTE_TONE_ICON } from '../shared/materialIcon';
 // variant's stages were already walked in buildTripView, so switching here
 // just changes which precomputed variant's stages/arrival the rest of the
 // timeline shows. The row's transit is the live one (liveDays.ts's
-// liveTransits), so its routeInfo.selectedTone is already the picked tab.
+// liveTransits), so its routeInfo.selectedId is already the picked tab.
 export function RouteVariantTabs({ transit }: { transit: EnrichedTransit }) {
   const info = transit.routeInfo;
-  const { selectRouteTone } = useRouteToneSelection();
+  const { selectRouteVariant } = useRouteVariantSelection();
+  const { palette } = useTheme();
   if (!info || info.variants.length < 2) return null;
   return (
     <Stack
@@ -23,17 +26,26 @@ export function RouteVariantTabs({ transit }: { transit: EnrichedTransit }) {
       sx={{ mt: 1, flexWrap: 'wrap' }}
       onClick={(e) => e.stopPropagation()}
     >
-      {info.variants.map((v) => {
-        const active = v.tone === info.selectedTone;
+      {info.variants.map((v, i) => {
+        const active = v.id === info.selectedId;
         return (
           <Chip
-            key={v.tone}
-            data-testid={`route-variant-${transit._id}-${v.tone}`}
+            key={v.id}
+            data-testid={`route-variant-${transit._id}-${v.id}`}
             label={v.label}
-            icon={renderMaterialIcon(ROUTE_TONE_ICON[v.tone] ?? 'route', { fontSize: 'small' })}
+            icon={
+              <Box
+                sx={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: '50%',
+                  bgcolor: palette.routeVariants[variantColorIndex(info.variants, i)],
+                }}
+              />
+            }
             color={active ? 'primary' : 'default'}
             variant={active ? 'filled' : 'outlined'}
-            onClick={() => selectRouteTone(transit._id, v.tone)}
+            onClick={() => selectRouteVariant(transit._id, v.id)}
           />
         );
       })}

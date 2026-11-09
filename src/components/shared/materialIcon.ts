@@ -1,12 +1,16 @@
+import AddIcon from '@mui/icons-material/Add';
 import AltRouteIcon from '@mui/icons-material/AltRoute';
 import AnchorIcon from '@mui/icons-material/Anchor';
 import AttractionsIcon from '@mui/icons-material/Attractions';
+import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import BakeryDiningIcon from '@mui/icons-material/BakeryDining';
 import CabinIcon from '@mui/icons-material/Cabin';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CallMergeIcon from '@mui/icons-material/CallMerge';
 import CelebrationIcon from '@mui/icons-material/Celebration';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import CloseIcon from '@mui/icons-material/Close';
 import CloudIcon from '@mui/icons-material/Cloud';
 import CommuteIcon from '@mui/icons-material/Commute';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -14,9 +18,12 @@ import DirectionsBikeIcon from '@mui/icons-material/DirectionsBike';
 import DirectionsBusIcon from '@mui/icons-material/DirectionsBus';
 import DirectionsCarIcon from '@mui/icons-material/DirectionsCar';
 import DirectionsWalkIcon from '@mui/icons-material/DirectionsWalk';
+import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
+import EditIcon from '@mui/icons-material/Edit';
 import EventIcon from '@mui/icons-material/Event';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import FilterListIcon from '@mui/icons-material/FilterList';
+import FitScreenIcon from '@mui/icons-material/FitScreen';
 import FlightIcon from '@mui/icons-material/Flight';
 import FlightTakeoffIcon from '@mui/icons-material/FlightTakeoff';
 import GroupIcon from '@mui/icons-material/Group';
@@ -34,24 +41,32 @@ import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import LocalGroceryStoreIcon from '@mui/icons-material/LocalGroceryStore';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import MuseumIcon from '@mui/icons-material/Museum';
+import NearMeIcon from '@mui/icons-material/NearMe';
 import PaidIcon from '@mui/icons-material/Paid';
 import PaletteIcon from '@mui/icons-material/Palette';
 import ParkIcon from '@mui/icons-material/Park';
+import PauseIcon from '@mui/icons-material/Pause';
 import PetsIcon from '@mui/icons-material/Pets';
 import PlaceIcon from '@mui/icons-material/Place';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
 import RedeemIcon from '@mui/icons-material/Redeem';
+import RemoveIcon from '@mui/icons-material/Remove';
 import RequestQuoteIcon from '@mui/icons-material/RequestQuote';
 import RestaurantIcon from '@mui/icons-material/Restaurant';
 import RouteIcon from '@mui/icons-material/Route';
 import RvHookupIcon from '@mui/icons-material/RvHookup';
 import ScheduleIcon from '@mui/icons-material/Schedule';
+import SearchIcon from '@mui/icons-material/Search';
 import SignpostIcon from '@mui/icons-material/Signpost';
 import SportsBarIcon from '@mui/icons-material/SportsBar';
 import StarIcon from '@mui/icons-material/Star';
 import StorefrontIcon from '@mui/icons-material/Storefront';
+import SwapHorizIcon from '@mui/icons-material/SwapHoriz';
 import TakeoutDiningIcon from '@mui/icons-material/TakeoutDining';
 import TerrainIcon from '@mui/icons-material/Terrain';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff';
 import WarningIcon from '@mui/icons-material/Warning';
 import WaterIcon from '@mui/icons-material/Water';
 import type { SvgIconProps } from '@mui/material/SvgIcon';
@@ -123,6 +138,21 @@ const ICONS: Record<string, IconComponent> = {
   link: LinkIcon,
   commute: CommuteIcon,
   celebration: CelebrationIcon,
+  add: AddIcon,
+  close: CloseIcon,
+  swap_horiz: SwapHorizIcon,
+  play_arrow: PlayArrowIcon,
+  auto_awesome: AutoAwesomeIcon,
+  visibility: VisibilityIcon,
+  visibility_off: VisibilityOffIcon,
+  search: SearchIcon,
+  remove: RemoveIcon,
+  pause: PauseIcon,
+  near_me: NearMeIcon,
+  fit_screen: FitScreenIcon,
+  edit: EditIcon,
+  drag_indicator: DragIndicatorIcon,
+  auto_fix_high: AutoFixHighIcon,
 };
 
 export function materialIcon(name: string | null | undefined): IconComponent {

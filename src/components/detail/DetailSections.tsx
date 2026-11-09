@@ -147,7 +147,7 @@ export function PortCallsSection({ calls }: { calls: PortCall[] | null | undefin
 
 // A routed drive's stops on its selected variant, in driving order.
 export function RouteStopsSection({ routeInfo }: { routeInfo: ResolvedRouteInfo | null }) {
-  const variant = routeInfo?.variants.find((v) => v.tone === routeInfo.selectedTone);
+  const variant = routeInfo?.variants.find((v) => v.id === routeInfo.selectedId);
   if (!variant?.stages.length) return null;
   return (
     <DetailSection title={`Route stops · ${variant.label}`}>

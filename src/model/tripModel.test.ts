@@ -130,7 +130,7 @@ function liveDays(
   return buildLiveDays(
     view,
     data,
-    { scenarioPicks: picks, routeTones: new Map(), mealOptionIndex: meals },
+    { scenarioPicks: picks, routeVariantIds: new Map(), mealOptionIndex: meals },
     previous,
   );
 }
@@ -153,7 +153,9 @@ describe('buildTripView', () => {
       _id: 'test_route',
       from: { id: null, label: 'A' },
       to: { id: null, label: 'B' },
-      variants: [{ tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 60 } }],
+      variants: [
+        { id: 'direct', tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 60 } },
+      ],
       images: [],
     });
     pushMinimalTransit(data, {
@@ -538,8 +540,15 @@ describe('a routed drive and the Activities along it', () => {
       from: { id: null, label: 'A' },
       to: { id: null, label: 'B' },
       variants: [
-        { tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 120 } },
         {
+          id: 'direct',
+          tone: 'direct',
+          label: 'Direct',
+          places: [],
+          finalTravel: { minutes: 120 },
+        },
+        {
+          id: 'scenic',
           tone: 'scenic',
           label: 'Direct',
           places: [
@@ -576,6 +585,33 @@ describe('a routed drive and the Activities along it', () => {
       '2027-06-01T10:45', // 15 min stop, then 30 min to the Fork
     ]);
     expect(transit.arrivesAt).toBe('2027-06-01T11:45');
+  });
+
+  it('walks the route backwards for a drive that runs it the other way', () => {
+    const data = routedDrive();
+    data.routes[0].from = { id: 'p_a', label: 'A' };
+    data.routes[0].to = { id: 'p_b', label: 'B' };
+    const transit = data.transits[0];
+    transit.from = { id: 'p_b', label: 'B' };
+    transit.to = { id: 'p_a', label: 'A' };
+    const walked = routeOf(data);
+    const scenic = walked.routeInfo!.variants.find((v) => v.tone === 'scenic')!;
+    // Fork first (the 60 minute final leg), then View (30), its 15 minute stop, and 60 back to A.
+    expect(scenic.stages.map((s) => [s.place.label, s.key])).toEqual([
+      ['Fork', '2027-06-01T10:00'],
+      ['View', '2027-06-01T10:30'],
+    ]);
+    expect(walked.arrivesAt).toBe('2027-06-01T11:45');
+  });
+
+  it('walks it forwards when the drive runs the route the same way', () => {
+    const data = routedDrive();
+    data.routes[0].from = { id: 'p_a', label: 'A' };
+    data.routes[0].to = { id: 'p_b', label: 'B' };
+    data.transits[0].from = { id: 'p_a', label: 'A' };
+    data.transits[0].to = { id: 'p_b', label: 'B' };
+    const scenic = routeOf(data).routeInfo!.variants.find((v) => v.tone === 'scenic')!;
+    expect(scenic.stages.map((s) => s.place.label)).toEqual(['View', 'Fork']);
   });
 
   it("uses a waypoint's own stop duration when it has one", () => {
@@ -637,6 +673,7 @@ describe('the direct route variant', () => {
       to: { id: null, label: 'B' },
       variants: [
         {
+          id: 'scenic',
           tone: 'scenic',
           label: 'Scenic',
           places: [
@@ -644,7 +681,7 @@ describe('the direct route variant', () => {
           ],
           finalTravel: { minutes: 120 },
         },
-        { tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 60 } },
+        { id: 'direct', tone: 'direct', label: 'Direct', places: [], finalTravel: { minutes: 60 } },
       ],
       images: [],
     });
@@ -661,7 +698,7 @@ describe('the direct route variant', () => {
       const data = twoTones();
       data.transits[0].routeVariant = routeVariant;
       const transit = buildTripView(data, TEST_TODAY).transitsById.get('test_transit')!;
-      expect(transit.routeInfo!.selectedTone).toBe('direct');
+      expect(transit.routeInfo!.selectedId).toBe('direct');
       expect(transit.arrivesAt).toBe('2027-06-01T10:00');
     }
   });
@@ -695,7 +732,7 @@ describe('the direct route variant', () => {
     const warningFor = (tone: string) => {
       const { days } = buildLiveDays(buildTripView(data, TEST_TODAY), data, {
         scenarioPicks: new Map(),
-        routeTones: new Map([['test_transit', tone]]),
+        routeVariantIds: new Map([['test_transit', tone]]),
         mealOptionIndex: new Map(),
       });
       const day = days.find((d) => d.date === '2027-06-01')!;
@@ -710,13 +747,13 @@ describe('the direct route variant', () => {
     const data = twoTones();
     const live = buildLiveDays(buildTripView(data, TEST_TODAY), data, {
       scenarioPicks: new Map(),
-      routeTones: new Map([['test_transit', 'scenic']]),
+      routeVariantIds: new Map([['test_transit', 'scenic']]),
       mealOptionIndex: new Map(),
     });
     const day = live.days.find((d) => d.date === '2027-06-01')!;
     const row = day.rows.find((r) => r.type === 'transit' && r.phase === 'depart');
     const transit = live.transitsById.get('test_transit')!;
-    expect(transit.routeInfo!.selectedTone).toBe('scenic');
+    expect(transit.routeInfo!.selectedId).toBe('scenic');
     expect(transit.arrivesAt).toBe('2027-06-01T12:00');
     expect(row?.type === 'transit' && row.transit).toBe(transit);
     expect(day.transits[0]).toBe(transit);
@@ -2098,7 +2135,7 @@ describe('overlap warnings across time zones', () => {
     const view = buildTripView(data, TEST_TODAY);
     const { days } = buildLiveDays(view, data, {
       scenarioPicks: new Map(),
-      routeTones: new Map(),
+      routeVariantIds: new Map(),
       mealOptionIndex: new Map(),
     });
     const day = days.find((d) => d.date === '2027-06-28')!;
@@ -2143,5 +2180,69 @@ describe('overlap warnings across time zones', () => {
     });
     expect(warningsOf(data, 'page_walk')).toEqual([]);
     expect(warningsOf(data, 'canyon_tour')).toEqual([]);
+  });
+});
+
+describe('route variant ids', () => {
+  // Two scenic variants and a direct one, on a drive that picks the second scenic by id.
+  function twoScenic(routeVariant: string | null): TripData {
+    const data = minimalTripData();
+    const variant = (id: string, tone: string, label: string, minutes: number) => ({
+      id,
+      tone,
+      label,
+      places: [],
+      finalTravel: { minutes },
+    });
+    data.routes.push({
+      _id: 'test_route',
+      from: { id: null, label: 'A' },
+      to: { id: null, label: 'B' },
+      variants: [
+        variant('v_direct', 'direct', 'Highway', 120),
+        variant('v_hatcher', 'scenic', 'Hatcher Pass', 150),
+        variant('v_old', 'scenic', 'Old road', 180),
+      ],
+      images: [],
+    });
+    pushMinimalTransit(data, {
+      departsAt: '2027-06-01T09:00',
+      arrivesAt: null,
+      routeId: 'test_route',
+      routeVariant,
+    });
+    return data;
+  }
+  const info = (data: TripData) =>
+    buildTripView(data, TEST_TODAY).transitsById.get('test_transit')!.routeInfo!;
+
+  it('selects the variant the drive names, even when another shares its tone', () => {
+    const walked = info(twoScenic('v_old'));
+    expect(walked.selectedId).toBe('v_old');
+    expect(walked.resolvedArrivesAt).toBe('2027-06-01T12:00');
+  });
+
+  it('falls back to the direct variant for an id the route does not have', () => {
+    expect(info(twoScenic('scenic')).selectedId).toBe('v_direct');
+    expect(info(twoScenic(null)).selectedId).toBe('v_direct');
+  });
+
+  it('labels tabs by tone, and by label where a tone is shared', () => {
+    expect(info(twoScenic(null)).variants.map((v) => v.label)).toEqual([
+      'Direct',
+      'Hatcher Pass',
+      'Old road',
+    ]);
+  });
+
+  it('refuses a route whose variants lack an id or share one', () => {
+    const missing = twoScenic(null);
+    delete (missing.routes[0].variants[1] as { id?: string }).id;
+    expect(() => buildTripView(missing, TEST_TODAY)).toThrow('Every variant needs an id.');
+    const shared = twoScenic(null);
+    shared.routes[0].variants[2].id = 'v_hatcher';
+    expect(() => buildTripView(shared, TEST_TODAY)).toThrow(
+      "Two variants share the id 'v_hatcher'.",
+    );
   });
 });

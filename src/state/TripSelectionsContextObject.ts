@@ -15,9 +15,9 @@ export interface ScenarioSelectionValue {
   selectScenario: (groupKey: string, scenarioId: string) => void;
 }
 
-export interface RouteToneSelectionValue {
-  routeTones: Map<string, string>; // transitId -> tone
-  selectRouteTone: (transitId: string, tone: string) => void;
+export interface RouteVariantSelectionValue {
+  routeVariantIds: Map<string, string>; // transitId -> route variant id
+  selectRouteVariant: (transitId: string, variantId: string) => void;
 }
 
 export interface MealOptionSelectionValue {
@@ -88,7 +88,7 @@ export function isRowSelected(selection: RowSelection | null, dragId: string): b
 }
 
 export const ScenarioSelectionContext = createContext<ScenarioSelectionValue | null>(null);
-export const RouteToneSelectionContext = createContext<RouteToneSelectionValue | null>(null);
+export const RouteVariantSelectionContext = createContext<RouteVariantSelectionValue | null>(null);
 export const MealOptionSelectionContext = createContext<MealOptionSelectionValue | null>(null);
 export const FilterSelectionContext = createContext<FilterSelectionValue | null>(null);
 export const RowSelectionContext = createContext<RowSelectionValue | null>(null);

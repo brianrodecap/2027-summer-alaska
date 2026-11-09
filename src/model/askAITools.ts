@@ -333,15 +333,21 @@ export async function runReadTool(
         ctx.placeSearches.emptyQueries.add(query);
         throw err;
       });
-      for (const p of results) {
+      // A place that has closed for good is told, but never recorded, so it can't be proposed.
+      const open = results.filter((p) => !p.closed);
+      for (const p of open) {
         ctx.placeSearches.placeIds.add(p.id);
         if (p.timeZone) ctx.placeSearches.timeZones.set(p.id, p.timeZone);
       }
-      if (!results.length) {
-        ctx.placeSearches.emptyQueries.add(query);
-        return 'No places found.';
-      }
-      return results.map((p) => `${p.label} — ${p.address} (placeId ${p.id})`).join('\n');
+      if (!open.length) ctx.placeSearches.emptyQueries.add(query);
+      if (!results.length) return 'No places found.';
+      return results
+        .map((p) =>
+          p.closed
+            ? `${p.label} — ${p.address} (permanently closed, so don't propose it)`
+            : `${p.label} — ${p.address} (placeId ${p.id})`,
+        )
+        .join('\n');
     }
 
     case 'get_budget': {

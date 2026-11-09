@@ -55,7 +55,7 @@ function dayOf(data: TripData, date: string): Day {
   const view = buildTripView(data, TEST_TODAY);
   const { days } = buildLiveDays(view, data, {
     scenarioPicks: new Map(),
-    routeTones: new Map(),
+    routeVariantIds: new Map(),
     mealOptionIndex: new Map(),
   });
   return days.find((d) => d.date === date)!;
@@ -246,6 +246,7 @@ describe('places with no zone recorded on a routed drive', () => {
       to: b,
       variants: [
         {
+          id: 'direct',
           tone: 'direct',
           label: 'Direct',
           places: [

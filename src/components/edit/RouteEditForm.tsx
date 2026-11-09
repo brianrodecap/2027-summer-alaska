@@ -9,12 +9,9 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import type { Dispatch, SetStateAction } from 'react';
 
-import {
-  recomputeRouteTravel,
-  removeRouteStage,
-  replaceRouteStagePlace,
-} from '../../model/directions';
+import { applyTravel, recomputeRouteTravel, recomputeVariant } from '../../model/directions';
 import { blankRoutePlaceEntry, blankRouteVariant, swapItems as swap } from '../../model/editForms';
 import { formatTravel } from '../../model/formatting';
 import {
@@ -44,11 +41,16 @@ export function RouteEditForm({
   onChange,
 }: {
   form: Route;
-  onChange: (route: Route) => void;
+  // A setState, so a lookup that finishes later can lay its result on the form as
+  // it is then, not as it was when the lookup began (see applyTravel).
+  onChange: Dispatch<SetStateAction<Route>>;
 }) {
-  const updateVariant = (index: number, variant: RouteVariant) => {
-    onChange({ ...form, variants: form.variants.map((v, i) => (i === index ? variant : v)) });
-  };
+  const withVariant = (index: number, variant: RouteVariant): Route => ({
+    ...form,
+    variants: form.variants.map((v, i) => (i === index ? variant : v)),
+  });
+  const updateVariant = (index: number, variant: RouteVariant) =>
+    onChange(withVariant(index, variant));
 
   const updatePlace = (
     vi: number,
@@ -66,7 +68,8 @@ export function RouteEditForm({
   // From/To itself changes, since that shifts the origin every first place's
   // travel (and a places-less variant's finalTravel) is measured from.
   const recomputeAllVariants = async (route: Route) => {
-    onChange(await recomputeRouteTravel(route));
+    const computed = await recomputeRouteTravel(route);
+    onChange((latest) => applyTravel(latest, computed));
   };
 
   return (
@@ -185,10 +188,14 @@ export function RouteEditForm({
                       updatePlace(vi, variant, pi, (p) => ({ ...p, place: picked ?? undefined }));
                     }}
                     onPicked={async (picked) => {
-                      updateVariant(
-                        vi,
-                        await replaceRouteStagePlace(variant, pi, picked, form.from.id, form.to.id),
-                      );
+                      const next = {
+                        ...variant,
+                        places: variant.places.map((p, i) =>
+                          i === pi ? { ...p, place: picked } : p,
+                        ),
+                      };
+                      const computed = await recomputeVariant(next, form.from.id, form.to.id, pi);
+                      onChange((latest) => applyTravel(latest, withVariant(vi, computed)));
                     }}
                   />
                   <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start' }}>
@@ -205,13 +212,13 @@ export function RouteEditForm({
                     <IconButton
                       aria-label="Remove this stage"
                       onClick={async () => {
-                        const nextVariant = await removeRouteStage(
-                          variant,
-                          pi,
-                          form.from.id,
-                          form.to.id,
-                        );
-                        updateVariant(vi, nextVariant);
+                        const next = {
+                          ...variant,
+                          places: variant.places.filter((_, i) => i !== pi),
+                        };
+                        updateVariant(vi, next);
+                        const computed = await recomputeVariant(next, form.from.id, form.to.id, pi);
+                        onChange((latest) => applyTravel(latest, withVariant(vi, computed)));
                       }}
                     >
                       <DeleteIcon fontSize="small" />

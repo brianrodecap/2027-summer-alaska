@@ -1150,7 +1150,7 @@
                                    // view always walks the Route's own drive times
                                    // (see Route's finalTravel, below) instead
   routeId: 'route_anc_to_whittier',
-  routeVariant: 'scenic',
+  routeVariant: 'scenic',     // a variant's id, not its tone
   showEndpointsOnMap: true,  // optional, routed drives only — omitted = false:
                              // from/to are left off maps, links and drive totals
   bookingId: null,           // own car, no reservation
@@ -1218,7 +1218,10 @@
           </li>
           <li>
             <strong>routeId/routeVariant</strong> record which reusable Route this specific movement
-            followed, and which of that route's named alternatives was actually chosen.
+            followed, and which of that route's named alternatives was actually chosen. A route is
+            two-way: a drive that starts where the route ends and ends where it starts runs it
+            backwards. That is derived from the two places' ids, never stored, and the route is
+            walked in reverse (<code>reverseVariant</code>, <code>isReverseDrive</code>).
           </li>
           <li>
             <strong
@@ -1453,6 +1456,7 @@
   to:   { id: 'ChIJ...', label: 'Whittier' },
   variants: [
     {
+      id: 'scenic',          // names the variant within its route; a Transit's routeVariant points at it
       tone: 'scenic',
       label: 'Scenic — via the Seward Highway',
       places: [ { kind: 'waypoint', place: { id: 'ChIJ...', label: 'Girdwood' },
@@ -1496,6 +1500,13 @@
             <code>showEndpointsOnMap</code>), never a Route's own <code>from</code>/<code>to</code>.
           </li>
           <li>
+            <strong>variants[].id is what a Transit points at.</strong> It is unique within its
+            route (<code>variantIdProblem</code>, enforced at load time and in
+            <code>applyRouteForm</code>) and never changes when the variant is relabeled or retoned,
+            so a route can have several scenic variants and a drive can still name exactly one. The
+            hand-kept variants use their tone as the id; new ones get a random id.
+          </li>
+          <li>
             <strong>variants[].tone has its own vocabulary</strong> —
             <code>scenic</code>/<code>direct</code>, deliberately not reusing Scenario's
             <code>ideal</code>/<code>alternate</code>. A route choice isn't a go/no-go safety
@@ -1506,10 +1517,10 @@
               >Every Route has exactly one <code>direct</code> variant, and it has no vias.</strong
             >
             The direct variant is the default path — the one a Transit follows when its
-            <code>routeVariant</code> names no valid variant, and the one the edit UI picks when a
-            route is first chosen (never "whichever variant is listed first"). A via exists only to
-            steer routing off that default path, so vias belong on the other variants; waypoints
-            (real stops) are fine on the direct one. Enforced at load time
+            <code>routeVariant</code> names no variant of the route, and the one the edit UI picks
+            when a route is first chosen (never "whichever variant is listed first"). A via exists
+            only to steer routing off that default path, so vias belong on the other variants;
+            waypoints (real stops) are fine on the direct one. Enforced at load time
             (<code>validateRoutes</code>) and in the route editor (<code>applyRouteForm</code>),
             through one shared check (<code>directVariantProblem</code>).
           </li>

@@ -45,7 +45,7 @@ export interface TimelineSelections {
   // Already resolved (resolveActiveScenarios): an entity scoped to a scenario
   // only appears when that scenario is in this set.
   activeScenarioIds: ReadonlySet<string>;
-  routeTones: ReadonlyMap<string, string>; // transitId -> tone; absent = model default
+  routeVariantIds: ReadonlyMap<string, string>; // transitId -> route variant id; absent = model default
   mealOptionIndex: ReadonlyMap<string, number>; // activityId -> option; absent = default
 }
 
@@ -72,7 +72,7 @@ export interface Timeline {
   // transitId -> arrival for the selected route tone (or the authored
   // arrivesAt for an unrouted Transit that has one).
   arrivalOf: ReadonlyMap<string, string>;
-  // transitId -> the route walk for these selections (selectedTone = the
+  // transitId -> the route walk for these selections (selectedId = the
   // picked tone, stages timed with the meals actually picked along it).
   routeInfoOf: ReadonlyMap<string, ResolvedRouteInfo>;
   // activityId -> the selected candidate, per still-open meal — the same
@@ -122,7 +122,7 @@ export function buildTimeline(
   selections: TimelineSelections,
   clock: TripClock = tripClock(data),
 ): Timeline {
-  const { activeScenarioIds, routeTones, mealOptionIndex } = selections;
+  const { activeScenarioIds, routeVariantIds, mealOptionIndex } = selections;
   const scoped = (scenarioId: string | null) => inScope(activeScenarioIds, scenarioId);
   const routesById = new Map(data.routes.map((r) => [r._id, r]));
   const activities = data.activities.filter((a) => scoped(a.scenarioId));
@@ -220,11 +220,11 @@ export function buildTimeline(
     // The route walk's own model default (routeVariant, else the first
     // variant) applies when the reader hasn't picked a tone for this Transit.
     const info = resolveTransitRoute(transit, routesById, activities, clock, {
-      routeVariant: routeTones.get(transit._id),
+      routeVariant: routeVariantIds.get(transit._id),
       selectedMeals,
     });
     if (info) routeInfoOf.set(transit._id, info);
-    const variant = info?.variants.find((v) => v.tone === info.selectedTone);
+    const variant = info?.variants.find((v) => v.id === info.selectedId);
     const arrivesAt = variant ? variant.arrivesAt : transit.arrivesAt;
     variant?.stages.forEach((stage, i) =>
       push({

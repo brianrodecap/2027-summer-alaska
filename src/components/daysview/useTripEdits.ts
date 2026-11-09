@@ -2,11 +2,11 @@ import { useMemo } from 'react';
 
 import type { ChangeSource } from '../../model/changeLog';
 import {
+  applyRouteSave,
   applyScenarioDeletion,
   applyScenarioSave,
   commitEntityEdit,
   type EditKind,
-  upsertById,
 } from '../../model/editForms';
 import type { Activity, Booking, Route, Scenario, Stay, Transit } from '../../model/types';
 import { useTripData } from '../../state/useTripData';
@@ -18,7 +18,7 @@ export function useTripEdits() {
   return useMemo(
     () => ({
       saveRoute: (route: Route, source?: ChangeSource) =>
-        setData((prev) => ({ ...prev, routes: upsertById(prev.routes, route) }), source),
+        setData((prev) => applyRouteSave(prev, route), source),
       deleteRoute: (id: string, source?: ChangeSource) =>
         setData((prev) => ({ ...prev, routes: prev.routes.filter((r) => r._id !== id) }), source),
       // Returns a message when the scenario-tone invariant (see

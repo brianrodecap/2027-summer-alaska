@@ -37,6 +37,7 @@ import {
   stayZone,
   transitRouteLabel,
   tripClock,
+  variantIdProblem,
   type ZonedTime,
 } from './tripModel';
 import type {
@@ -1116,7 +1117,7 @@ export function routeSelectOptions(routes: Route[]): { value: string; label: str
 
 export function routeVariantOptions(route: Route | null): { value: string; label: string }[] {
   return route
-    ? route.variants.map((v) => ({ value: v.tone, label: v.label }))
+    ? route.variants.map((v) => ({ value: v.id, label: v.label }))
     : [{ value: '', label: '—' }];
 }
 
@@ -1209,6 +1210,8 @@ export function nextRouteId(routes: Route[]): string {
   return `route_new_${n}`;
 }
 
+export const newVariantId = (): string => crypto.randomUUID();
+
 export function blankRoutePlaceEntry(): RoutePlaceEntry {
   return { kind: 'waypoint', place: { id: null, label: '' }, travel: { minutes: 0 } };
 }
@@ -1217,7 +1220,7 @@ export function blankRoutePlaceEntry(): RoutePlaceEntry {
 // that can't be (directVariantProblem allows exactly one), so it starts scenic.
 export function blankRouteVariant(existing: RouteVariant[] = []): RouteVariant {
   const tone = hasDirectVariant(existing) ? 'scenic' : DEFAULT_ROUTE_TONE;
-  return { tone, label: '', places: [], finalTravel: { minutes: 0 } };
+  return { id: newVariantId(), tone, label: '', places: [], finalTravel: { minutes: 0 } };
 }
 
 // Mirrors docs/js/edit.js's own applyRouteEdit validation: every place entry
@@ -1231,7 +1234,7 @@ export function applyRouteForm(route: Route, form: Route): string | null {
   const toLabel = form.to.label.trim();
   if (!fromLabel || !toLabel) return 'Needs both a From and To label.';
   if (!form.variants.length) return 'Needs at least one variant.';
-  const directProblem = directVariantProblem(form);
+  const directProblem = directVariantProblem(form) ?? variantIdProblem(form);
   if (directProblem) return directProblem;
   for (const variant of form.variants) {
     if (!variant.label.trim()) return 'Every variant needs a label.';
@@ -1253,6 +1256,24 @@ export function applyRouteForm(route: Route, form: Route): string | null {
   route.to = { ...form.to, label: toLabel };
   route.variants = form.variants;
   return null;
+}
+
+// Saving a route. A drive follows one of a route's variants by id, so a route saved with
+// a variant removed leaves each drive that followed it on the route's direct variant,
+// with its pointer cleared, and no Transit is ever left naming a variant its route
+// doesn't have. Every way of saving a route (the planner, the Edit route form, the
+// assistant) goes through here.
+export function applyRouteSave(data: TripData, route: Route): TripData {
+  const ids = new Set(route.variants.map((v) => v.id));
+  const dangling = (t: Transit) =>
+    t.routeId === route._id && !!t.routeVariant && !ids.has(t.routeVariant);
+  return {
+    ...data,
+    routes: upsertById(data.routes, route),
+    transits: data.transits.some(dangling)
+      ? data.transits.map((t) => (dangling(t) ? { ...t, routeVariant: null } : t))
+      : data.transits,
+  };
 }
 
 // ---------- Scenario (the day list's own "Manage scenarios" dialog) ----------

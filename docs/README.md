@@ -143,3 +143,11 @@ A Google Places photo used to be stored as its media URL, which embeds the photo
 ### Plan status removed (Oct 2026)
 
 Stay, Transit and Activity have no `status` field. Every entry was `planning` and nothing read it, so it only contradicted the booking's status. Migration: the line was removed from all 211 entries in both trips.
+
+### Routes run both ways (Nov 2026)
+
+A drive whose endpoints are a route's, swapped, runs that route backwards: its places come in the opposite order and each leg's drive time moves with the leg (`reverseVariant`). Whether a drive does is derived from the Transit's and the route's place ids (`isReverseDrive`), never stored. Migration: none; no field was added.
+
+### Route variants have ids (Nov 2026)
+
+Each `RouteVariant` has an `id`, unique within its route (`variantIdProblem`, checked at load and in `applyRouteForm`). `Transit.routeVariant` and the reader's variant tab pick hold that id, where they held the variant's tone; the tone stays a classification (`direct` / `scenic`), so a route can have several scenic variants and a drive can still name one. A drive whose `routeVariant` names no variant of its route falls back to the route's direct variant. Migration: `public/data/routes.json` gained an `id` on every variant, equal to its tone (`direct`, `scenic`), which is what every transit already pointed at, so no transit changed. A route edit saved in a browser against the old shipped route is dropped on load as drift (`replayChanges`), since the shipped route changed; a route that exists only in a browser and was saved before ids has none, and fails the load check until its stored edit is cleared. Saving a route with a variant removed clears the pointer of every Transit that followed it, so a drive falls back to the route's direct variant instead of naming a variant that is gone (`applyRouteSave`, reached by every way of saving a route).

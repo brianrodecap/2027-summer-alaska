@@ -420,6 +420,7 @@ describe('routes', () => {
     to: { id: 'p_to', label: 'To' },
     variants: [
       {
+        id: 'direct',
         tone: 'direct',
         label: 'Highway',
         places: [
@@ -433,8 +434,8 @@ describe('routes', () => {
         ],
         finalTravel: { minutes: 20 },
       },
-      { tone: 'scenic', label: 'Coast', places: [], finalTravel: { minutes: 90 } },
-      { tone: 'scenic', label: 'Pass', places: [], finalTravel: { minutes: 80 } },
+      { id: 'coast', tone: 'scenic', label: 'Coast', places: [], finalTravel: { minutes: 90 } },
+      { id: 'pass', tone: 'scenic', label: 'Pass', places: [], finalTravel: { minutes: 80 } },
     ],
     images: [],
   };
@@ -521,7 +522,11 @@ describe('routes', () => {
     expect(resolved.route.from).toEqual({ id: 'p_a', label: 'A' });
     expect(resolved.route.variants[0].places[0]).toEqual({
       kind: 'waypoint',
-      place: { id: 'p_cafe', label: 'Cafe' },
+      place: {
+        id: 'p_cafe',
+        label: 'Cafe',
+        images: [{ placePhoto: { placeId: 'p_cafe' }, credit: null, caption: null }],
+      },
       travel: { minutes: 0 },
       note: null,
     });
@@ -600,6 +605,78 @@ describe('routes', () => {
       { tone: 'direct', label: 'Old road', places: [] },
     ]);
     expect(variants.map((v) => v.label)).toEqual(['Highway', 'Coast', 'Pass', 'Old road']);
+  });
+
+  it("keeps a revised variant's id, and gives every added variant an id of its own", () => {
+    const variants = revise([
+      { tone: 'scenic', label: 'Coast', places: [] },
+      { tone: 'direct', label: 'Highway', places: [] },
+      { tone: 'direct', label: 'Old road', places: [] },
+      { tone: 'scenic', label: 'Glacier', places: [] },
+    ]);
+    expect(variants.slice(0, 3).map((v) => v.id)).toEqual(['direct', 'coast', 'pass']);
+    const ids = variants.map((v) => v.id);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(ids.every(Boolean)).toBe(true);
+  });
+
+  it('gives a new stop its primary photo and leaves a kept stop its own images', () => {
+    const variants = revise([
+      {
+        tone: 'direct',
+        label: 'Highway',
+        places: [
+          { kind: 'waypoint', label: 'Stop', placeId: 'p_stop' },
+          { kind: 'waypoint', label: 'Beluga Point', placeId: 'p_beluga' },
+        ],
+      },
+    ]);
+    const [kept, added] = variants[0].places;
+    expect(kept.place?.images).toEqual([photo]);
+    expect(added.place?.images).toEqual([
+      { placePhoto: { placeId: 'p_beluga' }, credit: null, caption: null },
+    ]);
+  });
+
+  it("adds a requested variant beside the route's own, even when it looks like one it has", () => {
+    const proposal = parse({
+      summary: 's',
+      routeId: 'route_a',
+      variants: [
+        { tone: 'scenic', label: 'Coast', places: [] },
+        { tone: 'scenic', label: 'Glacier', places: [] },
+      ],
+    });
+    const resolved = resolveRouteProposal(proposal, data, { addOnly: true });
+    if ('error' in resolved) throw new Error(resolved.error);
+    expect(resolved.route.variants.map((v) => v.label)).toEqual([
+      'Highway',
+      'Coast',
+      'Pass',
+      'Coast',
+      'Glacier',
+    ]);
+    expect(resolved.route.variants.slice(0, 3)).toEqual(existing.variants);
+    const ids = resolved.route.variants.map((v) => v.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('gives each variant of a new route its own id', () => {
+    const resolved = resolveRouteProposal(
+      parse({
+        summary: 's',
+        from: { label: 'A', placeId: 'a' },
+        to: { label: 'B', placeId: 'p_b' },
+        variants: [
+          { tone: 'direct', label: 'Direct', places: [] },
+          { tone: 'scenic', label: 'One', places: [] },
+          { tone: 'scenic', label: 'Two', places: [] },
+        ],
+      }),
+      data,
+    );
+    if ('error' in resolved) throw new Error(resolved.error);
+    expect(new Set(resolved.route.variants.map((v) => v.id)).size).toBe(3);
   });
 
   it('reports a routeId that does not exist', () => {
