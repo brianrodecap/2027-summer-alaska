@@ -27,6 +27,7 @@ import {
   routeTimeRange,
   straightMiles,
   toTimeInput,
+  variantColor,
   variantColorIndex,
   variantPoints,
   variantSplit,
@@ -65,6 +66,16 @@ describe('variantColorIndex', () => {
   const variants = [{ tone: 'scenic' }, { tone: 'direct' }, { tone: 'scenic' }, { tone: 'scenic' }];
   it('gives the direct variant 0 wherever it sits, and the scenic ones 1, 2, 1', () => {
     expect(variants.map((_, i) => variantColorIndex(variants, i))).toEqual([1, 0, 2, 1]);
+  });
+});
+
+describe('variantColor', () => {
+  it("picks the theme color at the variant's color index", () => {
+    const variants = [{ tone: 'scenic' }, { tone: 'direct' }];
+    expect(variants.map((_, i) => variantColor(['blue', 'gold', 'teal'], variants, i))).toEqual([
+      'gold',
+      'blue',
+    ]);
   });
 });
 

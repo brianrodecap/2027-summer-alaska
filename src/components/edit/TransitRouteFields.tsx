@@ -16,7 +16,7 @@ import {
   type TransitFormState,
 } from '../../model/editForms';
 import { formatMinutes } from '../../model/formatting';
-import { variantColorIndex, variantSummary } from '../../model/routePlanner';
+import { variantColor, variantSummary } from '../../model/routePlanner';
 import { isReverseDrive } from '../../model/routeReverse';
 import { directVariantId, pickVariant } from '../../model/tripModel';
 import type { Route } from '../../model/types';
@@ -92,13 +92,11 @@ export function TransitRouteFields({
                 height: 12,
                 borderRadius: '50%',
                 flexShrink: 0,
-                bgcolor:
-                  palette.routeVariants[
-                    variantColorIndex(
-                      selectedRoute!.variants,
-                      selectedRoute!.variants.indexOf(chosen),
-                    )
-                  ],
+                bgcolor: variantColor(
+                  palette.routeVariants,
+                  selectedRoute!.variants,
+                  selectedRoute!.variants.indexOf(chosen),
+                ),
               }}
             />
             <Typography variant="body2" noWrap sx={{ flex: 1, minWidth: 0 }}>

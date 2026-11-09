@@ -81,12 +81,12 @@
   {
     "_id": "route_kennecott_anchorage",
     "from": {
-      "id": "ChIJ8X09aHSEs1YRhpKnyjO0wT4",
-      "label": "McCarthy",
+      "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
+      "label": "Anchorage",
       "images": [
         {
           "placePhoto": {
-            "placeId": "ChIJ8X09aHSEs1YRhpKnyjO0wT4"
+            "placeId": "ChIJQT-zBHaRyFYR42iEp1q6fSU"
           },
           "credit": null,
           "caption": null
@@ -94,12 +94,12 @@
       ]
     },
     "to": {
-      "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
-      "label": "Anchorage",
+      "id": "ChIJ8X09aHSEs1YRhpKnyjO0wT4",
+      "label": "McCarthy",
       "images": [
         {
           "placePhoto": {
-            "placeId": "ChIJQT-zBHaRyFYR42iEp1q6fSU"
+            "placeId": "ChIJ8X09aHSEs1YRhpKnyjO0wT4"
           },
           "credit": null,
           "caption": null
@@ -127,6 +127,7 @@
             "place": {
               "id": "ChIJe9iB48DiyFYR0c3w5-2X6No",
               "label": "Butte",
+              "timeZone": "America/Anchorage",
               "images": [
                 {
                   "placePhoto": {
@@ -138,14 +139,14 @@
               ]
             },
             "travel": {
-              "minutes": 337,
-              "miles": 270.6
+              "minutes": 47,
+              "miles": 42.1
             }
           }
         ],
         "finalTravel": {
-          "minutes": 46,
-          "miles": 41.9
+          "minutes": 352,
+          "miles": 270.6
         }
       }
     ],
@@ -353,17 +354,18 @@
       ]
     },
     "to": {
-      "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
-      "label": "Denali Visitor Center",
+      "id": "ChIJ-0i_GVHfzFYRRg-PNt-u2nw",
+      "label": "Denali Park",
       "images": [
         {
           "placePhoto": {
-            "placeId": "ChIJlwIYyVPfzFYR5iw_rFsr6xc"
+            "placeId": "ChIJ-0i_GVHfzFYRRg-PNt-u2nw"
           },
           "credit": null,
           "caption": null
         }
-      ]
+      ],
+      "timeZone": "America/Anchorage"
     },
     "variants": [
       {
@@ -387,14 +389,14 @@
               ]
             },
             "travel": {
-              "minutes": 89,
-              "miles": 82.9
+              "minutes": 91,
+              "miles": 82.3
             }
           }
         ],
         "finalTravel": {
-          "minutes": 45,
-          "miles": 40.4
+          "minutes": 48,
+          "miles": 45
         }
       }
     ],
@@ -563,17 +565,18 @@
       ]
     },
     "to": {
-      "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
-      "label": "Denali Visitor Center",
+      "id": "ChIJ-0i_GVHfzFYRRg-PNt-u2nw",
+      "label": "Denali Park",
       "images": [
         {
           "placePhoto": {
-            "placeId": "ChIJlwIYyVPfzFYR5iw_rFsr6xc"
+            "placeId": "ChIJ-0i_GVHfzFYRRg-PNt-u2nw"
           },
           "credit": null,
           "caption": null
         }
-      ]
+      ],
+      "timeZone": "America/Anchorage"
     },
     "variants": [
       {
@@ -597,7 +600,7 @@
               ]
             },
             "travel": {
-              "minutes": 53,
+              "minutes": 54,
               "miles": 50.4
             }
           },
@@ -623,8 +626,8 @@
           }
         ],
         "finalTravel": {
-          "minutes": 77,
-          "miles": 75.5
+          "minutes": 67,
+          "miles": 67.7
         }
       }
     ],
@@ -711,12 +714,12 @@
   {
     "_id": "route_new_11",
     "from": {
-      "id": "ChIJ8X09aHSEs1YRhpKnyjO0wT4",
-      "label": "McCarthy",
+      "id": "ChIJOXUaDwNEtlYRT6GRye20VB8",
+      "label": "Valdez",
       "images": [
         {
           "placePhoto": {
-            "placeId": "ChIJ8X09aHSEs1YRhpKnyjO0wT4"
+            "placeId": "ChIJOXUaDwNEtlYRT6GRye20VB8"
           },
           "credit": null,
           "caption": null
@@ -724,12 +727,12 @@
       ]
     },
     "to": {
-      "id": "ChIJOXUaDwNEtlYRT6GRye20VB8",
-      "label": "Valdez",
+      "id": "ChIJ8X09aHSEs1YRhpKnyjO0wT4",
+      "label": "McCarthy",
       "images": [
         {
           "placePhoto": {
-            "placeId": "ChIJOXUaDwNEtlYRT6GRye20VB8"
+            "placeId": "ChIJ8X09aHSEs1YRhpKnyjO0wT4"
           },
           "credit": null,
           "caption": null
@@ -758,14 +761,14 @@
               ]
             },
             "travel": {
-              "minutes": 202,
-              "miles": 145.7
+              "minutes": 38,
+              "miles": 34.5
             }
           }
         ],
         "finalTravel": {
-          "minutes": 38,
-          "miles": 34.5
+          "minutes": 202,
+          "miles": 145.7
         }
       }
     ],

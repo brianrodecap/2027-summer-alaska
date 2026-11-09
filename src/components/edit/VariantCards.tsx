@@ -10,7 +10,7 @@ import type { Coordinates } from '../../model/placeCoordinates';
 import {
   doublingBack,
   exampleClock,
-  variantColorIndex,
+  variantColor,
   variantPoints,
   variantSplit,
   variantSummary,
@@ -28,8 +28,8 @@ const VisibilityOffIcon = materialIcon('visibility_off');
 // One card per variant to compare them side by side: its kind and label, how long it
 // takes and how much longer than the fastest, how much of that is driving and how much
 // stopping, distance, stops and the example arrival time. The one being edited is
-// tinted in its map color with a check; the others fade back. The eye switches a
-// variant's line off the map. A dashed tile adds a variant and the violet one asks
+// outlined in its map color with a check, like the editor panel below it; the others
+// keep a plain outline. The eye switches a variant's line off the map. A dashed tile adds a variant and the violet one asks
 // the assistant for a scenic one.
 export function VariantCards({
   route,
@@ -57,6 +57,7 @@ export function VariantCards({
   const { palette } = useTheme();
   const summaries = route.variants.map(variantSummary);
   const fastest = summaries.length ? Math.min(...summaries.map((s) => s.minutes)) : 0;
+  const tied = summaries.filter((s) => s.minutes === fastest).length > 1;
   const accent = palette.primary.main;
   return (
     <Box sx={{ display: 'grid', gap: 1 }}>
@@ -68,10 +69,11 @@ export function VariantCards({
         }}
       >
         {route.variants.map((v, i) => {
-          const color = palette.routeVariants[variantColorIndex(route.variants, i)];
+          const color = variantColor(palette.routeVariants, route.variants, i);
           const { minutes, miles, stops } = summaries[i];
           const { drive } = variantSplit(v);
           const selected = i === active;
+          const isFastest = minutes === fastest;
           const off = hidden.has(v.id);
           const backs = doublingBack(variantPoints(route, v, coords)).some(Boolean);
           return (
@@ -97,11 +99,7 @@ export function VariantCards({
                 border: 2,
                 borderStyle: 'solid',
                 borderColor: selected ? color : 'divider',
-                borderTopWidth: 5,
-                borderTopColor: color,
-                bgcolor: selected ? alpha(color, 0.18) : 'background.paper',
-                opacity: selected ? 1 : 0.78,
-                '&:hover': { opacity: 1 },
+                bgcolor: 'background.paper',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: 0.25,
@@ -157,31 +155,36 @@ export function VariantCards({
                 {route.variants.length > 1 && (
                   <Typography
                     variant="caption"
-                    sx={{ fontWeight: 700, color: minutes === fastest ? color : 'text.secondary' }}
+                    sx={{ fontWeight: 700, color: isFastest ? color : 'text.secondary' }}
                   >
-                    {minutes === fastest ? 'Fastest' : `+${formatMinutes(minutes - fastest)}`}
+                    {isFastest
+                      ? tied
+                        ? 'Same time'
+                        : 'Fastest'
+                      : `+${formatMinutes(minutes - fastest)}`}
                   </Typography>
                 )}
                 {backs && <WarningBadge title="Doubles back" />}
               </Box>
-              <Box
-                aria-label="Driving, then stops"
-                sx={{
-                  height: 6,
-                  borderRadius: 3,
-                  overflow: 'hidden',
-                  display: 'flex',
-                  bgcolor: alpha(color, 0.18),
-                }}
-              >
-                <Box sx={{ width: `${(drive / Math.max(1, minutes)) * 100}%`, bgcolor: color }} />
+              <Tooltip title="Solid: driving. Hatched: time at stops.">
                 <Box
                   sx={{
-                    flex: 1,
-                    backgroundImage: `repeating-linear-gradient(135deg, ${color} 0 2px, transparent 2px 5px)`,
+                    height: 6,
+                    borderRadius: 3,
+                    overflow: 'hidden',
+                    display: 'flex',
+                    bgcolor: alpha(color, 0.18),
                   }}
-                />
-              </Box>
+                >
+                  <Box sx={{ width: `${(drive / Math.max(1, minutes)) * 100}%`, bgcolor: color }} />
+                  <Box
+                    sx={{
+                      flex: 1,
+                      backgroundImage: `repeating-linear-gradient(135deg, ${color} 0 2px, transparent 2px 5px)`,
+                    }}
+                  />
+                </Box>
+              </Tooltip>
               <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5 }}>
                 {miles} mi · {stops} {stops === 1 ? 'stop' : 'stops'} ·{' '}
                 {exampleClock(minutes, departure).toLowerCase()}

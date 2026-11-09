@@ -64,6 +64,7 @@ import {
   routePoints,
   routeTimeRange,
   toTimeInput,
+  variantColor,
   variantColorIndex,
   variantPoints,
   variantSummary,
@@ -294,6 +295,11 @@ function RoutesPlanner({
     [shown, selected, view],
   );
   const current = view?.variants[activeVariant] ?? null;
+  const { palette } = useTheme();
+  const activeColor =
+    view && current
+      ? variantColor(palette.routeVariants, view.variants, activeVariant)
+      : palette.primary.main;
   const backs = view && current ? doublingBack(variantPoints(view, current, coords)) : [];
 
   // Edits made here are saved as they happen, through the same checks as the Edit
@@ -1084,13 +1090,11 @@ function RoutesPlanner({
               />
               {task.busy && asking === 'scenic' && working}
               {current && (
-                <Paper
-                  variant="outlined"
-                  sx={{ p: 1.5, borderColor: 'primary.main', borderWidth: 2 }}
-                >
+                <Paper variant="outlined" sx={{ p: 1.5, borderWidth: 2, borderColor: activeColor }}>
                   <Stack spacing={1.5}>
                     <VariantEditor
                       variant={current}
+                      color={activeColor}
                       directElsewhere={(view ?? selected).variants.some(
                         (v, i) => i !== activeVariant && v.tone === DEFAULT_ROUTE_TONE,
                       )}
@@ -1178,6 +1182,7 @@ function RoutesPlanner({
                       disabled={pending !== null}
                       viaAllowed={current.tone !== DEFAULT_ROUTE_TONE}
                       activeStop={pending ? null : previewStop}
+                      color={activeColor}
                       onMove={move}
                       onEdit={editStop}
                       onRemove={removeStop}

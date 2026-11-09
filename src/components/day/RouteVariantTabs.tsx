@@ -3,7 +3,7 @@ import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
 
-import { variantColorIndex } from '../../model/routePlanner';
+import { variantColor } from '../../model/routePlanner';
 import type { EnrichedTransit } from '../../model/types';
 import { useRouteVariantSelection } from '../../state/useTripSelections';
 
@@ -39,7 +39,7 @@ export function RouteVariantTabs({ transit }: { transit: EnrichedTransit }) {
                   width: 10,
                   height: 10,
                   borderRadius: '50%',
-                  bgcolor: palette.routeVariants[variantColorIndex(info.variants, i)],
+                  bgcolor: variantColor(palette.routeVariants, info.variants, i),
                 }}
               />
             }

@@ -25,6 +25,15 @@ export function variantColorIndex(variants: Pick<RouteVariant, 'tone'>[], index:
   return 1 + (scenicBefore.length % 2);
 }
 
+// The theme color a variant draws in, from its `routeVariants` list.
+export function variantColor(
+  colors: readonly string[],
+  variants: Pick<RouteVariant, 'tone'>[],
+  index: number,
+): string {
+  return colors[variantColorIndex(variants, index)];
+}
+
 // Every place id a route touches: its ends and each variant's places.
 export function routePlaceIds(route: Route): string[] {
   return [

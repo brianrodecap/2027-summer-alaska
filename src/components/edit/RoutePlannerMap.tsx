@@ -1,7 +1,7 @@
 import Box from '@mui/material/Box';
 import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
-import { useTheme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import { AdvancedMarker, Map as GoogleMap, Polyline, useMap } from '@vis.gl/react-google-maps';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -14,7 +14,7 @@ import {
   offsetPath,
   pointOnPath,
   routePoints,
-  variantColorIndex,
+  variantColor,
   variantPlaceIds,
 } from '../../model/routePlanner';
 import { DEFAULT_ROUTE_TONE } from '../../model/tripModel';
@@ -249,7 +249,7 @@ function Layers({
             <Polyline
               key={i}
               path={path}
-              strokeColor={palette.routeVariants[variantColorIndex(selected.variants, i)]}
+              strokeColor={variantColor(palette.routeVariants, selected.variants, i)}
               strokeOpacity={active ? 1 : 0.85}
               strokeWeight={active ? 6 : 5}
               zIndex={active ? 2 : 1}
@@ -307,6 +307,7 @@ function StopMarkers({
 }) {
   const { palette } = useTheme();
   const places = route.variants[variant]?.places ?? [];
+  const color = variantColor(palette.routeVariants, route.variants, variant);
   let number = 0;
   const pins = [
     {
@@ -353,10 +354,10 @@ function StopMarkers({
                   fontWeight: 700,
                   border: via ? 2 : 3,
                   borderStyle: 'solid',
-                  borderColor: 'primary.main',
-                  bgcolor: end || active ? 'primary.main' : 'background.paper',
-                  color: end || active ? 'primary.contrastText' : 'text.primary',
-                  boxShadow: active ? `0 0 0 4px ${palette.primary.main}55` : undefined,
+                  borderColor: color,
+                  bgcolor: end || active ? color : 'background.paper',
+                  color: end || active ? palette.getContrastText(color) : 'text.primary',
+                  boxShadow: active ? `0 0 0 4px ${alpha(color, 0.33)}` : undefined,
                 }}
               >
                 {via ? null : glyph}

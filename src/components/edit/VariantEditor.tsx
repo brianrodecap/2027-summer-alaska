@@ -16,6 +16,7 @@ const DeleteIcon = materialIcon('delete');
 // still decide what saves.
 export function VariantEditor({
   variant,
+  color,
   directElsewhere,
   onlyVariant,
   disabled,
@@ -23,6 +24,8 @@ export function VariantEditor({
   onRemove,
 }: {
   variant: RouteVariant;
+  // The variant's map color, which fills the chosen kind.
+  color: string;
   directElsewhere: boolean;
   onlyVariant: boolean;
   disabled: boolean;
@@ -45,12 +48,14 @@ export function VariantEditor({
         <ChoiceChip
           label="Direct"
           selected={direct}
+          color={color}
           disabled={disabled || (directElsewhere && !direct)}
           onClick={() => onChange({ tone: DEFAULT_ROUTE_TONE })}
         />
         <ChoiceChip
           label="Scenic"
           selected={!direct}
+          color={color}
           disabled={disabled}
           onClick={() => onChange({ tone: 'scenic' })}
         />

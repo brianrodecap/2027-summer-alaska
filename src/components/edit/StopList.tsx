@@ -21,6 +21,7 @@ import Collapse from '@mui/material/Collapse';
 import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
+import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import { useEffect, useRef, useState } from 'react';
 
@@ -43,7 +44,8 @@ const NODE = 26;
 
 // A round marker on the spine: a letter for an end, a number for a waypoint, nothing
 // (an open ring) for a via.
-function Node({ glyph, filled }: { glyph: string; filled?: boolean }) {
+function Node({ glyph, color, filled }: { glyph: string; color: string; filled?: boolean }) {
+  const { palette } = useTheme();
   return (
     <Box
       sx={{
@@ -57,9 +59,9 @@ function Node({ glyph, filled }: { glyph: string; filled?: boolean }) {
         fontWeight: 700,
         border: 3,
         borderStyle: 'solid',
-        borderColor: 'primary.main',
-        bgcolor: filled ? 'primary.main' : 'background.paper',
-        color: filled ? 'primary.contrastText' : 'text.primary',
+        borderColor: color,
+        bgcolor: filled ? color : 'background.paper',
+        color: filled ? palette.getContrastText(color) : 'text.primary',
         position: 'relative',
         zIndex: 1,
       }}
@@ -82,10 +84,20 @@ function LegCaption({ travel, back }: { travel: RouteTravel; back: boolean }) {
 }
 
 // One end of the drive: where it starts or finishes, and the example clock time.
-function EndRow({ glyph, name, clock }: { glyph: string; name: string; clock: string }) {
+function EndRow({
+  glyph,
+  name,
+  clock,
+  color,
+}: {
+  glyph: string;
+  name: string;
+  clock: string;
+  color: string;
+}) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-      <Node glyph={glyph} filled />
+      <Node glyph={glyph} color={color} filled />
       <Typography variant="body1" sx={{ fontWeight: 700, flex: 1, minWidth: 0 }} noWrap>
         {name}
       </Typography>
@@ -110,6 +122,7 @@ export function StopList({
   disabled,
   viaAllowed,
   activeStop,
+  color,
   onMove,
   onEdit,
   onRemove,
@@ -128,6 +141,8 @@ export function StopList({
   viaAllowed: boolean;
   // The place a preview is stopped at.
   activeStop: number | null;
+  // The variant's map color, for the markers, the spine and the stopped row.
+  color: string;
   onMove: (from: number, to: number) => void;
   onEdit: (index: number, entry: RoutePlaceEntry) => boolean | void;
   onRemove: (index: number) => void;
@@ -156,11 +171,11 @@ export function StopList({
             top: NODE / 2,
             bottom: NODE / 2,
             width: 3,
-            bgcolor: 'primary.main',
+            bgcolor: color,
             opacity: 0.5,
           }}
         />
-        <EndRow glyph="A" name={from} clock={clocks.start} />
+        <EndRow glyph="A" name={from} clock={clocks.start} color={color} />
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
           <SortableContext
             items={places.map((_, i) => String(i))}
@@ -178,6 +193,7 @@ export function StopList({
                   disabled={disabled}
                   viaAllowed={viaAllowed}
                   active={i === activeStop}
+                  color={color}
                   onEdit={(entry) => onEdit(i, entry)}
                   onRemove={() => onRemove(i)}
                 />
@@ -186,7 +202,7 @@ export function StopList({
           </SortableContext>
         </DndContext>
         <LegCaption travel={finalTravel} back={backs[places.length]} />
-        <EndRow glyph="B" name={to} clock={clocks.end} />
+        <EndRow glyph="B" name={to} clock={clocks.end} color={color} />
       </Box>
       <AddStop disabled={disabled} onAdd={onAdd} />
     </Box>
@@ -201,6 +217,7 @@ function StopRow({
   disabled,
   viaAllowed,
   active,
+  color,
   onEdit,
   onRemove,
 }: {
@@ -211,6 +228,7 @@ function StopRow({
   disabled: boolean;
   viaAllowed: boolean;
   active: boolean;
+  color: string;
   onEdit: (entry: RoutePlaceEntry) => boolean | void;
   onRemove: () => void;
 }) {
@@ -235,7 +253,7 @@ function StopRow({
       sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}
     >
       <Box sx={{ pt: 1.25 }}>
-        <Node glyph={glyph} />
+        <Node glyph={glyph} color={color} />
       </Box>
       <Paper
         variant="outlined"
@@ -243,7 +261,7 @@ function StopRow({
           flex: 1,
           minWidth: 0,
           opacity: isDragging ? 0.5 : 1,
-          ...(active && { borderColor: 'primary.main', bgcolor: 'action.selected' }),
+          ...(active && { borderColor: color, bgcolor: 'action.selected' }),
         }}
       >
         <Box
