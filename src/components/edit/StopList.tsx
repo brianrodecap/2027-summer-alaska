@@ -36,6 +36,7 @@ import { CommitField } from './CommitField';
 import { PlacePickerField } from './PlacePickerField';
 
 const AddIcon = materialIcon('add');
+const CloseIcon = materialIcon('close');
 const DeleteIcon = materialIcon('delete');
 const DragIndicatorIcon = materialIcon('drag_indicator');
 const ExpandMoreIcon = materialIcon('expand_more');
@@ -353,15 +354,14 @@ function StopRow({
               onCommit={(note) => onEdit({ ...place, note: note || null })}
             />
             <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <Button
+              <IconButton
                 size="small"
-                color="error"
-                startIcon={<DeleteIcon />}
+                aria-label={`Remove ${name}`}
                 disabled={disabled}
                 onClick={onRemove}
               >
-                Remove stop
-              </Button>
+                <DeleteIcon fontSize="small" />
+              </IconButton>
             </Box>
           </Stack>
         </Collapse>
@@ -389,26 +389,28 @@ function AddStop({ disabled, onAdd }: { disabled: boolean; onAdd: (place: Place)
     );
   }
   return (
-    <Stack direction="row" spacing={1} sx={{ alignItems: 'flex-start', mt: 1 }}>
-      <PlacePickerField
-        label="Add a waypoint"
-        place={place}
-        onChange={setPlace}
-        onPicked={(picked) => {
-          setAdding(false);
-          setPlace(null);
-          onAdd(picked);
-        }}
-      />
-      <Button
-        size="small"
+    <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mt: 1, ml: `${NODE + 12}px` }}>
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <PlacePickerField
+          label="Add a waypoint"
+          place={place}
+          onChange={setPlace}
+          onPicked={(picked) => {
+            setAdding(false);
+            setPlace(null);
+            onAdd(picked);
+          }}
+        />
+      </Box>
+      <IconButton
+        aria-label="Cancel adding a waypoint"
         onClick={() => {
           setAdding(false);
           setPlace(null);
         }}
       >
-        Cancel
-      </Button>
+        <CloseIcon />
+      </IconButton>
     </Stack>
   );
 }

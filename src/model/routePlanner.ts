@@ -83,11 +83,14 @@ const fromWorld = ({ x, y }: { x: number; y: number }): Coordinates => ({
   lat: ((2 * Math.atan(Math.exp((0.5 - y) * 2 * Math.PI)) - Math.PI / 2) * 180) / Math.PI,
 });
 
+const MAX_MITER = 3;
+
 // The path shifted `pixels` to the right of its direction of travel as drawn
 // at `zoom` (negative: left), so several variants that share a road sit side
 // by side instead of hiding one another. A vertex leans on the average of the
 // directions in and out of it; a repeated point or an exact U-turn, where that
-// average vanishes, takes the direction of whichever segment is left.
+// average vanishes, takes the direction of whichever segment is left. The shift
+// is stretched by the miter at a bend so the gap between lines holds there too.
 export function offsetPath(path: Coordinates[], pixels: number, zoom: number): Coordinates[] {
   if (pixels === 0 || path.length < 2) return path;
   const world = path.map(toWorld);
@@ -105,8 +108,14 @@ export function offsetPath(path: Coordinates[], pixels: number, zoom: number): C
       y: (before?.y ?? 0) + (after?.y ?? 0),
     });
     const { x, y } = d ?? before ?? after ?? first;
+    // Pushed out by the miter, 1 / cos(half the turn), so the lines keep their gap
+    // at a bend; capped so a near U-turn does not throw a spike.
+    const miter =
+      d && before && after
+        ? Math.min(MAX_MITER, 2 / Math.hypot(before.x + after.x, before.y + after.y))
+        : 1;
     // Rotated a quarter turn to the right (the map's y axis points south).
-    return fromWorld({ x: p.x - y * distance, y: p.y + x * distance });
+    return fromWorld({ x: p.x - y * distance * miter, y: p.y + x * distance * miter });
   });
 }
 
@@ -166,9 +175,11 @@ export function pathMiles(points: Coordinates[]): number {
   return points.slice(1).reduce((sum, p, i) => sum + straightMiles(points[i], p), 0);
 }
 
+const MIN_MILES_SAVED = 1;
+
 // The order of `stops` (each entry the index of the stop that goes there) that
 // makes the shortest drive from `from` to `to`, or the order given when nothing
-// is shorter by a mile. shortcut: straight-line distances, and more than 8
+// is shorter by MIN_MILES_SAVED. shortcut: straight-line distances, and more than 8
 // stops keep their order; upgrade to drive times if it misorders a winding
 // road, and to a heuristic if routes ever grow past 8 stops.
 export function optimizeOrder(from: Coordinates, to: Coordinates, stops: Coordinates[]): number[] {
@@ -176,7 +187,7 @@ export function optimizeOrder(from: Coordinates, to: Coordinates, stops: Coordin
   if (stops.length < 2 || stops.length > 8) return identity;
   const length = (order: number[]) => pathMiles([from, ...order.map((i) => stops[i]), to]);
   let best = identity;
-  let bestLength = length(identity) - 1;
+  let bestLength = length(identity) - MIN_MILES_SAVED;
   const search = (order: number[], left: number[]) => {
     if (!left.length) {
       const total = length(order);
@@ -294,11 +305,14 @@ export const DEFAULT_EXAMPLE_DEPARTURE = 8 * 60;
 
 // A made-up clock for the preview and the stop list: `minute` into a drive that
 // departs at `departure` (minutes into the day).
-// shortcut: wraps past midnight without saying so, when a route needs a day marker.
+// A time past midnight carries the number of days on, "+1".
 export function exampleClock(minute: number, departure = DEFAULT_EXAMPLE_DEPARTURE): string {
-  const m = (((departure + Math.round(minute)) % (24 * 60)) + 24 * 60) % (24 * 60);
+  const total = departure + Math.round(minute);
+  const m = ((total % (24 * 60)) + 24 * 60) % (24 * 60);
+  const days = Math.floor(total / (24 * 60));
   const h = Math.floor(m / 60);
-  return `${h % 12 || 12}:${String(m % 60).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+  const clock = `${h % 12 || 12}:${String(m % 60).padStart(2, '0')} ${h < 12 ? 'AM' : 'PM'}`;
+  return days > 0 ? `${clock} +${days}` : clock;
 }
 
 // ---------- Filters for the route list

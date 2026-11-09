@@ -135,6 +135,34 @@ describe('offsetPath', () => {
       expect(gaps[0]).toBeGreaterThan(0);
     }
   });
+  // How far each vertex moved, in the map's own units.
+  const shifts = (path: typeof east) => {
+    const world = ({ lat, lng }: (typeof east)[number]) => ({
+      x: lng / 360,
+      y: -Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI) / 360)) / (2 * Math.PI),
+    });
+    return offsetPath(path, 8, 10).map((p, i) =>
+      Math.hypot(world(p).x - world(path[i]).x, world(p).y - world(path[i]).y),
+    );
+  };
+  it('stretches the shift at a right-angle bend so the lines keep their gap', () => {
+    const bend = [
+      { lat: 61, lng: -150 },
+      { lat: 61, lng: -149 },
+      { lat: 62, lng: -149 },
+    ];
+    const [straight, corner] = shifts(bend);
+    expect(corner / straight).toBeCloseTo(Math.SQRT2, 3);
+  });
+  it('stretches no more than three times at a near U-turn', () => {
+    const sharp = [
+      { lat: 61, lng: -150 },
+      { lat: 61, lng: -149 },
+      { lat: 61.001, lng: -150 },
+    ];
+    const [straight, corner] = shifts(sharp);
+    expect(corner / straight).toBeCloseTo(3, 3);
+  });
   it('returns the path untouched for no offset or a single point', () => {
     expect(offsetPath(east, 0, 10)).toBe(east);
     const one = [east[0]];
@@ -357,7 +385,13 @@ describe('preview', () => {
     expect(exampleClock(0)).toBe('8:00 AM');
     expect(exampleClock(255)).toBe('12:15 PM');
     expect(exampleClock(5 * 60 + 5)).toBe('1:05 PM');
-    expect(exampleClock(16 * 60)).toBe('12:00 AM');
+  });
+
+  it('marks a time past midnight with the days on', () => {
+    expect(exampleClock(15 * 60 + 59)).toBe('11:59 PM');
+    expect(exampleClock(16 * 60)).toBe('12:00 AM +1');
+    expect(exampleClock(16 * 60 + 24 * 60)).toBe('12:00 AM +2');
+    expect(exampleClock(0, 23 * 60)).toBe('11:00 PM');
   });
 });
 

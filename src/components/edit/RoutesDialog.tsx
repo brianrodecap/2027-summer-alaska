@@ -107,20 +107,13 @@ const PlayArrowIcon = materialIcon('play_arrow');
 const SearchIcon = materialIcon('search');
 const SwapHorizIcon = materialIcon('swap_horiz');
 
-// A short line in the variant's map color: solid for the direct variant,
-// dashed and dotted for the scenic ones.
+// A short line in the variant's map color, as the map and the variant cards draw it.
 function LineSwatch({ index }: { index: number }) {
   const color = useTheme().palette.routeVariants[index];
-  const style = ['solid', 'dashed', 'dotted'][index];
   return (
     <Box
       component="span"
-      sx={{
-        display: 'inline-block',
-        width: 24,
-        borderTop: `4px ${style} ${color}`,
-        borderRadius: 1,
-      }}
+      sx={{ display: 'inline-block', width: 24, height: 4, borderRadius: 2, bgcolor: color }}
     />
   );
 }
@@ -175,7 +168,7 @@ const ROUTE_FILTERS: { id: RouteFilter; label: string; tip: string }[] = [
 const PREVIEW_NEEDS_PLACES = 'Every stop needs a place Google knows before it can be previewed.';
 
 const STALE =
-  'The route changed while its drive times were being looked up, so that change was not saved.';
+  'The route changed while its drive times or the assistant were being looked up, so that change was not saved.';
 
 // A set with `item` taken out if it was in, put in if it was not.
 function toggled<T>(set: ReadonlySet<T>, item: T): Set<T> {
@@ -426,6 +419,12 @@ function RoutesPlanner({
     setProblem(null);
     playback.pause();
   }
+  // What the handlers that await a lookup compare against when it returns: the
+  // route and variant open now, and the routes as saved now.
+  const latest = useRef({ key: previewKey, selected, routes });
+  useEffect(() => {
+    latest.current = { key: previewKey, selected, routes };
+  }, [previewKey, selected, routes]);
   const previewReversed = preview?.reversed ?? false;
   // The example departure every clock time is worked from, and the variants switched
   // off the map. Neither is saved.
@@ -470,13 +469,16 @@ function RoutesPlanner({
   // A new route has one direct variant, from start to end, with its real drive time.
   const createRoute = async (from: Place, to: Place) => {
     const blank = { ...blankRouteVariant([]), label: 'Direct' };
-    const route = await recomputeRouteTravel({
-      _id: nextRouteId(routes),
+    const made = await recomputeRouteTravel({
+      _id: '',
       from: endpoint(from),
       to: endpoint(to),
       variants: [blank],
       images: [],
     });
+    // The id is taken from the routes as they are after the lookups, so a route saved
+    // meanwhile is not overwritten.
+    const route = { ...made, _id: nextRouteId(latest.current.routes) };
     onSave(route);
     select(route._id);
   };
@@ -551,8 +553,12 @@ function RoutesPlanner({
     revisedId?: string,
   ) => {
     setAsking(where === 'stops' ? 'stops' : base ? 'scenic' : 'plan');
+    const opened = latest.current;
+    const moved = () =>
+      latest.current.key !== opened.key || latest.current.selected !== opened.selected;
     const proposal = await task.run(question);
     if (!proposal || !data) return;
+    if (moved()) return setProblem(STALE);
     const resolved = resolveRouteProposal(proposal, data, {
       addOnly: !revisedId && base !== null,
     });
@@ -562,6 +568,7 @@ function RoutesPlanner({
       return task.setError(`That route doesn't connect ${routeLabel(drive)}.`);
     }
     const route = await recomputeRouteTravel(resolved.route);
+    if (moved()) return setProblem(STALE);
     setAiDraft({
       base,
       variant: activeVariant,
