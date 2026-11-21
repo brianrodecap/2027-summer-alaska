@@ -286,6 +286,27 @@
           {
             "kind": "waypoint",
             "place": {
+              "id": "ChIJ_zcG_GTlLVERJTCFmnPxOts",
+              "label": "Dalton Highway Sign",
+              "timeZone": "America/Anchorage",
+              "images": [
+                {
+                  "placePhoto": {
+                    "placeId": "ChIJ_zcG_GTlLVERJTCFmnPxOts"
+                  },
+                  "credit": null,
+                  "caption": null
+                }
+              ]
+            },
+            "travel": {
+              "minutes": 109,
+              "miles": 80.2
+            }
+          },
+          {
+            "kind": "waypoint",
+            "place": {
               "id": "ChIJq1HFuXaxLlERly-xPwd2LII",
               "label": "Finger Mountain",
               "images": [
@@ -299,8 +320,8 @@
               ]
             },
             "travel": {
-              "minutes": 234,
-              "miles": 176.9
+              "minutes": 137,
+              "miles": 96.7
             }
           },
           {
@@ -325,7 +346,7 @@
           }
         ],
         "finalTravel": {
-          "minutes": 83,
+          "minutes": 89,
           "miles": 59.9
         }
       }

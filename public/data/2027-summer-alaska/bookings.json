@@ -91,9 +91,20 @@
   },
   {
     "_id": "booking_stay_coldfoot",
-    "status": "planning",
-    "pricing": null,
-    "confirmationNumber": null
+    "status": "booked",
+    "pricing": {
+      "perTraveler": [],
+      "fixed": [
+        {
+          "label": "Fixed",
+          "amount": {
+            "amount": 690,
+            "currency": "USD"
+          }
+        }
+      ]
+    },
+    "confirmationNumber": "An6P"
   },
   {
     "_id": "booking_stay_westmark_fbx_2",

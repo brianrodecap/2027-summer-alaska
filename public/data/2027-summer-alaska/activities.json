@@ -1200,34 +1200,6 @@
     "date": "2027-06-30"
   },
   {
-    "_id": "act_jul1_ideal_1",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jul1_ideal",
-    "startAt": "2027-07-01T08:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Breakfast buffet at Coldfoot Camp Cafe",
-    "place": {
-      "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
-      "label": "Coldfoot Camp Cafe",
-      "images": [
-        {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/World%27s_Northernmost_Truck_Stop,_Coldfoot,_AK.jpg",
-          "credit": "Photo by Scott McMurren / CC BY 2.0",
-          "caption": "Coldfoot Camp, the world's northernmost truck stop"
-        }
-      ]
-    },
-    "bookingId": null,
-    "mealType": "breakfast",
-    "diningFormat": "sit-down",
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
     "_id": "act_jul1_ideal_lunch",
     "legId": "leg_parks",
     "scenarioId": "scenario_jul1_ideal",
@@ -1296,36 +1268,6 @@
     "bookingId": null,
     "mealType": null,
     "diningFormat": null,
-    "includedIn": null,
-    "options": null,
-    "travelers": null,
-    "images": []
-  },
-  {
-    "_id": "act_jul1_alt_breakfast",
-    "legId": "leg_parks",
-    "scenarioId": "scenario_jul1_alt",
-    "startAt": "2027-07-01T06:00",
-    "durationMinutes": null,
-    "timeLabel": null,
-    "priority": null,
-    "text": "Breakfast buffet at Coldfoot Camp Cafe",
-    "place": {
-      "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
-      "label": "Coldfoot Camp Cafe",
-      "images": [
-        {
-          "placePhoto": {
-            "placeId": "ChIJifpoSNzAKFERJLZv8umH-cw"
-          },
-          "credit": null,
-          "caption": null
-        }
-      ]
-    },
-    "bookingId": null,
-    "mealType": "breakfast",
-    "diningFormat": "sit-down",
     "includedIn": null,
     "options": null,
     "travelers": null,
@@ -4483,17 +4425,20 @@
     "durationMinutes": null,
     "timeLabel": null,
     "priority": null,
-    "text": "Breakfast buffet at Coldfoot Camp Cafe",
+    "text": null,
     "place": {
-      "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
-      "label": "Coldfoot Camp Cafe",
+      "id": "ChIJq6qqqqoHMlER2hxwNGwiU_g",
+      "label": "Arctic Getaway Bed & Breakfast",
       "images": [
         {
-          "uri": "https://commons.wikimedia.org/wiki/Special:FilePath/World%27s_Northernmost_Truck_Stop,_Coldfoot,_AK.jpg",
-          "credit": "Photo by Scott McMurren / CC BY 2.0",
-          "caption": "Coldfoot Camp, the world's northernmost truck stop"
+          "placePhoto": {
+            "placeId": "ChIJq6qqqqoHMlER2hxwNGwiU_g"
+          },
+          "credit": null,
+          "caption": null
         }
-      ]
+      ],
+      "timeZone": "America/Anchorage"
     },
     "bookingId": null,
     "mealType": "breakfast",
@@ -6268,5 +6213,37 @@
     "options": null,
     "travelers": null,
     "images": []
+  },
+  {
+    "_id": "act_jul1_ideal_1",
+    "legId": "leg_parks",
+    "scenarioId": null,
+    "startAt": "2027-07-01T08:00",
+    "durationMinutes": null,
+    "timeLabel": null,
+    "priority": null,
+    "text": "Breakfast buffet at Coldfoot Camp Cafe",
+    "place": {
+      "id": "ChIJq6qqqqoHMlER2hxwNGwiU_g",
+      "label": "Arctic Getaway Bed & Breakfast",
+      "images": [
+        {
+          "placePhoto": {
+            "placeId": "ChIJq6qqqqoHMlER2hxwNGwiU_g"
+          },
+          "credit": null,
+          "caption": null
+        }
+      ],
+      "timeZone": "America/Anchorage"
+    },
+    "bookingId": null,
+    "mealType": "breakfast",
+    "diningFormat": "sit-down",
+    "includedIn": null,
+    "options": null,
+    "travelers": null,
+    "images": [],
+    "date": null
   }
 ]

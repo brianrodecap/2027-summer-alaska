@@ -3,29 +3,43 @@
     "_id": "stay_coldfoot",
     "legId": "leg_parks",
     "scenarioId": null,
-    "checkInAt": "2027-06-29T15:00",
+    "checkInAt": "2027-06-29T16:00",
     "checkOutAt": "2027-07-01T11:00",
     "lodging": {
       "place": {
-        "id": "ChIJKXBYEtzAKFERMTb-h_NwAtE",
-        "label": "Slate Creek Inn (Coldfoot Camp)",
+        "id": "ChIJq6qqqqoHMlER2hxwNGwiU_g",
+        "label": "Arctic Getaway Bed & Breakfast",
         "images": [
           {
             "placePhoto": {
-              "placeId": "ChIJKXBYEtzAKFERMTb-h_NwAtE"
+              "placeId": "ChIJq6qqqqoHMlER2hxwNGwiU_g"
             },
             "credit": null,
             "caption": null
           }
-        ]
+        ],
+        "timeZone": "America/Anchorage",
+        "phone": "907.799.4455",
+        "website": "https://www.arcticgetaway.com/koyukuk-cabin/"
       },
-      "roomType": null,
+      "roomType": "Koyukuk Cabin",
       "roomNumber": null,
-      "campsite": null
+      "campsite": null,
+      "bedConfiguration": "1 Twin, 2 Full"
     },
     "bookingId": "booking_stay_coldfoot",
     "packages": null,
     "images": [
+      {
+        "placePhoto": {
+          "placeId": "ChIJq6qqqqoHMlER2hxwNGwiU_g",
+          "author": "Arctic Getaway Bed & Breakfast",
+          "widthPx": 4032,
+          "heightPx": 3024
+        },
+        "credit": null,
+        "caption": null
+      },
       {
         "uri": "https://images.squarespace-cdn.com/content/v1/53c02418e4b0b3bb7d14b47f/41555e6c-d79d-48eb-85e9-f35682cdfc82/Coldfoot+Camp+Sign+s.jpg",
         "credit": "Courtesy of Coldfoot Camp",
