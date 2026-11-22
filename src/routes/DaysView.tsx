@@ -9,6 +9,7 @@ import { DayMapPanel } from '../components/day/DayMapPanel';
 import { useActiveDayDate } from '../components/day/useActiveDayDate';
 import { AddToDayDialog } from '../components/daysview/AddToDayDialog';
 import { DayList } from '../components/daysview/DayList';
+import { DayNavigator } from '../components/daysview/DayNavigator';
 import { DaysAppBar } from '../components/daysview/DaysAppBar';
 import { DaysDialogs } from '../components/daysview/DaysDialogs';
 import { DetailPanels } from '../components/daysview/DetailPanels';
@@ -25,9 +26,10 @@ import { useTripData } from '../state/useTripData';
 import { useFilterSelection } from '../state/useTripSelections';
 
 // The trip's day list: an app bar, one block per day (with drag-and-drop
-// reordering), a sidebar beside it on wide screens (the day map or the trip
-// assistant), and the sheets and dialogs the rows open. Each of those lives in its own component or hook under
-// components/daysview; this only wires them to the live days.
+// reordering), and on wide screens a day navigator and a map-or-assistant pane
+// beside it, plus the sheets and dialogs the rows open. Each of those lives in
+// its own component or hook under components/daysview; this only wires them to
+// the live days.
 export function DaysView() {
   const { view, data } = useTripData();
   const { activeFilterTokens } = useFilterSelection();
@@ -44,7 +46,7 @@ export function DaysView() {
   // Groups of alternatives without exactly one Ideal — surfaced on the
   // Manage-scenarios button and inside its dialog.
   const groupProblems = useMemo(() => (data ? describeScenarioGroupProblems(data) : []), [data]);
-  useDayListNavigation(view, slug, date);
+  const jumpToDay = useDayListNavigation(view, slug, date);
 
   const visibleDays = useMemo(
     () =>
@@ -73,6 +75,15 @@ export function DaysView() {
     <AssistantChatProvider>
       <Box>
         <Box sx={{ display: 'flex' }}>
+          <DayNavigator days={visibleDays} activeDate={activeDate} onSelectDay={jumpToDay} />
+          <SidebarSlot
+            activeDay={activeDay}
+            view={assistant.sidebarView}
+            onViewChange={assistant.setSidebarView}
+            onOpenActivity={panels.handleOpenActivity}
+            onOpenStay={panels.stayPanel.onOpen}
+            onOpenTransit={panels.transitPanel.onOpen}
+          />
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <DaysAppBar
               canJumpToDay={Boolean(view.dateRange)}
@@ -92,14 +103,6 @@ export function DaysView() {
               onAddEvent={setAddWizardDay}
             />
           </Box>
-          <SidebarSlot
-            activeDay={activeDay}
-            view={assistant.sidebarView}
-            onViewChange={assistant.setSidebarView}
-            onOpenActivity={panels.handleOpenActivity}
-            onOpenStay={panels.stayPanel.onOpen}
-            onOpenTransit={panels.transitPanel.onOpen}
-          />
         </Box>
         <DayMapPanel {...mapDialog.panelProps} />
         <DetailPanels panels={panels} />

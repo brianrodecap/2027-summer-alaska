@@ -10,3 +10,12 @@ export const DAYS_APP_BAR_HEIGHT = '4rem';
 export const DAY_SCROLL_GAP = '0.5rem';
 
 export const dayElementId = (date: string): string => `day-${date}`;
+
+// The wide layout's side panes (the day navigator, the map or assistant): they
+// stay in view at full height while the day list scrolls.
+export const STICKY_PANE_SX = {
+  flexShrink: 0,
+  position: 'sticky',
+  top: 0,
+  height: '100vh',
+} as const;

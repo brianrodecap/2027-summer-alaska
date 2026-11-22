@@ -6,7 +6,8 @@ import type { TripView } from '../../model/types';
 import { dayElementId } from '../day/dayLayout';
 
 // The two ways the URL's date drives the day list: scrolling to it, and — on
-// the bare /days route — defaulting to today.
+// the bare /days route — defaulting to today. Returns a function that scrolls to
+// a day and puts it in the URL, for pickers beside the list.
 export function useDayListNavigation(
   view: TripView | null,
   slug: string | undefined,
@@ -47,4 +48,10 @@ export function useDayListNavigation(
       navigate(`/${slug}/days/${today}`, { replace: true });
     }
   }, [date, view?.dateRange, slug, navigate]);
+
+  return (selected: string) => {
+    document.getElementById(dayElementId(selected))?.scrollIntoView({ block: 'start' });
+    scrolledDateRef.current = selected;
+    navigate(`/${slug}/days/${selected}`, { replace: true });
+  };
 }

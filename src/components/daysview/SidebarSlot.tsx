@@ -8,17 +8,18 @@ import { APIProvider } from '@vis.gl/react-google-maps';
 import { getGoogleApiKey, hasGoogleApiKey } from '../../config/apiKeys';
 import type { Day } from '../../model/types';
 import { AssistantPanel } from '../assistant/AssistantPanel';
+import { STICKY_PANE_SX } from '../day/dayLayout';
 import { DayMapSidebar } from '../day/DayMapSidebar';
 import type { DayRowOpeners } from '../day/openHandlers';
 import type { SidebarView } from './useSidebarView';
 
 // Full viewport height, outside the day list's own scrolling content — one
-// persistent sidebar beside the day list that shows either the day map
-// (DayMapSidebar, swapping to whichever day useActiveDayDate says the reader has
-// scrolled to) or the trip assistant, switched by the tabs at its top. A third
-// column would squeeze the day list too much, so the two share this one slot.
-// Narrower screens keep the map-icon-opens-a-dialog flow
-// (useDayMapDialog/DayMapPanel) and the assistant's bottom sheet instead.
+// persistent pane, between the day navigator and the day list, that shows either
+// the day map (DayMapSidebar, swapping to whichever day useActiveDayDate says the
+// reader has scrolled to) or the trip assistant, switched by the tabs at its top.
+// The two share this one slot so the day list keeps its width. Narrower screens
+// keep the map-icon-opens-a-dialog flow (useDayMapDialog/DayMapPanel) and the
+// assistant's bottom sheet instead.
 export function SidebarSlot({
   activeDay,
   view,
@@ -39,14 +40,12 @@ export function SidebarSlot({
   return (
     <Box
       sx={{
+        ...STICKY_PANE_SX,
         display: { xs: 'none', lg: 'flex' },
         flexDirection: 'column',
-        width: { lg: 440, xl: 560 },
-        flexShrink: 0,
-        position: 'sticky',
-        top: 0,
-        height: '100vh',
+        width: { lg: 380, xl: 520 },
         borderLeft: 1,
+        borderRight: 1,
         borderColor: 'divider',
       }}
     >
