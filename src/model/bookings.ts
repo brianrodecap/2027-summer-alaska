@@ -7,6 +7,7 @@
 import type {
   Activity,
   Booking,
+  BookingStatus,
   FixedCharge,
   Leg,
   MealOption,
@@ -39,6 +40,10 @@ export function bookingOf(
 ): Booking | null {
   return bookingById(data.bookings, entity?.bookingId);
 }
+
+// A booking that is a real purchase or an open request, not just a plan.
+export const isBought = (status: BookingStatus | undefined) =>
+  status === 'booked' || status === 'requested';
 
 // Sums Money values to the cent, in the first one's currency. null for none.
 export function sumMoney(amounts: Money[]): Money | null {

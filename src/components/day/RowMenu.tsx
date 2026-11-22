@@ -12,7 +12,10 @@ import type { RefEntityKind } from '../../model/types';
 import { useNoteEdit } from '../../state/useNoteEdit';
 import { AddNoteMenuItems } from '../shared/AddNoteMenuItems';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
+import { materialIcon } from '../shared/materialIcon';
 import { useAnchorMenu } from '../shared/useAnchorMenu';
+
+const EventIcon = materialIcon('event');
 
 // A row's action menu — a plain kebab IconButton that opens a standard MUI
 // dropdown Menu, rather than a SpeedDial's fanned-out Fab. It sits inline as
@@ -26,11 +29,14 @@ export function RowMenu({
   entity,
   id,
   onEdit,
+  onMove,
   onDelete,
 }: {
   entity: RefEntityKind;
   id: string;
   onEdit: () => void;
+  // Only for rows that can move to another day (an Activity, a Transit).
+  onMove?: () => void;
   onDelete?: () => void;
 }) {
   const { anchorEl, openAt, close, pick } = useAnchorMenu();
@@ -56,6 +62,14 @@ export function RowMenu({
           </ListItemIcon>
           <ListItemText>Edit</ListItemText>
         </MenuItem>
+        {onMove && (
+          <MenuItem onClick={pick(onMove)}>
+            <ListItemIcon>
+              <EventIcon fontSize="small" />
+            </ListItemIcon>
+            <ListItemText>Move to another day…</ListItemText>
+          </MenuItem>
+        )}
         {onDelete && (
           <MenuItem onClick={pick(() => setConfirmingDelete(true))}>
             <ListItemIcon>

@@ -5,6 +5,7 @@ import type { Day } from '../../model/types';
 import { DayClockChip } from './DayClockChip';
 import { DayHolidayChip } from './DayHolidayChip';
 import { DayPortCallChip } from './DayPortCallChip';
+import { DaySelectButton } from './DaySelectButton';
 import { DayTitleField } from './DayTitleField';
 
 // The day accordion's own AccordionSummary content — just the date label,
@@ -24,7 +25,10 @@ export function DayHeader({ day, expanded }: { day: Day; expanded: boolean }) {
         <DayHolidayChip date={day.date} />
         <DayPortCallChip day={day} />
       </Box>
-      <DayTitleField day={day} expanded={expanded} />
+      <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+        <DayTitleField day={day} expanded={expanded} />
+        <DaySelectButton day={day} />
+      </Box>
     </Box>
   );
 }

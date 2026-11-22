@@ -90,6 +90,19 @@ export function TripSelectionsProvider({ children }: { children: ReactNode }) {
           else rows.set(dragId, { containerId, members, isScenarioGroup });
           return rows.size ? { rows } : null;
         }),
+      selectRows: (added) =>
+        setRowSelection((prev) => {
+          const rows = new Map(prev?.rows ?? []);
+          for (const { dragId, ...entry } of added) rows.set(dragId, entry);
+          return rows.size ? { rows } : null;
+        }),
+      deselectRows: (dragIds) =>
+        setRowSelection((prev) => {
+          if (!prev) return prev;
+          const rows = new Map(prev.rows);
+          for (const id of dragIds) rows.delete(id);
+          return rows.size ? { rows } : null;
+        }),
       clearRowSelection: () => setRowSelection(null),
     }),
     [rowSelection],

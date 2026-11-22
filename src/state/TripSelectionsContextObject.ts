@@ -1,5 +1,6 @@
 import { createContext } from 'react';
 
+import type { SelectableRow } from '../model/daySelection';
 import type { ReorderMembers } from '../model/reorder';
 
 // Four independent contexts rather than one combined value: with a single
@@ -76,6 +77,9 @@ export interface RowSelectionValue {
     members: RowSelectionMembers,
     isScenarioGroup: boolean,
   ) => void;
+  // Adds (or removes) a whole set of rows at once: a day's rows, for "select this day".
+  selectRows: (rows: SelectableRow[]) => void;
+  deselectRows: (dragIds: string[]) => void;
   clearRowSelection: () => void;
 }
 

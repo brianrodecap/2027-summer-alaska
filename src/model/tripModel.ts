@@ -1684,6 +1684,13 @@ export function splitOutStayBoundaries(rows: DayRow[]): {
   return { checkOuts, rest, checkIns };
 }
 
+// A container's rows in the order the timeline lays them out: stay check-outs
+// first, check-ins last.
+export function flattenStayBoundaries(rows: DayRow[]): DayRow[] {
+  const { checkOuts, rest, checkIns } = splitOutStayBoundaries(rows);
+  return [...checkOuts, ...rest, ...checkIns];
+}
+
 // Google caps this URL at 9 waypoints — a hard ceiling on this URL scheme,
 // not a raisable quota (the paid Directions/Routes API allows more, but
 // costs a second billed API and a key that can't stay Places-only, the same

@@ -13,6 +13,7 @@ import { DayNavigator } from '../components/daysview/DayNavigator';
 import { DaysAppBar } from '../components/daysview/DaysAppBar';
 import { DaysDialogs } from '../components/daysview/DaysDialogs';
 import { DetailPanels } from '../components/daysview/DetailPanels';
+import { SelectionBar } from '../components/daysview/SelectionBar';
 import { SidebarSlot } from '../components/daysview/SidebarSlot';
 import { useDayListNavigation } from '../components/daysview/useDayListNavigation';
 import { useDayMapDialog } from '../components/daysview/useDayMapDialog';
@@ -21,6 +22,7 @@ import { useDetailPanels } from '../components/daysview/useDetailPanels';
 import { dayHasVisibleContent } from '../model/filters';
 import { describeScenarioGroupProblems } from '../model/scenarioGroups';
 import type { Day } from '../model/types';
+import { MoveToDayProvider } from '../state/MoveToDayContext';
 import { useLiveDays } from '../state/useLiveDays';
 import { useTripData } from '../state/useTripData';
 import { useFilterSelection } from '../state/useTripSelections';
@@ -73,47 +75,50 @@ export function DaysView() {
   // panel, not this whole view.
   return (
     <AssistantChatProvider>
-      <Box>
-        <Box sx={{ display: 'flex' }}>
-          <DayNavigator days={visibleDays} activeDate={activeDate} onSelectDay={jumpToDay} />
-          <SidebarSlot
-            activeDay={activeDay}
-            view={assistant.sidebarView}
-            onViewChange={assistant.setSidebarView}
-            onOpenActivity={panels.handleOpenActivity}
-            onOpenStay={panels.stayPanel.onOpen}
-            onOpenTransit={panels.transitPanel.onOpen}
-          />
-          <Box sx={{ flex: 1, minWidth: 0 }}>
-            <DaysAppBar
-              canJumpToDay={Boolean(view.dateRange)}
-              legSummaries={view.legSummaries}
-              scenarioProblemCount={groupProblems.length}
-              onJumpToDay={() => dialogs.open('datePicker')}
-              onManageRoutes={() => dialogs.open('routes')}
-              onManageScenarios={() => dialogs.open('scenarios')}
-              onAskAI={assistant.open}
-            />
-            <DayList
-              days={visibleDays}
+      <MoveToDayProvider>
+        <Box>
+          <Box sx={{ display: 'flex' }}>
+            <DayNavigator days={visibleDays} activeDate={activeDate} onSelectDay={jumpToDay} />
+            <SidebarSlot
+              activeDay={activeDay}
+              view={assistant.sidebarView}
+              onViewChange={assistant.setSidebarView}
               onOpenActivity={panels.handleOpenActivity}
               onOpenStay={panels.stayPanel.onOpen}
               onOpenTransit={panels.transitPanel.onOpen}
-              onOpenMap={mapDialog.openMap}
-              onAddEvent={setAddWizardDay}
             />
+            <Box sx={{ flex: 1, minWidth: 0 }}>
+              <DaysAppBar
+                canJumpToDay={Boolean(view.dateRange)}
+                legSummaries={view.legSummaries}
+                scenarioProblemCount={groupProblems.length}
+                onJumpToDay={() => dialogs.open('datePicker')}
+                onManageRoutes={() => dialogs.open('routes')}
+                onManageScenarios={() => dialogs.open('scenarios')}
+                onAskAI={assistant.open}
+              />
+              <DayList
+                days={visibleDays}
+                onOpenActivity={panels.handleOpenActivity}
+                onOpenStay={panels.stayPanel.onOpen}
+                onOpenTransit={panels.transitPanel.onOpen}
+                onOpenMap={mapDialog.openMap}
+                onAddEvent={setAddWizardDay}
+              />
+            </Box>
           </Box>
+          <DayMapPanel {...mapDialog.panelProps} />
+          <DetailPanels panels={panels} />
+          <DaysDialogs dialogs={dialogs} groupProblems={groupProblems} />
+          <AddToDayDialog day={addWizardDay} onClose={() => setAddWizardDay(null)} />
+          <SelectionBar />
+          <AssistantSheet
+            open={assistant.sheetOpen}
+            onClose={assistant.closeSheet}
+            focusDay={activeDay}
+          />
         </Box>
-        <DayMapPanel {...mapDialog.panelProps} />
-        <DetailPanels panels={panels} />
-        <DaysDialogs dialogs={dialogs} groupProblems={groupProblems} />
-        <AddToDayDialog day={addWizardDay} onClose={() => setAddWizardDay(null)} />
-        <AssistantSheet
-          open={assistant.sheetOpen}
-          onClose={assistant.closeSheet}
-          focusDay={activeDay}
-        />
-      </Box>
+      </MoveToDayProvider>
     </AssistantChatProvider>
   );
 }

@@ -8,7 +8,7 @@
 //     and their messages go back to the AI to fix, never get repaired here;
 //   - queueFromProposals turns checked proposals into review drafts.
 // IMPORT_CONVENTIONS is how this trip is modeled, in one list the AI gets.
-import { bookingById, bookingOf, namedBookedThrough, payableLines } from './bookings';
+import { bookingById, bookingOf, isBought, namedBookedThrough, payableLines } from './bookings';
 import { isDateTime } from './dateTime';
 import type { QueuedImport } from './documentImport';
 import {
@@ -1319,9 +1319,6 @@ function validateAsSaved(
   }
   return errors;
 }
-
-const isBought = (status: BookingStatus | undefined) =>
-  status === 'booked' || status === 'requested';
 
 // The existing entries changes give a bought booking.
 function boughtPlaceholders(changes: ChangeProposal[]): string[] {

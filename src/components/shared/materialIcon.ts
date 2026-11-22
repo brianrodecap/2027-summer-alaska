@@ -9,6 +9,8 @@ import CabinIcon from '@mui/icons-material/Cabin';
 import CalendarMonthIcon from '@mui/icons-material/CalendarMonth';
 import CallMergeIcon from '@mui/icons-material/CallMerge';
 import CelebrationIcon from '@mui/icons-material/Celebration';
+import CheckBoxIcon from '@mui/icons-material/CheckBox';
+import CheckBoxOutlineBlankIcon from '@mui/icons-material/CheckBoxOutlineBlank';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CloseIcon from '@mui/icons-material/Close';
 import CloudIcon from '@mui/icons-material/Cloud';
@@ -31,6 +33,7 @@ import HelpOutlineIcon from '@mui/icons-material/Help';
 import HikingIcon from '@mui/icons-material/Hiking';
 import HotelIcon from '@mui/icons-material/Hotel';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import IndeterminateCheckBoxIcon from '@mui/icons-material/IndeterminateCheckBox';
 import InfoIcon from '@mui/icons-material/Info';
 import KitchenIcon from '@mui/icons-material/Kitchen';
 import LandscapeIcon from '@mui/icons-material/Landscape';
@@ -131,7 +134,10 @@ const ICONS: Record<string, IconComponent> = {
   call_merge: CallMergeIcon,
   calendar_month: CalendarMonthIcon,
   help_outline: HelpOutlineIcon,
+  check_box: CheckBoxIcon,
+  check_box_outline_blank: CheckBoxOutlineBlankIcon,
   check_circle: CheckCircleIcon,
+  indeterminate_check_box: IndeterminateCheckBoxIcon,
   star: StarIcon,
   warning: WarningIcon,
   filter_list: FilterListIcon,

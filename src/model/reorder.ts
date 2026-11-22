@@ -34,6 +34,7 @@ import {
   dateOnly,
   departure,
   earliestTime,
+  flattenStayBoundaries,
   minutesBetween,
   movedBy,
   onClockOf,
@@ -45,7 +46,7 @@ import {
   tripClock,
   type ZonedTime,
 } from './tripModel';
-import type { Activity, DayRow, ScenarioTrack, Stay, Transit, TripData } from './types';
+import type { Activity, Day, DayRow, ScenarioTrack, Stay, Transit, TripData } from './types';
 
 // An Activity's own fuzzy-timing label if it's fuzzy (no startAt), else
 // null — what a real anchor/drag-meta entry names as "after this" so a drop
@@ -371,6 +372,23 @@ export function dragIdOf(row: DayRow, date: string): string {
 // the two files.
 export function beforeScenarioSplitDragId(boxDragId: string): string {
   return `before-${boxDragId}`;
+}
+
+// A container's drag metadata, from the rows it shows: the one place the timeline and
+// "select this day" (daySelection.ts) build it, so a day's selection is always
+// what clicking each row's handle would select.
+export function containerDragMeta(
+  day: Pick<Day, 'date' | 'leg' | 'clock'>,
+  rows: DayRow[],
+  scenarioId: string | null,
+): DragMeta[] {
+  return buildDragMeta(
+    flattenStayBoundaries(rows),
+    scenarioId,
+    `${day.date}T00:00`,
+    day.leg._id,
+    day.clock,
+  );
 }
 
 // `id` mirrors DayTimeline's own node-key scheme exactly (same source
@@ -894,8 +912,9 @@ export function applyActivityReorder(
 // shifting departsAt alone would silently collapse or inflate its
 // duration, so arrivesAt shifts by the same real delta, on its destination's
 // clock, to preserve it exactly. Shared by applyTransitReorder (a lone Transit
-// drag) and applyBlockReorder (every Transit in a dragged scenario-group bundle).
-function shiftedArrivesAt(transit: Transit, deltaMinutes: number, clock: TripClock) {
+// drag), applyBlockReorder (every Transit in a dragged scenario-group bundle) and
+// applyMoveToDay (moveToDay.ts).
+export function shiftedArrivesAt(transit: Transit, deltaMinutes: number, clock: TripClock) {
   return transit.routeId || !transit.arrivesAt
     ? transit.arrivesAt
     : movedBy({ at: transit.arrivesAt, zone: transit.to.timeZone ?? null }, deltaMinutes, clock);
@@ -1173,7 +1192,7 @@ export function applyGroupActivityReorder(
 // untouched) apart from a genuine cross-day move (where landing on the new
 // day's own anchor position, date included, is the entire point of the
 // drag).
-function dayOfContainer(containerId: string | null): string | null {
+export function dayOfContainer(containerId: string | null): string | null {
   return containerId ? containerId.split('::')[0] : null;
 }
 

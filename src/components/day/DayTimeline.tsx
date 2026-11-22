@@ -40,18 +40,18 @@ import {
 import { activeMealOptions, isMealActivity, selectedMealOption } from '../../model/mealOptions';
 import {
   beforeScenarioSplitDragId,
-  buildDragMeta,
+  containerDragMeta,
   dragIdOf,
   type DragMeta,
   rowMembersOf,
 } from '../../model/reorder';
 import {
   activeTrackOf,
+  flattenStayBoundaries,
   formatTime,
   rowShows,
   rowTestId,
   segmentKey,
-  splitOutStayBoundaries,
   stayRelation,
   stayZone,
   transitRowPlace,
@@ -74,6 +74,7 @@ import type {
 } from '../../model/types';
 import { isRowSelected, type RowSelectionMembers } from '../../state/TripSelectionsContextObject';
 import { useEdit } from '../../state/useEdit';
+import { useMoveToDay } from '../../state/useMoveToDay';
 import { useTripData } from '../../state/useTripData';
 import {
   useFilterSelection,
@@ -277,6 +278,7 @@ const StayNode = memo(function StayNode({
   const detailBits = stayDetailBits(stay.lodging);
   const image = firstImage(stay, lodgingPlace);
   const { openEdit, deleteEntity } = useEdit();
+  const { requestMove } = useMoveToDay();
   const { booking, notes } = rowShows(item);
   const { above, mid, below } = splitNotes(notes);
   return (
@@ -291,6 +293,7 @@ const StayNode = memo(function StayNode({
           entity="stay"
           id={stay._id}
           onEdit={() => openEdit('stay', stay._id)}
+          onMove={() => requestMove([{ activityIds: [], transitIds: [], stayIds: [stay._id] }])}
           onDelete={() => deleteEntity('stay', stay._id)}
         />
       }
@@ -358,6 +361,7 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
   const modeIconName = transitModeIconName(transit);
   const image = firstImage(transit, endpointPlace);
   const { openEdit, deleteEntity } = useEdit();
+  const { requestMove } = useMoveToDay();
   const { booking, notes } = rowShows(item);
   const { above, mid, below } = splitNotes(notes);
 
@@ -395,6 +399,9 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
             entity="transit"
             id={transit._id}
             onEdit={() => openEdit('transit', transit._id)}
+            onMove={() =>
+              requestMove([{ activityIds: [], transitIds: [transit._id], stayIds: [] }])
+            }
             onDelete={() => deleteEntity('transit', transit._id)}
           />
         )
@@ -461,6 +468,7 @@ const ActivityNode = memo(function ActivityNode({
   travelFooter?: ReactNode;
 }) {
   const { openEdit, deleteEntity } = useEdit();
+  const { requestMove } = useMoveToDay();
   const { mealOptionIndex } = useMealOptionSelection();
   const { above, mid, below } = splitNotes(rowShows({ type: 'activity', activity }).notes);
   // One observer shared by this node's leading dot and its row text — both
@@ -511,6 +519,7 @@ const ActivityNode = memo(function ActivityNode({
           entity={noteTarget.entity}
           id={noteTarget.id}
           onEdit={() => openEdit('activity', activity._id)}
+          onMove={() => requestMove([{ activityIds: [activity._id], transitIds: [], stayIds: [] }])}
           onDelete={() => deleteEntity('activity', activity._id)}
         />
       }
@@ -887,8 +896,7 @@ function edgeRealPlace(rows: DayRow[], fromStart: boolean): Place | null {
 // edgeRealPlace's walk: the place, null when the rows have none, false when a
 // scheduled transit's boundary ends the walk first.
 function edgeStop(rows: DayRow[], fromStart: boolean): Place | null | false {
-  const { checkOuts, rest, checkIns } = splitOutStayBoundaries(rows);
-  const flattened = [...checkOuts, ...rest, ...checkIns];
+  const flattened = flattenStayBoundaries(rows);
   const ordered = fromStart ? flattened : [...flattened].reverse();
   for (const item of ordered) {
     if (item.type === 'stay') {
@@ -992,10 +1000,7 @@ export const DayTimeline = memo(function DayTimeline({
   // splitOutStayBoundaries) — pulled to the same front/back position a plain
   // Stay row would get, alongside (not ahead of/behind) any real top-level
   // Stay boundary already there.
-  const flattened = useMemo(() => {
-    const { checkOuts, rest, checkIns } = splitOutStayBoundaries(filtered);
-    return [...checkOuts, ...rest, ...checkIns];
-  }, [filtered]);
+  const flattened = useMemo(() => flattenStayBoundaries(filtered), [filtered]);
   const dayStart = `${day.date}T00:00`;
 
   // Kept a stable reference across renders the filter/selection/scenario
@@ -1004,8 +1009,8 @@ export const DayTimeline = memo(function DayTimeline({
   // one day recomputes every other day's buildDragMeta (including its own
   // scenario-group members walk) for nothing.
   const dragMeta = useMemo(
-    () => buildDragMeta(flattened, scenarioId, dayStart, day.leg._id, day.clock),
-    [flattened, scenarioId, dayStart, day.leg._id, day.clock],
+    () => containerDragMeta(day, filtered, scenarioId),
+    [day, filtered, scenarioId],
   );
   const dragMetaById = useMemo(() => new Map(dragMeta.map((d) => [d.id, d])), [dragMeta]);
 

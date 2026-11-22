@@ -1,4 +1,5 @@
 import CloseIcon from '@mui/icons-material/Close';
+import Alert from '@mui/material/Alert';
 import Dialog from '@mui/material/Dialog';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
@@ -16,10 +17,9 @@ function toIsoDate(value: Dayjs): string {
   return value.format('YYYY-MM-DD');
 }
 
-// The "Jump to a day" control — a docked month-grid calendar; only dates
-// that land on an actual trip Day are selectable, matching the old app's
-// hand-built date-picker.js. @mui/x-date-pickers' DateCalendar is a direct,
-// built-in replacement for that hand-rolled month-grid math.
+// A docked month-grid calendar for picking a trip day ("Jump to a day", and the
+// Move action's target); only dates that land on an actual trip Day are
+// selectable. `notes` are shown above the calendar, before a day is picked.
 export function JumpToDayPicker({
   open,
   onClose,
@@ -27,6 +27,9 @@ export function JumpToDayPicker({
   tripStart,
   tripEnd,
   onSelectDay,
+  title = 'Jump to a day',
+  notes = [],
+  initialDate,
 }: {
   open: boolean;
   onClose: () => void;
@@ -34,6 +37,10 @@ export function JumpToDayPicker({
   tripStart: string;
   tripEnd: string;
   onSelectDay: (date: string) => void;
+  title?: string;
+  notes?: string[];
+  // The month first shown; the first trip day when absent.
+  initialDate?: string;
 }) {
   const validDates = useMemo(() => new Set(days.map((d) => d.date)), [days]);
 
@@ -71,14 +78,19 @@ export function JumpToDayPicker({
       }}
     >
       <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        Jump to a day
+        {title}
         <IconButton onClick={onClose} aria-label="Close">
           <CloseIcon />
         </IconButton>
       </DialogTitle>
       <DialogContent sx={{ p: 0 }}>
+        {notes.map((note) => (
+          <Alert key={note} severity="info" sx={{ mx: 2, mb: 1 }}>
+            {note}
+          </Alert>
+        ))}
         <DateCalendar
-          defaultValue={dayjs(days[0]?.date ?? tripStart, 'YYYY-MM-DD')}
+          defaultValue={dayjs(initialDate ?? days[0]?.date ?? tripStart, 'YYYY-MM-DD')}
           minDate={dayjs(tripStart, 'YYYY-MM-DD')}
           maxDate={dayjs(tripEnd, 'YYYY-MM-DD')}
           shouldDisableDate={(value) => !validDates.has(toIsoDate(value as Dayjs))}
