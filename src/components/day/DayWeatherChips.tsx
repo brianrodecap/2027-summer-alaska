@@ -39,9 +39,9 @@ function isCruiseDay(day: Day): boolean {
 // the page loads instead of as each day actually scrolls into view.
 export function DayWeatherChips({ day, inView }: { day: Day; inView: boolean }) {
   const hasAnyPlace = Boolean(day.sunrisePlaceId || day.sunsetPlaceId || day.weatherPlaceId);
-  // Air quality wants a place for every day, even one with no dedicated
-  // weatherPlaceId of its own (a cruise day with no priority Activity) — the
-  // same fallback chain weatherPlaceId itself already falls back through.
+  // Air quality wants a place for every day, even one with no weatherPlaceId
+  // of its own — the same fallback chain weatherPlaceId itself already falls
+  // back through.
   const airQualityPlaceId = day.weatherPlaceId ?? day.sunsetPlaceId ?? day.sunrisePlaceId;
   const marinePlaceId = isCruiseDay(day) ? airQualityPlaceId : null;
   const { weather, loading, failed } = useDayWeather(

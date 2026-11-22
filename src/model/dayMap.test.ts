@@ -48,7 +48,6 @@ const activity = (id: string, startAt: string, at: string | null, extra: Partial
     durationMinutes: null,
     timeLabel: null,
     date: null,
-    priority: null,
     text: id,
     place: at ? place(`p_${at}`, at) : null,
     bookingId: null,

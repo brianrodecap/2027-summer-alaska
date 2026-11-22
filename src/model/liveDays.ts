@@ -4,7 +4,7 @@
 // one trip-wide timeline, and lays each date out (layoutDay); every other
 // Day field passes through unchanged. Pure — the React hook that feeds it the
 // live selections and keeps day identities stable lives with the day list.
-import { activeTitleCandidates, followedDayOf, liveHeader } from './dayHeader';
+import { liveHeader } from './dayHeader';
 import { layoutDay } from './dayLayout';
 import { buildDayVisits, indexTimeline } from './dayMap';
 import { dateTitlesOf, writtenTitle } from './dayTitles';
@@ -17,7 +17,6 @@ import {
   type ScenarioPicks,
 } from './scenarioGroups';
 import { buildTimeline, inScope, type Timeline } from './timeline';
-import { deriveTitle } from './tripModel';
 import type {
   BookingShare,
   Day,
@@ -42,7 +41,7 @@ export interface LiveSelections {
 export interface LiveDayCache {
   staticDay: DayFrame;
   signature: string;
-  base: Day; // everything but the title, which may borrow a followed day's
+  base: Day; // everything but the title
   live: Day;
 }
 
@@ -284,15 +283,11 @@ export function buildLiveDays(
     return { day, base, signature };
   });
 
-  // Pass 2: titles. A written title (the selected plan's, else the date's) wins.
-  // Otherwise a day whose active branch has nothing of its own borrows the day its
-  // scenario follows, so this needs every day's layout first.
-  const baseByDate = new Map(bases.map(({ base }) => [base.date, base]));
+  // Pass 2: titles. A written title (the selected plan's, else the date's) wins;
+  // a day with none is titled by its place.
   const dateTitles = dateTitlesOf(data);
   const days = bases.map(({ day, base, signature }): Day => {
-    const title =
-      writtenTitle(base, dateTitles) ??
-      deriveTitle(base.location, activeTitleCandidates(base, followedDayOf(base, baseByDate)));
+    const title = writtenTitle(base, dateTitles) ?? base.location;
     const hit = previous?.get(day.date);
     const live =
       hit && hit.base === base && hit.live.title === title ? hit.live : { ...base, title };

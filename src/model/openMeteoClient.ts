@@ -9,8 +9,8 @@ import type { ClientOptions } from './clientOptions';
 
 // Open-Meteo's free tier rate-limits bursts of concurrent requests — an
 // unvirtualized day list can easily resolve several dozen distinct places at
-// once (every Stay/Transit endpoint, every priority Activity's own place, now
-// also any place with weather/elevation toggled on), which trips a 429 on its
+// once (every Stay/Transit endpoint, and any place with weather/elevation
+// toggled on), which trips a 429 on its
 // own well before that many places finish. Every call funnels through this
 // queue — one request in flight at a time, each spaced at least
 // MIN_DISPATCH_INTERVAL_MS after the previous one *started* — with a backoff

@@ -155,6 +155,10 @@ Each `RouteVariant` has an `id`, unique within its route (`variantIdProblem`, ch
 
 ### Written day titles (Nov 2026)
 
-A day's title can be written. `dayTitles.json` holds one document per titled date (`{ _id: '2027-06-29', title: 'Dalton Highway' }`), and a `Scenario` has an optional `title`. While a plan is selected, its title replaces the date's; the innermost selected plan with a title wins (`writtenTitle`). A day with neither shows the title derived from its priority activities, else its place, as before. Editing a title in the day header writes the shown one (`titleTarget`, `withTitle`); a blank title removes it. Migration: `dayTitles.json` is added to every trip as `[]`; no existing document changed.
+A day's title can be written. `dayTitles.json` holds one document per titled date (`{ _id: '2027-06-29', title: 'Dalton Highway' }`), and a `Scenario` has an optional `title`. While a plan is selected, its title replaces the date's; the innermost selected plan with a title wins (`writtenTitle`). A day with neither shows its place. Editing a title in the day header writes the shown one (`titleTarget`, `withTitle`); a blank title removes it. Migration: `dayTitles.json` is added to every trip as `[]`; no existing document changed.
 
 A date title is keyed by the date itself, so nothing in the app can leave one behind. Re-dating content by hand-editing `public/data/` can: move the matching `dayTitles.json` entries by the same number of days.
+
+### Activity priority removed (Nov 2026)
+
+`Activity.priority` is gone. It named a day after its headline activity, set the header's high/low weather place, and drove the Highlights filter; written day titles replace the first, the day's own place serves the second (an activity shows its own weather where its place has `showWeather` on), and the filter was dropped. Migration: `public/data/*/activities.json` no longer carry the field (16 activities were `high`, the rest `null`); no load-time support for it.

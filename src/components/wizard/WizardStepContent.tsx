@@ -20,7 +20,6 @@ import {
   DINING_FORMAT_OPTIONS,
   DINING_FORMATS_WITH_INCLUDED_IN,
   MEAL_TYPE_VALUES,
-  PRIORITY_OPTIONS,
   WIZARD_CATEGORY_META,
 } from '../../model/editForms';
 import { bookingNoun, DINING_FORMAT_LABEL, zoneLabel } from '../../model/formatting';
@@ -35,7 +34,6 @@ import type {
   Activity,
   DiningFormat,
   MealType,
-  Priority,
   Route,
   Scenario,
   Stay,
@@ -248,10 +246,8 @@ function DescriptionField({
   );
 }
 
-// Consolidates what used to be three separate steps — description, priority
-// + attendees, and booking/reservation — into one, since none of them are
-// required and stepping through each individually was mostly just clicking
-// Next three times in a row. Attendees only appears once a booking/
+// Description, attendees and booking/reservation in one step, since none of
+// them are required. Attendees only appears once a booking/
 // reservation is actually on the books: without one there's nothing yet
 // that could be limiting who's going, so asking earlier just adds noise.
 export function DetailsStep({
@@ -284,19 +280,6 @@ export function DetailsStep({
         onPlaceChange={(place) => onChange({ ...form, place })}
         showOnboard
       />
-      <TextField
-        select
-        label="Priority"
-        value={form.priority}
-        onChange={(e) => onChange({ ...form, priority: e.target.value as Priority | '' })}
-        slotProps={{ select: { displayEmpty: true }, inputLabel: { shrink: true } }}
-      >
-        {PRIORITY_OPTIONS.map((o) => (
-          <MenuItem key={o.value} value={o.value}>
-            {o.label}
-          </MenuItem>
-        ))}
-      </TextField>
       {showBooking && (
         <>
           <Divider />
@@ -601,7 +584,6 @@ export function ActivityReview({
           />
         </>
       )}
-      <ReviewRow label="Priority" value={form.priority || null} />
       <BookingReviewRow booking={form.booking} isMeal={category === 'meal'} />
     </ReviewSection>
   );

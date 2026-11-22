@@ -979,12 +979,10 @@ export function filterTagsFor(entity: {
   legId: string;
   booking: Booking | null;
   options?: { booking: Booking | null }[] | null;
-  priority?: string | null;
   hasWarningNote?: boolean;
   warnings?: string[];
 }): string[] {
   const tags = [`leg:${entity.legId}`, ...resolveBookingTags(entity)];
-  if (entity.priority) tags.push('attr:highlight');
   // 'Needs attention' is exactly the warnings a row shows (transit overlaps,
   // activity overlaps, port-call timing), so the filter and the row agree.
   if (entity.hasWarningNote || entity.warnings?.length) {
@@ -1583,22 +1581,14 @@ export function deriveSummary(
   return day.location;
 }
 
-// ---------- Day title — the header text shown above each day-block. Falls
-// back to `location` (usually the Stay's name) unless one or more Activities
-// that day carry a `priority`, in which case the title becomes those
-// activities' own text instead — a flightseeing day is titled "Denali
-// Flightseeing," not "Staying at Denali Lodge." Ties (same top priority,
-// several activities) join with " & " in sequence order rather than picking
-// one arbitrarily. ----------
+// ---------- Activities of a day's rows ----------
 
-const PRIORITY_RANK: Record<string, number> = { high: 3, medium: 2, low: 1 };
-
-export function activitiesOf(rows: DayRow[]): EnrichedActivity[] {
+function activitiesOf(rows: DayRow[]): EnrichedActivity[] {
   return rows.flatMap((row) => (row.type === 'activity' ? [row.activity] : []));
 }
 
 // Same as activitiesOf, but also recurses into every scenario box's own tracks
-// (unlike a title's candidates, which follow only the active branch) — for
+// (unlike activitiesOf, which reads only the day's own rows) — for
 // callers that need every Activity a day currently renders, e.g.
 // mealOptions.ts's overlap-warning pool.
 export function activitiesDeep(rows: DayRow[]): EnrichedActivity[] {
@@ -1607,37 +1597,6 @@ export function activitiesDeep(rows: DayRow[]): EnrichedActivity[] {
     if (row.type === 'box') return row.tracks.flatMap((track) => activitiesDeep(track.rows));
     return [];
   });
-}
-
-// A single track's own priority-activity candidates, plus whatever its
-// nested scenario-tabs split (if any) contributes — resolveNested decides
-// which nested track(s) that comes from, so this same walk serves both the
-// build-time "planned" convention (plannedTrackCandidates below, which
-// falls through nested siblings) and a live-selection-aware caller
-// (dayHeader.ts's activeTitleCandidates, which follows exactly the
-// currently-active nested track) without duplicating the own-activities/
-// find-scenario-tabs-item shape twice.
-export function ownTrackCandidates(
-  track: ScenarioTrack,
-  resolveNested: (tracks: ScenarioTrack[]) => EnrichedActivity[],
-): EnrichedActivity[] {
-  const own = activitiesOf(track.rows).filter((a) => a.priority);
-  const box = track.rows.find((row): row is BoxRow => row.type === 'box');
-  const nested = box?.tracks.length ? resolveNested(box.tracks) : [];
-  return [...own, ...nested];
-}
-
-// Exported so a live-selection-aware caller (liveDays.ts, via
-// dayHeader.ts's activeTitleCandidates) can join its own candidate
-// list the same way day.title's build-time default does, rather than
-// duplicating the priority-rank/tie-join rule.
-export function deriveTitle(location: string, candidates: EnrichedActivity[]): string {
-  if (!candidates.length) return location;
-  const topRank = Math.max(...candidates.map((a) => PRIORITY_RANK[a.priority as string]));
-  return candidates
-    .filter((a) => PRIORITY_RANK[a.priority as string] === topRank)
-    .map((a) => activityHeadline(a))
-    .join(' & ');
 }
 
 // ---------- day map — a computed Google Maps embed for the day-list header's

@@ -51,7 +51,6 @@ import type {
   Package,
   Place,
   PortCall,
-  Priority,
   Ref,
   Route,
   RoutePlaceEntry,
@@ -89,7 +88,6 @@ export function blankActivity(
     durationMinutes: null,
     timeLabel: null,
     date,
-    priority: null,
     text: '',
     place: null,
     bookingId: null,
@@ -634,7 +632,6 @@ export interface ActivityFormState {
   durationMinutes: number | null;
   timeLabel: TimeLabel | '';
   text: string;
-  priority: Priority | '';
   mealType: MealType | '';
   diningFormat: DiningFormat | '';
   place: Place | null;
@@ -657,7 +654,6 @@ export function activityFormFrom(activity: Activity, source: BookingSource): Act
     durationMinutes: activity.durationMinutes,
     timeLabel: activity.timeLabel ?? '',
     text: activity.text ?? '',
-    priority: activity.priority ?? '',
     mealType: activity.mealType ?? '',
     diningFormat: activity.diningFormat ?? '',
     place: activity.place,
@@ -724,7 +720,6 @@ export function applyActivityForm(activity: Activity, form: ActivityFormState): 
   const startAt =
     form.startsDate && form.startsTime ? `${form.startsDate}T${form.startsTime}` : null;
   activity.text = text || null;
-  activity.priority = form.priority || null;
   if (startAt) {
     activity.startAt = startAt;
     activity.durationMinutes = form.durationMinutes;
@@ -1139,13 +1134,6 @@ export const TIME_LABEL_OPTIONS: { value: TimeLabel | ''; label: string }[] = [
   { value: 'Evening', label: 'Evening' },
   { value: 'Night', label: 'Night' },
   { value: 'Midnight', label: 'Midnight' },
-];
-
-export const PRIORITY_OPTIONS: { value: Priority | ''; label: string }[] = [
-  { value: '', label: 'None' },
-  { value: 'high', label: 'High' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'low', label: 'Low' },
 ];
 
 export const DINING_FORMAT_OPTIONS: { value: DiningFormat | ''; label: string }[] = [
@@ -1576,8 +1564,7 @@ export const WIZARD_STEP_LABEL: Record<WizardStepId, string> = {
   review: 'Review',
 };
 
-// Only steps worth a nudge get an entry — most fields (Priority, Route
-// variant, ...) are self-explanatory enough not to need one.
+// Only steps worth a nudge get an entry — most fields (Route variant, ...) are self-explanatory enough not to need one.
 export const WIZARD_STEP_TIP: Partial<Record<WizardStepId, string>> = {
   category: 'Pick whichever comes closest — the next questions adjust to match.',
   mealBranch: "Meals get an extra step for whether you've picked a restaurant yet.",

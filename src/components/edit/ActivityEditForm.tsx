@@ -10,17 +10,8 @@ import {
   DINING_FORMAT_OPTIONS,
   DINING_FORMATS_WITH_INCLUDED_IN,
   MEAL_TYPE_VALUES,
-  PRIORITY_OPTIONS,
 } from '../../model/editForms';
-import type {
-  Activity,
-  DiningFormat,
-  MealType,
-  Priority,
-  Stay,
-  Transit,
-  Traveler,
-} from '../../model/types';
+import type { Activity, DiningFormat, MealType, Stay, Transit, Traveler } from '../../model/types';
 import { ActivityWhenFields } from './ActivityWhenFields';
 import { BookingFields } from './BookingFields';
 import { IncludedInField } from './IncludedInField';
@@ -81,18 +72,6 @@ export function ActivityEditForm({
         onPlaceChange={(place) => onChange({ ...form, place })}
         showOnboard
       />
-      <TextField
-        select
-        label="Priority"
-        value={form.priority}
-        onChange={(e) => onChange({ ...form, priority: e.target.value as Priority | '' })}
-      >
-        {PRIORITY_OPTIONS.map((o) => (
-          <MenuItem key={o.value} value={o.value}>
-            {o.label}
-          </MenuItem>
-        ))}
-      </TextField>
       <TextField
         select
         label="Meal type"

@@ -39,7 +39,6 @@ function activity(
     durationMinutes: null,
     timeLabel: null,
     date: null,
-    priority: null,
     text: id,
     place,
     bookingId: null,

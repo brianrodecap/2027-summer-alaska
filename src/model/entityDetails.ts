@@ -21,13 +21,7 @@ import {
   wallClockMs,
   zoneShortName,
 } from './tripModel';
-import type { Package, PortCall, Priority, Ref, Stay, Transit, TripData } from './types';
-
-export const PRIORITY_LABEL: Record<Priority, string> = {
-  high: 'High priority',
-  medium: 'Medium priority',
-  low: 'Low priority',
-};
+import type { Package, PortCall, Ref, Stay, Transit, TripData } from './types';
 
 // "3:00pm in · 11:00am out" on one day; once the two ends fall on different
 // days each gets its date: "Sat Jul 17, 3:00pm in → Sat Jul 24, 7:30am out".

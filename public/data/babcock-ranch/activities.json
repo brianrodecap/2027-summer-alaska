@@ -7,7 +7,6 @@
     "durationMinutes": null,
     "timeLabel": "Afternoon",
     "date": "2026-08-29",
-    "priority": null,
     "text": "Oil change",
     "place": {
       "id": "ChIJZ8Dny-A_24gRHJf4v8WlPBA",
@@ -29,7 +28,6 @@
     "durationMinutes": null,
     "timeLabel": "Afternoon",
     "date": "2026-08-29",
-    "priority": null,
     "text": "Grocery Store",
     "place": {
       "id": "ChIJix0_xL1l24gRZ8tSCiHyd8g",

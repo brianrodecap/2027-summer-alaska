@@ -18,7 +18,6 @@ const activity = (id: string, legId: string, startAt: string, extra: Partial<Act
     durationMinutes: null,
     timeLabel: null,
     date: null,
-    priority: null,
     text: id,
     place: null,
     bookingId: null,
@@ -54,13 +53,15 @@ function twoLegTrip(): TripData {
     stays: [],
     transits: [],
     activities: [
-      activity('park_hike', 'leg_parks', '2027-06-01T09:00', { priority: 'high' }),
+      activity('park_hike', 'leg_parks', '2027-06-01T09:00', { bookingId: 'booking_hike' }),
       activity('park_lunch', 'leg_parks', '2027-06-01T12:00'),
       activity('cruise_show', 'leg_cruise', '2027-06-10T20:00'),
     ],
     scenarios: [],
     notes: [],
-    bookings: [],
+    bookings: [
+      { _id: 'booking_hike', status: 'planning', pricing: null, confirmationNumber: null },
+    ],
     travelModeOverrides: [],
     dayTitles: [],
     routes: [],
@@ -85,13 +86,13 @@ describe('filters', () => {
   });
 
   it('rowMatches ANDs across groups but ORs within one', () => {
-    const tags = ['leg:leg_parks', 'attr:highlight'];
+    const tags = ['leg:leg_parks', 'booking:needs'];
     expect(rowMatches(tags, new Set())).toBe(true); // no active filters matches everything
     expect(rowMatches(tags, new Set(['leg:leg_parks']))).toBe(true);
     expect(rowMatches(tags, new Set(['leg:leg_cruise']))).toBe(false);
     expect(rowMatches(tags, new Set(['leg:leg_parks', 'leg:leg_cruise']))).toBe(true); // OR within the leg group
     expect(rowMatches(tags, new Set(['leg:leg_parks', 'attr:attention']))).toBe(false); // AND across groups
-    expect(rowMatches(tags, new Set(['leg:leg_parks', 'attr:highlight']))).toBe(true);
+    expect(rowMatches(tags, new Set(['leg:leg_parks', 'booking:needs']))).toBe(true);
   });
 
   const lookup = { activities: view.activitiesById, transits: view.transitsById };
@@ -110,7 +111,7 @@ describe('filters', () => {
       activity('ideal_walk', 'leg_parks', '2027-06-01T09:00', { scenarioId: 'ideal' }),
       activity('alt_tour', 'leg_parks', '2027-06-01T10:00', {
         scenarioId: 'alt',
-        priority: 'high',
+        bookingId: 'booking_hike',
       }),
     ];
     trip.scenarios = ['ideal', 'alt'].map((id) => ({
@@ -128,10 +129,10 @@ describe('filters', () => {
       mealOptionIndex: new Map(),
     }).days.find((d) => d.date === '2027-06-01')!;
     const entities = { activities: tripView.activitiesById, transits: tripView.transitsById };
-    // The alternate (holding the highlight) is not the selected tab, so its
-    // activity has no row — but the day must still match "highlight".
+    // The alternate (holding the unbooked activity) is not the selected tab, so
+    // its activity has no row — but the day must still match "needs booking".
     expect(live.rows.some((r) => r.type === 'activity')).toBe(false);
-    expect(dayHasVisibleContent(live, new Set(['attr:highlight']), entities)).toBe(true);
+    expect(dayHasVisibleContent(live, new Set(['booking:needs']), entities)).toBe(true);
     expect(dayHasVisibleContent(live, new Set(['attr:attention']), entities)).toBe(false);
   });
 
@@ -174,14 +175,14 @@ describe('filters', () => {
   });
 
   it('filterRows drops the rows that no longer match, one row per event', () => {
-    const dayWithHighlight = days.find((d) =>
-      d.rows.some((r) => r.type === 'activity' && r.activity.priority),
+    const dayWithUnbooked = days.find((d) =>
+      d.rows.some((r) => r.type === 'activity' && r.activity._id === 'park_hike'),
     );
-    expect(dayWithHighlight).toBeDefined();
+    expect(dayWithUnbooked).toBeDefined();
     const filtered = filterRows(
-      dayWithHighlight!.rows,
-      dayWithHighlight!,
-      new Set(['attr:highlight']),
+      dayWithUnbooked!.rows,
+      dayWithUnbooked!,
+      new Set(['booking:needs']),
     );
     expect(filtered.flatMap((r) => (r.type === 'activity' ? [r.activity._id] : []))).toEqual([
       'park_hike',

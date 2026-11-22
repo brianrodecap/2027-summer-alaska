@@ -6,7 +6,6 @@
     "startAt": "2027-06-26T14:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Pick up rental car at ANC.",
     "place": {
       "id": "ChIJ13s4RLKiyFYROmJ7yCd4CVU",
@@ -28,7 +27,6 @@
     "startAt": "2027-06-26T23:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Late dinner in Anchorage before the overnight drive — choosing where",
     "place": null,
     "bookingId": null,
@@ -93,7 +91,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Afternoon",
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJ33nUJ42VzlYReEG24JfykiY",
@@ -123,7 +120,6 @@
     "durationMinutes": null,
     "timeLabel": "Afternoon",
     "date": "2027-06-27",
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJ-9r9Su3GzlYRd2bK5bTAhq0",
@@ -162,7 +158,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "priority": "high",
     "text": "Denali flightseeing with glacier landing",
     "place": {
       "id": "ChIJ3yZKTfOVzlYR66TXF7zl7dg",
@@ -199,7 +194,6 @@
     "startAt": "2027-06-27T12:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "West Rib Pub & Grill",
     "place": null,
     "bookingId": null,
@@ -253,7 +247,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Afternoon",
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJn7ypqvKVzlYRxjwrM2rNi20",
@@ -282,7 +275,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Afternoon",
-    "priority": null,
     "text": "Talkeetna Historical Society Museum",
     "place": {
       "id": "ChIJj6m5aoTAzlYRyQI-9AWEsFc",
@@ -320,7 +312,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Afternoon",
-    "priority": null,
     "text": "River confluence viewpoint (Susitna/Talkeetna/Chulitna)",
     "place": {
       "id": "ChIJ7Z95D5OVzlYRc9Cs6MSc8A4",
@@ -349,7 +340,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Afternoon",
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJl5APv_m5zlYRInGU8O6jjLM",
@@ -389,7 +379,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Afternoon",
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJRcDJfvyVzlYRIOTHFeZRV_Q",
@@ -429,7 +418,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Afternoon",
-    "priority": null,
     "text": "Canoe/kayak at Talkeetna Lakes",
     "place": {
       "id": "ChIJjYhX8Ta-zlYRzKKo9L1hVRM",
@@ -466,7 +454,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Evening",
-    "priority": null,
     "text": "Dinner at Mountain High Pizza Pie",
     "place": null,
     "bookingId": null,
@@ -521,7 +508,6 @@
     "durationMinutes": null,
     "timeLabel": "Afternoon",
     "date": "2027-06-27",
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJoQxNrpKVzlYRE3yIXLzxvcs",
@@ -560,7 +546,6 @@
     "startAt": "2027-06-28T05:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Early breakfast at the cabin before the first bus",
     "place": null,
     "bookingId": null,
@@ -610,7 +595,6 @@
     "startAt": "2027-06-28T20:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner in Fairbanks after the drive from Denali — choosing where",
     "place": null,
     "bookingId": null,
@@ -668,7 +652,6 @@
     "startAt": "2027-06-29T06:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast — choosing where",
     "place": null,
     "bookingId": null,
@@ -704,7 +687,6 @@
     "startAt": "2027-06-29T09:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Yukon River Camp",
     "place": {
       "id": "ChIJCSqfQ1VLKVER9FZigu88Qtg",
@@ -733,7 +715,6 @@
     "startAt": "2027-06-29T12:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Lunch on the road",
     "place": null,
     "bookingId": null,
@@ -760,7 +741,6 @@
     "startAt": "2027-06-29T14:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": "high",
     "text": "Arctic Interagency Visitor Center",
     "place": {
       "id": "ChIJmYs44d3AKFERJq-Pgp3qfhY",
@@ -789,7 +769,6 @@
     "startAt": "2027-06-29T17:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Buffet at Coldfoot Camp Cafe",
     "place": {
       "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
@@ -817,7 +796,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Evening",
-    "priority": null,
     "text": "Optional evening program at the Arctic Interagency Visitor Center",
     "place": {
       "id": "ChIJmYs44d3AKFERJq-Pgp3qfhY",
@@ -854,7 +832,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "priority": "high",
     "text": "Gates of the Continental Divide Tour",
     "place": {
       "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
@@ -893,7 +870,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Afternoon",
-    "priority": null,
     "text": "Free time at the Arctic Interagency Visitor Center",
     "place": {
       "id": "ChIJmYs44d3AKFERJq-Pgp3qfhY",
@@ -922,7 +898,6 @@
     "startAt": "2027-06-30T12:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Packed lunch during free time at the visitor center",
     "place": {
       "id": "ChIJmYs44d3AKFERJq-Pgp3qfhY",
@@ -952,7 +927,6 @@
     "startAt": "2027-06-30T17:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner buffet at Coldfoot Camp Cafe",
     "place": {
       "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
@@ -980,7 +954,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Evening",
-    "priority": null,
     "text": "Optional evening program at the Arctic Interagency Visitor Center",
     "place": {
       "id": "ChIJmYs44d3AKFERJq-Pgp3qfhY",
@@ -1017,7 +990,6 @@
     "startAt": "2027-06-30T09:30",
     "durationMinutes": 30,
     "timeLabel": null,
-    "priority": null,
     "text": "Visit Wiseman",
     "place": {
       "id": "ChIJrUTVpIu9KFER9GaZSNV8EQI",
@@ -1053,7 +1025,6 @@
     "startAt": "2027-06-30T10:00",
     "durationMinutes": 90,
     "timeLabel": null,
-    "priority": null,
     "text": "Sukakpak Mountain viewpoint",
     "place": {
       "id": "ChIJzcj7G0CgKFERgydRvLmUvgg",
@@ -1089,7 +1060,6 @@
     "startAt": "2027-06-30T11:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Packed lunch on the drive back to Coldfoot",
     "place": null,
     "bookingId": null,
@@ -1113,7 +1083,6 @@
     "startAt": "2027-06-30T13:00",
     "durationMinutes": 180,
     "timeLabel": null,
-    "priority": null,
     "text": "Arctic Interagency Visitor Center exhibits and trails",
     "place": {
       "id": "ChIJmYs44d3AKFERJq-Pgp3qfhY",
@@ -1141,7 +1110,6 @@
     "startAt": "2027-06-30T17:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner buffet at Coldfoot Camp Cafe",
     "place": {
       "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
@@ -1169,7 +1137,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Evening",
-    "priority": null,
     "text": "One more check with Coyote Air before calling it a night",
     "place": {
       "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
@@ -1206,7 +1173,6 @@
     "startAt": "2027-07-01T11:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Lunch on the drive back — choosing where",
     "place": null,
     "bookingId": null,
@@ -1252,7 +1218,6 @@
     "startAt": "2027-07-01T15:30",
     "durationMinutes": 150,
     "timeLabel": null,
-    "priority": null,
     "text": "University of Alaska Museum of the North",
     "place": {
       "id": "ChIJAca7fEtbMlERWW6yR4ANuKU",
@@ -1280,7 +1245,6 @@
     "startAt": "2027-07-01T07:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Check with Coyote Air first thing",
     "place": {
       "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
@@ -1308,7 +1272,6 @@
     "startAt": "2027-07-01T07:30",
     "durationMinutes": 120,
     "timeLabel": null,
-    "priority": "high",
     "text": "Gates of the Continental Divide Tour",
     "place": {
       "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
@@ -1347,7 +1310,6 @@
     "startAt": "2027-07-01T12:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Packed lunch on the drive back to Fairbanks",
     "place": null,
     "bookingId": null,
@@ -1365,7 +1327,6 @@
     "startAt": "2027-07-01T11:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Packed lunch on the drive back to Fairbanks",
     "place": null,
     "bookingId": null,
@@ -1383,7 +1344,6 @@
     "startAt": "2027-07-01T15:45",
     "durationMinutes": 30,
     "timeLabel": null,
-    "priority": null,
     "text": "Arrive Fairbanks, check into Westmark Fairbanks",
     "place": {
       "id": "ChIJ_aR34k5FMlERqYeOQVWen5I",
@@ -1419,7 +1379,6 @@
     "startAt": "2027-07-01T16:15",
     "durationMinutes": 120,
     "timeLabel": null,
-    "priority": null,
     "text": "University of Alaska Museum of the North",
     "place": {
       "id": "ChIJAca7fEtbMlERWW6yR4ANuKU",
@@ -1447,7 +1406,6 @@
     "startAt": "2027-07-01T13:15",
     "durationMinutes": 30,
     "timeLabel": null,
-    "priority": null,
     "text": "Arrive Fairbanks, check into Westmark Fairbanks",
     "place": {
       "id": "ChIJ_aR34k5FMlERqYeOQVWen5I",
@@ -1477,7 +1435,6 @@
     "startAt": "2027-07-01T13:45",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Free afternoon to rest",
     "place": null,
     "bookingId": null,
@@ -1495,7 +1452,6 @@
     "startAt": "2027-07-02T08:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast — choosing where",
     "place": null,
     "bookingId": null,
@@ -1543,7 +1499,6 @@
     "startAt": "2027-07-02T11:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJM56Y08aLNFERXTjxur2q62I",
@@ -1574,7 +1529,6 @@
     "startAt": "2027-07-02T15:00",
     "durationMinutes": 60,
     "timeLabel": null,
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJRabRJduQtVYRO5fDE4treEU",
@@ -1603,7 +1557,6 @@
     "startAt": "2027-07-02T16:15",
     "durationMinutes": 45,
     "timeLabel": null,
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJD_gXFWOWtVYRvSRwYiqDR2M",
@@ -1634,7 +1587,6 @@
     "startAt": "2027-07-02T18:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner — choosing where",
     "place": null,
     "bookingId": null,
@@ -1671,7 +1623,6 @@
     "startAt": "2027-07-03T08:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast at Copper River Princess Wilderness Lodge (buffet, 6–10am)",
     "place": {
       "id": "ChIJmb_m9FyFtVYRza-EUEqwdfU",
@@ -1699,7 +1650,6 @@
     "startAt": "2027-07-03T15:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Quick lunch in McCarthy — choosing where",
     "place": null,
     "bookingId": null,
@@ -1745,7 +1695,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Evening",
-    "priority": null,
     "text": "Self-guided walk through the Kennecott townsite",
     "place": {
       "id": "ChIJR97PyS2Cs1YRyQEw4Y-6jOY",
@@ -1782,7 +1731,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Evening",
-    "priority": null,
     "text": "Dinner — choosing where",
     "place": null,
     "bookingId": null,
@@ -1841,7 +1789,6 @@
     "startAt": "2027-07-04T08:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast — choosing where",
     "place": null,
     "bookingId": null,
@@ -1887,7 +1834,6 @@
     "startAt": "2027-07-04T09:00",
     "durationMinutes": 300,
     "timeLabel": null,
-    "priority": null,
     "text": "Root Glacier guided half-day hike",
     "place": {
       "id": "ChIJU-XcLiODs1YRBCWN4GuXAs4",
@@ -1915,7 +1861,6 @@
     "startAt": "2027-07-04T13:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Lunch (packed lunch or quick bite at the lodge)",
     "place": null,
     "bookingId": null,
@@ -1939,7 +1884,6 @@
     "startAt": "2027-07-04T15:00",
     "durationMinutes": 120,
     "timeLabel": null,
-    "priority": "high",
     "text": "Kennecott Mill Town Tour",
     "place": {
       "id": "ChIJU-XcLiODs1YRBCWN4GuXAs4",
@@ -1968,7 +1912,6 @@
     "startAt": "2027-07-04T18:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner — choosing where",
     "place": null,
     "bookingId": null,
@@ -2026,7 +1969,6 @@
     "startAt": "2027-07-05T07:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast — choosing where",
     "place": null,
     "bookingId": null,
@@ -2072,7 +2014,6 @@
     "startAt": "2027-07-08T07:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast — choosing where",
     "place": null,
     "bookingId": null,
@@ -2118,7 +2059,6 @@
     "startAt": "2027-07-08T11:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Check into Nullaġvik Hotel, drop bags",
     "place": {
       "id": "ChIJo6lg1JGXyFYR5CruzmerxY8",
@@ -2148,7 +2088,6 @@
     "startAt": "2027-07-08T11:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Check in with Golden Eagle Outfitters at their hangar near the Alaska terminal",
     "place": {
       "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
@@ -2176,7 +2115,6 @@
     "startAt": "2027-07-08T11:45",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Lunch in Kotzebue — choosing where",
     "place": null,
     "bookingId": null,
@@ -2234,7 +2172,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Afternoon",
-    "priority": "high",
     "text": "Kobuk Valley flightseeing",
     "place": {
       "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
@@ -2271,7 +2208,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Afternoon",
-    "priority": null,
     "text": "Northwest Arctic Heritage Center",
     "place": {
       "id": "ChIJg65tX1cXzVAR9z2Gr7xJSN4",
@@ -2300,7 +2236,6 @@
     "startAt": "2027-07-08T18:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner at Bison Store & Restaurant",
     "place": {
       "id": "ChIJHxwWQVIXzVARXZHgjj-LZwU",
@@ -2336,7 +2271,6 @@
     "startAt": "2027-07-09T07:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast at the Nullaġvik Hotel restaurant",
     "place": {
       "id": "ChIJo6lg1JGXyFYR5CruzmerxY8",
@@ -2366,7 +2300,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "priority": "high",
     "text": "Kobuk Valley flightseeing — Great Sand Dunes landing",
     "place": {
       "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
@@ -2395,7 +2328,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "priority": null,
     "text": "Free day in Kotzebue",
     "place": null,
     "bookingId": null,
@@ -2414,7 +2346,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "priority": "high",
     "text": "Bonus flightseeing — Noatak/Kotzebue Sound",
     "place": {
       "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
@@ -2451,7 +2382,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "priority": null,
     "text": "Northwest Arctic Heritage Center",
     "place": {
       "id": "ChIJg65tX1cXzVAR9z2Gr7xJSN4",
@@ -2480,7 +2410,6 @@
     "startAt": "2027-07-09T12:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Flexible lunch, kept loose around today's flight window",
     "place": null,
     "bookingId": null,
@@ -2498,7 +2427,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Evening",
-    "priority": null,
     "text": "Dinner at Little Louie's",
     "place": {
       "id": "ChIJyfidPVEXzVARzxH_okzDMHM",
@@ -2529,7 +2457,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "priority": null,
     "text": "Bonus flightseeing — Noatak/Kotzebue Sound",
     "place": {
       "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
@@ -2566,7 +2493,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "priority": null,
     "text": "Northwest Arctic Heritage Center",
     "place": {
       "id": "ChIJg65tX1cXzVAR9z2Gr7xJSN4",
@@ -2597,7 +2523,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "priority": "high",
     "text": "Kobuk Valley flightseeing — last chance",
     "place": {
       "id": "ChIJ9-Ij5lkXzVARObCKEwG8c1I",
@@ -2634,7 +2559,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "priority": null,
     "text": "Northwest Arctic Heritage Center",
     "place": {
       "id": "ChIJg65tX1cXzVAR9z2Gr7xJSN4",
@@ -2665,7 +2589,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJg65tX1cXzVAR9z2Gr7xJSN4",
@@ -2696,7 +2619,6 @@
     "startAt": "2027-07-10T08:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJo6lg1JGXyFYR5CruzmerxY8",
@@ -2727,7 +2649,6 @@
     "startAt": "2027-07-10T12:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJHxwWQVIXzVARXZHgjj-LZwU",
@@ -2758,7 +2679,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Night",
-    "priority": null,
     "text": "Late dinner in Anchorage — choosing where",
     "place": null,
     "bookingId": null,
@@ -2816,7 +2736,6 @@
     "startAt": "2027-07-15T06:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast — choosing where",
     "place": null,
     "bookingId": null,
@@ -2862,7 +2781,6 @@
     "startAt": "2027-07-15T09:45",
     "durationMinutes": 60,
     "timeLabel": null,
-    "priority": null,
     "text": "Exit Glacier / Harding Icefield Trailhead",
     "place": {
       "id": "ChIJe9tDyguix1YRXW7BK2pUkS0",
@@ -2898,7 +2816,6 @@
     "startAt": "2027-07-15T11:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Lunch at Chinooks Restaurant",
     "place": {
       "id": "ChIJld4P2Xecx1YR6isB_nwgqYU",
@@ -2928,7 +2845,6 @@
     "startAt": "2027-07-15T12:45",
     "durationMinutes": 300,
     "timeLabel": null,
-    "priority": "high",
     "text": "Kenai Fjords Tours — Resurrection Bay Tour",
     "place": {
       "id": "ChIJTbp77Hecx1YRRQiYmotUsnM",
@@ -2959,7 +2875,6 @@
     "startAt": "2027-07-15T18:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner — Seward or Anchorage?",
     "place": null,
     "bookingId": null,
@@ -2998,7 +2913,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Midday",
-    "priority": null,
     "text": "Lunch in Whittier before boarding — choosing where",
     "place": null,
     "bookingId": null,
@@ -3056,7 +2970,6 @@
     "startAt": "2027-07-17T15:30",
     "durationMinutes": 300,
     "timeLabel": null,
-    "priority": null,
     "text": "Board Discovery Princess — departs 8:30pm",
     "place": {
       "id": "ChIJmVCAZBYNyFYRgccbPfb2SBI",
@@ -3087,7 +3000,6 @@
     "startAt": "2027-07-17T20:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "First night's dinner onboard — choosing where",
     "place": null,
     "bookingId": null,
@@ -3149,7 +3061,6 @@
     "startAt": "2027-07-18T08:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast onboard",
     "place": null,
     "bookingId": null,
@@ -3196,7 +3107,6 @@
     "startAt": "2027-07-18T12:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Lunch onboard",
     "place": null,
     "bookingId": null,
@@ -3243,7 +3153,6 @@
     "startAt": "2027-07-18T15:00",
     "durationMinutes": 300,
     "timeLabel": null,
-    "priority": null,
     "text": "Scenic cruising and glacier viewing at Hubbard Glacier",
     "place": {
       "id": "ChIJg_jo6m9VrFYRPcarxgmpnks",
@@ -3279,7 +3188,6 @@
     "startAt": "2027-07-18T19:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner onboard while cruising past Hubbard Glacier — choosing where",
     "place": null,
     "bookingId": null,
@@ -3327,7 +3235,6 @@
     "startAt": "2027-07-19T08:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast onboard",
     "place": null,
     "bookingId": null,
@@ -3374,7 +3281,6 @@
     "startAt": "2027-07-19T09:15",
     "durationMinutes": 540,
     "timeLabel": null,
-    "priority": null,
     "text": "Scenic cruising and glacier viewing in Glacier Bay National Park",
     "place": {
       "id": "ChIJpwhC0wkNqlYRYD228-ekk-I",
@@ -3410,7 +3316,6 @@
     "startAt": "2027-07-19T13:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Lunch on deck while cruising Glacier Bay",
     "place": {
       "id": null,
@@ -3435,7 +3340,6 @@
     "startAt": "2027-07-19T19:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner onboard",
     "place": null,
     "bookingId": null,
@@ -3483,7 +3387,6 @@
     "startAt": "2027-07-20T06:45",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Early breakfast onboard, before the morning tour",
     "place": {
       "id": null,
@@ -3508,7 +3411,6 @@
     "startAt": "2027-07-20T07:30",
     "durationMinutes": 180,
     "timeLabel": null,
-    "priority": null,
     "text": "Whale watching tour from Icy Strait Point",
     "place": {
       "id": "ChIJWfzzDQBxAVQR4FXR2r1AMDE",
@@ -3544,7 +3446,6 @@
     "startAt": "2027-07-20T11:00",
     "durationMinutes": 60,
     "timeLabel": null,
-    "priority": null,
     "text": "Tlingit cultural program at the Huna Tribal House",
     "place": {
       "id": "ChIJs0Y9MR8eAVQRQxmi943PqIU",
@@ -3574,7 +3475,6 @@
     "startAt": "2027-07-20T13:00",
     "durationMinutes": 60,
     "timeLabel": null,
-    "priority": null,
     "text": "ZipRider zipline",
     "place": {
       "id": "ChIJl4v5-dNvAVQRy4RVQ5_1IGI",
@@ -3604,7 +3504,6 @@
     "startAt": "2027-07-20T14:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Lunch — choosing where",
     "place": null,
     "bookingId": null,
@@ -3675,7 +3574,6 @@
     "startAt": "2027-07-20T19:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner onboard",
     "place": null,
     "bookingId": null,
@@ -3723,7 +3621,6 @@
     "startAt": "2027-07-21T06:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Early breakfast onboard, before the Mendenhall transfer",
     "place": {
       "id": null,
@@ -3748,7 +3645,6 @@
     "startAt": "2027-07-21T07:00",
     "durationMinutes": 90,
     "timeLabel": null,
-    "priority": null,
     "text": "Mendenhall Glacier Visitor Center",
     "place": {
       "id": "ChIJQR9sz4fhAFQRzEZzbh9t7xI",
@@ -3789,7 +3685,6 @@
     "startAt": "2027-07-21T09:00",
     "durationMinutes": 180,
     "timeLabel": null,
-    "priority": null,
     "text": "Whale watching tour with Harv & Marv's Outback Alaska",
     "place": {
       "id": "ChIJVymutYkfAVQRAaE6CPxZfvI",
@@ -3819,7 +3714,6 @@
     "startAt": "2027-07-21T12:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Lunch in Juneau — choosing where",
     "place": null,
     "bookingId": null,
@@ -3876,7 +3770,6 @@
     "startAt": "2027-07-21T13:00",
     "durationMinutes": 120,
     "timeLabel": null,
-    "priority": null,
     "text": "Mount Roberts Tramway",
     "place": {
       "id": "ChIJRyojKjPfAFQRBhHoZxTLgb4",
@@ -3906,7 +3799,6 @@
     "startAt": "2027-07-21T19:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner onboard",
     "place": null,
     "bookingId": null,
@@ -3954,7 +3846,6 @@
     "startAt": "2027-07-22T09:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast onboard before heading ashore",
     "place": {
       "id": null,
@@ -3979,7 +3870,6 @@
     "startAt": "2027-07-22T10:30",
     "durationMinutes": 90,
     "timeLabel": null,
-    "priority": null,
     "text": "Saxman Totem Park",
     "place": {
       "id": "ChIJZZP6cCslDFQRkuufviWZqAc",
@@ -4009,7 +3899,6 @@
     "startAt": "2027-07-22T12:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Lunch in Ketchikan — choosing where",
     "place": null,
     "bookingId": null,
@@ -4067,7 +3956,6 @@
     "startAt": "2027-07-22T13:00",
     "durationMinutes": 120,
     "timeLabel": null,
-    "priority": "high",
     "text": "Misty Fjords flightseeing with Family Air Tours",
     "place": {
       "id": "ChIJx5WfGqglDFQRKYbEUxtB_40",
@@ -4103,7 +3991,6 @@
     "startAt": "2027-07-22T19:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner onboard",
     "place": null,
     "bookingId": null,
@@ -4151,7 +4038,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "All day",
-    "priority": null,
     "text": "Cruising the Inside Passage — full sea day",
     "place": null,
     "bookingId": null,
@@ -4176,7 +4062,6 @@
     "startAt": "2027-07-23T08:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast onboard",
     "place": null,
     "bookingId": null,
@@ -4223,7 +4108,6 @@
     "startAt": "2027-07-23T12:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Lunch onboard",
     "place": null,
     "bookingId": null,
@@ -4270,7 +4154,6 @@
     "startAt": "2027-07-23T19:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Last full dinner onboard — choosing where",
     "place": null,
     "bookingId": null,
@@ -4332,7 +4215,6 @@
     "startAt": "2027-07-24T06:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Early breakfast onboard before disembarking",
     "place": {
       "id": null,
@@ -4357,7 +4239,6 @@
     "startAt": "2027-07-24T07:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Disembark in Vancouver",
     "place": {
       "id": "ChIJA-6x0YJxhlQRGOI1wy_va1g",
@@ -4393,7 +4274,6 @@
     "startAt": "2027-06-29T14:00",
     "durationMinutes": 15,
     "timeLabel": null,
-    "priority": null,
     "text": "Check in with Coyote Air about tomorrow’s flight",
     "place": {
       "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
@@ -4424,7 +4304,6 @@
     "startAt": "2027-06-30T08:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJq6qqqqoHMlER2hxwNGwiU_g",
@@ -4456,7 +4335,6 @@
     "startAt": "2027-06-30T08:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Check in at the Coyote Air office, Coldfoot Airport",
     "place": {
       "id": "ChIJ_0I_bsnBKFERI4b1NuS8eVM",
@@ -4489,7 +4367,6 @@
     "startAt": "2027-07-01T18:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner at The Pump House Restaurant",
     "place": {
       "id": "ChIJbf5SBnJbMlEReyVKG1_ISbU",
@@ -4518,7 +4395,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Midday",
-    "priority": null,
     "text": "Packed lunch at Brooks Camp",
     "place": {
       "id": "ChIJ_1SvpuFF6FYRbWqogSLA7Ww",
@@ -4549,7 +4425,6 @@
     "startAt": "2027-07-12T08:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Check with Rust's Flying Service — grounded, free day in Anchorage",
     "place": {
       "id": "ChIJnaVbp1K9yFYRyaefNvkHj8k",
@@ -4580,7 +4455,6 @@
     "startAt": "2027-07-13T09:00",
     "durationMinutes": 240,
     "timeLabel": null,
-    "priority": "high",
     "text": "Hike to Tanalian Falls and Kontrashibuna Lake",
     "place": {
       "id": "ChIJi_W6IRJnw1YR6WJaXFWJUxM",
@@ -4611,7 +4485,6 @@
     "startAt": "2027-07-13T12:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Packed lunch on the trail",
     "place": null,
     "bookingId": null,
@@ -4629,7 +4502,6 @@
     "startAt": "2027-07-13T08:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Check with Lake Clark Air — grounded, free day in Anchorage",
     "place": {
       "id": "ChIJk1PG0UaWyFYRa7b0os7ZSgY",
@@ -4660,7 +4532,6 @@
     "startAt": "2027-07-11T11:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Light lunch at Redoubt Bay Lodge",
     "place": {
       "id": "ChIJQxwv6rO2xVYRSJZLdkGOLn4",
@@ -4694,7 +4565,6 @@
     "startAt": "2027-07-11T08:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Check with Rust's Flying Service — grounded, free day in Anchorage",
     "place": {
       "id": "ChIJnaVbp1K9yFYRyaefNvkHj8k",
@@ -4725,7 +4595,6 @@
     "startAt": "2027-07-17T08:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast — choosing where",
     "place": null,
     "bookingId": null,
@@ -4774,7 +4643,6 @@
     "durationMinutes": null,
     "timeLabel": "Morning",
     "date": "2027-07-10",
-    "priority": "high",
     "text": "Bonus day in Kotzebue",
     "place": {
       "id": "ChIJNbpwJOYWzVARtRutEpMtQE4",
@@ -4804,7 +4672,6 @@
     "startAt": "2027-07-13T18:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner in Anchorage",
     "place": null,
     "bookingId": null,
@@ -4862,7 +4729,6 @@
     "startAt": "2027-07-11T18:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner in Anchorage",
     "place": null,
     "bookingId": null,
@@ -4939,7 +4805,6 @@
     "startAt": "2027-07-12T18:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Dinner in Anchorage",
     "place": null,
     "bookingId": null,
@@ -4997,7 +4862,6 @@
     "startAt": "2027-07-16T18:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJcRhn_Ya9yFYRAgyWbeaWyFI",
@@ -5028,7 +4892,6 @@
     "startAt": "2027-07-16T10:00",
     "durationMinutes": 150,
     "timeLabel": null,
-    "priority": null,
     "text": "Alaska Native Heritage Center",
     "place": {
       "id": "ChIJa0B1BT2UyFYR4Uq-O1L3LBw",
@@ -5059,7 +4922,6 @@
     "startAt": "2027-07-16T12:45",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Quick lunch between stops",
     "place": null,
     "bookingId": null,
@@ -5078,7 +4940,6 @@
     "startAt": "2027-07-16T13:15",
     "durationMinutes": 90,
     "timeLabel": null,
-    "priority": null,
     "text": "Tony Knowles Coastal Trail — Westchester Lagoon",
     "place": {
       "id": "ChIJ00sQ8ny9yFYRGCr4QjH5c_E",
@@ -5109,7 +4970,6 @@
     "startAt": "2027-07-16T15:15",
     "durationMinutes": 90,
     "timeLabel": null,
-    "priority": null,
     "text": "Alaska Wildlife Conservation Center",
     "place": {
       "id": "ChIJZ9R_CrJ2yFYRc0c7bqahWdk",
@@ -5140,7 +5000,6 @@
     "startAt": "2027-07-16T08:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast at Middle Way Cafe",
     "place": {
       "id": "ChIJH666iNuXyFYRNH0w9oXIJQ8",
@@ -5173,7 +5032,6 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Drive to Homer (~4.5 hrs via Seward Highway/Sterling Highway)",
     "place": {
       "id": "ChIJz1qGp-4twVYRu3Pnce2ULh8",
@@ -5205,7 +5063,6 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "priority": "high",
     "text": "Explore the Homer Spit — shops, beach, boardwalk",
     "place": {
       "id": "ChIJa0dFWDYswVYRmDWslCfG1O4",
@@ -5237,7 +5094,6 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Lunch in Homer — choosing where",
     "place": {
       "id": "ChIJz1qGp-4twVYRu3Pnce2ULh8",
@@ -5269,7 +5125,6 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Pratt Museum or Alaska Islands and Ocean Visitor Center",
     "place": {
       "id": "ChIJ3UP9TgsywVYRrixGjH6GKfM",
@@ -5300,7 +5155,6 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Begin drive back to Anchorage (~4.5 hrs)",
     "place": {
       "id": "ChIJz1qGp-4twVYRu3Pnce2ULh8",
@@ -5332,7 +5186,6 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Late dinner in Anchorage — choosing where",
     "place": {
       "id": "ChIJQT-zBHaRyFYR42iEp1q6fSU",
@@ -5364,7 +5217,6 @@
     "durationMinutes": 30,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Walmart Supercenter",
     "place": {
       "id": "ChIJOe6XNsaXyFYRC3S8q6sEmUE",
@@ -5403,7 +5255,6 @@
     "startAt": "2027-06-28T11:00",
     "durationMinutes": null,
     "timeLabel": "Afternoon",
-    "priority": "high",
     "text": "Denali Visitor Center",
     "place": {
       "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
@@ -5432,7 +5283,6 @@
     "startAt": "2027-06-28T10:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJY28Rjp4gzVYRQFLw8NqoU-E",
@@ -5461,7 +5311,6 @@
     "startAt": "2027-06-28T12:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Morino Grill, Denali Visitor Center",
     "place": {
       "id": "ChIJm08IkFHfzFYRR1motg0wk64",
@@ -5502,7 +5351,6 @@
     "durationMinutes": null,
     "timeLabel": "Afternoon",
     "date": "2027-07-02",
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJmb_m9FyFtVYRcM6RvzyFDFg",
@@ -5532,7 +5380,6 @@
     "startAt": "2027-07-07T12:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Lunch at Sheep Mountain Lodge",
     "place": {
       "id": "ChIJ69kB6Dl1yVYRrWn-KL13EpE",
@@ -5561,7 +5408,6 @@
     "startAt": "2027-07-07T13:30",
     "durationMinutes": 60,
     "timeLabel": null,
-    "priority": "high",
     "text": "Matanuska Glacier helicopter tour with Sheep Mountain Air",
     "place": {
       "id": "ChIJS37BSCqNyVYRmTFsCdbhoYA",
@@ -5590,7 +5436,6 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Evening",
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJ7bXHMYe9yFYRdVPg648EZGY",
@@ -5620,7 +5465,6 @@
     "durationMinutes": null,
     "timeLabel": "Morning",
     "date": "2027-07-12",
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJH0pLWWtnw1YRjEtrw7olBe8",
@@ -5651,7 +5495,6 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJk1yonu9bMlER3tc_jXM9MiQ",
@@ -5682,7 +5525,6 @@
     "durationMinutes": 120,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Alaska Aviation Museum on Lake Hood — bush planes, plus floatplane traffic right outside",
     "place": {
       "id": "ChIJExnfV029yFYRTYFt5lqdbNI",
@@ -5713,7 +5555,6 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Lunch at Snow City Cafe downtown",
     "place": {
       "id": "ChIJQcnnU4G9yFYRRfrr7uDX1Rs",
@@ -5744,7 +5585,6 @@
     "durationMinutes": 180,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Anchorage Museum — Alaska Native art and history, Discovery Center for kids",
     "place": {
       "id": "ChIJjUPnbCmWyFYRr_lSUBrKRVc",
@@ -5775,7 +5615,6 @@
     "durationMinutes": 60,
     "timeLabel": null,
     "date": "2027-07-13",
-    "priority": null,
     "text": "Watch salmon running and anglers fishing at Ship Creek",
     "place": {
       "id": "ChIJrd5ZFSeWyFYRUt2nHaEYzm4",
@@ -5806,7 +5645,6 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Breakfast before heading to Lake Hood",
     "place": null,
     "bookingId": null,
@@ -5864,7 +5702,6 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Early breakfast on the way to Lake Hood",
     "place": null,
     "bookingId": null,
@@ -5922,7 +5759,6 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Early breakfast before the Lake Clark Air check-in",
     "place": null,
     "bookingId": null,
@@ -5980,7 +5816,6 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Dinner near the cabins",
     "place": null,
     "bookingId": null,
@@ -6057,7 +5892,6 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Breakfast near the cabins, then check out and load the car",
     "place": null,
     "bookingId": null,
@@ -6106,7 +5940,6 @@
     "durationMinutes": 40,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Free kennel shuttle from the Denali Visitor Center (arrive ~9:00, park here for the day)",
     "place": {
       "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
@@ -6137,7 +5970,6 @@
     "durationMinutes": 120,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Horseshoe Lake Trail — easy ~3-mile loop to an oxbow lake with beaver dams",
     "place": {
       "id": "ChIJr6tfl6zYzFYRE-XnuXy-Z58",
@@ -6168,7 +6000,6 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "priority": null,
     "text": "Packed lunch on the bus (no food sold past the entrance)",
     "place": {
       "id": null,
@@ -6190,7 +6021,6 @@
     "durationMinutes": null,
     "timeLabel": "Evening",
     "date": "2027-07-16",
-    "priority": null,
     "text": null,
     "place": {
       "id": "ChIJAaBdSrp0yFYR8MKE-44BQIw",
@@ -6221,7 +6051,6 @@
     "startAt": "2027-07-01T08:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "priority": null,
     "text": "Breakfast buffet at Coldfoot Camp Cafe",
     "place": {
       "id": "ChIJq6qqqqoHMlER2hxwNGwiU_g",

@@ -1,6 +1,6 @@
 // The trip page's filter nav: lets a reader narrow the day list down to just
-// what's Booked, still needs booking, tagged a highlight, flagged with a
-// warning note, or belongs to one leg. A direct port of docs/js/filters.js's
+// what's Booked, still needs booking, flagged with a warning note, or
+// belongs to one leg. A direct port of docs/js/filters.js's
 // group vocabulary and AND-across/OR-within matching rule, adapted to filter
 // real Day/DayRow data (via filterTagsFor, tripModel.ts) instead of
 // toggling CSS classes on rendered DOM nodes — the React tree here can just
@@ -44,10 +44,7 @@ const GROUP_DEFS: FilterGroup[] = [
   {
     id: 'attr',
     label: 'Attributes',
-    options: [
-      { token: 'attr:highlight', label: 'Highlights', icon: 'star' },
-      { token: 'attr:attention', label: 'Needs attention', icon: 'warning' },
-    ],
+    options: [{ token: 'attr:attention', label: 'Needs attention', icon: 'warning' }],
   },
 ];
 

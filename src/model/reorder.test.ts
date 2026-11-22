@@ -164,7 +164,6 @@ function activity(overrides: Partial<EnrichedActivity>): EnrichedActivity {
     durationMinutes: null,
     timeLabel: null,
     date: null,
-    priority: null,
     text: 'Test activity',
     place: null,
     bookingId: null,

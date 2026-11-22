@@ -426,7 +426,6 @@ export type TimeLabel =
   | 'Night'
   | 'Midnight'
   | (string & {});
-export type Priority = 'high' | 'medium' | 'low';
 export type MealType = 'breakfast' | 'lunch' | 'dinner' | 'snack';
 
 export interface Activity {
@@ -437,7 +436,6 @@ export interface Activity {
   durationMinutes: number | null; // null when unknown/point-in-time; see activityDurationMinutes
   timeLabel: TimeLabel | null;
   date: string | null; // set only when startAt is null
-  priority: Priority | null;
   // null when a Place already names the row — see activityHeadline
   // (tripModel.ts), which every reader of this field's display text goes
   // through instead of reading .text directly.
@@ -698,11 +696,9 @@ export interface Day extends DayFrame {
   // Real Google Place ids for the live weather strip, each answering a
   // different question: sunrise/sunset track wherever the day actually
   // starts/ends (the first and last place with a resolvable id in
-  // the day's rows), while the high/low temperature follows the same priority the
-  // day's own header title does (a flightseeing day's temperature is the
-  // flightseeing spot's, not the hotel's) — falling back to the place
-  // `location` was drawn from. null wherever nothing resolves to a real
-  // geocodable point.
+  // the day's rows), while the high/low temperature reads the place `location`
+  // was drawn from. null wherever nothing resolves to a real geocodable
+  // point.
   sunrisePlaceId: string | null;
   sunsetPlaceId: string | null;
   weatherPlaceId: string | null;

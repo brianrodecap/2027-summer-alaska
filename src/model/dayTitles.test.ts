@@ -43,7 +43,6 @@ function activity(id: string, startAt: string, scenarioId: string | null): Activ
     durationMinutes: null,
     timeLabel: null,
     date: null,
-    priority: null,
     text: id,
     place: null,
     bookingId: null,
@@ -190,5 +189,26 @@ describe('a day’s written title', () => {
     const day = { date: DAY, scenarioTracks: [] };
     expect(writtenTitle(day, dateTitlesOf(data))).toBe('Dalton Highway');
     expect(writtenTitle({ date: '2027-07-01', scenarioTracks: [] }, dateTitlesOf(data))).toBeNull();
+  });
+});
+
+describe('a day’s header weather place', () => {
+  it('is the day’s own place, wherever its activities are', () => {
+    const data = trip();
+    data.stays.push({
+      _id: 's1',
+      legId: 'leg_t',
+      scenarioId: null,
+      checkInAt: '2027-06-29T15:00',
+      checkOutAt: '2027-07-01T11:00',
+      lodging: { place: { id: 'p_lodge', label: 'Lodge' } },
+      bookingId: null,
+      images: [],
+    });
+    data.activities.push({
+      ...activity('hike', '2027-06-30T09:00', null),
+      place: { id: 'p_trailhead', label: 'Trailhead' },
+    });
+    expect(dayOf(data).weatherPlaceId).toBe('p_lodge');
   });
 });

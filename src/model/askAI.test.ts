@@ -58,7 +58,6 @@ function tripData(activityText = 'Kayak tour'): TripData {
         durationMinutes: 120,
         timeLabel: null,
         date: null,
-        priority: null,
         text: activityText,
         place: null,
         bookingId: null,

@@ -1,7 +1,7 @@
 import Typography from '@mui/material/Typography';
 
 import { clockSuffix } from '../../model/dayClocks';
-import { includedInLabel, PRIORITY_LABEL } from '../../model/entityDetails';
+import { includedInLabel } from '../../model/entityDetails';
 import {
   DINING_FORMAT_LABEL,
   firstImage,
@@ -155,11 +155,6 @@ export function ActivityDetailPanel({
         bookingZone={activityZone(activity)}
         placeZone={place?.timeZone}
       />
-      {activity.priority && (
-        <Typography variant="body2" color="text.secondary">
-          {PRIORITY_LABEL[activity.priority]}
-        </Typography>
-      )}
       {selectedOption ? (
         <SelectedMealOptionBody option={selectedOption} includedIn={includedIn} />
       ) : (
