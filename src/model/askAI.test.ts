@@ -69,6 +69,7 @@ function tripData(activityText = 'Kayak tour'): TripData {
     notes: [],
     bookings: [],
     travelModeOverrides: [],
+    dayTitles: [],
     routes: [],
   } as unknown as TripData;
 }

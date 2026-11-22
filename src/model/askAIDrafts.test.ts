@@ -56,6 +56,7 @@ function trip(activities: Activity[], scenarios: Scenario[] = []): TripData {
     notes: [],
     bookings: [],
     travelModeOverrides: [],
+    dayTitles: [],
     routes: [],
   } as unknown as TripData;
 }

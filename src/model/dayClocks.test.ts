@@ -20,6 +20,7 @@ function trip(): TripData {
     notes: [],
     bookings: [],
     travelModeOverrides: [],
+    dayTitles: [],
     routes: [],
   };
 }

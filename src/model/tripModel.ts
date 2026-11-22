@@ -94,12 +94,24 @@ export const TRIP_FILES = [
   'scenarios',
   'notes',
   'travelModeOverrides',
+  'dayTitles',
 ] as const;
 
 export async function loadTripData(slug: string): Promise<TripData> {
   const base = `${import.meta.env.BASE_URL}data/${slug}/`;
   const [
-    [trip, legs, stays, transits, activities, bookings, scenarios, notes, travelModeOverrides],
+    [
+      trip,
+      legs,
+      stays,
+      transits,
+      activities,
+      bookings,
+      scenarios,
+      notes,
+      travelModeOverrides,
+      dayTitles,
+    ],
     routes,
   ] = await Promise.all([
     Promise.all(TRIP_FILES.map((f) => fetch(`${base}${f}.json`).then((r) => r.json()))),
@@ -115,6 +127,7 @@ export async function loadTripData(slug: string): Promise<TripData> {
     scenarios,
     notes,
     travelModeOverrides,
+    dayTitles,
     routes,
   };
 }

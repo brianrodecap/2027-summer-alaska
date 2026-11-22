@@ -379,6 +379,7 @@ export function draftTripData(travelers: Traveler[], pets: boolean): TripData {
     scenarios: [],
     notes: [],
     travelModeOverrides: [],
+    dayTitles: [],
     routes: [],
   };
 }

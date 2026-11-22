@@ -359,6 +359,8 @@ export interface Scenario {
   followsScenarioId?: string;
   requiresScenarioId?: string[];
   parentScenarioId?: string;
+  // The day's title while this scenario is selected; replaces the date's title.
+  title?: string;
   images: Image[];
 }
 
@@ -476,6 +478,13 @@ export interface TravelModeOverride {
   mode: TravelMode;
 }
 
+// A title written for one date (dayTitles.json). Keyed by the date itself:
+// days are computed, so there is no Day entity to hang it on.
+export interface DayTitle {
+  _id: string; // YYYY-MM-DD
+  title: string;
+}
+
 // ---------- raw, as-loaded data ----------
 
 export interface TripData {
@@ -488,6 +497,7 @@ export interface TripData {
   scenarios: Scenario[];
   notes: Note[];
   travelModeOverrides: TravelModeOverride[];
+  dayTitles: DayTitle[];
   routes: Route[];
 }
 

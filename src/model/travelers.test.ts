@@ -73,6 +73,7 @@ function tripWithDuplicate(): TripData {
     scenarios: [],
     notes: [],
     travelModeOverrides: [],
+    dayTitles: [],
     routes: [],
   };
 }

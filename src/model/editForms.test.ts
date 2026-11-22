@@ -5,6 +5,7 @@ import {
   applyActivityForm,
   applyRouteForm,
   applyRouteSave,
+  applyScenarioForm,
   applyScenarioSave,
   applyStayForm,
   applyTransitForm,
@@ -246,6 +247,31 @@ describe('applyScenarioSave', () => {
       ideal: 'alternate',
       alt: 'ideal',
     });
+  });
+});
+
+describe('the scenario form’s day title', () => {
+  const base = (): Scenario => ({
+    _id: 'plan',
+    legId: 'leg_test',
+    tone: 'ideal',
+    label: 'Plan',
+    icon: 'help_outline',
+    images: [],
+  });
+
+  it('saves the day title trimmed', () => {
+    const scenario = base();
+    const form = { ...base(), title: '  Gates of the Arctic ' };
+    expect(applyScenarioForm(scenario, form, [scenario])).toBeNull();
+    expect(scenario.title).toBe('Gates of the Arctic');
+  });
+
+  it('removes the day title when the field is blank', () => {
+    const scenario = { ...base(), title: 'Gates of the Arctic' };
+    const form = { ...scenario, title: '   ' };
+    expect(applyScenarioForm(scenario, form, [scenario])).toBeNull();
+    expect(scenario.title).toBeUndefined();
   });
 });
 

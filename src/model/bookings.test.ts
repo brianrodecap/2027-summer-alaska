@@ -51,6 +51,7 @@ function tripData(overrides: Partial<TripData> = {}): TripData {
     scenarios: [],
     notes: [],
     travelModeOverrides: [],
+    dayTitles: [],
     routes: [],
     ...overrides,
   };

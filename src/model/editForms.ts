@@ -1324,6 +1324,7 @@ export function applyScenarioForm(
   scenario.tone = form.tone;
   scenario.label = label;
   scenario.icon = form.icon || 'help_outline';
+  scenario.title = form.title?.trim() || undefined;
   scenario.followsScenarioId =
     form.followsScenarioId && validIds.has(form.followsScenarioId)
       ? form.followsScenarioId

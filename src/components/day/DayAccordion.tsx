@@ -150,7 +150,7 @@ export const DayAccordion = memo(function DayAccordion({
             }}
           >
             <Box sx={{ gridArea: 'title', minWidth: 0 }}>
-              <DayHeader day={day} title={day.title} expanded={expanded} />
+              <DayHeader day={day} expanded={expanded} />
             </Box>
             {/* Stays mounted while collapsed (hidden via display:none, not
                 unmounted) so this box's viewport latch and DayTravelChip/

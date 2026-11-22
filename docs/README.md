@@ -40,6 +40,7 @@ docs/data/
     scenarios.json           — named ideal/alternate weather contingencies
     notes.json                — warnings, footnotes, and asides, each pointing at
                                  whatever it concerns via `concerns: Ref[]`
+    dayTitles.json            — titles written for a date: [{ _id: 'YYYY-MM-DD', title }]
 ```
 
 A second trip gets its own sibling directory next to `2027-summer-alaska/`, plus one more `{ slug }` entry in `trips.json` so it shows up on the landing screen; `routes.json` stays shared, since routes aren't owned by any one trip.
@@ -151,3 +152,9 @@ A drive whose endpoints are a route's, swapped, runs that route backwards: its p
 ### Route variants have ids (Nov 2026)
 
 Each `RouteVariant` has an `id`, unique within its route (`variantIdProblem`, checked at load and in `applyRouteForm`). `Transit.routeVariant` and the reader's variant tab pick hold that id, where they held the variant's tone; the tone stays a classification (`direct` / `scenic`), so a route can have several scenic variants and a drive can still name one. A drive whose `routeVariant` names no variant of its route falls back to the route's direct variant. Migration: `public/data/routes.json` gained an `id` on every variant, equal to its tone (`direct`, `scenic`), which is what every transit already pointed at, so no transit changed. A route edit saved in a browser against the old shipped route is dropped on load as drift (`replayChanges`), since the shipped route changed; a route that exists only in a browser and was saved before ids has none, and fails the load check until its stored edit is cleared. Saving a route with a variant removed clears the pointer of every Transit that followed it, so a drive falls back to the route's direct variant instead of naming a variant that is gone (`applyRouteSave`, reached by every way of saving a route).
+
+### Written day titles (Nov 2026)
+
+A day's title can be written. `dayTitles.json` holds one document per titled date (`{ _id: '2027-06-29', title: 'Dalton Highway' }`), and a `Scenario` has an optional `title`. While a plan is selected, its title replaces the date's; the innermost selected plan with a title wins (`writtenTitle`). A day with neither shows the title derived from its priority activities, else its place, as before. Editing a title in the day header writes the shown one (`titleTarget`, `withTitle`); a blank title removes it. Migration: `dayTitles.json` is added to every trip as `[]`; no existing document changed.
+
+A date title is keyed by the date itself, so nothing in the app can leave one behind. Re-dating content by hand-editing `public/data/` can: move the matching `dayTitles.json` entries by the same number of days.

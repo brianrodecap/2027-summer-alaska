@@ -62,6 +62,7 @@ function twoLegTrip(): TripData {
     notes: [],
     bookings: [],
     travelModeOverrides: [],
+    dayTitles: [],
     routes: [],
   };
 }

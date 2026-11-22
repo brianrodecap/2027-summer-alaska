@@ -60,6 +60,7 @@ function minimalTripData(): TripData {
     notes: [],
     bookings: [],
     travelModeOverrides: [],
+    dayTitles: [],
     routes: [],
   };
 }

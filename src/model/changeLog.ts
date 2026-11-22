@@ -18,6 +18,7 @@ export const COLLECTIONS = [
   'scenarios',
   'notes',
   'travelModeOverrides',
+  'dayTitles',
   'routes',
 ] as const;
 

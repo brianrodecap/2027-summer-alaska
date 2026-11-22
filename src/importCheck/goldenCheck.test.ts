@@ -58,6 +58,7 @@ function trip(transits: Transit[], bookings: Booking[] = []): TripData {
     notes: [],
     bookings,
     travelModeOverrides: [],
+    dayTitles: [],
     routes: [],
   };
 }

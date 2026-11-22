@@ -7,6 +7,7 @@
 import { activeTitleCandidates, followedDayOf, liveHeader } from './dayHeader';
 import { layoutDay } from './dayLayout';
 import { buildDayVisits, indexTimeline } from './dayMap';
+import { dateTitlesOf, writtenTitle } from './dayTitles';
 import { uniqueById } from './formatting';
 import {
   resolveActiveScenarios,
@@ -283,14 +284,15 @@ export function buildLiveDays(
     return { day, base, signature };
   });
 
-  // Pass 2: titles. A day whose active branch has nothing of its own borrows
-  // the day its scenario follows, so this needs every day's layout first.
+  // Pass 2: titles. A written title (the selected plan's, else the date's) wins.
+  // Otherwise a day whose active branch has nothing of its own borrows the day its
+  // scenario follows, so this needs every day's layout first.
   const baseByDate = new Map(bases.map(({ base }) => [base.date, base]));
+  const dateTitles = dateTitlesOf(data);
   const days = bases.map(({ day, base, signature }): Day => {
-    const title = deriveTitle(
-      base.location,
-      activeTitleCandidates(base, followedDayOf(base, baseByDate)),
-    );
+    const title =
+      writtenTitle(base, dateTitles) ??
+      deriveTitle(base.location, activeTitleCandidates(base, followedDayOf(base, baseByDate)));
     const hit = previous?.get(day.date);
     const live =
       hit && hit.base === base && hit.live.title === title ? hit.live : { ...base, title };

@@ -1717,6 +1717,14 @@ find Note  where concerns overlaps the date, the Leg, or any of the above
 location := active Stay's lodging, or the relevant Transit's from/to</code></pre>
         <ul class="rationale">
           <li>
+            <strong>Its title is the one written thing.</strong>
+            <code>dayTitles.json</code> holds <code>{ _id: 'YYYY-MM-DD', title }</code> for a date
+            someone titled, and a <code>Scenario</code> may carry its own <code>title</code>, which
+            replaces the date's while that plan is selected. Neither makes a day an entity: the date
+            is only the key, and a day with no written title shows one derived from its priority
+            activities, else its place.
+          </li>
+          <li>
             <strong>Nothing here has its own identity.</strong> Nobody books "July 5th" — every
             other entity on this page is a real thing in the world with a confirmation number, a
             ticket, or a geography. A day is a lens for grouping things that already have their own.
@@ -2036,7 +2044,9 @@ location := active Stay's lodging, or the relevant Transit's from/to</code></pre
           </div>
         </div>
         <pre class="schema"><code>{ _id: 'scenario_denali_ideal', legId: 'leg_parks',
-  tone: 'ideal', label: 'Ideal — flight goes', icon: 'flight_takeoff', images: [] }
+  tone: 'ideal', label: 'Ideal — flight goes', icon: 'flight_takeoff',
+  title: 'Gates of the Arctic',  // optional — the day's title while this plan is selected
+  images: [] }
 
 { _id: 'scenario_denali_alt', legId: 'leg_parks',
   tone: 'alternate', label: 'Alternate — flight weathered out', icon: 'cloud', images: [] }

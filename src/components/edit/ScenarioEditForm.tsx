@@ -83,6 +83,13 @@ export function ScenarioEditForm({
         onChange={(e) => onChange({ ...form, label: e.target.value })}
         fullWidth
       />
+      <TextField
+        label="Day title"
+        size="small"
+        value={form.title ?? ''}
+        onChange={(e) => onChange({ ...form, title: e.target.value })}
+        fullWidth
+      />
       <Stack direction="row" spacing={2}>
         <TextField
           select

@@ -34,6 +34,7 @@ function tripData(notes: Note[]): TripData {
     scenarios: [],
     notes,
     travelModeOverrides: [],
+    dayTitles: [],
     routes: [],
   };
 }
