@@ -97,7 +97,13 @@ export function DaysView() {
       <MoveToDayProvider>
         <Box>
           <Box sx={{ display: 'flex' }}>
-            <DayNavigator days={visibleDays} activeDate={activeDate} onSelectDay={jumpToDay} />
+            <DayNavigator
+              days={visibleDays}
+              activeDate={activeDate}
+              bookings={data?.bookings ?? []}
+              tripStart={tripStart}
+              onSelectDay={jumpToDay}
+            />
             <SidebarSlot
               activeDay={activeDay}
               view={assistant.sidebarView}
