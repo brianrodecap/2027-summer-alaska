@@ -43,6 +43,7 @@ import LocalCafeIcon from '@mui/icons-material/LocalCafe';
 import LocalGasStationIcon from '@mui/icons-material/LocalGasStation';
 import LocalGroceryStoreIcon from '@mui/icons-material/LocalGroceryStore';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
+import MoreVertIcon from '@mui/icons-material/MoreVert';
 import MuseumIcon from '@mui/icons-material/Museum';
 import NearMeIcon from '@mui/icons-material/NearMe';
 import PaidIcon from '@mui/icons-material/Paid';
@@ -102,6 +103,7 @@ const ICONS: Record<string, IconComponent> = {
   kitchen: KitchenIcon,
   signpost: SignpostIcon,
   event: EventIcon,
+  more_vert: MoreVertIcon,
   place: PlaceIcon,
   trending_flat: TrendingFlatIcon,
   landscape: LandscapeIcon,

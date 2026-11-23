@@ -19,6 +19,7 @@ import { DayAlertsBanner } from './DayAlertsBanner';
 import { DayHeader } from './DayHeader';
 import { DayInfoStrip } from './DayInfoStrip';
 import { DAY_SCROLL_GAP, dayElementId, DAYS_APP_BAR_HEIGHT } from './dayLayout';
+import { DayMenu } from './DayMenu';
 import { DayTimeline } from './DayTimeline';
 import { DayTravelChip } from './DayTravelChip';
 import { DayWeatherChips } from './DayWeatherChips';
@@ -174,6 +175,7 @@ export const DayAccordion = memo(function DayAccordion({
               </DayInfoStrip>
             </Box>
           </Box>
+          <DayMenu day={day} />
         </AccordionSummary>
         <AccordionDetails sx={{ px: 2 }}>
           <NotesCluster notes={day.notes} />

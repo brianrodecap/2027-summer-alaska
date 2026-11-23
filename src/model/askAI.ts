@@ -35,6 +35,7 @@ import {
   type ProposedNote,
   type ProposedRoute,
 } from './askAIDrafts';
+import { parseMove, PROPOSE_MOVE_TOOL, type ProposedMove } from './askAIMove';
 import {
   type AskAIToolContext,
   READ_TOOL_NAMES,
@@ -131,7 +132,8 @@ type ProposalBody =
   | { type: 'dayPlan'; plan: ProposedDayPlan }
   | { type: 'alternative'; alternative: ProposedAlternative }
   | { type: 'note'; note: ProposedNote }
-  | { type: 'route'; route: ProposedRoute };
+  | { type: 'route'; route: ProposedRoute }
+  | { type: 'move'; move: ProposedMove };
 export type AskAIProposal = { id: string } & ProposalBody;
 
 // One message as the chat shows it. An assistant turn can carry several proposals
@@ -278,7 +280,7 @@ const ASK_AI_SYSTEM_PROMPT =
   'get_travel_time between two place ids, search_places to find a real place and its id, get_budget for money. ' +
   'Answer concisely, in plain prose — no markdown headings or bullet lists. ' +
   'You cannot change the itinerary yourself; you propose changes, which the user reviews. To re-plan a day, or ' +
-  'to move/add/remove several activities on one date, use propose_day_plan with one entry in changes per activity to add or update and one id in remove per activity to drop. For one ' +
+  'to add/remove several activities on one date or change their times, use propose_day_plan with one entry in changes per activity to add or update and one id in remove per activity to drop. For one ' +
   "change to one entity — retiming or rewording an activity, or any change to a Stay's or Transit's own " +
   'fields — use propose_edit. Notes (warnings, info, footnotes on an entry or a date) are their own ' +
   "entities: add, reword or remove one with propose_note, never by editing an entry's text. A routed " +
@@ -287,6 +289,8 @@ const ASK_AI_SYSTEM_PROMPT =
   'computed for you, so never estimate them. To put a drive on a route, or change which route or variant ' +
   'it follows, use propose_edit on the transit with routeId/routeVariant — a route proposed in the same ' +
   "turn doesn't exist until the user saves it, so link it in a later turn. " +
+  'To move existing entries to another day — activities, drives, stays, a weather-plan group or a whole day, ' +
+  'keeping their times of day — use propose_move, never an edit of each start time. ' +
   'After proposing, say briefly what you proposed; never claim a change was made. ' +
   'Always fill in "summary" with a short, human-readable description of the change. Reference an existing ' +
   "entity's exact entityId when modifying it; when adding something new, pick the correct legId and date. " +
@@ -638,6 +642,7 @@ const PROPOSE_TOOLS: BetaTool[] = [
   PROPOSE_ALTERNATIVE_TOOL,
   PROPOSE_NOTE_TOOL,
   PROPOSE_ROUTE_TOOL,
+  PROPOSE_MOVE_TOOL,
 ].map((tool) => ({
   ...tool,
   eager_input_streaming: true,
@@ -679,6 +684,7 @@ const PROPOSAL_PARSERS: Record<string, (input: unknown, ctx: ProposalContext) =>
   },
   [PROPOSE_NOTE_TOOL.name]: (input) => ({ type: 'note', note: parseNote(input) }),
   [PROPOSE_ROUTE_TOOL.name]: (input, ctx) => ({ type: 'route', route: parseRoute(input, ctx) }),
+  [PROPOSE_MOVE_TOOL.name]: (input, ctx) => ({ type: 'move', move: parseMove(input, ctx.data) }),
 };
 
 const QUEUED_FOR_REVIEW =

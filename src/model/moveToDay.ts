@@ -18,6 +18,7 @@ import {
   dateOnly,
   departure,
   diffMinutesIso,
+  legDateRange,
   minutesBetween,
   resolveActivityDate,
   type TripClock,
@@ -33,6 +34,9 @@ export interface MoveMembers {
   // move by the days between it and the target, keeping their plans. Without it
   // each entry moves onto the target day.
   groupFrom?: string;
+  // Set when these entries are everything movable on that day (see wholeDayMove): the
+  // day's written title and its date notes move to the target date with them.
+  wholeDay?: string;
 }
 
 export interface MoveTarget {
@@ -40,9 +44,13 @@ export interface MoveTarget {
   legId: string;
 }
 
+// A date that exists on the calendar, not just one shaped like it.
+const isRealDate = (date: string) =>
+  /^\d{4}-\d{2}-\d{2}$/.test(date) && addDaysStr(date, 0) === date;
+
 export type MoveResult = { data: TripData } | { error: string };
 
-const wholeDays = (from: string, to: string) =>
+export const wholeDays = (from: string, to: string) =>
   Math.round(diffMinutesIso(`${from}T00:00`, `${to}T00:00`) / 1440);
 
 const shiftedDateTime = (dateTime: string, days: number) =>
@@ -75,35 +83,29 @@ function movedActivity(a: Activity, move: MoveMembers, target: MoveTarget): Acti
   return { ...placed(a, move, target), date };
 }
 
-function movedTransit(
-  t: Transit,
-  move: MoveMembers,
-  target: MoveTarget,
-  clock: TripClock,
-): Transit {
-  const departsAt = shiftedDateTime(t.departsAt, daysFor(move, target, dateOnly(t.departsAt)));
+const shiftedTransit = (t: Transit, by: number, clock: TripClock): Transit => {
+  const departsAt = shiftedDateTime(t.departsAt, by);
   const departs = departure(t);
   const deltaMinutes = minutesBetween(departs, { ...departs, at: departsAt }, clock);
-  return {
-    ...placed(t, move, target),
-    departsAt,
-    arrivesAt: shiftedArrivesAt(t, deltaMinutes, clock),
-  };
-}
+  return { ...t, departsAt, arrivesAt: shiftedArrivesAt(t, deltaMinutes, clock) };
+};
 
-function movedStay(s: Stay, move: MoveMembers, target: MoveTarget): Stay {
-  const by = daysFor(move, target, dateOnly(s.checkInAt));
-  return {
-    ...placed(s, move, target),
-    checkInAt: shiftedDateTime(s.checkInAt, by),
-    checkOutAt: shiftedDateTime(s.checkOutAt, by),
-    portCalls: s.portCalls?.map((call) => ({
-      ...call,
-      arrivesAt: shiftedOrNull(call.arrivesAt, by),
-      departsAt: shiftedOrNull(call.departsAt, by),
-    })),
-  };
-}
+const movedTransit = (t: Transit, move: MoveMembers, target: MoveTarget, clock: TripClock) =>
+  shiftedTransit(placed(t, move, target), daysFor(move, target, dateOnly(t.departsAt)), clock);
+
+const shiftedStay = (s: Stay, by: number): Stay => ({
+  ...s,
+  checkInAt: shiftedDateTime(s.checkInAt, by),
+  checkOutAt: shiftedDateTime(s.checkOutAt, by),
+  portCalls: s.portCalls?.map((call) => ({
+    ...call,
+    arrivesAt: shiftedOrNull(call.arrivesAt, by),
+    departsAt: shiftedOrNull(call.departsAt, by),
+  })),
+});
+
+const movedStay = (s: Stay, move: MoveMembers, target: MoveTarget) =>
+  shiftedStay(placed(s, move, target), daysFor(move, target, dateOnly(s.checkInAt)));
 
 // The entries the moves name, by id, and whether every id was found. An entry named
 // by a plan group and by a plain row moves with the group.
@@ -142,22 +144,48 @@ function resolveMoves(data: TripData, moves: MoveMembers[]) {
   };
 }
 
+// A whole day's written title and date notes, moved to another date. A title already
+// on the target date is replaced; a range note stays where it is.
+function carryDay(
+  data: TripData,
+  from: string | undefined,
+  to: string,
+): Pick<TripData, 'dayTitles' | 'notes'> {
+  if (!from) return { dayTitles: data.dayTitles, notes: data.notes };
+  const title = data.dayTitles.find((t) => t._id === from);
+  const others = data.dayTitles.filter((t) => t._id !== from && (!title || t._id !== to));
+  return {
+    dayTitles: title ? [...others, { ...title, _id: to }] : data.dayTitles,
+    notes: data.notes.map((note) => ({
+      ...note,
+      concerns: note.concerns.map((ref) =>
+        'date' in ref && ref.date === from ? { date: to } : ref,
+      ),
+    })),
+  };
+}
+
 export function applyMoveToDay(
   data: TripData,
   moves: MoveMembers[],
   target: MoveTarget,
 ): MoveResult {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(target.date)) return { error: 'Pick a day from the calendar.' };
+  if (!isRealDate(target.date)) return { error: 'Pick a day from the calendar.' };
   if (!data.legs.some((leg) => leg._id === target.legId)) {
     return { error: 'That leg is not part of this trip.' };
+  }
+  if (moves.some((m) => [m.groupFrom, m.wholeDay].some((d) => d !== undefined && !isRealDate(d)))) {
+    return { error: 'A move names a day that is not a date.' };
   }
   const found = resolveMoves(data, moves);
   if (found.empty) return { error: 'Nothing to move.' };
   if (!found.complete) return { error: 'Some of these entries no longer exist.' };
   const clock = tripClock(data);
+  const carried = carryDay(data, moves.find((m) => m.wholeDay)?.wholeDay, target.date);
   return {
     data: {
       ...data,
+      ...carried,
       activities: data.activities.map((a) => {
         const hit = found.activities.get(a._id);
         return hit ? movedActivity(a, hit.move, target) : a;
@@ -174,9 +202,159 @@ export function applyMoveToDay(
   };
 }
 
+// The leg whose dates are closest to a date no leg claims: a date inside a leg's
+// range is distance 0, and ties go to the earlier leg in the list.
+export function nearestLegId(
+  legs: { legId: string; range: { startDate: string; endDate: string } | null }[],
+  date: string,
+): string | null {
+  let best: { legId: string; away: number } | null = null;
+  for (const { legId, range } of legs) {
+    if (!range) continue;
+    const away =
+      date < range.startDate
+        ? wholeDays(date, range.startDate)
+        : date > range.endDate
+          ? wholeDays(range.endDate, date)
+          : 0;
+    if (!best || away < best.away) best = { legId, away };
+  }
+  return best?.legId ?? null;
+}
+
+// Other legs that a move would run into, and how far each would have to shift to
+// keep the gap it has now. A move to a date past the end of its leg stretches the
+// leg later; one before its start stretches it earlier. Legs that begin at or after
+// the old end (or end at or before the old start) and fall inside the stretched
+// span are the ones offered a shift. Empty when nothing collides, which is the
+// usual case: legs may share days, and a person may want them to.
+export interface LegShift {
+  legId: string;
+  days: number;
+}
+
+export function legShiftOffer(
+  data: TripData,
+  moves: MoveMembers[],
+  target: MoveTarget,
+): LegShift[] {
+  const moved = applyMoveToDay(data, moves, target);
+  if (!('data' in moved)) return [];
+  const found = resolveMoves(data, moves);
+  const staying = {
+    stays: data.stays.filter((x) => !found.stays.has(x._id)),
+    transits: data.transits.filter((x) => !found.transits.has(x._id)),
+    activities: data.activities.filter((x) => !found.activities.has(x._id)),
+  };
+  const was = legDateRange(target.legId, staying.stays, staying.transits, staying.activities);
+  const now = legDateRange(
+    target.legId,
+    moved.data.stays,
+    moved.data.transits,
+    moved.data.activities,
+  );
+  if (!was || !now) return [];
+  const shifts: LegShift[] = [];
+  for (const leg of data.legs) {
+    if (leg._id === target.legId) continue;
+    const range = legDateRange(
+      leg._id,
+      moved.data.stays,
+      moved.data.transits,
+      moved.data.activities,
+    );
+    if (!range) continue;
+    if (
+      now.endDate > was.endDate &&
+      range.startDate >= was.endDate &&
+      range.startDate < now.endDate
+    ) {
+      shifts.push({ legId: leg._id, days: wholeDays(was.endDate, now.endDate) });
+    } else if (
+      now.startDate < was.startDate &&
+      range.endDate <= was.startDate &&
+      range.endDate > now.startDate
+    ) {
+      shifts.push({ legId: leg._id, days: -wholeDays(now.startDate, was.startDate) });
+    }
+  }
+  return shifts;
+}
+
+// How far a date moves when legs shift: with the shifted leg that claims it, unless
+// a leg that stays also claims it (a day the legs share stays put).
+function dateShifter(data: TripData, shifts: LegShift[]): (date: string) => number {
+  const range = (legId: string) => legDateRange(legId, data.stays, data.transits, data.activities);
+  const moving = shifts.flatMap((shift) => {
+    const r = range(shift.legId);
+    return r ? [{ ...r, days: shift.days }] : [];
+  });
+  const shiftedIds = new Set(shifts.map((shift) => shift.legId));
+  const staying = data.legs.flatMap((leg) => {
+    const r = shiftedIds.has(leg._id) ? null : range(leg._id);
+    return r ? [r] : [];
+  });
+  return (date) => {
+    const inRange = (r: { startDate: string; endDate: string }) =>
+      r.startDate <= date && date <= r.endDate;
+    return staying.some(inRange) ? 0 : (moving.find(inRange)?.days ?? 0);
+  };
+}
+
+// Every dated entry of the given legs, moved by whole days, and with them the day
+// titles and date notes on the days only those legs claim.
+//
+// `ranges` is the data the legs' days are read from: after a move that stretches a
+// leg over the ones being shifted, that is the data from before the move, where
+// the days still belong to the leg being shifted.
+export function shiftLegs(data: TripData, shifts: LegShift[], ranges: TripData = data): TripData {
+  const byLeg = new Map(shifts.map((shift) => [shift.legId, shift.days]));
+  const clock = tripClock(data);
+  const shiftFor = dateShifter(ranges, shifts);
+  const shiftedDate = (date: string) => addDaysStr(date, shiftFor(date));
+  const movedTitles = data.dayTitles
+    .filter((t) => shiftFor(t._id))
+    .map((t) => ({ ...t, _id: shiftedDate(t._id) }));
+  const landedOn = new Set(movedTitles.map((t) => t._id));
+  return {
+    ...data,
+    activities: data.activities.map((a) => {
+      const by = byLeg.get(a.legId);
+      if (!by) return a;
+      if (a.startAt) return { ...a, startAt: shiftedDateTime(a.startAt, by) };
+      return a.date ? { ...a, date: addDaysStr(a.date, by) } : a;
+    }),
+    transits: data.transits.map((t) => {
+      const by = byLeg.get(t.legId);
+      return by ? shiftedTransit(t, by, clock) : t;
+    }),
+    stays: data.stays.map((s) => {
+      const by = byLeg.get(s.legId);
+      return by ? shiftedStay(s, by) : s;
+    }),
+    // A title that lands on a date takes it from one already there.
+    dayTitles: [
+      ...data.dayTitles.filter((t) => !shiftFor(t._id) && !landedOn.has(t._id)),
+      ...movedTitles,
+    ],
+    notes: data.notes.map((note) => ({
+      ...note,
+      concerns: note.concerns.map((ref) => {
+        if ('date' in ref) return { date: shiftedDate(ref.date) };
+        if (!('dateRange' in ref)) return ref;
+        const [from, to] = ref.dateRange;
+        const by = shiftFor(from);
+        return by && by === shiftFor(to)
+          ? { dateRange: [addDaysStr(from, by), addDaysStr(to, by)] as [string, string] }
+          : ref;
+      }),
+    })),
+  };
+}
+
 // What the person should know before picking a day: bought bookings are real
 // reservations, so a move changes the plan and not the booking; a plan group
-// moves whole; and entries moved on their own leave their weather plan. Empty
+// moves whole; stays move with their dates (a drag leaves them where they are); and entries moved on their own leave their weather plan. Empty
 // when there is nothing to say.
 export function moveNotes(data: TripData, moves: MoveMembers[]): string[] {
   const found = resolveMoves(data, moves);
@@ -195,6 +373,21 @@ export function moveNotes(data: TripData, moves: MoveMembers[]): string[] {
     notes.push(
       `Moves the whole plan group (${grouped} ${grouped === 1 ? 'entry' : 'entries'}), keeping its plans and timing.`,
     );
+  }
+  if (found.stays.size) {
+    notes.push(
+      found.stays.size === 1
+        ? 'Moves 1 stay too: its check-in and check-out dates shift with it.'
+        : `Moves ${found.stays.size} stays too: their check-in and check-out dates shift with them.`,
+    );
+  }
+  const day = moves.find((m) => m.wholeDay)?.wholeDay;
+  if (
+    day &&
+    (data.dayTitles.some((t) => t._id === day) ||
+      data.notes.some((n) => n.concerns.some((r) => 'date' in r && r.date === day)))
+  ) {
+    notes.push('Takes the day’s title and notes along, replacing any title on the day you pick.');
   }
   const plans = [
     ...new Set(
@@ -231,6 +424,14 @@ export function selectionToMove(
   return together.activityIds.length || together.transitIds.length || together.stayIds.length
     ? [together, ...groups]
     : groups;
+}
+
+// The same as selectionToMove, for a day moved whole: its title and date notes go too.
+export function wholeDayMove(
+  rows: Parameters<typeof selectionToMove>[0],
+  date: string,
+): MoveMembers[] {
+  return selectionToMove(rows).map((move) => ({ ...move, wholeDay: date }));
 }
 
 // Where the first entry being moved sits now: the day and leg a picker can start

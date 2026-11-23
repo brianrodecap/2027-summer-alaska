@@ -271,6 +271,7 @@ export function buildLiveDays(
       // live "during transit" check (liveWarnings) above all —
       // rechecks when the route tab or a meal along the drive changes.
       transits: day.transits.map((t) => transitsById.get(t._id) ?? t),
+      carryoverTransits: day.carryoverTransits.map((t) => transitsById.get(t._id) ?? t),
       ...header,
       rows: layout.rows,
       scenarioTracks: layout.scenarioTracks,

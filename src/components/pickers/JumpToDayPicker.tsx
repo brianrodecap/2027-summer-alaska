@@ -19,7 +19,7 @@ function toIsoDate(value: Dayjs): string {
 
 // A docked month-grid calendar for picking a trip day ("Jump to a day", and the
 // Move action's target); only dates that land on an actual trip Day are
-// selectable. `notes` are shown above the calendar, before a day is picked.
+// selectable unless `anyDate`. `notes` are shown above the calendar, before a day is picked.
 export function JumpToDayPicker({
   open,
   onClose,
@@ -30,6 +30,7 @@ export function JumpToDayPicker({
   title = 'Jump to a day',
   notes = [],
   initialDate,
+  anyDate = false,
 }: {
   open: boolean;
   onClose: () => void;
@@ -41,6 +42,8 @@ export function JumpToDayPicker({
   notes?: string[];
   // The month first shown; the first trip day when absent.
   initialDate?: string;
+  // Any calendar date can be picked, not only the trip's days.
+  anyDate?: boolean;
 }) {
   const validDates = useMemo(() => new Set(days.map((d) => d.date)), [days]);
 
@@ -91,9 +94,11 @@ export function JumpToDayPicker({
         ))}
         <DateCalendar
           defaultValue={dayjs(initialDate ?? days[0]?.date ?? tripStart, 'YYYY-MM-DD')}
-          minDate={dayjs(tripStart, 'YYYY-MM-DD')}
-          maxDate={dayjs(tripEnd, 'YYYY-MM-DD')}
-          shouldDisableDate={(value) => !validDates.has(toIsoDate(value as Dayjs))}
+          minDate={anyDate ? undefined : dayjs(tripStart, 'YYYY-MM-DD')}
+          maxDate={anyDate ? undefined : dayjs(tripEnd, 'YYYY-MM-DD')}
+          shouldDisableDate={
+            anyDate ? undefined : (value) => !validDates.has(toIsoDate(value as Dayjs))
+          }
           onChange={(value) => {
             if (!value) return;
             pendingDateRef.current = toIsoDate(value as Dayjs);

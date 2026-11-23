@@ -685,6 +685,9 @@ export interface DayFrame {
   legIds: string[];
   stays: EnrichedStay[]; // the stays overlapping this date
   transits: EnrichedTransit[]; // the transits departing this date
+  // Transits that left an earlier day and are still under way on this date, so a
+  // check against this day's rows sees them.
+  carryoverTransits: EnrichedTransit[];
   notes: Note[];
 }
 

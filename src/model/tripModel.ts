@@ -1972,6 +1972,13 @@ function buildDayFrame(
     stays: stays.filter((s) => legIds.has(s.legId) && stayOverlapsDay(s, dayStart, dayEnd)),
     // A Transit belongs to the single day it departs (transitDepartsOnDay).
     transits: transits.filter((t) => legIds.has(t.legId) && transitDepartsOnDay(t, date)),
+    carryoverTransits: transits.filter(
+      (t) =>
+        legIds.has(t.legId) &&
+        dateOnly(t.departsAt) < date &&
+        !!t.arrivesAt &&
+        dateOnly(t.arrivesAt) >= date,
+    ),
     notes: notesForDay(notes, date),
   };
 }

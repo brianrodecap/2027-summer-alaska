@@ -54,6 +54,8 @@ export function DaysView() {
     () =>
       view
         ? liveDays.filter((day) =>
+            // The view's own maps, not the live ones: a scenario tab the reader is not on
+            // is judged by the verdict built against its own branch (see filters.ts).
             dayHasVisibleContent(day, activeFilterTokens, {
               activities: view.activitiesById,
               transits: view.transitsById,

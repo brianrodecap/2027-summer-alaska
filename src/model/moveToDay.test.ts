@@ -4,11 +4,15 @@ import { TEST_TODAY } from '../test/today';
 import { buildLiveDays } from './liveDays';
 import {
   applyMoveToDay,
+  legShiftOffer,
   movedFrom,
   type MoveMembers,
   moveNotes,
+  nearestLegId,
   selectionToMove,
+  shiftLegs,
   suggestedLegId,
+  wholeDayMove,
 } from './moveToDay';
 import { buildTripView } from './tripModel';
 import type { Activity, Leg, Stay, Transit, TripData } from './types';
@@ -258,6 +262,9 @@ describe('what a move turns down: only what cannot be stored', () => {
     expect(applyMoveToDay(data, one, { date: 'Jul 3', legId: 'leg_a' })).toEqual({
       error: 'Pick a day from the calendar.',
     });
+    expect(applyMoveToDay(data, one, { date: '2027-02-31', legId: 'leg_a' })).toEqual({
+      error: 'Pick a day from the calendar.',
+    });
     expect(applyMoveToDay(data, one, { date: '2027-07-03', legId: 'leg_gone' })).toEqual({
       error: 'That leg is not part of this trip.',
     });
@@ -267,6 +274,18 @@ describe('what a move turns down: only what cannot be stored', () => {
         legId: 'leg_a',
       }),
     ).toEqual({ error: 'Some of these entries no longer exist.' });
+    expect(
+      applyMoveToDay(data, [{ ...one[0], groupFrom: 'banana' }], {
+        date: '2027-07-03',
+        legId: 'leg_a',
+      }),
+    ).toEqual({ error: 'A move names a day that is not a date.' });
+    expect(
+      applyMoveToDay(data, [{ ...one[0], wholeDay: '2027-02-31' }], {
+        date: '2027-07-03',
+        legId: 'leg_a',
+      }),
+    ).toEqual({ error: 'A move names a day that is not a date.' });
     expect(applyMoveToDay(data, plain({}), { date: '2027-07-03', legId: 'leg_a' })).toEqual({
       error: 'Nothing to move.',
     });
@@ -457,6 +476,21 @@ describe('what a move tells the person first', () => {
     ]);
     expect(moveNotes(data, plain({ activityIds: ['a', 'b'], stayIds: ['s'] }))).toEqual([
       '3 of these are booked. Moving them changes the plan, not the bookings.',
+      'Moves 1 stay too: its check-in and check-out dates shift with it.',
+    ]);
+  });
+
+  it('says stays shift with a move, counting them', () => {
+    const data = trip();
+    data.stays.push(
+      stay('s1', '2027-07-02T15:00', '2027-07-03T11:00'),
+      stay('s2', '2027-07-03T15:00', '2027-07-04T11:00'),
+    );
+    expect(moveNotes(data, plain({ stayIds: ['s1'] }))).toEqual([
+      'Moves 1 stay too: its check-in and check-out dates shift with it.',
+    ]);
+    expect(moveNotes(data, plain({ stayIds: ['s1', 's2'] }))).toEqual([
+      'Moves 2 stays too: their check-in and check-out dates shift with them.',
     ]);
   });
 
@@ -488,5 +522,300 @@ describe('which leg to suggest on a day where the trip changes legs', () => {
   it('is nothing when the entry’s leg does not claim the day, or there is no entry', () => {
     expect(suggestedLegId({ legId: 'leg_c' }, ['leg_a', 'leg_b'])).toBeNull();
     expect(suggestedLegId(null, ['leg_a', 'leg_b'])).toBeNull();
+  });
+});
+
+// Leg A runs Jul 2-4 (an activity each day), leg B (the cruise) Jul 6-8.
+function twoLegs(): TripData {
+  const data = trip();
+  data.activities.push(
+    activity('a1', '2027-07-02T10:00'),
+    activity('a2', '2027-07-03T10:00'),
+    activity('a3', '2027-07-04T10:00'),
+    activity('b1', '2027-07-06T10:00', { legId: 'leg_b' }),
+    activity('b2', '2027-07-08T10:00', { legId: 'leg_b' }),
+  );
+  return data;
+}
+const to = (date: string, legId = 'leg_a') => ({ date, legId });
+
+describe('which legs a move would run into', () => {
+  it('offers to shift a later leg by how far the move stretches this one', () => {
+    // a1 moves to Jul 9: leg A now ends Jul 9, five days past Jul 4 and past leg B's start.
+    expect(legShiftOffer(twoLegs(), plain({ activityIds: ['a1'] }), to('2027-07-09'))).toEqual([
+      { legId: 'leg_b', days: 5 },
+    ]);
+  });
+
+  it('offers to shift an earlier leg back when a move stretches this one earlier', () => {
+    // b2 moves to Jul 1: leg B now starts Jul 1, one day before Jul 2 and over leg A's end.
+    const data = twoLegs();
+    expect(legShiftOffer(data, plain({ activityIds: ['b2'] }), to('2027-07-01', 'leg_b'))).toEqual([
+      { legId: 'leg_a', days: -5 },
+    ]);
+  });
+
+  it('counts a leg that starts on this leg’s last day as in the way', () => {
+    const data = twoLegs();
+    data.activities.push(activity('b0', '2027-07-04T20:00', { legId: 'leg_b' }));
+    expect(legShiftOffer(data, plain({ activityIds: ['a1'] }), to('2027-07-09'))).toEqual([
+      { legId: 'leg_b', days: 5 },
+    ]);
+  });
+
+  it('counts an earlier leg that ends on this leg’s first day as in the way', () => {
+    const data = twoLegs();
+    data.activities.push(activity('a4', '2027-07-06T20:00'));
+    expect(legShiftOffer(data, plain({ activityIds: ['b2'] }), to('2027-07-01', 'leg_b'))).toEqual([
+      { legId: 'leg_a', days: -5 },
+    ]);
+  });
+
+  it('leaves alone an earlier leg that ends before the stretched leg now starts', () => {
+    const data = twoLegs();
+    expect(legShiftOffer(data, plain({ activityIds: ['b2'] }), to('2027-07-05', 'leg_b'))).toEqual(
+      [],
+    );
+  });
+
+  it('offers nothing when the stretched leg stops short of the next one', () => {
+    expect(legShiftOffer(twoLegs(), plain({ activityIds: ['a1'] }), to('2027-07-05'))).toEqual([]);
+  });
+
+  it('offers nothing when the move does not stretch the leg, even if legs already overlap', () => {
+    const data = twoLegs();
+    data.activities.push(activity('x', '2027-07-07T10:00'));
+    expect(legShiftOffer(data, plain({ activityIds: ['a1'] }), to('2027-07-03'))).toEqual([]);
+  });
+
+  it('offers nothing for a move to a date before the trip when no leg is in the way', () => {
+    expect(legShiftOffer(twoLegs(), plain({ activityIds: ['a1'] }), to('2027-06-01'))).toEqual([]);
+  });
+
+  it('offers nothing when the move cannot be stored', () => {
+    expect(legShiftOffer(twoLegs(), plain({ activityIds: ['ghost'] }), to('2027-07-09'))).toEqual(
+      [],
+    );
+  });
+});
+
+describe('shifting whole legs', () => {
+  it('moves every dated entry of the named legs by whole days, and no other leg', () => {
+    const data = twoLegs();
+    data.transits.push({ ...transit('t', '2027-07-06T08:00', '2027-07-06T10:00'), legId: 'leg_b' });
+    data.stays.push(
+      stay('s', '2027-07-06T15:00', '2027-07-08T11:00', {
+        legId: 'leg_b',
+        portCalls: [
+          {
+            kind: 'port',
+            place: { id: 'p_port', label: 'Port' },
+            arrivesAt: '2027-07-07T08:00',
+            departsAt: '2027-07-07T17:00',
+          },
+        ],
+      }),
+    );
+    const after = shiftLegs(data, [{ legId: 'leg_b', days: 5 }]);
+    expect(after.activities.map((a) => a.startAt)).toEqual([
+      '2027-07-02T10:00',
+      '2027-07-03T10:00',
+      '2027-07-04T10:00',
+      '2027-07-11T10:00',
+      '2027-07-13T10:00',
+    ]);
+    expect(after.transits[0]).toMatchObject({
+      departsAt: '2027-07-11T08:00',
+      arrivesAt: '2027-07-11T10:00',
+    });
+    expect(after.stays[0]).toMatchObject({
+      checkInAt: '2027-07-11T15:00',
+      checkOutAt: '2027-07-13T11:00',
+    });
+    expect(after.stays[0].portCalls?.[0]).toMatchObject({
+      arrivesAt: '2027-07-12T08:00',
+      departsAt: '2027-07-12T17:00',
+    });
+  });
+
+  it('shifts a date-only activity, and earlier for a negative number', () => {
+    const data = trip();
+    data.activities.push(activity('d', null, { date: '2027-07-06', legId: 'leg_b' }));
+    expect(shiftLegs(data, [{ legId: 'leg_b', days: -2 }]).activities[0].date).toBe('2027-07-04');
+  });
+
+  it('takes the titles and date notes of the shifted leg’s own days along', () => {
+    const data = twoLegs();
+    data.dayTitles.push(
+      { _id: '2027-07-03', title: 'Parks day' },
+      { _id: '2027-07-07', title: 'Sea day' },
+    );
+    const note = (id: string, concerns: TripData['notes'][number]['concerns']) => ({
+      _id: id,
+      kind: 'info' as const,
+      text: id,
+      concerns,
+      images: [],
+    });
+    data.notes.push(
+      note('on', [{ date: '2027-07-06' }]),
+      note('range', [{ dateRange: ['2027-07-06', '2027-07-08'] }]),
+      note('across', [{ dateRange: ['2027-07-04', '2027-07-07'] }]),
+      note('out', [{ dateRange: ['2027-07-07', '2027-07-14'] }]),
+      note('entity', [{ entity: 'leg', id: 'leg_b' }]),
+    );
+    const after = shiftLegs(data, [{ legId: 'leg_b', days: 5 }]);
+    expect(after.dayTitles.map((t) => [t._id, t.title]).sort()).toEqual([
+      ['2027-07-03', 'Parks day'],
+      ['2027-07-12', 'Sea day'],
+    ]);
+    const concerns = (id: string) => after.notes.find((n) => n._id === id)?.concerns;
+    expect(concerns('on')).toEqual([{ date: '2027-07-11' }]);
+    expect(concerns('range')).toEqual([{ dateRange: ['2027-07-11', '2027-07-13'] }]);
+    expect(concerns('across')).toEqual([{ dateRange: ['2027-07-04', '2027-07-07'] }]);
+    expect(concerns('out')).toEqual([{ dateRange: ['2027-07-07', '2027-07-14'] }]);
+    expect(concerns('entity')).toEqual([{ entity: 'leg', id: 'leg_b' }]);
+  });
+
+  it('takes titles along after a move that stretched a leg over the shifted one', () => {
+    const data = twoLegs();
+    data.dayTitles.push({ _id: '2027-07-07', title: 'Sea day' });
+    const members = plain({ activityIds: ['a1'] });
+    const offer = legShiftOffer(data, members, to('2027-07-09'));
+    const after = shiftLegs(moved(data, members, '2027-07-09'), offer, data);
+    expect(after.dayTitles).toEqual([{ _id: '2027-07-12', title: 'Sea day' }]);
+  });
+
+  it('leaves a title on a day another leg also claims, and lets a shifted title replace one it lands on', () => {
+    const data = twoLegs();
+    data.activities.push(activity('a5', '2027-07-06T20:00'));
+    data.dayTitles.push(
+      { _id: '2027-07-06', title: 'Shared' },
+      { _id: '2027-07-08', title: 'Cruise end' },
+      { _id: '2027-07-13', title: 'Old' },
+    );
+    const after = shiftLegs(data, [{ legId: 'leg_b', days: 5 }]);
+    expect(after.dayTitles.map((t) => [t._id, t.title]).sort()).toEqual([
+      ['2027-07-06', 'Shared'],
+      ['2027-07-13', 'Cruise end'],
+    ]);
+  });
+
+  it('after a move plus an accepted shift, the legs no longer collide', () => {
+    const data = twoLegs();
+    const offer = legShiftOffer(data, plain({ activityIds: ['a1'] }), to('2027-07-09'));
+    const after = shiftLegs(moved(data, plain({ activityIds: ['a1'] }), '2027-07-09'), offer);
+    expect(legShiftOffer(after, plain({ activityIds: ['a2'] }), to('2027-07-03'))).toEqual([]);
+    const starts = after.activities.filter((a) => a.legId === 'leg_b').map((a) => a.startAt);
+    expect(starts).toEqual(['2027-07-11T10:00', '2027-07-13T10:00']);
+  });
+});
+
+describe('the leg nearest a date no leg claims', () => {
+  const legs = [
+    { legId: 'a', range: { startDate: '2027-07-02', endDate: '2027-07-04' } },
+    { legId: 'none', range: null },
+    { legId: 'b', range: { startDate: '2027-07-10', endDate: '2027-07-12' } },
+  ];
+
+  it('is the one whose edge is closest, before, between or after', () => {
+    expect(nearestLegId(legs, '2027-06-01')).toBe('a');
+    expect(nearestLegId(legs, '2027-07-05')).toBe('a');
+    expect(nearestLegId(legs, '2027-07-08')).toBe('b');
+    expect(nearestLegId(legs, '2027-08-30')).toBe('b');
+  });
+
+  it('goes to the earlier leg on a tie, and is nothing when no leg has dates', () => {
+    expect(nearestLegId(legs, '2027-07-07')).toBe('a');
+    expect(nearestLegId([{ legId: 'x', range: null }], '2027-07-07')).toBeNull();
+  });
+});
+
+describe('moving a whole day', () => {
+  const note = (id: string, concerns: TripData['notes'][number]['concerns']) => ({
+    _id: id,
+    kind: 'info' as const,
+    text: id,
+    concerns,
+    images: [],
+  });
+  const withDay = () => {
+    const data = twoLegs();
+    data.dayTitles.push({ _id: '2027-07-03', title: 'Parks day' });
+    data.notes.push(
+      note('on', [{ date: '2027-07-03' }]),
+      note('other', [{ date: '2027-07-04' }]),
+      note('range', [{ dateRange: ['2027-07-03', '2027-07-04'] }]),
+      note('both', [{ date: '2027-07-03' }, { entity: 'leg', id: 'leg_a' }]),
+    );
+    return data;
+  };
+  const whole = (date = '2027-07-03'): MoveMembers[] =>
+    plain({ activityIds: ['a2'] }).map((m) => ({ ...m, wholeDay: date }));
+  const concerns = (data: TripData, id: string) => data.notes.find((n) => n._id === id)?.concerns;
+
+  it('takes the day’s title and date notes to the target date', () => {
+    const after = moved(withDay(), whole(), '2027-07-09');
+    expect(after.dayTitles).toEqual([{ _id: '2027-07-09', title: 'Parks day' }]);
+    expect(concerns(after, 'on')).toEqual([{ date: '2027-07-09' }]);
+    expect(concerns(after, 'both')).toEqual([
+      { date: '2027-07-09' },
+      { entity: 'leg', id: 'leg_a' },
+    ]);
+    expect(concerns(after, 'other')).toEqual([{ date: '2027-07-04' }]);
+    expect(concerns(after, 'range')).toEqual([{ dateRange: ['2027-07-03', '2027-07-04'] }]);
+  });
+
+  it('replaces a title already on the target date, and keeps it when the day has none', () => {
+    const data = withDay();
+    data.dayTitles.push({ _id: '2027-07-09', title: 'Old' });
+    expect(moved(data, whole(), '2027-07-09').dayTitles).toEqual([
+      { _id: '2027-07-09', title: 'Parks day' },
+    ]);
+    const bare = withDay();
+    bare.dayTitles = [{ _id: '2027-07-09', title: 'Old' }];
+    expect(moved(bare, whole(), '2027-07-09').dayTitles).toEqual([
+      { _id: '2027-07-09', title: 'Old' },
+    ]);
+  });
+
+  it('leaves the title and notes where they are when it is not a whole day', () => {
+    const data = withDay();
+    const after = moved(data, plain({ activityIds: ['a2'] }), '2027-07-09');
+    expect(after.dayTitles).toEqual(data.dayTitles);
+    expect(after.notes).toEqual(data.notes);
+  });
+
+  it('changes nothing about them when the day moves onto itself', () => {
+    const data = withDay();
+    const after = moved(data, whole(), '2027-07-03');
+    expect(after.dayTitles).toEqual(data.dayTitles);
+    expect(after.notes).toEqual(data.notes);
+  });
+
+  it('says the title and notes go along, only when the day has some', () => {
+    const data = withDay();
+    expect(moveNotes(data, whole())).toContain(
+      'Takes the day’s title and notes along, replacing any title on the day you pick.',
+    );
+    expect(moveNotes(data, whole('2027-07-05'))).toEqual([]);
+    expect(moveNotes(data, plain({ activityIds: ['a2'] }))).toEqual([]);
+  });
+
+  it('marks every part of a selection as the whole day', () => {
+    const rows = [
+      {
+        members: { activityIds: ['a'], transitIds: [], stayIds: [] },
+        isScenarioGroup: false,
+        containerId: '2027-07-03',
+      },
+      {
+        members: { activityIds: ['b'], transitIds: [], stayIds: [] },
+        isScenarioGroup: true,
+        containerId: '2027-07-03',
+      },
+    ];
+    expect(wholeDayMove(rows, '2027-07-03').every((m) => m.wholeDay === '2027-07-03')).toBe(true);
+    expect(wholeDayMove(rows, '2027-07-03')).toHaveLength(2);
   });
 });

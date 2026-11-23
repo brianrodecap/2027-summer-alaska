@@ -1421,3 +1421,44 @@ describe('askAIStream', () => {
     await expect(askAIStream(options)(hello, {})).rejects.toBeInstanceOf(AskAIError);
   });
 });
+
+describe('propose_move', () => {
+  const moveCall = (input: unknown) =>
+    fakeMessage([{ type: 'tool_use', id: 'tu_1', name: 'propose_move', input }], 'tool_use');
+
+  it('queues a move for review without changing the trip', async () => {
+    const data = tripData();
+    const { stream } = stubTurns(
+      moveCall({
+        summary: 'A week later',
+        date: '2027-07-22',
+        legId: 'leg_a',
+        moves: [{ activityIds: ['act_1'] }],
+      }),
+      fakeMessage([{ type: 'text', text: 'Proposed.' }], 'end_turn'),
+    );
+    const after = await turn(stream, startConversation(data), 'Move the kayak tour');
+    const proposals = after.messages.at(-1)?.proposals ?? [];
+    expect(proposals).toHaveLength(1);
+    expect(proposals[0]).toMatchObject({ type: 'move', move: { date: '2027-07-22' } });
+  });
+
+  it('turns down an id that is not in the trip, so the model can look it up', async () => {
+    const { bodies, stream } = stubTurns(
+      moveCall({
+        summary: 's',
+        date: '2027-07-22',
+        legId: 'leg_a',
+        moves: [{ activityIds: ['ghost'] }],
+      }),
+      fakeMessage([{ type: 'text', text: 'Fixed.' }], 'end_turn'),
+    );
+    const after = await turn(stream, startConversation(tripData()), 'Move it');
+    expect(after.messages.at(-1)?.proposals ?? []).toEqual([]);
+    const result = (
+      bodies[1].messages as { content: { is_error?: boolean; content: string }[] }[]
+    ).at(-1)!.content[0];
+    expect(result.is_error).toBe(true);
+    expect(result.content).toMatch(/Not in this trip: ghost/);
+  });
+});

@@ -273,7 +273,7 @@ export function liveWarnings(activity: EnrichedActivity, day: Day): string[] {
     warnings = activityWarnings(
       activity,
       dayActivities(day),
-      day.transits,
+      [...day.transits, ...day.carryoverTransits],
       staysInScope(day.stays, activity),
       day.clock,
       day.selectedMeals,

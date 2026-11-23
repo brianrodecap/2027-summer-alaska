@@ -2144,6 +2144,46 @@ describe('overlap warnings across time zones', () => {
     ]);
   });
 
+  it('flags it on the live day after a drive that left the day before, as the build does', () => {
+    const data = minimalTripData();
+    pushMinimalTransit(data, {
+      departsAt: '2027-06-28T22:00',
+      arrivesAt: '2027-06-29T02:00',
+      from: at('p_a', DENVER),
+      to: at('p_b', DENVER),
+    });
+    pushMinimalActivity(data, { startAt: '2027-06-29T00:30' });
+    const view = buildTripView(data, TEST_TODAY);
+    const activity = view.activitiesById.get('test_activity')!;
+    expect(activity.warnings).toEqual(['During transit: p_a → p_b']);
+    const { days } = buildLiveDays(view, data, {
+      scenarioPicks: new Map(),
+      routeVariantIds: new Map(),
+      mealOptionIndex: new Map(),
+    });
+    const day = days.find((d) => d.date === '2027-06-29')!;
+    expect(liveWarnings(activity, day)).toEqual(activity.warnings);
+  });
+
+  it('does not count a drive that already arrived before the day', () => {
+    const data = minimalTripData();
+    pushMinimalTransit(data, {
+      departsAt: '2027-06-28T20:00',
+      arrivesAt: '2027-06-28T23:00',
+      from: at('p_a', DENVER),
+      to: at('p_b', DENVER),
+    });
+    pushMinimalActivity(data, { startAt: '2027-06-29T00:30' });
+    const view = buildTripView(data, TEST_TODAY);
+    const { days } = buildLiveDays(view, data, {
+      scenarioPicks: new Map(),
+      routeVariantIds: new Map(),
+      mealOptionIndex: new Map(),
+    });
+    const day = days.find((d) => d.date === '2027-06-29')!;
+    expect(day.carryoverTransits).toEqual([]);
+  });
+
   it('flags a departure in the middle of an activity on another clock', () => {
     const data = minimalTripData();
     // Dinner in Page 21:00 to 23:00 is 04:00 to 06:00 UTC; the drive leaves

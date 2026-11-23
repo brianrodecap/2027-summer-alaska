@@ -36,6 +36,7 @@ import {
   withPlaceImages,
   withPlaceImagesInData,
 } from '../../model/askAIDrafts';
+import { applyMoveProposal, describeMove } from '../../model/askAIMove';
 import { recomputeRouteTravel } from '../../model/directions';
 import { findByKind } from '../../model/editForms';
 import { entityLabel } from '../../model/tripModel';
@@ -203,6 +204,8 @@ function reviewSummary(proposal: AskAIProposal, data: TripData): ReviewSummary {
       };
     case 'dayPlan':
       return { title: proposal.plan.summary, items: describeDayPlan(proposal.plan, data) };
+    case 'move':
+      return { title: proposal.move.summary, items: describeMove(proposal.move, data) };
     case 'alternative':
       return {
         title: alternativeTitle(proposal.alternative, data),
@@ -378,6 +381,8 @@ export function AssistantPanel({ focusDay, onClose, fitViewport = false }: Assis
       let run: (prev: TripData) => { data: TripData } | { error: string };
       if (proposal.type === 'dayPlan') {
         run = (prev) => applyDayPlan(proposal.plan, prev, kept);
+      } else if (proposal.type === 'move') {
+        run = (prev) => applyMoveProposal(proposal.move, prev, kept);
       } else if (proposal.type === 'alternative') {
         const alt = proposal.alternative;
         const withIcons = {
