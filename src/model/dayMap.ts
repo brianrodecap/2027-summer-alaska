@@ -19,6 +19,7 @@
 // Everything else is in the list's own order, so an Activity reached mid-drive
 // on the arrival day of an overnight Transit sits between the Transit's stages
 // and its Arrive, rather than ahead of the whole widened Transit.
+import { rowOrder } from './dayLayout';
 import { sameName } from './formatting';
 import type { Timeline, TimelineEvent } from './timeline';
 import {
@@ -130,7 +131,7 @@ function rowVisits(row: DayRow): DayVisit[] {
           relation: row.relation,
           place,
           key: row.key,
-          order: row.order,
+          order: rowOrder(row),
         },
       ];
     }
@@ -142,7 +143,7 @@ function rowVisits(row: DayRow): DayVisit[] {
               activity: row.activity,
               place: row.event.place,
               key: row.key,
-              order: row.order,
+              order: rowOrder(row),
             },
           ]
         : [];
@@ -158,7 +159,7 @@ function rowVisits(row: DayRow): DayVisit[] {
               stageIndex: row.stageIndex,
               place,
               key: row.key,
-              order: row.order,
+              order: rowOrder(row),
             },
           ]
         : [
@@ -168,7 +169,7 @@ function rowVisits(row: DayRow): DayVisit[] {
               phase: row.phase,
               place,
               key: row.key,
-              order: row.order,
+              order: rowOrder(row),
             },
           ];
     }

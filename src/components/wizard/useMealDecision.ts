@@ -6,6 +6,7 @@ import {
   findDuplicateMealActivity,
   type MealDecision,
 } from '../../model/editForms';
+import { activityZone } from '../../model/tripModel';
 import type { Activity } from '../../model/types';
 
 // The mealDecision/setMealDecision pair plus the form-patching onChange that
@@ -54,6 +55,7 @@ export function useMealDuplicateMerge(
         activityForm.mealType,
         activityForm.startsDate,
         activityForm.startsTime,
+        activityZone({ clockZone: activityForm.clockZone || null, place: activityForm.place }),
         scenarioId,
         excludeId,
       ),
@@ -62,6 +64,8 @@ export function useMealDuplicateMerge(
       activityForm.mealType,
       activityForm.startsDate,
       activityForm.startsTime,
+      activityForm.clockZone,
+      activityForm.place,
       scenarioId,
       excludeId,
     ],

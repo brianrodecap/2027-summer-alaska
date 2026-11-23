@@ -23,7 +23,8 @@ import {
   transitFormFrom,
   tripFormFrom,
 } from './editForms';
-import type { Leg, Package, Route, Scenario, Transit, Trip, TripData } from './types';
+import { findDuplicateMealActivity } from './editForms';
+import type { Activity, Leg, Package, Route, Scenario, Transit, Trip, TripData } from './types';
 
 // Synthetic fixture only — never the real public/data/routes.json, which is the
 // site's live, actively-edited reference data rather than a fixed test fixture.
@@ -600,5 +601,66 @@ describe('saving a route with a variant removed', () => {
   it('leaves the transits themselves alone when nothing dangles', () => {
     const before = data([drive('route_test', 'scenic')]);
     expect(applyRouteSave(before, syntheticRoute()).transits).toBe(before.transits);
+  });
+});
+
+describe('which existing meal a new snack duplicates', () => {
+  const snack = (clockZone: string | null): Activity =>
+    ({
+      _id: 'snack',
+      legId: 'leg_a',
+      scenarioId: null,
+      startAt: '2027-07-02T15:00',
+      mealType: 'snack',
+      clockZone,
+    }) as Activity;
+
+  it('is the snack at the same time on the same clock', () => {
+    const found = findDuplicateMealActivity(
+      [snack('America/Anchorage')],
+      'snack',
+      '2027-07-02',
+      '15:00',
+      'America/Anchorage',
+      null,
+    );
+    expect(found?._id).toBe('snack');
+    expect(
+      findDuplicateMealActivity([snack(null)], 'snack', '2027-07-02', '15:00', null, null)?._id,
+    ).toBe('snack');
+  });
+
+  it('is not a snack at the same wall time on another clock', () => {
+    expect(
+      findDuplicateMealActivity(
+        [snack(null)],
+        'snack',
+        '2027-07-02',
+        '15:00',
+        'Pacific/Honolulu',
+        null,
+      ),
+    ).toBeNull();
+    expect(
+      findDuplicateMealActivity(
+        [snack('America/Anchorage')],
+        'snack',
+        '2027-07-02',
+        '15:00',
+        null,
+        null,
+      ),
+    ).toBeNull();
+  });
+
+  it('reads a snack with no stated clock on its place’s', () => {
+    const atPlace = {
+      ...snack(null),
+      place: { id: 'p', label: 'P', timeZone: 'America/Anchorage' },
+    } as Activity;
+    const find = (zone: string | null) =>
+      findDuplicateMealActivity([atPlace], 'snack', '2027-07-02', '15:00', zone, null);
+    expect(find('America/Anchorage')?._id).toBe('snack');
+    expect(find('Pacific/Honolulu')).toBeNull();
   });
 });

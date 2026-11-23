@@ -5,6 +5,7 @@
 // show (each list's stay boundaries first and last, and each scenario box's
 // active branch where the box sits), so the chip, the labels and the markers
 // all read the same answer.
+import { rowOrder } from './dayLayout';
 import { dragIdOf } from './reorder';
 import {
   clockZoneOf,
@@ -127,10 +128,9 @@ function clockAt(row: DayRow, clock: TripClock) {
   const time = rowTime(row);
   const here = placeZone(row);
   const zone = time && (isKnownZone(here) ? here : clockZoneOf(time, clock));
-  const offset = zone === null ? null : zoneOffsetMs(zone, row.order);
-  return zone && offset !== null
-    ? { zone, instant: row.order, offset: Math.round(offset / 60_000) }
-    : null;
+  const instant = rowOrder(row);
+  const offset = zone === null ? null : zoneOffsetMs(zone, instant);
+  return zone && offset !== null ? { zone, instant, offset: Math.round(offset / 60_000) } : null;
 }
 
 // The day's clocks, once per (live) Day.

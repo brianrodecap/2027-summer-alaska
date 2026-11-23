@@ -73,7 +73,7 @@ const activityRow = (activity: EnrichedActivity): ActivityRow => {
   });
   // On its own place's clock, as the timeline sets it.
   event.zone = activity.place?.timeZone ?? null;
-  return { type: 'activity', event, activity, key: activity.startAt ?? '', order: event.instant };
+  return { type: 'activity', event, activity, key: activity.startAt ?? '' };
 };
 
 const stayRow = (stay: EnrichedStay, relation: StayRelation, key: string): StayRow => ({
@@ -97,8 +97,7 @@ const transitRow = (
     { kind: 'transit', id: transit._id },
     phase === 'stage' ? 0 : undefined,
   );
-  const order = event.instant;
-  if (phase !== 'stage') return { type: 'transit', event, transit, phase, key, order };
+  if (phase !== 'stage') return { type: 'transit', event, transit, phase, key };
   return {
     type: 'transit',
     event,
@@ -107,7 +106,6 @@ const transitRow = (
     stage: { kind: 'via', note: null, place: transit.from, key, zone: null },
     stageIndex: 0,
     key,
-    order,
   };
 };
 

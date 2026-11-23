@@ -19,12 +19,14 @@ export function useActiveDayDate(dates: string[]): string | null {
 
   useEffect(() => {
     if (dates.length === 0) return;
-    const elements = dates
-      .map((date) => document.getElementById(dayElementId(date)))
-      .filter((el): el is HTMLElement => el !== null);
+    const dateByElement = new Map<HTMLElement, string>();
+    for (const date of dates) {
+      const el = document.getElementById(dayElementId(date));
+      if (el) dateByElement.set(el, date);
+    }
+    const elements = [...dateByElement.keys()];
     if (elements.length === 0) return;
 
-    const dateByElement = new Map(elements.map((el, i) => [el, dates[i]]));
     const intersecting = new Set<HTMLElement>();
 
     // Among every day block currently crossing the band, the "active" one

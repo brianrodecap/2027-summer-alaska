@@ -48,10 +48,16 @@ export interface DayLayout {
   scenarioTracks: ScenarioTrack[]; // the day's top-level tabs, flat
 }
 
-// Rows by when they happen, the timeline's own order (event rows carry its
-// instant); a same-instant tie keeps insertion order (stays, then events in
-// timeline order — which already breaks an Activity tie, then boxes).
-const byOrder = (a: DayRow, b: DayRow) => a.order - b.order;
+// When a row happens (orderInstant): an event row's event instant; a stay and a box
+// carry their own.
+export function rowOrder(row: DayRow): number {
+  return row.type === 'stay' || row.type === 'box' ? row.order : row.event.instant;
+}
+
+// Rows by when they happen, the timeline's own order; a same-instant tie keeps
+// insertion order (stays, then events in timeline order — which already breaks an
+// Activity tie, then boxes).
+const byOrder = (a: DayRow, b: DayRow) => rowOrder(a) - rowOrder(b);
 
 export function layoutDay(input: DayLayoutInput): DayLayout {
   const { date, events, groups, stays, activities, transits, clock } = input;
@@ -105,7 +111,6 @@ export function layoutDay(input: DayLayoutInput): DayLayout {
               stage: event.stage,
               stageIndex: event.stageIndex,
               key: event.at,
-              order: event.instant,
             });
           }
         } else {
@@ -116,12 +121,11 @@ export function layoutDay(input: DayLayoutInput): DayLayout {
             transit,
             phase,
             key: event.at,
-            order: event.instant,
           });
         }
       } else if (event.kind === 'activity') {
         const activity = activities.get(event.source.id) as EnrichedActivity;
-        rows.push({ type: 'activity', event, activity, key: event.at, order: event.instant });
+        rows.push({ type: 'activity', event, activity, key: event.at });
       }
     }
     return rows;

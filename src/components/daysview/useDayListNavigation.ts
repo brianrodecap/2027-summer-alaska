@@ -50,8 +50,13 @@ export function useDayListNavigation(
   }, [date, view?.dateRange, slug, navigate]);
 
   return (selected: string) => {
-    document.getElementById(dayElementId(selected))?.scrollIntoView({ block: 'start' });
-    scrolledDateRef.current = selected;
+    // A day the list does not show yet (the single-day panel shows one) is scrolled to
+    // by the effect above once it is on screen.
+    const el = document.getElementById(dayElementId(selected));
+    if (el) {
+      el.scrollIntoView({ block: 'start' });
+      scrolledDateRef.current = selected;
+    }
     navigate(`/${slug}/days/${selected}`, { replace: true });
   };
 }

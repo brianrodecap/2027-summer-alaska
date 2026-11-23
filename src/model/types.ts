@@ -607,7 +607,6 @@ export interface ActivityRow {
   event: TimelineEvent;
   activity: EnrichedActivity;
   key: string;
-  order: number; // when the row happens (orderInstant): the day list's one sort
 }
 
 export interface StayRow {
@@ -618,7 +617,7 @@ export interface StayRow {
   stay: EnrichedStay;
   relation: StayRelation;
   key: string;
-  order: number; // when the row happens (orderInstant): the day list's one sort
+  order: number; // when the row happens (orderInstant); event rows take it from their event (rowOrder)
 }
 
 export interface TransitBoundaryRow {
@@ -627,7 +626,6 @@ export interface TransitBoundaryRow {
   transit: EnrichedTransit;
   phase: 'depart' | 'arrive';
   key: string;
-  order: number; // when the row happens (orderInstant): the day list's one sort
 }
 
 // A stop along the selected route variant.
@@ -639,7 +637,6 @@ export interface TransitStageRow {
   stage: RouteStage;
   stageIndex: number; // its position in the variant's stages
   key: string;
-  order: number; // when the row happens (orderInstant): the day list's one sort
 }
 
 export type TransitRow = TransitBoundaryRow | TransitStageRow;

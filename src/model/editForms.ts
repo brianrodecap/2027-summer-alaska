@@ -17,6 +17,7 @@ import { resolveScenarioToneChange } from './scenarioGroups';
 import {
   activityHeadline,
   activityTimelineStart,
+  activityZone,
   addDaysStr,
   arrivalProblem,
   canonicalZone,
@@ -430,6 +431,9 @@ export function findDuplicateMealActivity(
   mealType: MealType | '',
   startsDate: string | null,
   startsTime: string | null,
+  // The clock the meal's time is read on (activityZone): the same wall time on another
+  // clock is another moment, so it is not the same snack.
+  zone: string | null,
   scenarioId: string | null,
   excludeId?: string,
 ): Activity | null {
@@ -438,7 +442,11 @@ export function findDuplicateMealActivity(
   if (mealType === 'snack') {
     if (!startsTime) return null;
     const startAt = `${startsDate}T${startsTime}`;
-    return candidates.find((a) => a.mealType === 'snack' && a.startAt === startAt) ?? null;
+    return (
+      candidates.find(
+        (a) => a.mealType === 'snack' && a.startAt === startAt && activityZone(a) === zone,
+      ) ?? null
+    );
   }
   return (
     candidates.find((a) => a.mealType === mealType && resolveActivityDate(a) === startsDate) ?? null

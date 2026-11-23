@@ -1,4 +1,5 @@
 import Box from '@mui/material/Box';
+import useMediaQuery from '@mui/material/useMediaQuery';
 import { useMemo, useState } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -13,6 +14,7 @@ import { DayNavigator } from '../components/daysview/DayNavigator';
 import { DaysAppBar } from '../components/daysview/DaysAppBar';
 import { DaysDialogs } from '../components/daysview/DaysDialogs';
 import { DetailPanels } from '../components/daysview/DetailPanels';
+import { selectedDayDate } from '../components/daysview/selectedDay';
 import { SelectionBar } from '../components/daysview/SelectionBar';
 import { SidebarSlot } from '../components/daysview/SidebarSlot';
 import { useDayListNavigation } from '../components/daysview/useDayListNavigation';
@@ -64,11 +66,23 @@ export function DaysView() {
         : liveDays,
     [liveDays, activeFilterTokens, view],
   );
+  // On wide screens the list shows one day: the URL's, or the first the filters
+  // leave. Narrower screens keep the scrolling list of every day.
+  const wide = useMediaQuery((theme) => theme.breakpoints.up('lg'));
+  const selectedDate = selectedDayDate(
+    visibleDays.map((day) => day.date),
+    date,
+  );
+  const listedDays = useMemo(
+    () => (wide ? visibleDays.filter((day) => day.date === selectedDate) : visibleDays),
+    [wide, visibleDays, selectedDate],
+  );
   // Drives DayMapSidebar — see that hook's own comment for why this is a
   // single scroll-tracked map rather than one per day. useActiveDayDate keys
   // its own effect on the joined date string, not array identity, so this
   // doesn't need its own memo.
-  const activeDate = useActiveDayDate(visibleDays.map((day) => day.date));
+  const scrolledDate = useActiveDayDate(listedDays.map((day) => day.date));
+  const activeDate = wide ? selectedDate : scrolledDate;
   const activeDay = activeDate ? (daysByDate.get(activeDate) ?? null) : null;
 
   if (!view) return null;
@@ -100,7 +114,7 @@ export function DaysView() {
                 onAskAI={assistant.open}
               />
               <DayList
-                days={visibleDays}
+                days={listedDays}
                 onOpenActivity={panels.handleOpenActivity}
                 onOpenStay={panels.stayPanel.onOpen}
                 onOpenTransit={panels.transitPanel.onOpen}

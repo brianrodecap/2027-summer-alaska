@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { TEST_TODAY } from '../test/today';
+import { rowOrder } from './dayLayout';
 import { buildLiveDays } from './liveDays';
 import { buildTripView } from './tripModel';
 import type { Activity, DayRow, Scenario, Stay, Transit, TripData } from './types';
@@ -384,5 +385,16 @@ describe('layoutDay — time zones', () => {
       'tabs@2027-06-01T10:30[i,a]',
       '  activity:i1',
     ]);
+  });
+});
+
+describe('when a row happens', () => {
+  it('is its event’s instant for an event row, and its own order for a stay or box', () => {
+    const event = { instant: 100 } as never;
+    expect(rowOrder({ type: 'activity', event, key: '' } as unknown as DayRow)).toBe(100);
+    expect(rowOrder({ type: 'transit', event, key: '' } as unknown as DayRow)).toBe(100);
+    expect(rowOrder({ type: 'stay', event, key: '', order: 7 } as unknown as DayRow)).toBe(7);
+    expect(rowOrder({ type: 'stay', event: null, key: '', order: 7 } as unknown as DayRow)).toBe(7);
+    expect(rowOrder({ type: 'box', key: '', order: 9 } as unknown as DayRow)).toBe(9);
   });
 });
