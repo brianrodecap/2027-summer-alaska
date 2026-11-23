@@ -77,6 +77,9 @@ export function DaysView() {
     () => (wide ? visibleDays.filter((day) => day.date === selectedDate) : visibleDays),
     [wide, visibleDays, selectedDate],
   );
+  // The single-day panel opens with the day's poster.
+  const tripStart = view?.dateRange?.startDate ?? null;
+  const poster = useMemo(() => (wide ? { tripStart } : undefined), [wide, tripStart]);
   // Drives DayMapSidebar — see that hook's own comment for why this is a
   // single scroll-tracked map rather than one per day. useActiveDayDate keys
   // its own effect on the joined date string, not array identity, so this
@@ -120,6 +123,7 @@ export function DaysView() {
                 onOpenTransit={panels.transitPanel.onOpen}
                 onOpenMap={mapDialog.openMap}
                 onAddEvent={setAddWizardDay}
+                poster={poster}
               />
             </Box>
           </Box>

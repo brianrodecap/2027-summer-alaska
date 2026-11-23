@@ -20,6 +20,7 @@ import { DayHeader } from './DayHeader';
 import { DayInfoStrip } from './DayInfoStrip';
 import { DAY_SCROLL_GAP, dayElementId, DAYS_APP_BAR_HEIGHT } from './dayLayout';
 import { DayMenu } from './DayMenu';
+import { DayPoster } from './DayPoster';
 import { DayTimeline } from './DayTimeline';
 import { DayTravelChip } from './DayTravelChip';
 import { DayWeatherChips } from './DayWeatherChips';
@@ -99,10 +100,13 @@ export const DayAccordion = memo(function DayAccordion({
   onOpenTransit,
   onOpenMap,
   onAddEvent,
+  poster,
 }: {
   day: Day;
   onOpenMap: (day: Day) => void;
   onAddEvent: (day: Day) => void;
+  // Shows the day's poster above it: the trip's first date, for the poster's day number.
+  poster?: { tripStart: string | null };
 } & DayRowOpeners) {
   const [expanded, setExpanded] = useState(true);
   const { ref: infoRef, inView } = useInViewport<HTMLDivElement>();
@@ -113,6 +117,7 @@ export const DayAccordion = memo(function DayAccordion({
       id={dayElementId(day.date)}
       sx={{ scrollMarginTop: `calc(${DAYS_APP_BAR_HEIGHT} + ${DAY_SCROLL_GAP})` }}
     >
+      {poster && <DayPoster day={day} tripStart={poster.tripStart} />}
       <DayAlertsBanner day={day} />
       <Accordion
         expanded={expanded}
@@ -151,7 +156,7 @@ export const DayAccordion = memo(function DayAccordion({
             }}
           >
             <Box sx={{ gridArea: 'title', minWidth: 0 }}>
-              <DayHeader day={day} expanded={expanded} />
+              <DayHeader day={day} expanded={expanded} poster={Boolean(poster)} />
             </Box>
             {/* Stays mounted while collapsed (hidden via display:none, not
                 unmounted) so this box's viewport latch and DayTravelChip/

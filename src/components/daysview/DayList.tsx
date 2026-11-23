@@ -16,10 +16,12 @@ export function DayList({
   onOpenTransit,
   onOpenMap,
   onAddEvent,
+  poster,
 }: {
   days: Day[];
   onOpenMap: (day: Day) => void;
   onAddEvent: (day: Day) => void;
+  poster?: { tripStart: string | null };
 } & DayRowOpeners) {
   if (days.length === 0) {
     return (
@@ -40,6 +42,7 @@ export function DayList({
             onOpenTransit={onOpenTransit}
             onOpenMap={onOpenMap}
             onAddEvent={onAddEvent}
+            poster={poster}
           />
         ))}
       </Stack>

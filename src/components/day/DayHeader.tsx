@@ -13,18 +13,30 @@ import { DayTitleField } from './DayTitleField';
 // whether or not the day is expanded, so there's nothing else that needs
 // restating while collapsed. `expanded` only affects whether a long title
 // truncates to one line (collapsed) or wraps (expanded), same as before.
-export function DayHeader({ day, expanded }: { day: Day; expanded: boolean }) {
+// With the day poster above (`poster`), it carries the date and the title, and this is
+// just the chips.
+export function DayHeader({
+  day,
+  expanded,
+  poster = false,
+}: {
+  day: Day;
+  expanded: boolean;
+  poster?: boolean;
+}) {
   return (
     <Box sx={{ minWidth: 0 }}>
       <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', rowGap: 0.5 }}>
-        <Typography variant="caption" color="text.secondary">
-          {day.dateLabel}
-        </Typography>
+        {!poster && (
+          <Typography variant="caption" color="text.secondary">
+            {day.dateLabel}
+          </Typography>
+        )}
         <DayClockChip day={day} />
         <DayHolidayChip date={day.date} />
         <DayPortCallChip day={day} />
       </Box>
-      <DayTitleField day={day} expanded={expanded} />
+      {!poster && <DayTitleField day={day} expanded={expanded} />}
     </Box>
   );
 }
