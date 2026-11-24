@@ -3,7 +3,7 @@ import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
 import { alpha, useTheme } from '@mui/material/styles';
 import { AdvancedMarker, useMap } from '@vis.gl/react-google-maps';
-import { type Ref, useEffect } from 'react';
+import { type Ref, useEffect, useState } from 'react';
 
 import type { Coordinates } from '../../model/placeCoordinates';
 import { materialIcon } from './materialIcon';
@@ -19,8 +19,21 @@ const PREVIEW_ZOOM = 9;
 
 const RING = 22;
 
-// A ring on a point, in a line's color, with its name beside it: filled for an end
-// or the stop a preview is at, an open ring for a via. `glyph` is what is inside it.
+// Text a screen reader reads that nobody sees.
+const VISUALLY_HIDDEN = {
+  position: 'absolute',
+  width: 1,
+  height: 1,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+} as const;
+
+// A ring on a point, in a line's color: filled for an end or the stop a preview is
+// at, an open ring for a via. `glyph` is what is inside it. Its name shows beside it
+// while the pointer is over it, once it is tapped (when tapping does nothing else),
+// and while a preview is stopped there; never otherwise, so rings never crowd out
+// each other's names.
 export function RingMarker({
   position,
   color,
@@ -44,17 +57,23 @@ export function RingMarker({
 }) {
   const { palette } = useTheme();
   const size = via ? 12 : active ? RING + 8 : RING;
-  const halo = palette.background.default;
+  const [hovered, setHovered] = useState(false);
+  const [tapped, setTapped] = useState(false);
+  const named = name !== '' && (hovered || tapped || active);
   return (
     <AdvancedMarker
       ref={markerRef}
       position={position}
-      zIndex={active ? 6 : filled ? 5 : 4}
-      onClick={onClick}
-      title={name}
+      zIndex={named ? 8 : active ? 6 : filled ? 5 : 4}
+      onClick={onClick ?? (() => setTapped((t) => !t))}
     >
       {/* a marker sits on its point by its bottom edge; this centers the ring on it */}
-      <Box sx={{ position: 'relative', width: size, height: size, transform: 'translateY(50%)' }}>
+      <Box
+        // a mouse only: a touch's own tap is what toggles the name
+        onPointerEnter={(e) => setHovered(e.pointerType === 'mouse')}
+        onPointerLeave={() => setHovered(false)}
+        sx={{ position: 'relative', width: size, height: size, transform: 'translateY(50%)' }}
+      >
         <Box
           sx={{
             width: size,
@@ -71,30 +90,31 @@ export function RingMarker({
             bgcolor: filled || active ? color : 'background.paper',
             color: filled || active ? palette.getContrastText(color) : 'text.primary',
             boxShadow: active ? `0 0 0 4px ${alpha(color, 0.33)}` : undefined,
-            cursor: onClick ? 'pointer' : undefined,
+            cursor: 'pointer',
           }}
         >
           {via ? null : glyph}
+          <span style={VISUALLY_HIDDEN}>{name}</span>
         </Box>
-        {name && (
-          <Box
+        {named && (
+          <Paper
+            elevation={3}
             component="span"
             sx={{
               position: 'absolute',
               left: size + 6,
               top: '50%',
               transform: 'translateY(-50%)',
+              px: 1,
+              py: 0.25,
               whiteSpace: 'nowrap',
               fontSize: 13,
-              fontWeight: via ? 400 : 700,
-              color: 'text.primary',
-              // a halo in the page color keeps the name legible over roads and terrain
-              textShadow: `0 0 3px ${halo}, 0 0 3px ${halo}, 0 0 6px ${halo}`,
+              fontWeight: 700,
               pointerEvents: 'none',
             }}
           >
-            {name}
-          </Box>
+            {glyph ? `${glyph} · ${name}` : name}
+          </Paper>
         )}
       </Box>
     </AdvancedMarker>

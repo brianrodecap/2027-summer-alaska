@@ -282,7 +282,7 @@ function Layers({
 }
 
 // A and B for the ends, numbers for the active variant's waypoints and a small
-// open ring for a via, each with its name beside it.
+// open ring for a via; a name shows on hover or tap.
 function StopMarkers({
   route,
   variant,
