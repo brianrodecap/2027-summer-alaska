@@ -843,7 +843,8 @@
         "credit": "Alaska DOT&PF / Federal Highway Administration, public domain",
         "caption": "Driving the George Parks Highway toward Denali"
       }
-    ]
+    ],
+    "showEndpointsOnMap": true
   },
   {
     "_id": "b326de5a-14bd-4c86-919e-0fe7396e8155",
@@ -883,7 +884,8 @@
     "routeId": "route_new_12",
     "routeVariant": "direct",
     "bookingId": null,
-    "images": []
+    "images": [],
+    "showEndpointsOnMap": true
   },
   {
     "_id": "073e15c0-5d67-442d-b89e-0011a5cab44b",
