@@ -4,13 +4,12 @@ import Stack from '@mui/material/Stack';
 import { useTheme } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import {
-  AdvancedMarker,
   InfoWindow,
   Map as GoogleMap,
   Polyline,
   useAdvancedMarkerRef,
 } from '@vis.gl/react-google-maps';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { GOOGLE_MAPS_MAP_ID } from '../../config/places';
 import { usePlaceCoordinates } from '../../hooks/usePlaceCoordinates';
@@ -42,31 +41,13 @@ import {
 import type { Day, TravelMode, TravelModeOverride } from '../../model/types';
 import { useTripData } from '../../state/useTripData';
 import { FitBoundsToPoints } from '../shared/FitBoundsToPoints';
-import {
-  activityRowIconName,
-  DEFAULT_PLACE_ICON,
-  renderMaterialIcon,
-  transitModeIconName,
-} from '../shared/materialIcon';
+import { MapButtons, PreviewMarker, RingMarker } from '../shared/PlannerMapParts';
+import { PreviewBar } from '../shared/PreviewBar';
+import { PreviewStartButton } from '../shared/PreviewStartButton';
+import { PREVIEW_NEEDS_PLACES } from '../shared/previewText';
 import { TripImage } from '../shared/TripImage';
-import { dayElementId } from './dayLayout';
 import type { DayRowOpeners } from './openHandlers';
-
-// A stop's icon reflects whichever kind of entity it is — stay (lodging)
-// takes priority over transit-boundary over transit-stage over activity,
-// matching how a place named by more than one entity in one day (rare, but
-// e.g. a floatplane dock that's also today's photo-op activity) would read
-// on the day timeline itself: the "where you're sleeping" story outranks
-// the rest, and an actual Depart/Arrive outranks a mere via/waypoint.
-function markerIconName(stop: DayMapPlaceStop): string {
-  if (stop.refs.some((ref) => ref.kind === 'stay')) return 'hotel';
-  const transitRef = stop.refs.find((ref) => ref.kind === 'transit');
-  if (transitRef?.kind === 'transit') return transitModeIconName(transitRef.entity);
-  if (stop.refs.some((ref) => ref.kind === 'transit-stage')) return 'signpost';
-  const activityRef = stop.refs.find((ref) => ref.kind === 'activity');
-  if (activityRef?.kind === 'activity') return activityRowIconName(activityRef.entity);
-  return DEFAULT_PLACE_ICON;
-}
+import { useDayPreview } from './useDayPreview';
 
 // `placeLabel` is the InfoWindow's own already-shown heading (stop.place.label)
 // — a transit-stage's own label is always that same place's name (see
@@ -137,6 +118,7 @@ function segmentTravelMode(
 
 interface RouteSegment {
   key: string;
+  fromIndex: number; // the node the leg leaves from
   fromPlaceId: string;
   toPlaceId: string;
   fromPoint: Coordinates;
@@ -184,6 +166,7 @@ function buildRouteSegments(
       // still gets distinct keys here, since each occurrence is a distinct
       // row.
       key: `${domTestIdForRef(nodes[i].ref)}>${domTestIdForRef(nodes[i + 1].ref)}`,
+      fromIndex: i,
       fromPlaceId,
       toPlaceId,
       fromPoint,
@@ -241,107 +224,36 @@ function domTestIdForRef(ref: DayMapPlaceRef): string {
   return rowTestId('activity', ref.entity._id);
 }
 
-// "Currently displayed on the timeline" — of everything resolvable for the
-// active day, only the subset whose own row is presently somewhere in the
-// viewport, not the day's whole content (a day's own timeline routinely
-// runs far taller than one screen). Scoped to just this day's own section
-// (`#day-<date>`) rather than the whole document, so a rowKey that happens
-// to collide with another day's never gets watched by mistake. Falls back
-// to every watched id when nothing's been detected yet (first paint, before
-// the observer's initial callback lands, or a day short enough that nothing
-// distinctly enters/exits) rather than reporting an empty set. Watches
-// routeNodes' own rows — stops' refs are the same rows regrouped by place
-// (see dedupeDayMapPlaceStops), so one observer over routeNodes' testIds
-// covers both the marker list and the route-node list below.
-function useVisibleTestIds(day: Day, testIds: string[]): Set<string> {
-  const [visible, setVisible] = useState<Set<string>>(new Set());
-  const idsKey = `${day.date}|${testIds.join(',')}`;
-
-  useEffect(() => {
-    const dayRoot = document.getElementById(dayElementId(day.date));
-    if (!dayRoot) return;
-
-    const testIdByElement = new Map<Element, string>();
-    const seen = new Set<string>();
-    for (const testId of testIds) {
-      if (seen.has(testId)) continue;
-      seen.add(testId);
-      const el = dayRoot.querySelector(`[data-testid="${testId}"]`);
-      if (el) testIdByElement.set(el, testId);
-    }
-    if (testIdByElement.size === 0) return;
-
-    const intersecting = new Set<string>();
-    const observer = new IntersectionObserver((entries) => {
-      for (const entry of entries) {
-        const testId = testIdByElement.get(entry.target);
-        if (!testId) continue;
-        if (entry.isIntersecting) intersecting.add(testId);
-        else intersecting.delete(testId);
-      }
-      setVisible(new Set(intersecting));
-    });
-    testIdByElement.forEach((_testId, el) => observer.observe(el));
-    return () => observer.disconnect();
-    // day/testIds are fresh every render; idsKey is their stable "which day,
-    // which resolvable rows" identity.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idsKey]);
-
-  return visible;
-}
-
-// One shared visible-rows observer for both the marker list (deduped by
-// place) and the route-node list (one entry per chronological occurrence,
-// see dedupeDayMapPlaceStops' own comment for why a round-trip Transit's two
-// visits to one place need to stay distinct) — both are filtered views over
-// the exact same set of DOM rows, so they read off one Set rather than each
-// standing up their own IntersectionObserver.
-function useVisibleDayMapEntries(
-  day: Day,
-  stops: DayMapPlaceStop[],
-  nodes: DayMapRouteNode[],
-): { visibleStops: DayMapPlaceStop[]; visibleRouteNodes: DayMapRouteNode[] } {
-  const testIds = nodes.map((node) => domTestIdForRef(node.ref));
-  const visibleTestIds = useVisibleTestIds(day, testIds);
-  if (visibleTestIds.size === 0) return { visibleStops: stops, visibleRouteNodes: nodes };
-  return {
-    visibleStops: stops.filter((stop) =>
-      stop.refs.some((ref) => visibleTestIds.has(domTestIdForRef(ref))),
-    ),
-    visibleRouteNodes: nodes.filter((node) => visibleTestIds.has(domTestIdForRef(node.ref))),
-  };
-}
-
-// What a marker's InfoWindow reports about the leg leaving from this stop —
-// absent when this is the day's last mapped place, or nothing plausible
-// mapped after it (e.g. the next node's coordinates never resolved).
+// What a pin's InfoWindow reports about the leg leaving from its stop — absent
+// when this is the plan's last mapped place, or nothing plausible mapped after
+// it (e.g. the next node's coordinates never resolved).
 interface NextPlaceInfo {
   label: string;
   travel: DriveInfo | null;
 }
 
-// One marker per resolved place, matching the day timeline's own monochrome
-// outlined-dot treatment (RowLeadingDot) rather than a colored pin, so the
-// map reads as part of the same system. Clicking opens an InfoWindow listing
-// every Stay/Transit/Activity that named this place — almost always one,
-// but never assumed to be — each of which opens that entity's own detail
-// side sheet, the same one its day-list row opens.
+// One numbered ring per resolved place, the route planner's pin, in its plan's
+// color. Clicking opens an InfoWindow listing every Stay/Transit/Activity that
+// named this place — almost always one, but never assumed to be — each of which
+// opens that entity's own detail side sheet, the same one its day-list row opens.
 //
-// The InfoWindow's own content sits inside Google's fixed white popup
-// chrome, not this app's own MUI surfaces — unlike every other panel in the
-// app, it never picks up the site's dark theme, so its text needs its own
-// explicit dark-on-light colors rather than theme text tokens (this app's
-// `text.primary`/`text.secondary` are a cream/tan pair tuned for the site's
-// own dark ground, and read as washed-out low-contrast text on Google's
-// forced-white background).
+// The InfoWindow's own content sits inside Google's fixed white popup chrome, not
+// this app's own MUI surfaces — unlike every other panel in the app, it never
+// picks up the site's dark theme, so its text needs its own explicit dark-on-light
+// colors rather than theme text tokens.
 function PlaceMarker({
   stop,
+  number,
+  color,
+  active,
   coordinates,
   nextPlace,
   ...handlers
 }: {
   stop: DayMapPlaceStop;
+  number: number;
+  color: string;
+  active: boolean;
   coordinates: Coordinates;
   nextPlace: NextPlaceInfo | null;
 } & DayRowOpeners) {
@@ -349,29 +261,15 @@ function PlaceMarker({
   const [infoOpen, setInfoOpen] = useState(false);
   return (
     <>
-      <AdvancedMarker
-        ref={markerRef}
+      <RingMarker
+        markerRef={markerRef}
         position={coordinates}
-        title={stop.place.label}
+        color={color}
+        glyph={String(number)}
+        name={stop.place.label}
+        active={active}
         onClick={() => setInfoOpen((open) => !open)}
-      >
-        <Box
-          sx={{
-            width: 32,
-            height: 32,
-            borderRadius: '50%',
-            bgcolor: 'background.paper',
-            border: '2px solid',
-            borderColor: 'grey.500',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            boxShadow: 1,
-          }}
-        >
-          {renderMaterialIcon(markerIconName(stop), { fontSize: 'small' })}
-        </Box>
-      </AdvancedMarker>
+      />
       {infoOpen && (
         <InfoWindow anchor={marker} onClose={() => setInfoOpen(false)} maxWidth={280}>
           <Stack spacing={0.5} sx={{ py: 0.5, minWidth: 200 }}>
@@ -420,22 +318,17 @@ function PlaceMarker({
 }
 
 // The single persistent map panel beside the day list (DaysView, when the
-// viewport has room — see the lg-breakpoint gate there) — a richer sibling
-// to DayMapPanel's own keyless iframe embed: real markers per place, each
-// clickable straight through to that place's own Stay/Transit/Activity
-// detail sheet(s), rather than a static picture of a start→end route. Needs
-// the Maps JavaScript API (loaded lazily by DaysView's APIProvider around
-// this component — mounted only while the sidebar is, so narrow screens
-// never load the script; the loader itself bootstraps the script only once
-// per page load, but the map instance and provider context are rebuilt each
-// time the sidebar remounts, e.g. on resizing across the lg breakpoint) and
-// a real Map ID (GOOGLE_MAPS_MAP_ID) for AdvancedMarker to render at all.
+// viewport has room — see the lg-breakpoint gate there) — a richer sibling to
+// DayMapPanel's own keyless iframe embed, drawn like the route planner's map
+// (RoutePlannerMap): the plan the reader has picked as a road path in its color,
+// every place a numbered ring. Needs the Maps JavaScript API (loaded lazily by
+// DaysView's APIProvider around this component — mounted only while the sidebar
+// is, so narrow screens never load the script) and a real Map ID
+// (GOOGLE_MAPS_MAP_ID) for AdvancedMarker to render at all.
 //
-// One map, not one per day: DaysView tracks whichever Day block the reader
-// has scrolled to (useActiveDayDate) and swaps this same map's markers to
-// match, rather than standing up a separate live google.maps.Map instance
-// per day — DaysView renders every Day block unvirtualized (~28+ for this
-// trip), so the latter would mean that many concurrent map/WebGL contexts.
+// One map, not one per day: DaysView tracks the day the reader is on and swaps
+// this same map's pins to match, rather than standing up a separate live
+// google.maps.Map instance per day.
 export function DayMapSidebar({
   activeDay,
   ...handlers
@@ -467,60 +360,58 @@ function DayMapSidebarContent({
   onOpenStay,
   onOpenTransit,
 }: { day: Day } & DayRowOpeners) {
-  // One walk of the day's visits, shared by both the deduped markers below
-  // and the route line's own undeduped nodes — see dedupeDayMapPlaceStops'
-  // own comment for why a place visited twice in one day (a round-trip
-  // Transit's shared from/to) needs two separate route nodes even though it
-  // gets one marker.
+  const { palette } = useTheme();
+  // The nodes of the plan the reader has picked, one per chronological occurrence
+  // of a place (a round-trip Transit's shared from/to needs two nodes, one marker).
   const routeNodes = useMemo(() => mapRouteNodes(day.visits), [day.visits]);
   const stops = useMemo(() => dedupeDayMapPlaceStops(routeNodes), [routeNodes]);
-  // dedupeDayMapPlaceStops only ever adds a stop once its place has a real
-  // Google Place id (see mapRouteNodes' own comment), so this cast is safe.
-  const placeIds = stops.map((stop) => stop.place.id as string);
-  // Resolved (has real coordinates) over every one of the day's stops, not
-  // just the currently-visible ones — so a place that's already warm stays
-  // warm as the reader scrolls past it again, rather than re-fetching.
-  const coords = usePlaceCoordinates(placeIds);
-  // "Currently displayed on the timeline" over every stop, not just the
-  // resolved ones — a place still awaiting its coordinates shouldn't count
-  // as invisible and get excluded once it does resolve.
-  const { visibleStops, visibleRouteNodes } = useVisibleDayMapEntries(day, stops, routeNodes);
-  const visibleResolvedStops = visibleStops.filter((stop) => coords.has(stop.place.id as string));
-  const points = visibleResolvedStops.map(
-    (stop) => coords.get(stop.place.id as string) as Coordinates,
-  );
-  const pointsKey = visibleResolvedStops
-    .map((stop) => stop.place.id)
-    .sort()
-    .join(',');
-  const routeColor = useTheme().palette.primary.main;
-  // travelModeOverrides may be undefined while the trip's own data is still
-  // loading — segmentTravelMode's own default (DRIVE) applies to every
-  // segment in that case, same as once it's loaded but simply has no
-  // override for a given one.
+  // The route planner's line color for the picked plan: the ideal plan's first.
+  const picked = day.scenarioTracks.find((t) => t.active)?.scenario;
+  const pickedTone = picked?.tone;
+  const color = palette.routeVariants[pickedTone === 'alternate' ? 1 : 0];
+  // dedupeDayMapPlaceStops only adds a stop once its place has a real Google Place
+  // id (see mapRouteNodes), so this cast is safe.
+  const coords = usePlaceCoordinates(stops.map((stop) => stop.place.id as string));
   const { data } = useTripData();
   const overrides = data?.travelModeOverrides;
-  const routeSegments = useMemo(
-    () => buildRouteSegments(visibleRouteNodes, coords, day.date, overrides ?? []),
-    [visibleRouteNodes, coords, day.date, overrides],
+  const segments = useMemo(
+    () => buildRouteSegments(routeNodes, coords, day.date, overrides ?? []),
+    [routeNodes, coords, day.date, overrides],
   );
-  const routePaths = useRoutePaths(routeSegments);
-  const segmentTravelInfo = useSegmentTravelInfo(routeSegments);
-  // Every stop's own place label, keyed by id — not just the currently
-  // visible/resolved ones, since a marker's "next place" can point at one
-  // that's off in a not-yet-scrolled-to part of the day.
-  const placeLabelById = useMemo(
-    () => new Map(stops.map((stop) => [stop.place.id as string, stop.place.label])),
-    [stops],
+  const routePaths = useRoutePaths(segments);
+  const segmentTravelInfo = useSegmentTravelInfo(segments);
+  // Numbered along every stop of the plan, so a number does not change as the
+  // coordinates of the others arrive.
+  const shownStops = stops.flatMap((stop, i) =>
+    coords.has(stop.place.id as string) ? [{ stop, number: i + 1 }] : [],
   );
-  // The first (chronologically earliest) segment leaving each place — a
-  // round-trip day visiting the same place twice has more than one, but a
-  // marker only ever needs one "next place" line, not one per occurrence.
+  const points = shownStops.map(({ stop }) => coords.get(stop.place.id as string) as Coordinates);
+  const pointsKey = shownStops
+    .map(({ stop }) => stop.place.id)
+    .sort()
+    .join(',');
+  const legInto = useMemo(() => new Map(segments.map((s) => [s.fromIndex + 1, s])), [segments]);
+  const driveMinutes = useMemo(
+    () => new Map([...segmentTravelInfo].map(([key, info]) => [key, info.minutes])),
+    [segmentTravelInfo],
+  );
+  const preview = useDayPreview({
+    day,
+    planId: picked?._id ?? '',
+    nodes: routeNodes,
+    coords,
+    legInto,
+    paths: routePaths,
+    driveMinutes,
+  });
+  // The first leg leaving each place — a round-trip day visiting the same place
+  // twice has more than one, but a pin only ever needs one "next place" line.
   const nextPlaceByStopId = useMemo(() => {
+    const labels = new Map(stops.map((stop) => [stop.place.id as string, stop.place.label]));
     const result = new Map<string, NextPlaceInfo>();
-    for (const segment of routeSegments) {
+    for (const segment of segments) {
       if (result.has(segment.fromPlaceId)) continue;
-      const label = placeLabelById.get(segment.toPlaceId);
+      const label = labels.get(segment.toPlaceId);
       if (!label) continue;
       result.set(segment.fromPlaceId, {
         label,
@@ -528,7 +419,7 @@ function DayMapSidebarContent({
       });
     }
     return result;
-  }, [routeSegments, placeLabelById, segmentTravelInfo]);
+  }, [segments, stops, segmentTravelInfo]);
 
   if (stops.length === 0) {
     return (
@@ -550,33 +441,69 @@ function DayMapSidebarContent({
   }
 
   return (
-    <GoogleMap
-      mapId={GOOGLE_MAPS_MAP_ID}
-      style={{ width: '100%', height: '100%' }}
-      defaultCenter={points[0] ?? { lat: 61.2181, lng: -149.9003 }}
-      defaultZoom={9}
-    >
-      <FitBoundsToPoints points={points} pointsKey={pointsKey} />
-      {routeSegments.map((segment) => (
-        <Polyline
-          key={segment.key}
-          path={routePaths.get(segment.key) ?? [segment.fromPoint, segment.toPoint]}
-          strokeColor={routeColor}
-          strokeOpacity={0.8}
-          strokeWeight={3}
+    <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
+      <GoogleMap
+        mapId={GOOGLE_MAPS_MAP_ID}
+        colorScheme={palette.mode === 'dark' ? 'DARK' : 'LIGHT'}
+        style={{ width: '100%', height: '100%' }}
+        defaultCenter={points[0] ?? { lat: 61.2181, lng: -149.9003 }}
+        defaultZoom={9}
+        disableDefaultUI
+        gestureHandling="greedy"
+      >
+        <FitBoundsToPoints
+          points={points}
+          pointsKey={`${pointsKey}${preview.following ? ':preview' : ''}`}
         />
-      ))}
-      {visibleResolvedStops.map((stop) => (
-        <PlaceMarker
-          key={stop.place.id}
-          stop={stop}
-          coordinates={coords.get(stop.place.id as string) as Coordinates}
-          nextPlace={nextPlaceByStopId.get(stop.place.id as string) ?? null}
-          onOpenActivity={onOpenActivity}
-          onOpenStay={onOpenStay}
-          onOpenTransit={onOpenTransit}
-        />
-      ))}
-    </GoogleMap>
+        {segments.map((segment) => (
+          <Polyline
+            key={segment.key}
+            path={routePaths.get(segment.key) ?? [segment.fromPoint, segment.toPoint]}
+            strokeColor={color}
+            strokeWeight={6}
+          />
+        ))}
+        {shownStops.map(({ stop, number }) => (
+          <PlaceMarker
+            key={stop.place.id}
+            stop={stop}
+            number={number}
+            color={color}
+            active={stop.place.id === preview.activePlaceId}
+            coordinates={coords.get(stop.place.id as string) as Coordinates}
+            nextPlace={nextPlaceByStopId.get(stop.place.id as string) ?? null}
+            onOpenActivity={onOpenActivity}
+            onOpenStay={onOpenStay}
+            onOpenTransit={onOpenTransit}
+          />
+        ))}
+        {preview.point && <PreviewMarker point={preview.point} />}
+        <MapButtons fitPoints={points} />
+      </GoogleMap>
+      {!preview.previewing && (
+        <Box sx={{ position: 'absolute', left: 12, bottom: 32, zIndex: 2 }}>
+          <PreviewStartButton
+            label="Preview day"
+            reason={preview.resolved ? undefined : PREVIEW_NEEDS_PLACES}
+            onClick={preview.start}
+          />
+        </Box>
+      )}
+      {preview.previewing && (
+        <Box sx={{ position: 'absolute', left: 12, right: 72, bottom: 32, zIndex: 2 }}>
+          <PreviewBar
+            caption={preview.caption}
+            playing={preview.playback.playing}
+            progress={preview.playback.progress}
+            clock={preview.clock}
+            clockTitle="The times on the day's list."
+            onPlay={preview.playback.play}
+            onPause={preview.playback.pause}
+            onSeek={preview.playback.seek}
+            onClose={preview.close}
+          />
+        </Box>
+      )}
+    </Box>
   );
 }

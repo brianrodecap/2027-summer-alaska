@@ -1864,6 +1864,8 @@ export interface DayMapPlaceStop {
 export interface DayMapRouteNode {
   place: Place;
   ref: DayMapPlaceRef;
+  order: number; // when the visit happens (orderInstant, ms)
+  at: string; // the visit's wall-clock time, on the place's own clock
 }
 
 // Collapses mapRouteNodes' own chronological node list down to one stop per

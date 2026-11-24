@@ -5,21 +5,22 @@ import Stack from '@mui/material/Stack';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 
-import { materialIcon } from '../shared/materialIcon';
+import { materialIcon } from './materialIcon';
 
 const CloseIcon = materialIcon('close');
 const PauseIcon = materialIcon('pause');
 const PlayArrowIcon = materialIcon('play_arrow');
 const SwapHorizIcon = materialIcon('swap_horiz');
 
-// Play and pause, a scrubber, and the example clock for the route preview, with a
-// button to run it the other way and one to close it. Nothing here is saved.
+// Play and pause, a scrubber and the clock for a preview, with a button to run it
+// the other way (when it can run both) and one to close it. Nothing here is saved.
 export function PreviewBar({
   caption,
   playing,
   progress,
   clock,
-  reversed,
+  reversed = false,
+  clockTitle = 'Example times from the example departure. They are never saved.',
   onPlay,
   onPause,
   onSeek,
@@ -31,11 +32,12 @@ export function PreviewBar({
   playing: boolean;
   progress: number;
   clock: string;
-  reversed: boolean;
+  reversed?: boolean;
+  clockTitle?: string;
   onPlay: () => void;
   onPause: () => void;
   onSeek: (progress: number) => void;
-  onReverse: () => void;
+  onReverse?: () => void;
   onClose: () => void;
 }) {
   return (
@@ -68,21 +70,23 @@ export function PreviewBar({
             onSeek(value);
           }}
         />
-        <Tooltip title="Example times from the example departure. They are never saved.">
+        <Tooltip title={clockTitle}>
           <Typography variant="body2" sx={{ minWidth: 72, textAlign: 'right' }}>
             {clock}
           </Typography>
         </Tooltip>
-        <Tooltip title="Preview the other direction. The saved route is not changed.">
-          <IconButton
-            aria-label="Preview in reverse"
-            aria-pressed={reversed}
-            color={reversed ? 'primary' : 'default'}
-            onClick={onReverse}
-          >
-            <SwapHorizIcon />
-          </IconButton>
-        </Tooltip>
+        {onReverse && (
+          <Tooltip title="Preview the other direction. The saved route is not changed.">
+            <IconButton
+              aria-label="Preview in reverse"
+              aria-pressed={reversed}
+              color={reversed ? 'primary' : 'default'}
+              onClick={onReverse}
+            >
+              <SwapHorizIcon />
+            </IconButton>
+          </Tooltip>
+        )}
         <IconButton aria-label="Close preview" onClick={onClose}>
           <CloseIcon fontSize="small" />
         </IconButton>

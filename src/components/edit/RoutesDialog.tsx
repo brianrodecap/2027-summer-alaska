@@ -84,11 +84,12 @@ import {
 import type { Place, Route, RouteEndpoint, RoutePlaceEntry, RouteVariant } from '../../model/types';
 import { useTripData } from '../../state/useTripData';
 import { materialIcon } from '../shared/materialIcon';
+import { PreviewBar } from '../shared/PreviewBar';
+import { PREVIEW_NEEDS_PLACES } from '../shared/previewText';
 import { WarningBadge } from '../shared/WarningBadge';
 import { TimeStringField } from './DateTimeFieldPair';
 import { DraftCard } from './DraftCard';
 import { NewRouteDialog } from './NewRouteDialog';
-import { PreviewBar } from './PreviewBar';
 import { RouteEditDialog } from './RouteEditDialog';
 import { RoutePlannerMap } from './RoutePlannerMap';
 import { StopList } from './StopList';
@@ -164,8 +165,6 @@ const ROUTE_FILTERS: { id: RouteFilter; label: string; tip: string }[] = [
     tip: 'A variant has a leg that heads away from where it is going',
   },
 ];
-
-const PREVIEW_NEEDS_PLACES = 'Every stop needs a place Google knows before it can be previewed.';
 
 const STALE =
   'The route changed while its drive times or the assistant were being looked up, so that change was not saved.';

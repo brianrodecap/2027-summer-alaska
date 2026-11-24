@@ -526,18 +526,24 @@ export function mapRouteNodes(visits: DayVisits): DayMapRouteNode[] {
       case 'stay':
         nodes.push({
           place: v.place,
+          order: v.order,
+          at: v.key,
           ref: { kind: 'stay', entity: v.stay, relation: v.relation, rowKey: v.key },
         });
         break;
       case 'transit':
         nodes.push({
           place: v.place,
+          order: v.order,
+          at: v.key,
           ref: { kind: 'transit', entity: v.transit, phase: v.phase, rowKey: v.key },
         });
         break;
       case 'stage':
         nodes.push({
           place: v.place,
+          order: v.order,
+          at: v.key,
           ref: {
             kind: 'transit-stage',
             entity: v.transit,
@@ -548,7 +554,12 @@ export function mapRouteNodes(visits: DayVisits): DayMapRouteNode[] {
         });
         break;
       case 'activity':
-        nodes.push({ place: v.place, ref: { kind: 'activity', entity: v.activity } });
+        nodes.push({
+          place: v.place,
+          order: v.order,
+          at: v.key,
+          ref: { kind: 'activity', entity: v.activity },
+        });
         break;
     }
   }

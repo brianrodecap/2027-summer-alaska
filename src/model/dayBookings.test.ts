@@ -12,8 +12,8 @@ const booking = (_id: string, status: BookingStatus): Booking => ({
 
 const activityRow = (bookingId: string | null) =>
   ({ type: 'activity', activity: { bookingId } }) as unknown as DayRow;
-const stayRow = (bookingId: string | null) =>
-  ({ type: 'stay', stay: { bookingId } }) as unknown as DayRow;
+const stayRow = (bookingId: string | null, relation = 'Check in') =>
+  ({ type: 'stay', relation, stay: { bookingId } }) as unknown as DayRow;
 const transitRow = (bookingId: string | null) =>
   ({ type: 'transit', transit: { bookingId } }) as unknown as DayRow;
 const boxRow = (...rows: DayRow[]) => ({ type: 'box', tracks: [{ rows }] }) as unknown as DayRow;
@@ -44,6 +44,14 @@ describe('whether a day’s bookings are made', () => {
     expect(
       state([activityRow('a'), stayRow('b')], booking('a', 'cancelled'), booking('b', 'booked')),
     ).toBe('booked');
+  });
+
+  it('counts a stay on the day it begins only', () => {
+    const planning = booking('b', 'planning');
+    expect(state([stayRow('b', 'Check in')], planning)).toBe('todo');
+    expect(state([stayRow('b', 'Overnight')], planning)).toBe('todo');
+    expect(state([stayRow('b', 'Staying')], planning)).toBeNull();
+    expect(state([stayRow('b', 'Check out')], planning)).toBeNull();
   });
 
   it('reads the selected plan inside a scenario box', () => {

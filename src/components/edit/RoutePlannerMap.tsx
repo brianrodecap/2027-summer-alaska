@@ -1,8 +1,5 @@
-import Box from '@mui/material/Box';
-import IconButton from '@mui/material/IconButton';
-import Paper from '@mui/material/Paper';
-import { alpha, useTheme } from '@mui/material/styles';
-import { AdvancedMarker, Map as GoogleMap, Polyline, useMap } from '@vis.gl/react-google-maps';
+import { useTheme } from '@mui/material/styles';
+import { Map as GoogleMap, Polyline, useMap } from '@vis.gl/react-google-maps';
 import { useEffect, useMemo, useState } from 'react';
 
 import { GOOGLE_MAPS_MAP_ID } from '../../config/places';
@@ -20,16 +17,10 @@ import {
 import { DEFAULT_ROUTE_TONE } from '../../model/tripModel';
 import type { Route, RouteVariant } from '../../model/types';
 import { FitBoundsToPoints } from '../shared/FitBoundsToPoints';
-import { materialIcon } from '../shared/materialIcon';
-
-const AddIcon = materialIcon('add');
-const FitScreenIcon = materialIcon('fit_screen');
-const RemoveIcon = materialIcon('remove');
+import { MapButtons, PreviewMarker, RingMarker } from '../shared/PlannerMapParts';
 
 const LINE_GAP_PX = 8;
 const DEFAULT_ZOOM = 6;
-// Wide enough that the map's tiles keep up with the camera at preview speed.
-const PREVIEW_ZOOM = 9;
 
 interface Stop {
   id: string;
@@ -290,8 +281,6 @@ function Layers({
   );
 }
 
-const RING = 22;
-
 // A and B for the ends, numbers for the active variant's waypoints and a small
 // open ring for a via, each with its name beside it.
 function StopMarkers({
@@ -333,124 +322,19 @@ function StopMarkers({
       {pins.map(({ key, id, glyph, name, via, active }) => {
         const position = id ? coords.get(id) : undefined;
         if (!position) return null;
-        const size = via ? 12 : active ? RING + 8 : RING;
-        const end = key === 'from' || key === 'to';
-        const halo = palette.background.default;
         return (
-          <AdvancedMarker key={key} position={position} zIndex={active ? 6 : end ? 5 : 4}>
-            {/* a marker sits on its point by its bottom edge; this centers the ring on it */}
-            <Box
-              sx={{ position: 'relative', width: size, height: size, transform: 'translateY(50%)' }}
-            >
-              <Box
-                sx={{
-                  width: size,
-                  height: size,
-                  borderRadius: '50%',
-                  boxSizing: 'border-box',
-                  display: 'grid',
-                  placeItems: 'center',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  border: via ? 2 : 3,
-                  borderStyle: 'solid',
-                  borderColor: color,
-                  bgcolor: end || active ? color : 'background.paper',
-                  color: end || active ? palette.getContrastText(color) : 'text.primary',
-                  boxShadow: active ? `0 0 0 4px ${alpha(color, 0.33)}` : undefined,
-                }}
-              >
-                {via ? null : glyph}
-              </Box>
-              {name && (
-                <Box
-                  component="span"
-                  sx={{
-                    position: 'absolute',
-                    left: size + 6,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    whiteSpace: 'nowrap',
-                    fontSize: 13,
-                    fontWeight: via ? 400 : 700,
-                    color: 'text.primary',
-                    // a halo in the page color keeps the name legible over roads and terrain
-                    textShadow: `0 0 3px ${halo}, 0 0 3px ${halo}, 0 0 6px ${halo}`,
-                    pointerEvents: 'none',
-                  }}
-                >
-                  {name}
-                </Box>
-              )}
-            </Box>
-          </AdvancedMarker>
+          <RingMarker
+            key={key}
+            position={position}
+            color={color}
+            glyph={glyph}
+            name={name}
+            via={via}
+            filled={key === 'from' || key === 'to'}
+            active={active}
+          />
         );
       })}
     </>
-  );
-}
-
-// The preview's moving dot, with the camera held on it: zoomed in once, then moved
-// in the same frame as the dot (not animated toward it, which lags), so the reader
-// can still zoom or pan between frames.
-function PreviewMarker({ point }: { point: Coordinates }) {
-  const map = useMap();
-  const { palette } = useTheme();
-  useEffect(() => {
-    map?.setZoom(PREVIEW_ZOOM);
-  }, [map]);
-  useEffect(() => {
-    map?.moveCamera({ center: point });
-  }, [map, point]);
-  return (
-    <AdvancedMarker position={point} zIndex={10}>
-      <Box
-        sx={{
-          transform: 'translateY(50%)',
-          width: 20,
-          height: 20,
-          borderRadius: '50%',
-          bgcolor: 'primary.main',
-          border: `3px solid ${palette.primary.contrastText}`,
-          boxShadow: `0 0 0 3px ${palette.primary.dark}`,
-        }}
-      />
-    </AdvancedMarker>
-  );
-}
-
-// Zoom in and out, and frame the whole route again.
-function MapButtons({ fitPoints }: { fitPoints: Coordinates[] }) {
-  const map = useMap();
-  return (
-    <Paper
-      elevation={3}
-      sx={{
-        position: 'absolute',
-        right: 12,
-        bottom: 32,
-        display: 'flex',
-        flexDirection: 'column',
-        zIndex: 2,
-      }}
-    >
-      <IconButton aria-label="Zoom in" onClick={() => map?.setZoom((map.getZoom() ?? 6) + 1)}>
-        <AddIcon />
-      </IconButton>
-      <IconButton aria-label="Zoom out" onClick={() => map?.setZoom((map.getZoom() ?? 6) - 1)}>
-        <RemoveIcon />
-      </IconButton>
-      <IconButton
-        aria-label="Fit the whole route"
-        disabled={fitPoints.length < 2}
-        onClick={() => {
-          const bounds = new google.maps.LatLngBounds();
-          fitPoints.forEach((p) => bounds.extend(p));
-          map?.fitBounds(bounds, 48);
-        }}
-      >
-        <FitScreenIcon />
-      </IconButton>
-    </Paper>
   );
 }
