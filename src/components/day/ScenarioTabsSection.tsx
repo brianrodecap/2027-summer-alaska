@@ -12,7 +12,7 @@ import { useLiveDays } from '../../state/useLiveDays';
 import { useScenarioSelection } from '../../state/useTripSelections';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
-import { DRAG_HANDLE_WIDTH, TIMELINE_CONTENT_PAD } from './dayLayout';
+import { NESTED_PULL_PX } from './dayLayout';
 import { DayTimeline } from './DayTimeline';
 
 // A branching day's scenarios each become one chip; the chip group picks
@@ -91,14 +91,9 @@ export function ScenarioTabsSection({
       <Box sx={{ mt: 1.5 }}>
         <NotesCluster notes={activeTrack.notes} />
       </Box>
-      {/* pulled back so its drag gutter sits over this section's own line: a nested
-          plan then costs each level one line's width, not a whole gutter too */}
-      <Box
-        sx={(theme) => ({
-          mt: 1.5,
-          ml: `calc(-${DRAG_HANDLE_WIDTH}px - ${theme.spacing(TIMELINE_CONTENT_PAD)})`,
-        })}
-      >
+      {/* pulled back toward this section's own line, so each level indents less; its
+          drag handles stay to the right of that line */}
+      <Box sx={{ mt: 1.5, ml: `-${NESTED_PULL_PX}px` }}>
         <DayTimeline
           day={day}
           rows={activeTrack.rows}

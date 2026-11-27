@@ -1,3 +1,5 @@
+import { STOP_NODE_SIZE } from '../shared/StopRail';
+
 // Layout facts the day list's pieces must agree on, kept in one place so
 // they can't drift apart: DaysView's sticky app bar, DayAccordion's sticky
 // day headers (which sit directly under it) and the scroll-into-view landing
@@ -29,5 +31,12 @@ export const DRAG_HANDLE_ICON_SIZE = 20;
 export const DRAG_HANDLE_PADDING_PX = 2;
 export const DRAG_HANDLE_WIDTH = DRAG_HANDLE_ICON_SIZE + DRAG_HANDLE_PADDING_PX * 2;
 
-// From a row's line to its card (theme spacing).
+// From a row's line column to its card (theme spacing, 8px a step).
 export const TIMELINE_CONTENT_PAD = 1;
+
+// How far a nested plan's list is pulled left. A section's line runs down the middle
+// of its dot column, so its content starts half a column plus the pad right of the
+// line; pulling any further than that, less some clearance, would put the nested
+// list's drag handles on the line.
+const LINE_CLEARANCE_PX = 5;
+export const NESTED_PULL_PX = STOP_NODE_SIZE / 2 + TIMELINE_CONTENT_PAD * 8 - LINE_CLEARANCE_PX;
