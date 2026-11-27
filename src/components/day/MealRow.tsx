@@ -102,7 +102,7 @@ export function MealRow({
       notes={notes}
       booking={shown?.booking}
       name={headline}
-      overline={timeAndMealTypeLabel(activity, timeOverride, clock)}
+      overline={timeAndMealTypeLabel(activity, timeOverride, clock, headline)}
       title={selected ? headline : <LinkifiedText text={headline} />}
       conditions={<PlaceConditionsLine place={selected?.place ?? activity.place} date={day.date} />}
       photo={

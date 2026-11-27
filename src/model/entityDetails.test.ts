@@ -10,7 +10,7 @@ import {
   transitDurationMinutes,
   transitWhenLabel,
 } from './entityDetails';
-import { hasPlaceInfo, lodgingBits } from './formatting';
+import { hasPlaceInfo, lodgingBits, timeAndMealTypeLabel } from './formatting';
 import { includedInLabel } from './mealOptions';
 import type { Activity, Package, PortCall, Stay, Transit, TripData } from './types';
 
@@ -257,5 +257,22 @@ describe('whether an open card has anything to say about a place', () => {
     for (const known of [{ id: 'p' }, { phone: '1' }, { website: 'w' }, { email: 'e' }]) {
       expect(hasPlaceInfo({ ...place, ...known })).toBe(true);
     }
+  });
+});
+
+describe('timeAndMealTypeLabel', () => {
+  const meal = {
+    _id: 'm',
+    startAt: '2027-07-01T12:00',
+    durationMinutes: null,
+    timeLabel: null,
+    mealType: 'lunch' as const,
+    diningFormat: null,
+    options: null,
+  };
+
+  it('gives the time and the type, leaving out a type the title already says', () => {
+    expect(timeAndMealTypeLabel(meal, 'Noon', '', 'Diner')).toBe('Noon · Lunch');
+    expect(timeAndMealTypeLabel(meal, 'Noon', '', 'Lunch')).toBe('Noon');
   });
 });

@@ -12,6 +12,7 @@ import {
   type AskAITurnInput,
   buildTripContext,
   describeDayPlan,
+  describeNewActivity,
   type ProposedDayPlan,
   type ProposedEdit,
   resolveProposalDraft,
@@ -1460,5 +1461,13 @@ describe('propose_move', () => {
     ).at(-1)!.content[0];
     expect(result.is_error).toBe(true);
     expect(result.content).toMatch(/Not in this trip: ghost/);
+  });
+});
+
+describe('describeNewActivity', () => {
+  it('names a new entry the way its card will, a meal by its type', () => {
+    expect(describeNewActivity({ mealType: 'lunch' })).toBe('+ Add "Lunch"');
+    expect(describeNewActivity({ text: 'Picnic', mealType: 'lunch' })).toBe('+ Add "Picnic"');
+    expect(describeNewActivity({})).toBe('+ Add "activity"');
   });
 });

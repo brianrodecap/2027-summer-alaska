@@ -57,7 +57,7 @@ export function ActivityRow({
       notes={notes}
       booking={booking}
       name={headline}
-      overline={timeAndMealTypeLabel(activity, timeText, clock)}
+      overline={timeAndMealTypeLabel(activity, timeText, clock, headline)}
       title={<LinkifiedText text={headline} />}
       conditions={<PlaceConditionsLine place={activity.place} date={day.date} />}
       photo={

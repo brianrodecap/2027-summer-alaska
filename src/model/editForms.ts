@@ -674,11 +674,8 @@ export function activityFormFrom(activity: Activity, source: BookingSource): Act
   };
 }
 
-// A description is only required when nothing else names the row: a Place or a
-// meal type already does, and storing its name again would store the same fact
-// twice. activityHeadline decides, as it does for every reader of an Activity's
-// name. Shared by applyActivityForm's validation and wizardStepCanProceed's
-// 'details' case.
+// An activity needs a description only when activityHeadline has nothing else to
+// name it by.
 export function hasActivityName(
   form: Pick<ActivityFormState, 'text' | 'place' | 'mealType'>,
 ): boolean {

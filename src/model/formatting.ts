@@ -266,9 +266,11 @@ export function timeAndMealTypeLabel(
   },
   timeOverride?: string,
   clock = '', // the clock to follow the time with (clockSuffix), on a day it moves
+  title?: string, // the card's title, which the type never repeats
 ): string {
   const time = `${timeOverride ?? activityTimeLabel(activity)}${clock}`;
-  return `${time} · ${activity.mealType ? MEAL_TYPE_LABEL[activity.mealType] : 'Activity'}`;
+  const type = activity.mealType ? MEAL_TYPE_LABEL[activity.mealType] : 'Activity';
+  return type === title ? time : `${time} · ${type}`;
 }
 
 // A time zone as the forms show it: 'America/Port of Spain'.

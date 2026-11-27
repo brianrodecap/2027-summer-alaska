@@ -952,7 +952,12 @@ export function applyDayPlan(
 // One line for a new activity in a review list, naming its candidates when it's a
 // meal still being decided.
 export function describeNewActivity(c: ChangeProposal['changes']): string {
-  const what = c.text ?? c.place?.label ?? c.mealType ?? 'activity';
+  const what =
+    activityHeadline({
+      text: c.text ?? null,
+      place: c.place ?? null,
+      mealType: c.mealType ?? null,
+    }) || 'activity';
   const when = c.startAt ? ` at ${formatTime(c.startAt)}` : '';
   const clock = c.clockZone ? ` on ${c.clockZone} time` : '';
   const choices =
