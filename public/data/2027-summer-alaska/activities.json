@@ -275,7 +275,7 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Afternoon",
-    "text": "Talkeetna Historical Society Museum",
+    "text": null,
     "place": {
       "id": "ChIJj6m5aoTAzlYRyQI-9AWEsFc",
       "label": "Talkeetna Historical Society",
@@ -684,10 +684,10 @@
     "_id": "act_jun29_3",
     "legId": "leg_parks",
     "scenarioId": null,
-    "startAt": "2027-06-29T09:15",
+    "startAt": "2027-06-29T10:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "text": "Yukon River Camp",
+    "text": null,
     "place": {
       "id": "ChIJCSqfQ1VLKVER9FZigu88Qtg",
       "label": "Yukon River Camp",
@@ -741,7 +741,7 @@
     "startAt": "2027-06-29T14:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "text": "Arctic Interagency Visitor Center",
+    "text": null,
     "place": {
       "id": "ChIJmYs44d3AKFERJq-Pgp3qfhY",
       "label": "Arctic Interagency Visitor Center",
@@ -769,7 +769,7 @@
     "startAt": "2027-06-29T17:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "text": "Buffet at Coldfoot Camp Cafe",
+    "text": null,
     "place": {
       "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
       "label": "Coldfoot Camp Cafe",
@@ -927,7 +927,7 @@
     "startAt": "2027-06-30T17:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "text": "Dinner buffet at Coldfoot Camp Cafe",
+    "text": null,
     "place": {
       "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
       "label": "Coldfoot Camp Cafe",
@@ -990,7 +990,7 @@
     "startAt": "2027-06-30T09:30",
     "durationMinutes": 30,
     "timeLabel": null,
-    "text": "Visit Wiseman",
+    "text": null,
     "place": {
       "id": "ChIJrUTVpIu9KFER9GaZSNV8EQI",
       "label": "Wiseman, Alaska",
@@ -1025,7 +1025,7 @@
     "startAt": "2027-06-30T10:00",
     "durationMinutes": 90,
     "timeLabel": null,
-    "text": "Sukakpak Mountain viewpoint",
+    "text": null,
     "place": {
       "id": "ChIJzcj7G0CgKFERgydRvLmUvgg",
       "label": "Sukakpak Mountain",
@@ -1110,7 +1110,7 @@
     "startAt": "2027-06-30T17:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "text": "Dinner buffet at Coldfoot Camp Cafe",
+    "text": null,
     "place": {
       "id": "ChIJifpoSNzAKFERJLZv8umH-cw",
       "label": "Coldfoot Camp Cafe",
@@ -1218,7 +1218,7 @@
     "startAt": "2027-07-01T15:30",
     "durationMinutes": 150,
     "timeLabel": null,
-    "text": "University of Alaska Museum of the North",
+    "text": null,
     "place": {
       "id": "ChIJAca7fEtbMlERWW6yR4ANuKU",
       "label": "University of Alaska Museum of the North",
@@ -1379,7 +1379,7 @@
     "startAt": "2027-07-01T16:15",
     "durationMinutes": 120,
     "timeLabel": null,
-    "text": "University of Alaska Museum of the North",
+    "text": null,
     "place": {
       "id": "ChIJAca7fEtbMlERWW6yR4ANuKU",
       "label": "University of Alaska Museum of the North",
@@ -2208,7 +2208,7 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Afternoon",
-    "text": "Northwest Arctic Heritage Center",
+    "text": null,
     "place": {
       "id": "ChIJg65tX1cXzVAR9z2Gr7xJSN4",
       "label": "Northwest Arctic Heritage Center",
@@ -2236,7 +2236,7 @@
     "startAt": "2027-07-08T18:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "text": "Dinner at Bison Store & Restaurant",
+    "text": null,
     "place": {
       "id": "ChIJHxwWQVIXzVARXZHgjj-LZwU",
       "label": "Bison Store & Restaurant",
@@ -2271,7 +2271,7 @@
     "startAt": "2027-07-09T07:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "text": "Breakfast at the Nullaġvik Hotel restaurant",
+    "text": null,
     "place": {
       "id": "ChIJo6lg1JGXyFYR5CruzmerxY8",
       "label": "Nullaġvik Hotel",
@@ -2382,7 +2382,7 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "text": "Northwest Arctic Heritage Center",
+    "text": null,
     "place": {
       "id": "ChIJg65tX1cXzVAR9z2Gr7xJSN4",
       "label": "Northwest Arctic Heritage Center",
@@ -2427,7 +2427,7 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Evening",
-    "text": "Dinner at Little Louie's",
+    "text": null,
     "place": {
       "id": "ChIJyfidPVEXzVARzxH_okzDMHM",
       "label": "Little Louie's",
@@ -2493,7 +2493,7 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "text": "Northwest Arctic Heritage Center",
+    "text": null,
     "place": {
       "id": "ChIJg65tX1cXzVAR9z2Gr7xJSN4",
       "label": "Northwest Arctic Heritage Center",
@@ -2559,7 +2559,7 @@
     "startAt": null,
     "durationMinutes": null,
     "timeLabel": "Morning",
-    "text": "Northwest Arctic Heritage Center",
+    "text": null,
     "place": {
       "id": "ChIJg65tX1cXzVAR9z2Gr7xJSN4",
       "label": "Northwest Arctic Heritage Center",
@@ -2816,7 +2816,7 @@
     "startAt": "2027-07-15T11:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "text": "Lunch at Chinooks Restaurant",
+    "text": null,
     "place": {
       "id": "ChIJld4P2Xecx1YR6isB_nwgqYU",
       "label": "Chinooks Restaurant",
@@ -3645,7 +3645,7 @@
     "startAt": "2027-07-21T07:00",
     "durationMinutes": 90,
     "timeLabel": null,
-    "text": "Mendenhall Glacier Visitor Center",
+    "text": null,
     "place": {
       "id": "ChIJQR9sz4fhAFQRzEZzbh9t7xI",
       "label": "Mendenhall Glacier Visitor Center",
@@ -3770,7 +3770,7 @@
     "startAt": "2027-07-21T13:00",
     "durationMinutes": 120,
     "timeLabel": null,
-    "text": "Mount Roberts Tramway",
+    "text": null,
     "place": {
       "id": "ChIJRyojKjPfAFQRBhHoZxTLgb4",
       "label": "Mount Roberts Tramway",
@@ -3870,7 +3870,7 @@
     "startAt": "2027-07-22T10:30",
     "durationMinutes": 90,
     "timeLabel": null,
-    "text": "Saxman Totem Park",
+    "text": null,
     "place": {
       "id": "ChIJZZP6cCslDFQRkuufviWZqAc",
       "label": "Saxman Totem Park",
@@ -4367,7 +4367,7 @@
     "startAt": "2027-07-01T18:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "text": "Dinner at The Pump House Restaurant",
+    "text": null,
     "place": {
       "id": "ChIJbf5SBnJbMlEReyVKG1_ISbU",
       "label": "The Pump House Restaurant",
@@ -4532,7 +4532,7 @@
     "startAt": "2027-07-11T11:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "text": "Light lunch at Redoubt Bay Lodge",
+    "text": null,
     "place": {
       "id": "ChIJQxwv6rO2xVYRSJZLdkGOLn4",
       "label": "Redoubt Bay Lodge",
@@ -4892,7 +4892,7 @@
     "startAt": "2027-07-16T10:00",
     "durationMinutes": 150,
     "timeLabel": null,
-    "text": "Alaska Native Heritage Center",
+    "text": null,
     "place": {
       "id": "ChIJa0B1BT2UyFYR4Uq-O1L3LBw",
       "label": "Alaska Native Heritage Center",
@@ -4970,7 +4970,7 @@
     "startAt": "2027-07-16T15:15",
     "durationMinutes": 90,
     "timeLabel": null,
-    "text": "Alaska Wildlife Conservation Center",
+    "text": null,
     "place": {
       "id": "ChIJZ9R_CrJ2yFYRc0c7bqahWdk",
       "label": "Alaska Wildlife Conservation Center",
@@ -5000,7 +5000,7 @@
     "startAt": "2027-07-16T08:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "text": "Breakfast at Middle Way Cafe",
+    "text": null,
     "place": {
       "id": "ChIJH666iNuXyFYRNH0w9oXIJQ8",
       "label": "Middle Way Café",
@@ -5217,7 +5217,7 @@
     "durationMinutes": 30,
     "timeLabel": null,
     "date": null,
-    "text": "Walmart Supercenter",
+    "text": null,
     "place": {
       "id": "ChIJOe6XNsaXyFYRC3S8q6sEmUE",
       "label": "Walmart Supercenter",
@@ -5255,7 +5255,7 @@
     "startAt": "2027-06-28T11:00",
     "durationMinutes": null,
     "timeLabel": "Afternoon",
-    "text": "Denali Visitor Center",
+    "text": null,
     "place": {
       "id": "ChIJlwIYyVPfzFYR5iw_rFsr6xc",
       "label": "Denali Visitor Center",
@@ -5311,7 +5311,7 @@
     "startAt": "2027-06-28T12:15",
     "durationMinutes": null,
     "timeLabel": null,
-    "text": "Morino Grill, Denali Visitor Center",
+    "text": null,
     "place": {
       "id": "ChIJm08IkFHfzFYRR1motg0wk64",
       "label": "Morino Grill",
@@ -5380,7 +5380,7 @@
     "startAt": "2027-07-07T12:30",
     "durationMinutes": null,
     "timeLabel": null,
-    "text": "Lunch at Sheep Mountain Lodge",
+    "text": null,
     "place": {
       "id": "ChIJ69kB6Dl1yVYRrWn-KL13EpE",
       "label": "Sheep Mountain Lodge",
@@ -5555,7 +5555,7 @@
     "durationMinutes": null,
     "timeLabel": null,
     "date": null,
-    "text": "Lunch at Snow City Cafe downtown",
+    "text": null,
     "place": {
       "id": "ChIJQcnnU4G9yFYRRfrr7uDX1Rs",
       "label": "Snow City Cafe",
@@ -6051,7 +6051,7 @@
     "startAt": "2027-07-01T08:00",
     "durationMinutes": null,
     "timeLabel": null,
-    "text": "Breakfast buffet at Coldfoot Camp Cafe",
+    "text": null,
     "place": {
       "id": "ChIJq6qqqqoHMlER2hxwNGwiU_g",
       "label": "Arctic Getaway Bed & Breakfast",
