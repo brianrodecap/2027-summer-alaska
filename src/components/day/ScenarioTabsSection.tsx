@@ -12,7 +12,7 @@ import { useLiveDays } from '../../state/useLiveDays';
 import { useScenarioSelection } from '../../state/useTripSelections';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
-import { NESTED_PULL_PX } from './dayLayout';
+import { nestedPull } from './dayLayout';
 import { DayTimeline } from './DayTimeline';
 
 // A branching day's scenarios each become one chip; the chip group picks
@@ -93,7 +93,7 @@ export function ScenarioTabsSection({
       </Box>
       {/* pulled back toward this section's own line, so each level indents less; its
           drag handles stay to the right of that line */}
-      <Box sx={{ mt: 1.5, ml: `-${NESTED_PULL_PX}px` }}>
+      <Box sx={(theme) => ({ mt: 1.5, ml: `calc(-1 * ${nestedPull(theme)})` })}>
         <DayTimeline
           day={day}
           rows={activeTrack.rows}

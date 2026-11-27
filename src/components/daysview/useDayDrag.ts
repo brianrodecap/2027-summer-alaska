@@ -30,7 +30,7 @@ function containerIdOf(dndData: unknown): string | null {
 // Whether a drag of `meta` moves a real (>1) multi-select together — takes
 // priority over the single-row case. Dragging some other, unselected row while
 // a selection exists elsewhere is a normal single-row drag.
-const movesSelection = (
+export const movesSelection = (
   selection: RowSelection | null,
   meta: DragMeta,
 ): selection is RowSelection =>
@@ -113,10 +113,19 @@ export function useDayDrag() {
 
     if (movesSelection(selection, activeMeta)) {
       const rows = [...selection.rows.values()];
-      commit(
-        applyGroupDragEnd(data, activeMeta, overMeta, activeContainerId, overContainerId, rows),
+      const next = applyGroupDragEnd(
+        data,
+        activeMeta,
+        overMeta,
+        activeContainerId,
+        overContainerId,
+        rows,
       );
-      clearRowSelection();
+      // a refused drop keeps the selection, to be dropped somewhere else
+      if (next) {
+        commit(next);
+        clearRowSelection();
+      }
       return;
     }
     const result = applySingleRowDragEnd(

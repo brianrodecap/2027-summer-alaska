@@ -1,3 +1,5 @@
+import type { Theme } from '@mui/material/styles';
+
 import { STOP_NODE_SIZE } from '../shared/StopRail';
 
 // Layout facts the day list's pieces must agree on, kept in one place so
@@ -31,12 +33,12 @@ export const DRAG_HANDLE_ICON_SIZE = 20;
 export const DRAG_HANDLE_PADDING_PX = 2;
 export const DRAG_HANDLE_WIDTH = DRAG_HANDLE_ICON_SIZE + DRAG_HANDLE_PADDING_PX * 2;
 
-// From a row's line column to its card (theme spacing, 8px a step).
+// From a row's line column to its card (theme spacing).
 export const TIMELINE_CONTENT_PAD = 1;
 
-// How far a nested plan's list is pulled left. A section's line runs down the middle
-// of its dot column, so its content starts half a column plus the pad right of the
-// line; pulling any further than that, less some clearance, would put the nested
-// list's drag handles on the line.
+// A section's content starts half a dot column plus the pad right of its line. Its
+// nested plan's list is pulled left by that much, less a clearance that keeps the
+// list's drag handles off the line. A CSS length.
 const LINE_CLEARANCE_PX = 5;
-export const NESTED_PULL_PX = STOP_NODE_SIZE / 2 + TIMELINE_CONTENT_PAD * 8 - LINE_CLEARANCE_PX;
+export const nestedPull = (theme: Theme) =>
+  `calc(${STOP_NODE_SIZE / 2 - LINE_CLEARANCE_PX}px + ${theme.spacing(TIMELINE_CONTENT_PAD)})`;

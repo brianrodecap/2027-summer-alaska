@@ -1,10 +1,17 @@
-import { closestCenter, DndContext, DragOverlay } from '@dnd-kit/core';
+import {
+  closestCenter,
+  type CollisionDetection,
+  DndContext,
+  DragOverlay,
+  pointerWithin,
+} from '@dnd-kit/core';
 import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import type { ReactNode } from 'react';
 
+import type { DragMeta } from '../../model/reorder';
 import { activityHeadline, formatTime, transitRouteLabel } from '../../model/tripModel';
 import { type DragOverlayModel, useDayDrag } from './useDayDrag';
 
@@ -53,6 +60,15 @@ function DragOverlayBody({ overlay }: { overlay: DragOverlayModel }) {
   return null;
 }
 
+// What a drag is over. A plan section is taller than the screen, so its own middle
+// says little about where the reader is aiming: it goes by what is under the
+// pointer, which over its own rows, or a gap, drops it nowhere. A row goes by the
+// nearest row.
+const collisionDetection: CollisionDetection = (args) => {
+  const dragged = args.active.data.current as DragMeta | undefined;
+  return dragged?.source?.kind === 'scenario-group' ? pointerWithin(args) : closestCenter(args);
+};
+
 // Wraps the day list in its drag-and-drop context: sensors, the overlay chip,
 // and the reorder handlers (see useDayDrag).
 export function DayListDnd({ children }: { children: ReactNode }) {
@@ -60,7 +76,7 @@ export function DayListDnd({ children }: { children: ReactNode }) {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={collisionDetection}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >

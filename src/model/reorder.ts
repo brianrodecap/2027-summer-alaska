@@ -77,6 +77,9 @@ export interface ReorderMembers {
   activityIds: string[];
   transitIds: string[];
   stayIds: string[];
+  // A section's plans, nested ones included: every row listed under them is part
+  // of the section, an empty plan's drop zone too.
+  scenarioIds?: string[];
 }
 
 // What a DragMeta row actually is as a drag source, replacing four mutually-
@@ -242,6 +245,12 @@ export interface DragMeta {
   // placeholder metas (EmptyDropZone) — none of these are independently
   // authored entities with a position of their own to drag away from.
   source: DragSource | null;
+  // The entries this row shows, whether or not it can be dragged itself (an
+  // Arrive, a route stage); none for a drop placeholder.
+  shows?: ReorderMembers;
+  // Set on the drop spot just above a section with nothing before it: that
+  // section's plans. It is part of the section when they are all moving.
+  beforeSection?: string[];
   anchorEntityId: AnchorEntity | null;
   // Set only when this row's own `endAt` is a fuzzy Activity's sort-key
   // surrogate (activityAnchorEndAt's no-startAt branch), never a real
@@ -323,14 +332,9 @@ function buildRealAnchors(flattened: DayRow[], dayStart: string, clock: TripCloc
   return anchors;
 }
 
-// Every Activity/Transit/Stay id under one scenario-tabs node's own subtree —
-// the union of each branch's (the tracks passed in) own `members`, which
-// already roll up any nested child scenario-tabs group, so a scenario-group
-// drag picks up a nested weather-inside-a-delay split's content too, not
-// just the immediate tracks. A Transit's boundary and
-// stage rows both name the same transit._id, so transitIds is deduplicated;
-// an Activity/Stay only ever appears in one track's own rows, so no
-// deduplication is needed for either of those.
+// Every Activity/Transit/Stay id under a scenario-tabs node (all of its tracks,
+// from each track's own `members`), and every plan id in it, nested ones
+// included.
 function collectScenarioGroupMembers(tracks: ScenarioTrack[]): ReorderMembers {
   const activityIds = new Set<string>();
   const transitIds = new Set<string>();
@@ -340,7 +344,19 @@ function collectScenarioGroupMembers(tracks: ScenarioTrack[]): ReorderMembers {
     for (const id of members.transitIds) transitIds.add(id);
     for (const id of members.stayIds) stayIds.add(id);
   }
-  return { activityIds: [...activityIds], transitIds: [...transitIds], stayIds: [...stayIds] };
+  return {
+    activityIds: [...activityIds],
+    transitIds: [...transitIds],
+    stayIds: [...stayIds],
+    scenarioIds: scenarioIdsOf(tracks),
+  };
+}
+
+function scenarioIdsOf(tracks: ScenarioTrack[]): string[] {
+  return tracks.flatMap((track) => [
+    track.scenario._id,
+    ...track.rows.flatMap((row) => (row.type === 'box' ? scenarioIdsOf(row.tracks) : [])),
+  ]);
 }
 
 // A row's drag/render id — the ONE place it is decided, used by both this
@@ -372,6 +388,16 @@ export function dragIdOf(row: DayRow, date: string): string {
 // the two files.
 export function beforeScenarioSplitDragId(boxDragId: string): string {
   return `before-${boxDragId}`;
+}
+
+// The entries a row shows: its own, or all of a section's.
+function rowShownMembers(row: DayRow): ReorderMembers {
+  if (row.type === 'box') return collectScenarioGroupMembers(row.tracks);
+  return {
+    activityIds: row.type === 'activity' ? [row.activity._id] : [],
+    transitIds: row.type === 'transit' ? [row.transit._id] : [],
+    stayIds: row.type === 'stay' ? [row.stay._id] : [],
+  };
 }
 
 // A container's drag metadata, from the rows it shows: the one place the timeline and
@@ -455,6 +481,7 @@ export function buildDragMeta(
   return flattened
     .flatMap((item): Array<Omit<DragMeta, 'index' | 'containerDayStart'>> => {
       const id = dragIdOf(item, dateOnly(dayStart));
+      const shows = rowShownMembers(item);
       if (item.type === 'stay') {
         // Keyed by date, not the per-day flatMap index `i` — a multi-night
         // Stay renders its own row on every night it covers (Check
@@ -471,6 +498,7 @@ export function buildDragMeta(
               endZone: first?.zone ?? null,
               legId: first?.legId ?? item.stay.legId,
               scenarioId,
+              shows,
               source: null, // Check-out is never a drag source — see applyStayReorder
               anchorEntityId: null,
               anchorTimeLabel: null,
@@ -488,6 +516,7 @@ export function buildDragMeta(
               endZone: lastAnchor?.zone ?? null,
               legId: lastAnchor?.legId ?? item.stay.legId,
               scenarioId,
+              shows,
               // Check-in is the one row a Stay is draggable via (see
               // applyStayReorder) — dropping it onto a scenario tab's panel
               // (or back out to the top-level day) reassigns the whole Stay's
@@ -513,6 +542,7 @@ export function buildDragMeta(
             endZone: null,
             legId: item.stay.legId,
             scenarioId,
+            shows,
             source: null, // a 'Staying' row is never a drag source
             anchorEntityId: null,
             anchorTimeLabel: null,
@@ -529,6 +559,7 @@ export function buildDragMeta(
             endZone: item.event.zone,
             legId: item.transit.legId,
             scenarioId,
+            shows,
             // Only Depart carries a 'transit' source — the whole compound
             // unit (Depart boundary, every route stage, Arrive boundary)
             // travels together via that one handle, so Arrive/stages are
@@ -551,6 +582,7 @@ export function buildDragMeta(
             endZone: item.event.zone,
             legId: item.transit.legId,
             scenarioId,
+            shows,
             source: null, // a route stage is never independently draggable
             anchorEntityId: null,
             anchorTimeLabel: null, // a route stage is never fuzzy
@@ -570,6 +602,7 @@ export function buildDragMeta(
             endZone: item.event.zone,
             legId: activity.legId,
             scenarioId,
+            shows,
             source: { kind: 'activity', id: activity._id },
             anchorEntityId: { kind: 'activity', id: activity._id },
             anchorTimeLabel: fuzzyTimeLabelOf(activity),
@@ -610,9 +643,10 @@ export function buildDragMeta(
       const scenarioEntry: Omit<DragMeta, 'index' | 'containerDayStart'> = {
         ...sharedFields,
         id,
+        shows,
         source: {
           kind: 'scenario-group',
-          members: collectScenarioGroupMembers(item.tracks),
+          members: shows,
         },
       };
       // A scenario-tabs row being droppable:false is normally harmless — the
@@ -635,6 +669,7 @@ export function buildDragMeta(
           {
             ...sharedFields,
             id: beforeScenarioSplitDragId(id),
+            beforeSection: shows.scenarioIds,
             source: null,
             cascadeActivityIds: downstreamActivityIds(realAnchorIdx + 1),
           },
@@ -1196,6 +1231,47 @@ export function dayOfContainer(containerId: string | null): string | null {
   return containerId ? containerId.split('::')[0] : null;
 }
 
+// Whether a drop lands on part of what is being dragged: a row whose entries are
+// all moving, any row listed under a moving section (its day's plans, empty ones
+// too), or the drop spot just above that section. Such a drop names no new place,
+// and reading it as one would shift what moves by its own length. A row holding
+// more than what moves, like the section around a nested one, is outside it. A stay
+// shows on each of its days, and the same plan can too, so those count only on the
+// day being dragged from.
+export function dropsOnItself(
+  overMeta: DragMeta,
+  activeMeta: DragMeta,
+  // The multi-selection being moved, when the drag moves one.
+  selectedRows: Array<{ containerId: string; members: ReorderMembers }> | null,
+): boolean {
+  const moving = selectedRows
+    ? selectedRows.map((row) => ({ day: dayOfContainer(row.containerId), members: row.members }))
+    : [{ day: dateOnly(activeMeta.containerDayStart), members: rowMembersOf(activeMeta) }];
+  const overDay = dateOnly(overMeta.containerDayStart);
+  const inSection = moving.some(({ day, members }) => {
+    const plans = members.scenarioIds;
+    if (day !== overDay || !plans) return false;
+    return (
+      (overMeta.scenarioId !== null && plans.includes(overMeta.scenarioId)) ||
+      Boolean(overMeta.beforeSection?.every((id) => plans.includes(id)))
+    );
+  });
+  if (inSection) return true;
+  const { shows } = overMeta;
+  if (!shows) return false;
+  const isMoving = (kind: 'activityIds' | 'transitIds' | 'stayIds') => (id: string) =>
+    moving.some(
+      ({ day, members }) => members[kind].includes(id) && (kind !== 'stayIds' || day === overDay),
+    );
+  const count = shows.activityIds.length + shows.transitIds.length + shows.stayIds.length;
+  return (
+    count > 0 &&
+    shows.activityIds.every(isMoving('activityIds')) &&
+    shows.transitIds.every(isMoving('transitIds')) &&
+    shows.stayIds.every(isMoving('stayIds'))
+  );
+}
+
 // Resolves dnd-kit's raw active/over pair down to the two things every
 // single-row (or block) drop actually needs: `dropMeta` (which DragMeta's
 // fields the drop should actually take its position from) and
@@ -1269,6 +1345,7 @@ export function applySingleRowDragEnd(
   overContainerId: string | null,
 ): TripData | null {
   if (!activeMeta.source) return null;
+  if (dropsOnItself(overMeta, activeMeta, null)) return null;
   const { dropMeta, preserveOwnTiming } = resolveDragEndPlacement(
     activeMeta,
     overMeta,
@@ -1336,7 +1413,8 @@ export function applyGroupDragEnd(
   activeContainerId: string | null,
   overContainerId: string | null,
   selectedRows: Array<{ containerId: string; members: ReorderMembers; isScenarioGroup: boolean }>,
-): TripData {
+): TripData | null {
+  if (dropsOnItself(overMeta, activeMeta, selectedRows)) return null;
   const { dropMeta } = resolveDragEndPlacement(
     activeMeta,
     overMeta,

@@ -14,6 +14,7 @@ import {
   type DragMeta,
   type ReorderMembers,
   resolveDropTiming,
+  rowMembersOf,
 } from './reorder';
 import type { TimelineEvent } from './timeline';
 import { stageNodeKey, type TripClock, tripClock } from './tripModel';
@@ -2315,7 +2316,7 @@ describe('applyGroupDragEnd', () => {
       'container1',
       'container1',
       selectedRows,
-    );
+    )!;
     const byId = (id: string) => result.activities.find((a) => a._id === id);
     expect(byId('g1')?.startAt).toBe('2027-06-01T09:00');
     expect(byId('g2')?.startAt).toBe('2027-06-01T09:30');
@@ -2384,7 +2385,7 @@ describe('applyGroupDragEnd', () => {
       },
     ];
 
-    const result = applyGroupDragEnd(data, activeMeta, overMeta, 'c1', 'c1', selectedRows);
+    const result = applyGroupDragEnd(data, activeMeta, overMeta, 'c1', 'c1', selectedRows)!;
     const byId = (id: string) => result.activities.find((a) => a._id === id);
     const transitById = result.transits.find((t) => t._id === 'transit1');
     // delta = 10:00 - 08:00 = +120 minutes, applied to every member — same
@@ -2461,7 +2462,7 @@ describe('applyGroupDragEnd', () => {
       },
     ];
 
-    const result = applyGroupDragEnd(data, activeMeta, overMeta, 'c1', 'c1', selectedRows);
+    const result = applyGroupDragEnd(data, activeMeta, overMeta, 'c1', 'c1', selectedRows)!;
     const byId = (id: string) => result.activities.find((a) => a._id === id);
     const transitById = result.transits.find((t) => t._id === 'transit1');
     expect(transitById?.scenarioId).toBe('ideal'); // scenario-group member — untouched
@@ -2694,9 +2695,162 @@ describe('drag-reorder across time zones', () => {
     const next = applyGroupDragEnd(tripOf([page, den]), activeMeta, overMeta, 'c1', 'c1', [
       row('page'),
       row('den'),
-    ]);
+    ])!;
     // Denver 12:00 to 12:30, then Page from 12:30 Denver, 11:30 Page.
     expect(startOf(next, 'den')).toBe('2027-06-01T12:00');
     expect(startOf(next, 'page')).toBe('2027-06-01T11:30');
+  });
+});
+
+describe('a drop onto part of what is being dragged', () => {
+  const DAY = '2027-06-01';
+  const flight = transit({
+    _id: 'flight',
+    scenarioId: 'ideal',
+    departsAt: `${DAY}T08:00`,
+    arrivesAt: `${DAY}T09:00`,
+  });
+  const hike = activity({ _id: 'hike', scenarioId: 'ideal', startAt: `${DAY}T10:00` });
+  const swim = activity({ _id: 'swim', scenarioId: 'nested', startAt: `${DAY}T11:00` });
+  const breakfast = activity({ _id: 'breakfast', startAt: `${DAY}T06:00`, durationMinutes: 30 });
+  const dinner = activity({ _id: 'dinner', startAt: `${DAY}T18:00`, durationMinutes: 60 });
+  const scenario = (_id: string) => ({
+    _id,
+    legId: 'legA',
+    tone: 'ideal' as const,
+    label: _id,
+    icon: 'sunny',
+    images: [],
+  });
+  const nestedRows: DayRow[] = [activityRow(swim)];
+  const idealRows: DayRow[] = [
+    transitRow(flight, 'depart', `${DAY}T08:00`),
+    transitRow(flight, 'arrive', `${DAY}T09:00`),
+    activityRow(hike),
+    boxRow(`${DAY}T11:00`, [track({ scenario: scenario('nested'), notes: [], rows: nestedRows })]),
+  ];
+  const tracks: ScenarioTrack[] = [
+    track({ scenario: scenario('ideal'), notes: [], rows: idealRows }),
+    // an alternative with nothing in it yet: only its drop zone shows
+    track({ scenario: scenario('empty'), notes: [], rows: [], active: false }),
+  ];
+  const metaOf = (rows: DayRow[], scenarioId: string | null, day = DAY) =>
+    buildDragMeta(rows, scenarioId, `${day}T00:00`, 'legA', NO_ZONES);
+  const top = metaOf(
+    [activityRow(breakfast), boxRow(`${DAY}T08:00`, tracks), activityRow(dinner)],
+    null,
+  );
+  const [breakfastRow, section, dinnerRow] = top;
+  const ideal = metaOf(idealRows, 'ideal');
+  const [depart, arrive, hikeRow, nestedSection] = ideal;
+  const [swimRow] = metaOf(nestedRows, 'nested');
+  const emptyZone: DragMeta = { ...dinnerRow, scenarioId: 'empty', source: null, shows: undefined };
+  const data: TripData = {
+    trip: { _id: 'trip', name: 'Trip', travelers: [], images: [] },
+    legs: [],
+    stays: [],
+    transits: [flight],
+    activities: [breakfast, hike, swim, dinner],
+    scenarios: [],
+    notes: [],
+    bookings: [],
+    travelModeOverrides: [],
+    dayTitles: [],
+    routes: [],
+  };
+  const times = (next: TripData) => [
+    ...next.activities.map((a) => `${a._id} ${a.startAt}`),
+    ...next.transits.map((t) => `${t._id} ${t.departsAt}`),
+  ];
+  const inside: [string, DragMeta][] = [
+    ['its own departure', depart],
+    ['its own arrival', arrive],
+    ['its own activity', hikeRow],
+    ['a section nested in it', nestedSection],
+    ["a nested section's row", swimRow],
+    ["an empty alternative's drop zone", emptyZone],
+  ];
+
+  it.each(inside)('does nothing when a section lands on %s', (_name, over) => {
+    expect(applySingleRowDragEnd(data, section, over, DAY, `${DAY}::ideal`)).toBeNull();
+  });
+
+  it('does nothing when a flight lands on its own arrival', () => {
+    expect(applySingleRowDragEnd(data, depart, arrive, DAY, DAY)).toBeNull();
+  });
+
+  const selected = (meta: DragMeta, containerId = DAY) => ({
+    containerId,
+    members: rowMembersOf(meta),
+    isScenarioGroup: meta.source?.kind === 'scenario-group',
+  });
+
+  it.each([
+    ['a row inside a selected section', [section, dinnerRow], arrive],
+    ['another selected row', [section, dinnerRow], dinnerRow],
+    ["a selected flight's arrival", [depart, dinnerRow], arrive],
+    ['a selected activity', [breakfastRow, dinnerRow], dinnerRow],
+  ])('moves nothing when a multi-selection lands on %s', (_name, rows, over) => {
+    const next = applyGroupDragEnd(
+      data,
+      rows[0],
+      over,
+      DAY,
+      DAY,
+      rows.map((r) => selected(r)),
+    );
+    expect(next).toBeNull();
+  });
+
+  it('still moves a section or a selection dropped on anything outside it', () => {
+    const moved = applySingleRowDragEnd(data, section, breakfastRow, DAY, DAY)!;
+    expect(times(moved)).not.toEqual(times(data));
+    const group = applyGroupDragEnd(data, section, breakfastRow, DAY, DAY, [
+      selected(section),
+      selected(dinnerRow),
+    ])!;
+    expect(times(group)).not.toEqual(times(data));
+    // a row dragged out of the section is not part of itself
+    const out = applySingleRowDragEnd(data, hikeRow, dinnerRow, `${DAY}::ideal`, DAY)!;
+    expect(out.activities.find((a) => a._id === 'hike')?.scenarioId).toBeNull();
+  });
+
+  it('lets a nested section move onto the section around it', () => {
+    expect(
+      applySingleRowDragEnd(data, nestedSection, section, `${DAY}::ideal`, DAY),
+    ).not.toBeNull();
+  });
+
+  it('counts a stay’s own row only on the day it is dragged from, as it shows every day', () => {
+    const stay: DragMeta = {
+      ...breakfastRow,
+      source: { kind: 'stay', id: 'inn' },
+      shows: { activityIds: [], transitIds: [], stayIds: ['inn'] },
+    };
+    const sameDay: DragMeta = { ...stay, id: 'inn-morning', index: 5, source: null };
+    const otherDay: DragMeta = { ...sameDay, containerDayStart: '2027-06-02T00:00' };
+    expect(applySingleRowDragEnd(data, stay, sameDay, DAY, DAY)).toBeNull();
+    expect(applySingleRowDragEnd(data, stay, otherDay, DAY, '2027-06-02')).not.toBeNull();
+  });
+
+  it('lets a section move onto the same plan’s rows on another day', () => {
+    const later = activity({ _id: 'later', scenarioId: 'ideal', startAt: '2027-06-02T15:00' });
+    const [laterRow] = metaOf([activityRow(later)], 'ideal', '2027-06-02');
+    const next = applySingleRowDragEnd(data, section, laterRow, DAY, '2027-06-02::ideal');
+    expect(next).not.toBeNull();
+  });
+
+  // With nothing above a section, its list gets a drop spot just above it.
+  it('treats the drop spot just above a section as part of that section only', () => {
+    const [spacer, own] = metaOf([boxRow(`${DAY}T10:00`, tracks), activityRow(dinner)], null);
+    expect(applySingleRowDragEnd(data, own, spacer, DAY, DAY)).toBeNull();
+    expect(
+      applyGroupDragEnd(data, own, spacer, DAY, DAY, [selected(own), selected(dinnerRow)]),
+    ).toBeNull();
+    // so is moving a nested section out above the section around it
+    expect(applySingleRowDragEnd(data, nestedSection, spacer, `${DAY}::ideal`, DAY)).not.toBeNull();
+    // dragging an entry out of the section to above it is a real move
+    expect(applySingleRowDragEnd(data, hikeRow, spacer, `${DAY}::ideal`, DAY)).not.toBeNull();
+    expect(applySingleRowDragEnd(data, dinnerRow, spacer, DAY, DAY)).not.toBeNull();
   });
 });

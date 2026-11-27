@@ -12,7 +12,7 @@ import IconButton from '@mui/material/IconButton';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { type SelectChangeEvent } from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
-import { useTheme } from '@mui/material/styles';
+import { type Theme, useTheme } from '@mui/material/styles';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import {
@@ -51,6 +51,7 @@ import {
   containerDragMeta,
   dragIdOf,
   type DragMeta,
+  dropsOnItself,
   rowMembersOf,
 } from '../../model/reorder';
 import {
@@ -90,6 +91,7 @@ import {
   useMealOptionSelection,
   useRowSelection,
 } from '../../state/useTripSelections';
+import { movesSelection } from '../daysview/useDayDrag';
 import { StayExtras, StayGoogle, StayLines } from '../detail/StayCardDetails';
 import { TransitExtras, TransitGoogle, TransitLines } from '../detail/TransitCardDetails';
 import { InfoLink } from '../shared/InfoChip';
@@ -101,7 +103,12 @@ import { ActivityRow } from './ActivityRow';
 import { AvatarOrDot } from './AvatarOrDot';
 import { ClockChangeMarker } from './ClockChangeMarker';
 import { ClockSuffixContext, useClockSuffix } from './dayClock';
-import { DRAG_HANDLE_PADDING_PX, DRAG_HANDLE_WIDTH, TIMELINE_CONTENT_PAD } from './dayLayout';
+import {
+  DRAG_HANDLE_PADDING_PX,
+  DRAG_HANDLE_WIDTH,
+  nestedPull,
+  TIMELINE_CONTENT_PAD,
+} from './dayLayout';
 import { DayPinsContext, useDayPin } from './dayPins';
 import { MealRow } from './MealRow';
 import { PlaceConditionsLine } from './PlaceConditionsLine';
@@ -128,7 +135,14 @@ const ACTIVITY_HOVER_SX = {
 };
 
 // A plan section that's part of the drag-handle multi-select (a card tints itself).
-const SELECTED_SECTION_SX = { bgcolor: 'primary.container', borderRadius: 1.5 } as const;
+// Reaching left as far as the plan's nested list is pulled, so the tint covers that
+// list's drag handles; the padding keeps the content where it is.
+const SELECTED_SECTION_SX = (theme: Theme) => ({
+  bgcolor: 'primary.container',
+  borderRadius: 1.5,
+  ml: `calc(-1 * ${nestedPull(theme)})`,
+  pl: nestedPull(theme),
+});
 
 // A row is as tall as its content, not MUI's minimum item height.
 const ITEM_SX = { minHeight: 0 } as const;
@@ -710,7 +724,7 @@ function SortableRow({
     isOver: boolean,
   ) => ReactElement;
 }) {
-  const { setNodeRef, transform, transition, attributes, listeners, isDragging, isOver } =
+  const { setNodeRef, transform, transition, attributes, listeners, isDragging, isOver, active } =
     useSortable({
       id: dragId,
       // Must stay the object form, not a plain boolean — dnd-kit's own
@@ -722,6 +736,19 @@ function SortableRow({
       disabled: { draggable: disabled, droppable: !droppable },
       data: dragMeta,
     });
+  // A row the drop would ignore doesn't light up as a place to drop.
+  const { selection } = useRowSelection();
+  const dragged = active?.data.current as DragMeta | undefined;
+  const ignored = Boolean(
+    isOver &&
+    dragged &&
+    dragMeta &&
+    dropsOnItself(
+      dragMeta,
+      dragged,
+      movesSelection(selection, dragged) ? [...selection.rows.values()] : null,
+    ),
+  );
   const style: CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition: transition ?? undefined,
@@ -729,7 +756,7 @@ function SortableRow({
   };
   return (
     <Box ref={setNodeRef} style={style}>
-      {children(disabled ? null : { attributes, listeners }, isOver)}
+      {children(disabled ? null : { attributes, listeners }, isOver && !ignored)}
     </Box>
   );
 }
