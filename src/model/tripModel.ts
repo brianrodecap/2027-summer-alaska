@@ -21,7 +21,7 @@ import {
 } from './bookings';
 import { isDateTime } from './dateTime';
 import type { EditKind, Entity } from './editForms';
-import { firstImage, uniqueById } from './formatting';
+import { firstImage, MEAL_TYPE_LABEL, uniqueById } from './formatting';
 import { allPackages, packageHolders } from './packages';
 import { isReverseDrive, reverseVariant } from './routeReverse';
 import type {
@@ -570,12 +570,15 @@ export function activityTimeLabel(
 }
 
 // The one place every reader of an Activity's display text goes through,
-// rather than reading .text directly — text is null whenever a Place
-// already names the row (see the Activity.text doc comment in types.ts), so
-// the place's own name is the fact of record in that case instead of a
-// second, possibly-stale copy of it.
-export function activityHeadline(activity: Pick<Activity, 'text' | 'place'>): string {
-  return activity.text ?? activity.place?.label ?? '';
+// rather than reading .text directly — text is null whenever a Place or a meal
+// type already names the row (see the Activity.text doc comment in types.ts):
+// the place's own name, else the kind of meal, is the fact of record then,
+// instead of a second, possibly-stale copy of it. '' when nothing names it.
+export function activityHeadline(
+  activity: Pick<Activity, 'text' | 'mealType'> & { place: Pick<Place, 'label'> | null },
+): string {
+  const meal = activity.mealType ? MEAL_TYPE_LABEL[activity.mealType] : undefined;
+  return activity.text ?? activity.place?.label ?? meal ?? '';
 }
 
 // The one name for an entry wherever a booking or import lists it — the

@@ -674,15 +674,21 @@ export function activityFormFrom(activity: Activity, source: BookingSource): Act
   };
 }
 
-// text is only required when there's no Place to fall back on — a Place
-// already names the row, so forcing a duplicate label just to satisfy this
-// check would store the same fact twice (see activityHeadline in
-// tripModel.ts, which every reader of an Activity's display text goes
-// through instead of reading .text directly). Shared by applyActivityForm's
-// validation and wizardStepCanProceed's 'details' case so the rule can't
-// drift between the two.
-export function hasDescriptionOrPlace(form: Pick<ActivityFormState, 'text' | 'place'>): boolean {
-  return form.text.trim() !== '' || Boolean(form.place);
+// A description is only required when nothing else names the row: a Place or a
+// meal type already does, and storing its name again would store the same fact
+// twice. activityHeadline decides, as it does for every reader of an Activity's
+// name. Shared by applyActivityForm's validation and wizardStepCanProceed's
+// 'details' case.
+export function hasActivityName(
+  form: Pick<ActivityFormState, 'text' | 'place' | 'mealType'>,
+): boolean {
+  return (
+    activityHeadline({
+      text: form.text.trim() || null,
+      place: form.place,
+      mealType: form.mealType || null,
+    }) !== ''
+  );
 }
 
 // Every Activity must resolve to both a real sort position and a real date
@@ -720,7 +726,7 @@ export function optionFromDecided(meal: Activity): MealOption {
 
 export function applyActivityForm(activity: Activity, form: ActivityFormState): string | null {
   const text = form.text.trim();
-  if (!hasDescriptionOrPlace(form)) return 'Needs a description.';
+  if (!hasActivityName(form)) return 'Needs a description.';
   const clock = clockZoneFromForm(form.clockZone);
   if (clock === undefined) return CLOCK_ZONE_ERROR;
   const stated = form.clockZone === (activity.clockZone ?? '') ? undefined : clock;
@@ -1723,7 +1729,7 @@ export function wizardStepCanProceed(
     }
     case 'details':
       if (isMergingIntoDuplicate(forms)) return true;
-      return Boolean(forms.activityForm && hasDescriptionOrPlace(forms.activityForm));
+      return Boolean(forms.activityForm && hasActivityName(forms.activityForm));
     case 'activityWhereWhen':
     case 'mealWhereWhen': {
       const f = forms.activityForm;

@@ -436,8 +436,8 @@ export interface Activity {
   durationMinutes: number | null; // null when unknown/point-in-time; see activityDurationMinutes
   timeLabel: TimeLabel | null;
   date: string | null; // set only when startAt is null
-  // null when a Place already names the row — see activityHeadline
-  // (tripModel.ts), which every reader of this field's display text goes
+  // null when a Place or the meal type already names the row — see
+  // activityHeadline (tripModel.ts), which every reader of this field's display text goes
   // through instead of reading .text directly.
   text: string | null;
   place: Place | null;

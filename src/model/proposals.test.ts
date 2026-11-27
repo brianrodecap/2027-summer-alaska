@@ -1680,6 +1680,7 @@ describe('entry point parity', () => {
       why: 's',
     }) as never;
   const hostile: [string, unknown][] = [
+    ['an entry with nothing to name it', { durationMinutes: 30 }],
     ['a text that is a number', { text: 5 }],
     ['a place that is a bare string', { text: 'x', place: 'Anchorage' }],
     ['a duration that is text', { text: 'x', durationMinutes: '90' }],
@@ -1703,6 +1704,27 @@ describe('entry point parity', () => {
       },
     ],
   ];
+
+  const checkedNew = (changes: unknown) =>
+    checkedChanges([onNewActivity(changes)], trip(), {
+      searches: placeSearchesFrom({ placeIds: ['place_port'], emptyQueries: [] }),
+    });
+
+  it.each([
+    ['its text', { text: 'Tour' }],
+    ['its place', { place: { label: 'Port', placeId: 'place_port' } }],
+    ['its meal type', { mealType: 'dinner' }],
+  ])('takes a new activity named by %s', (_name, changes) => {
+    expect(checkedNew(changes)).not.toHaveProperty('errors');
+    expect(applyBatch(trip(), [onNewActivity(changes)])).not.toHaveProperty('error');
+  });
+
+  it('says what a new activity with no name needs', () => {
+    const checked = checkedNew({ durationMinutes: 30 });
+    expect('errors' in checked && checked.errors.join()).toMatch(
+      /A new activity needs text, a place, a mealType or mealOptions\./,
+    );
+  });
 
   it.each(hostile)('turns down %s everywhere', (_name, changes) => {
     const proposal = onNewActivity(changes);

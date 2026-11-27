@@ -158,7 +158,7 @@ export const DINING_FORMAT_LABEL: Record<DiningFormat, string> = {
   'self-catered': 'Self-catered',
 };
 
-const MEAL_TYPE_LABEL: Record<MealType, string> = {
+export const MEAL_TYPE_LABEL: Record<MealType, string> = {
   breakfast: 'Breakfast',
   lunch: 'Lunch',
   dinner: 'Dinner',

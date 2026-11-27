@@ -5,6 +5,7 @@ import { filterRows } from './filters';
 import { buildLiveDays, type LiveDayCache } from './liveDays';
 import { liveWarnings } from './mealOptions';
 import {
+  activityHeadline,
   buildDirectionsUrl,
   buildTripView,
   diffMinutesIso,
@@ -2310,5 +2311,16 @@ describe('buildDirectionsUrl', () => {
       travelmode: 'walking',
     });
     expect(params(buildDirectionsUrl(from, to, [])).travelmode).toBe('driving');
+  });
+});
+
+describe('activityHeadline', () => {
+  const lodge = { label: 'Lodge' };
+
+  it('names an activity by its text, else its place, else its meal type, else nothing', () => {
+    expect(activityHeadline({ text: 'Picnic', place: lodge, mealType: 'lunch' })).toBe('Picnic');
+    expect(activityHeadline({ text: null, place: lodge, mealType: 'lunch' })).toBe('Lodge');
+    expect(activityHeadline({ text: null, place: null, mealType: 'lunch' })).toBe('Lunch');
+    expect(activityHeadline({ text: null, place: null, mealType: null })).toBe('');
   });
 });

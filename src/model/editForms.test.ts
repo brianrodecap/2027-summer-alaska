@@ -481,6 +481,30 @@ describe('form times, held to the same rules as every AI proposal', () => {
   });
 });
 
+describe('naming an activity in the form', () => {
+  const save = (named: Partial<ReturnType<typeof activityFormFrom>>) => {
+    const activity = blankActivity('leg_t', '2027-07-11');
+    return applyActivityForm(activity, {
+      ...activityFormFrom(activity, NO_BOOKINGS),
+      startsDate: '2027-07-11',
+      startsTime: '10:00',
+      text: '',
+      ...named,
+    });
+  };
+
+  it('saves one named by its description, its place or its meal type', () => {
+    expect(save({ text: 'Tour' })).toBeNull();
+    expect(save({ place: { id: null, label: 'Lodge' } })).toBeNull();
+    expect(save({ mealType: 'dinner' })).toBeNull();
+  });
+
+  it('asks for a description when nothing names it, blank text included', () => {
+    expect(save({})).toBe('Needs a description.');
+    expect(save({ text: '   ' })).toBe('Needs a description.');
+  });
+});
+
 describe("a booking's own clock in the forms", () => {
   const tour = () => {
     const activity = blankActivity('leg_t', '2027-07-11');

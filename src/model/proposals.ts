@@ -1106,7 +1106,13 @@ function validateFields(
         ? !c.departsAt && 'departsAt'
         : p.kind === 'stay'
           ? !c.checkInAt && 'checkInAt'
-          : !c.text && !c.place && !c.mealOptions?.length && 'text, a place or mealOptions';
+          : !activityHeadline({
+              text: c.text || null,
+              place: c.place ?? null,
+              mealType: c.mealType ?? null,
+            }) &&
+            !c.mealOptions?.length &&
+            'text, a place, a mealType or mealOptions';
     if (missing) errors.push(`A new ${p.kind} needs ${missing}.`);
   }
   if (!p.entityId && p.kind === 'activity' && c.startAt && p.date && isDateTime(c.startAt)) {
