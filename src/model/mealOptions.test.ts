@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
 import { includedInOptions } from './editForms';
+import { mealChipLabels } from './mealOptions';
 import { activeMealOptionsOn, packageCarriersOn, selectedMealOptions } from './mealOptions';
+import type { EnrichedMealOption } from './types';
 import type { Activity, MealOption, Package, Stay, Transit } from './types';
 
 const pkg = (_id: string): Package => ({ _id, name: `Package ${_id}` }) as Package;
@@ -203,5 +205,23 @@ describe('packageCarriersOn', () => {
     const routed = { ...transit, arrivesAt: null };
     expect(packageCarriersOn([routed], [], '2027-07-10')).toHaveLength(1);
     expect(packageCarriersOn([routed], [], '2027-07-11')).toEqual([]);
+  });
+});
+
+describe('mealChipLabels', () => {
+  const candidate = (diningFormat: string, label?: string) =>
+    ({ diningFormat, place: label ? { id: null, label } : null }) as unknown as EnrichedMealOption;
+
+  const options = [
+    candidate('sit-down', 'Alehouse'),
+    candidate('drivethru', 'Burger Hut'),
+    candidate('sit-down', 'Bistro'),
+  ];
+
+  it('says the kind of meal, and names the others that share one', () => {
+    expect(mealChipLabels(options, 0)).toEqual(['Sit-down', 'Drive-thru', 'Bistro']);
+    expect(mealChipLabels(options, 2)).toEqual(['Alehouse', 'Drive-thru', 'Sit-down']);
+    // none of the pair picked: both need telling apart
+    expect(mealChipLabels(options, 1)).toEqual(['Alehouse', 'Drive-thru', 'Bistro']);
   });
 });

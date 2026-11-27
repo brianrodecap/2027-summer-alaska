@@ -103,7 +103,7 @@ const transitRow = (
     event,
     transit,
     phase,
-    stage: { kind: 'via', note: null, place: transit.from, key, zone: null },
+    stage: { kind: 'via', note: null, place: transit.from, key, leavesAt: key, zone: null },
     stageIndex: 0,
     key,
   };

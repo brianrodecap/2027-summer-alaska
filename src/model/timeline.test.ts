@@ -475,7 +475,7 @@ describe('buildTimeline — meal places', () => {
     expect(picked.events.find((e) => e.kind === 'activity')?.place?.id).toBe('p_cafe');
   });
 
-  it("with nothing picked, on the check-in day resolves to the first ACTIVE candidate's place, like the row footers", () => {
+  it("with nothing picked, on the check-in day resolves to the first ACTIVE candidate's place, like the travel lines", () => {
     const data = tripData();
     data.stays.push(stay({ checkInAt: '2027-06-02T15:00' }));
     data.activities.push(meal());

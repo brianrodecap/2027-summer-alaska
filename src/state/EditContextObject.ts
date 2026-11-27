@@ -25,8 +25,7 @@ export interface DraftReview {
 
 export interface EditContextValue {
   // Opens the guided edit wizard (see components/wizard/EditEventWizard) on
-  // an existing entity — the day-list row pencils and the activity side
-  // sheet's own edit button. Brand-new entities never reach this: the day
+  // an existing entity — a card menu's Edit. Brand-new entities never reach this: the day
   // list's "Add to this day" button opens components/wizard/AddEventWizard
   // directly instead, since its kind isn't decided yet either (that's the
   // wizard's own first question) — see DaysView's addWizardDay state.

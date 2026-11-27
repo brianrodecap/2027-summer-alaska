@@ -21,7 +21,7 @@ export interface SegmentLookupResult<T> {
 // is exposed alongside the map for a caller (DayTravelChip) that needs to
 // distinguish "still fetching" from "fetched, nothing resolved" — a
 // distinction DayMapSidebar's own two consumers don't need, since they just
-// fall back to an unresolved segment's straight-line/no-footer treatment
+// fall back to an unresolved segment's straight-line/no-travel-line treatment
 // either way.
 export function useSegmentLookup<S, T>(
   segments: S[],

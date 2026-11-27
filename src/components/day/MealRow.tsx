@@ -1,95 +1,70 @@
-import Box from '@mui/material/Box';
-import ButtonBase from '@mui/material/ButtonBase';
 import Chip from '@mui/material/Chip';
 import Stack from '@mui/material/Stack';
-import Typography from '@mui/material/Typography';
+import type { ReactNode, Ref } from 'react';
 
-import { DINING_FORMAT_LABEL, firstImage, timeAndMealTypeLabel } from '../../model/formatting';
+import { activityCardAdds } from '../../model/activityCard';
+import { firstImage, timeAndMealTypeLabel, uniqueById } from '../../model/formatting';
 import {
   activeMealOptions,
+  bookingHolder,
+  includedInLabel,
+  includedInOf,
   liveWarnings,
+  mealChipLabels,
   mealOptionLabel,
   mealOptionTimeLabel,
   selectedMealOptionIndex,
 } from '../../model/mealOptions';
-import { activityHeadline, activityStart, activityZone, optionShows } from '../../model/tripModel';
-import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
+import {
+  activityHeadline,
+  activityNodeKey,
+  activityStart,
+  entryNotes,
+  optionShows,
+  rowShows,
+} from '../../model/tripModel';
+import type { Booking, Day, EnrichedActivity } from '../../model/types';
+import { cardId } from '../../state/expandedRows';
+import { useTravelerNames } from '../../state/useTravelerNames';
+import { useTripData } from '../../state/useTripData';
 import { useMealOptionSelection } from '../../state/useTripSelections';
-import { BookingChip } from '../shared/BookingChip';
+import { ActivityExtras, ActivityGoogle, ActivityLines } from '../detail/ActivityCardDetails';
 import { LinkifiedText } from '../shared/LinkifiedText';
 import { DINING_FORMAT_ICON, renderMaterialIcon } from '../shared/materialIcon';
-import { splitNotes } from '../shared/noteKind';
-import { NotesCluster } from '../shared/Notes';
 import { OverlapWarnings } from '../shared/OverlapWarnings';
-import { ROW_OVERLINE_SX } from '../shared/rowLeadingTokens';
-import { TravelerChips } from '../shared/TravelerChips';
 import { AvatarOrDotView } from './AvatarOrDot';
-import { BookingClockNote } from './BookingClockNote';
 import { useClockSuffix } from './dayClock';
+import { PlaceConditionsLine } from './PlaceConditionsLine';
+import { RowCard } from './RowCard';
 import { useSunAnchoredTime } from './useSunAnchoredTime';
 
-// Which candidate is "active" for a meal Activity — shared by the row's own
-// content and the timeline dot beside it, so both stay in sync as the user
-// switches tabs.
-function useMealSelection(activity: EnrichedActivity, day: Day) {
-  const { mealOptionIndex } = useMealOptionSelection();
-  const options = activeMealOptions(activity, day);
-  const index = selectedMealOptionIndex(options, mealOptionIndex, activity._id);
-  const selected = options[index] ?? null;
-  return { options, index, selected };
-}
-
-// The image/icon a meal Activity contributes to the day timeline's own dot
-// column, for whichever candidate is currently selected.
-export function MealRowLeading({
-  activity,
-  day,
-  inView,
-}: {
-  activity: EnrichedActivity;
-  day: Day;
-  inView: boolean;
-}) {
-  const { selected } = useMealSelection(activity, day);
-  const image = selected ? firstImage(selected.place) : null;
-  return (
-    <AvatarOrDotView
-      image={image}
-      icon={selected ? DINING_FORMAT_ICON[selected.diningFormat] : 'event'}
-      inView={inView}
-    />
-  );
-}
-
-// A meal Activity with several still-open MealOption candidates renders as
-// its own row: time/selected-candidate line, plus a chip group for switching
-// candidates inline — the header is its own button, a sibling of the chips
-// rather than a wrapper around them, so a chip click can't bubble into the
-// row's "open the side sheet" handler. `midNotes` is the Activity's own info
-// notes (about the meal choice as a whole, e.g. "still deciding" — shown no
-// matter which candidate is picked); the selected candidate's own notes are
-// a separate `entity:'mealOption'` concern (see EnrichedMealOption.notes) —
-// swapping candidates swaps which of those are visible, alert/info above and
-// beside the row, footnote below the chip group.
+// A meal Activity with MealOption candidates: the selected candidate's card, with
+// a chip group for switching candidates. Both the Activity's own alerts and the
+// selected candidate's show.
 export function MealRow({
   activity,
   day,
-  onOpen,
-  midNotes,
   inView,
-  buttonRef,
+  cardRef,
+  selected: rowSelected,
+  menu,
 }: {
   activity: EnrichedActivity;
   day: Day;
-  onOpen: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
-  midNotes?: Note[];
   inView: boolean;
-  buttonRef: (node: HTMLButtonElement | null) => void;
+  cardRef: Ref<HTMLDivElement>;
+  selected?: boolean;
+  menu: ReactNode;
 }) {
-  const { selectMealOption } = useMealOptionSelection();
-  const { options, index, selected } = useMealSelection(activity, day);
+  const { mealOptionIndex, selectMealOption } = useMealOptionSelection();
+  const options = activeMealOptions(activity, day);
+  const index = selectedMealOptionIndex(options, mealOptionIndex, activity._id);
+  const selected = options[index] ?? null;
   const shown = selected && optionShows(selected);
-  const { above: optionAbove, mid: optionMid, below: optionBelow } = splitNotes(shown?.notes ?? []);
+  const notes = uniqueById([
+    ...rowShows({ type: 'activity', activity }).notes,
+    ...(shown?.notes ?? []),
+  ]);
   // A selected candidate's own mealOptionTimeLabel already answers "what
   // time is this, really" more specifically than a sun-anchored Sunrise/
   // Sunset label ever could, so that lookup only fires for a still-open
@@ -97,51 +72,70 @@ export function MealRow({
   const sunAnchored = useSunAnchoredTime(activity, day, inView && !selected);
   const timeOverride = selected ? mealOptionTimeLabel(activity, selected) : sunAnchored;
   const clock = useClockSuffix(activity.startAt ? activityStart(activity) : null);
+  const { data } = useTripData();
+  const names = useTravelerNames();
+  // A candidate with no place is titled by what includes it, where something does:
+  // "Included" alone would only repeat its chip.
+  const includedIn =
+    selected && !selected.place && data
+      ? includedInLabel(data, includedInOf(activity, selected))
+      : null;
+  const headline = selected
+    ? (includedIn ?? mealOptionLabel(selected))
+    : activityHeadline(activity);
+  const allNotes = uniqueById([...entryNotes(activity), ...(shown?.notes ?? [])]);
+  const chipLabels = mealChipLabels(options, index);
+  const formatShown = options.length > 1;
+  const card = {
+    data,
+    activity,
+    option: selected ?? undefined,
+    title: headline,
+    formatShown,
+  };
+  const opens = activityCardAdds({ ...card, notes: allNotes, names });
 
   return (
-    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-      <NotesCluster notes={optionAbove} />
-      <ButtonBase
-        ref={buttonRef}
-        onClick={() => onOpen(activity, selected ?? undefined)}
-        sx={{ width: '100%', textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: 1 }}
-      >
-        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-          <Typography variant="caption" color="text.secondary" sx={ROW_OVERLINE_SX}>
-            {timeAndMealTypeLabel(activity, timeOverride, clock)}
-          </Typography>
-          <BookingClockNote
-            at={activity.startAt}
-            bookingZone={activityZone(activity)}
-            placeZone={(selected?.place ?? activity.place)?.timeZone}
-          />
-          <Typography variant="body1">
-            {selected ? (
-              mealOptionLabel(selected)
-            ) : (
-              <LinkifiedText text={activityHeadline(activity)} />
-            )}
-          </Typography>
-          <NotesCluster notes={midNotes} />
-          <NotesCluster notes={optionMid} />
-          <TravelerChips names={selected?.travelers} />
-          {shown?.booking && (
-            <Box sx={{ mt: 0.5 }}>
-              <BookingChip booking={shown.booking} />
-            </Box>
-          )}
-          <OverlapWarnings warnings={liveWarnings(activity, day)} />
-        </Box>
-      </ButtonBase>
-      {options.length > 1 && (
-        <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
+    <RowCard
+      cardRef={cardRef}
+      selected={rowSelected}
+      notes={notes}
+      booking={shown?.booking}
+      name={headline}
+      overline={timeAndMealTypeLabel(activity, timeOverride, clock)}
+      title={selected ? headline : <LinkifiedText text={headline} />}
+      conditions={<PlaceConditionsLine place={selected?.place ?? activity.place} date={day.date} />}
+      photo={
+        <AvatarOrDotView
+          image={selected ? firstImage(activity, selected.place) : null}
+          icon={selected ? DINING_FORMAT_ICON[selected.diningFormat] : 'event'}
+          inView={inView}
+        />
+      }
+      cardId={cardId(day.date, activityNodeKey(activity._id))}
+      details={
+        opens
+          ? {
+              booking: bookingHolder<{ booking: Booking | null }>(activity, selected).booking,
+              notes: allNotes,
+              lines: <ActivityLines {...card} />,
+              extras: <ActivityExtras activity={activity} option={card.option} />,
+              google: <ActivityGoogle activity={activity} option={card.option} />,
+            }
+          : undefined
+      }
+      menu={menu}
+    >
+      <OverlapWarnings warnings={liveWarnings(activity, day)} />
+      {formatShown && (
+        <Stack direction="row" spacing={1} useFlexGap sx={{ mt: 1, flexWrap: 'wrap' }}>
           {options.map((option, i) => {
             const active = i === index;
             return (
               <Chip
                 key={i}
                 data-testid={`meal-option-${activity._id}-${i}`}
-                label={DINING_FORMAT_LABEL[option.diningFormat]}
+                label={chipLabels[i]}
                 icon={renderMaterialIcon(DINING_FORMAT_ICON[option.diningFormat], {
                   fontSize: 'small',
                 })}
@@ -153,7 +147,6 @@ export function MealRow({
           })}
         </Stack>
       )}
-      <NotesCluster notes={optionBelow} />
-    </Box>
+    </RowCard>
   );
 }

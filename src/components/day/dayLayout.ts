@@ -19,3 +19,15 @@ export const STICKY_PANE_SX = {
   top: 0,
   height: '100vh',
 } as const;
+
+// The day list's width in the wide layout; the map or assistant takes the rest.
+export const DAY_LIST_WIDTH = { lg: 540, xl: 620 } as const;
+
+// The drag handle's icon button, a small 20px icon and its padding; every timeline
+// row keeps a gutter this wide for it, so the cards line up.
+export const DRAG_HANDLE_ICON_SIZE = 20;
+export const DRAG_HANDLE_PADDING_PX = 2;
+export const DRAG_HANDLE_WIDTH = DRAG_HANDLE_ICON_SIZE + DRAG_HANDLE_PADDING_PX * 2;
+
+// From a row's line to its card (theme spacing).
+export const TIMELINE_CONTENT_PAD = 1;

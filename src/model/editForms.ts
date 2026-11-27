@@ -176,7 +176,7 @@ export function findByKind<
 // above, used wherever a change needs to reach one entity buried in
 // TripData without a whole edit-form Save (see useHeroImageSelect, which
 // patches an entity's own images array when a viewer picks a new hero
-// photo from its detail panel).
+// photo from its card).
 export function patchByKind<
   T extends { activities: Activity[]; stays: Stay[]; transits: Transit[] },
   K extends EditKind,
@@ -834,7 +834,7 @@ export function applyEntityForm(
 // MealOption candidates, each naming a different real-world place, so the
 // photo has to land on that one candidate's own Place rather than the
 // shared Activity, or backfilling one candidate's photo would silently
-// become every other candidate's hero too (see MealRowLeading, which reads
+// become every other candidate's hero too (see MealRow, which reads
 // only the selected candidate's own place.images, never the Activity's).
 export function withActivityPlaceImage(
   activity: Activity,

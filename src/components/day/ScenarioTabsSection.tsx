@@ -12,8 +12,8 @@ import { useLiveDays } from '../../state/useLiveDays';
 import { useScenarioSelection } from '../../state/useTripSelections';
 import { renderMaterialIcon } from '../shared/materialIcon';
 import { NotesCluster } from '../shared/Notes';
-import { DayTimeline, ROW_CONTENT_PX } from './DayTimeline';
-import type { DayRowOpeners } from './openHandlers';
+import { DRAG_HANDLE_WIDTH, TIMELINE_CONTENT_PAD } from './dayLayout';
+import { DayTimeline } from './DayTimeline';
 
 // A branching day's scenarios each become one chip; the chip group picks
 // which branch's own timeline shows below. Each scenario's notes render once
@@ -22,20 +22,14 @@ import type { DayRowOpeners } from './openHandlers';
 export function ScenarioTabsSection({
   day,
   tracks,
-  onOpenActivity,
-  onOpenStay,
-  onOpenTransit,
-  trailingTravelFooter,
-}: DayRowOpeners & {
+  leadingTravel,
+}: {
   day: Day;
   // One scenario group's own tabs (tracksByGroup) — the active one is
   // already marked, upstream (resolveActiveScenarios/layoutDay).
   tracks: ScenarioTrack[];
-  // Forwarded straight through to the active track's own nested DayTimeline
-  // as its trailingTravelFooter — see DayTimeline.tsx's own note on that
-  // prop. Only ever set when this section itself sits inside another
-  // scenario-tabs node's own exit segment (ScenarioTabsNode below).
-  trailingTravelFooter?: ReactNode;
+  // Forwarded to the active track's own nested DayTimeline: see its note there.
+  leadingTravel?: ReactNode;
 }) {
   const { selectScenario } = useScenarioSelection();
   const { activitiesById, transitsById, staysById } = useLiveDays();
@@ -45,11 +39,7 @@ export function ScenarioTabsSection({
 
   return (
     <Box sx={{ mb: 1 }}>
-      {/* ScenarioTabsNode strips this content's horizontal padding (see
-          DayTimeline.tsx's TrailingGutter/ScenarioTabsNode comments) so the
-          nested DayTimeline below stays unindented; ROW_CONTENT_PX re-adds
-          the usual inset here, scoped to just the chips/notes. */}
-      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap', px: ROW_CONTENT_PX }}>
+      <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: 'wrap' }}>
         {tracks.map((t) => {
           const active = t === activeTrack;
           const color = t.scenario.tone === 'ideal' ? 'primary' : 'error';
@@ -98,19 +88,23 @@ export function ScenarioTabsSection({
           );
         })}
       </Stack>
-      <Box sx={{ mt: 1.5, px: ROW_CONTENT_PX }}>
+      <Box sx={{ mt: 1.5 }}>
         <NotesCluster notes={activeTrack.notes} />
       </Box>
-      <Box sx={{ mt: 1.5 }}>
+      {/* pulled back so its drag gutter sits over this section's own line: a nested
+          plan then costs each level one line's width, not a whole gutter too */}
+      <Box
+        sx={(theme) => ({
+          mt: 1.5,
+          ml: `calc(-${DRAG_HANDLE_WIDTH}px - ${theme.spacing(TIMELINE_CONTENT_PAD)})`,
+        })}
+      >
         <DayTimeline
           day={day}
           rows={activeTrack.rows}
           containerId={`${day.date}::${activeTrack.scenario._id}`}
           scenarioId={activeTrack.scenario._id}
-          onOpenActivity={onOpenActivity}
-          onOpenStay={onOpenStay}
-          onOpenTransit={onOpenTransit}
-          trailingTravelFooter={trailingTravelFooter}
+          leadingTravel={leadingTravel}
         />
       </Box>
     </Box>

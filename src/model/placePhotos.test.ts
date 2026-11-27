@@ -208,11 +208,11 @@ describe('resolveImage', () => {
     await resolveImage(first);
 
     // A row re-rendering gets the very same object back, not an equal copy.
-    expect(peekImage(first, 'avatar')).toBe(peekImage(first, 'avatar'));
-    expect(peekImage(first, 'avatar')?.src).toMatch(/\/photos\/x\/media\?maxWidthPx=96&/);
+    expect(peekImage(first, 'card')).toBe(peekImage(first, 'card'));
+    expect(peekImage(first, 'card')?.src).toMatch(/\/photos\/x\/media\?maxWidthPx=240&/);
     expect(peekImage(first, 'hero')?.src).toMatch(/\/photos\/x\/media\?maxWidthPx=1600&/);
     // Same author and size, told apart only by which of the two it was.
-    expect(peekImage(second, 'avatar')?.src).toMatch(/\/photos\/y\/media\?maxWidthPx=96&/);
+    expect(peekImage(second, 'card')?.src).toMatch(/\/photos\/y\/media\?maxWidthPx=240&/);
   });
 
   it('draws nothing after a failed lookup, and tries again only after a while', async () => {
@@ -236,7 +236,7 @@ describe('resolveImage', () => {
   });
 
   it('reads a full lookup started right after it in the same commit, instead of its own', async () => {
-    // A side sheet's hero asks for the photos first; its PlacePanel's full
+    // An image asks for the photos first; its PlacePanel's full
     // lookup starts later in the same synchronous pass.
     let full: Promise<{ photos: PlacePhoto[] }> | undefined;
     const { asked, resolveImage } = stubSource(found(PHOTOS), () => full);

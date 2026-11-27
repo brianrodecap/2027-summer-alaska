@@ -4,9 +4,8 @@ import Tooltip from '@mui/material/Tooltip';
 
 import type { BookingProgress } from '../../model/types';
 
-// Same success/default/error roles BookingChip already uses for a single
-// Booking, extended with 'warning' for the partial state a rollup can reach
-// that a single booking never can.
+// BookingChip's success for booked and warning for what is under way (a rollup's
+// partial state); nothing planned is muted.
 const PROGRESS_COLOR_ROLE: Record<BookingProgress, 'success' | 'warning' | 'text.disabled'> = {
   booked: 'success',
   partial: 'warning',

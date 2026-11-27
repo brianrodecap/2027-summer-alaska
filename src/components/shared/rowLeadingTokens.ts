@@ -1,9 +1,12 @@
-// Sized to match AvatarOrDot's own Avatar exactly (see RowLeadingDot.tsx) —
-// the dot-to-photo swap must never change a row's leading-column footprint,
-// so every dot renders at the same diameter an Avatar would, icon included.
-export const ROW_LEADING_SIZE = 48;
+// The size of a day-list card's photo, and of the icon box that stands in for it
+// (AvatarOrDot, RowLeadingDot), so the swap never changes the card's layout.
+export const ROW_PHOTO_SX = {
+  // narrow on a phone, so a long name still breaks between words
+  width: { xs: 64, sm: 120 },
+  height: { xs: 48, sm: 84 },
+  flexShrink: 0,
+  borderRadius: 1.5,
+} as const;
 
-// Every row's own leading caption (see DayTimeline.tsx, ActivityRow.tsx,
-// MealRow.tsx) uses this to sit flush against its dot/Avatar above, instead
-// of the default line-height's built-in leading.
-export const ROW_OVERLINE_SX = { lineHeight: 1 };
+// A card's inner padding, which the drag handle beside it lines up with.
+export const CARD_PADDING_PX = 10;

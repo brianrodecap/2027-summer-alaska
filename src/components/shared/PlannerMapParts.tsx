@@ -72,13 +72,16 @@ export function RingMarker({
         // a mouse only: a touch's own tap is what toggles the name
         onPointerEnter={(e) => setHovered(e.pointerType === 'mouse')}
         onPointerLeave={() => setHovered(false)}
-        sx={{ position: 'relative', width: size, height: size, transform: 'translateY(50%)' }}
+        sx={{ position: 'relative', minWidth: size, height: size, transform: 'translateY(50%)' }}
       >
         <Box
           sx={{
-            width: size,
+            // a ring, widening into a pill for a longer glyph
+            minWidth: size,
             height: size,
-            borderRadius: '50%',
+            borderRadius: `${size / 2}px`,
+            px: glyph.length > 2 ? 0.75 : 0,
+            whiteSpace: 'nowrap',
             boxSizing: 'border-box',
             display: 'grid',
             placeItems: 'center',
@@ -102,7 +105,7 @@ export function RingMarker({
             component="span"
             sx={{
               position: 'absolute',
-              left: size + 6,
+              left: 'calc(100% + 6px)',
               top: '50%',
               transform: 'translateY(-50%)',
               px: 1,

@@ -5,15 +5,16 @@ import { filterRows } from './filters';
 import { buildLiveDays, type LiveDayCache } from './liveDays';
 import { liveWarnings } from './mealOptions';
 import {
+  buildDirectionsUrl,
   buildTripView,
   diffMinutesIso,
+  entryNotes,
   instantOf,
   movedBy,
   optionShows,
   portCallsOn,
   portCallWarningFor,
   rowShows,
-  sheetNotes,
   splitOutStayBoundaries,
   stayTimingProblems,
   tripClock,
@@ -614,6 +615,14 @@ describe('a routed drive and the Activities along it', () => {
     expect(scenic.stages.map((s) => s.place.label)).toEqual(['View', 'Fork']);
   });
 
+  it('says when the drive leaves each stage: after its stop, or at once for a via', () => {
+    const scenic = routeOf(routedDrive()).routeInfo!.variants.find((v) => v.tone === 'scenic')!;
+    expect(scenic.stages.map((s) => [s.key, s.leavesAt])).toEqual([
+      ['2027-06-01T10:00', '2027-06-01T10:15'],
+      ['2027-06-01T10:45', '2027-06-01T10:45'],
+    ]);
+  });
+
   it("uses a waypoint's own stop duration when it has one", () => {
     expect(routeOf(routedDrive(40)).arrivesAt).toBe('2027-06-01T12:10');
     expect(routeOf(routedDrive(0)).arrivesAt).toBe('2027-06-01T11:30');
@@ -960,7 +969,7 @@ describe('a booking several entries share', () => {
       'note_seat',
     ]);
     expect(ids(second)).toEqual([]);
-    // The entry's own notes stay its own, for its detail sheet.
+    // The entry's own notes stay its own, for its open card.
     expect(second.notes.map((n) => n._id).sort()).toEqual(['note_both', 'note_refund']);
   });
 
@@ -1190,7 +1199,7 @@ describe('a booking several entries share', () => {
     });
     expect(showing(data, '2027-06-01')).toEqual(['stay_good']);
     expect(showing(data, '2027-06-01', badPick)).toEqual(['tr_bad']);
-    // The stay's sheet carries what its Check in row does.
+    // The stay's open card carries what its Check in row does.
     data.notes.push({
       _id: 'note_late',
       kind: 'info',
@@ -1199,8 +1208,8 @@ describe('a booking several entries share', () => {
       images: [],
     });
     const built = liveDays(buildTripView(data, TEST_TODAY), data, new Map());
-    expect(sheetNotes(built.staysById.get('stay_good')!).map((n) => n._id)).toEqual(['note_late']);
-    expect(sheetNotes(built.transitsById.get('tr_bad')!)).toEqual([]);
+    expect(entryNotes(built.staysById.get('stay_good')!).map((n) => n._id)).toEqual(['note_late']);
+    expect(entryNotes(built.transitsById.get('tr_bad')!)).toEqual([]);
   });
 
   // A dinner choosing between a candidate the cruise fare covers (sharing its
@@ -1294,16 +1303,16 @@ describe('a booking several entries share', () => {
     concerns: [{ entity: 'activity' as const, id: on }],
     images: [],
   });
-  // The note ids an activity's detail sheet shows, under the reader's picks.
+  // The note ids an activity's open card shows, under the reader's picks.
   const sheetNoteIds = (data: TripData, picks: Map<string, string>) => {
     const built = liveDays(buildTripView(data, TEST_TODAY), data, picks);
     return (id: string) =>
-      sheetNotes(built.activitiesById.get(id)!)
+      entryNotes(built.activitiesById.get(id)!)
         .map((n) => n._id)
         .sort();
   };
 
-  it('shows on the first sharer’s sheet what its row shows, and only its own on the rest', () => {
+  it('shows on the first sharer’s open card what its row shows, and only its own on the rest', () => {
     const data = weatherWindow();
     data.notes.push(noteOn('note_good', 'act_good'), noteOn('note_next', 'act_next'));
     const ids = sheetNoteIds(data, new Map());
@@ -1311,7 +1320,7 @@ describe('a booking several entries share', () => {
     expect(ids('act_next')).toEqual(['note_next']);
   });
 
-  it('moves the first sharer’s sheet notes with the reader’s pick', () => {
+  it('moves the first sharer’s open card notes with the reader’s pick', () => {
     const data = weatherWindow();
     data.notes.push(
       noteOn('note_bad', 'act_bad'),
@@ -2284,5 +2293,22 @@ describe('route variant ids', () => {
     expect(() => buildTripView(shared, TEST_TODAY)).toThrow(
       "Two variants share the id 'v_hatcher'.",
     );
+  });
+});
+
+describe('buildDirectionsUrl', () => {
+  it("opens directions between the two places' ids, by the travel mode picked", () => {
+    const from = { label: 'Lodge', placeId: 'p_lodge', nodeKey: null };
+    const to = { label: 'Cafe', placeId: 'p_cafe', nodeKey: null };
+    const params = (url: string) => Object.fromEntries(new URL(url).searchParams);
+    expect(params(buildDirectionsUrl(from, to, [], 'WALK'))).toEqual({
+      api: '1',
+      origin: 'Lodge',
+      origin_place_id: 'p_lodge',
+      destination: 'Cafe',
+      destination_place_id: 'p_cafe',
+      travelmode: 'walking',
+    });
+    expect(params(buildDirectionsUrl(from, to, [])).travelmode).toBe('driving');
   });
 });

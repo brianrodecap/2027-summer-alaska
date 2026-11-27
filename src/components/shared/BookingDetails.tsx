@@ -7,8 +7,9 @@ import Typography from '@mui/material/Typography';
 import { useMemo } from 'react';
 
 import { bookingPanel, priceLineLabel } from '../../model/bookingDetails';
-import { bookingCost } from '../../model/bookings';
+import { travelerName } from '../../model/cardTravelers';
 import { bookingCoverageLabels } from '../../model/editForms';
+import { dotted } from '../../model/formatting';
 import { formatMoney, todayDateStr } from '../../model/tripModel';
 import type { Booking, Money, Payable } from '../../model/types';
 import { useTravelerNames } from '../../state/useTravelerNames';
@@ -20,13 +21,11 @@ function PriceRow({
   detail,
   amount,
   state,
-  bold,
 }: {
   label: string;
   detail?: string;
   amount: Money | null;
   state?: string | null;
-  bold?: boolean;
 }) {
   return (
     <Box
@@ -37,15 +36,13 @@ function PriceRow({
         fontVariantNumeric: 'tabular-nums',
       }}
     >
-      <Typography variant="body2" sx={{ fontWeight: bold ? 700 : undefined }}>
-        {label}
-      </Typography>
-      <Typography variant="body2" sx={{ textAlign: 'right', fontWeight: bold ? 700 : undefined }}>
+      <Typography variant="body2">{label}</Typography>
+      <Typography variant="body2" sx={{ textAlign: 'right' }}>
         {formatMoney(amount)}
       </Typography>
       {(detail || state) && (
         <Typography variant="caption" color="text.secondary" sx={{ gridColumn: '1 / -1' }}>
-          {[detail, state].filter(Boolean).join(' · ')}
+          {dotted([detail, state])}
         </Typography>
       )}
     </Box>
@@ -105,7 +102,7 @@ export function BookingDetails({
                 </Typography>
               )}
               {travelers.map((t) => {
-                const name = names.get(t.travelerId) ?? t.travelerId;
+                const name = travelerName(names, t.travelerId);
                 const ticket = t.ticketNumber ? `Ticket ${t.ticketNumber}` : undefined;
                 if (t.lines.length === 1) {
                   const [line] = t.lines;
@@ -148,7 +145,6 @@ export function BookingDetails({
                   state={state(c.payable)}
                 />
               ))}
-              {panel.showTotal && <PriceRow label="Total" amount={bookingCost(booking)} bold />}
             </Stack>
           </AccordionDetails>
         </Accordion>

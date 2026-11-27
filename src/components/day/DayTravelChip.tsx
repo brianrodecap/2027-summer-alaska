@@ -29,7 +29,7 @@ function resolveHopMode(segment: DayTravelSegment, overrides: TravelModeOverride
 // tripModel.ts) gets looked up live and summed via the same shared
 // useSegmentLookup batching DayMapSidebar's own route-path/travel-info
 // lookups use — the same per-pair lookupTravelInfo call DayTimeline's own
-// row-level travel-info footers use, just totaled instead of shown
+// row-level travel lines use, just totaled instead of shown
 // individually. A hop with literally no drivable route between its two
 // points (fetchRoute's own "no route" case, e.g. no road to a ferry-only
 // island) is dropped from the sum rather than blanking the whole total — an
@@ -93,15 +93,15 @@ export function DayTravelChip({
 
   // Always renders a chip once resolved, even with no drivable total (a
   // ferry/flight-only day, or too few resolvable places) — this is the
-  // day's only "open the map" action on narrower viewports (DayMapSidebar
-  // is lg+ only), so it must never disappear the way it would by
+  // day's only "open the map" action on narrower viewports (the map panel
+  // beside the list is lg+ only), so it must never disappear the way it would by
   // returning null here; DayMapPanel itself already renders a plain
   // "nothing resolvable to map yet" message when there's truly nothing to
   // show.
   return (
     <InfoChip
       Icon={DirectionsIcon}
-      color="conditions.travel"
+      color="text.secondary"
       text={
         travel ? `${formatMinutes(travel.durationMinutes)} · ${travel.distanceMiles} mi` : 'Map'
       }

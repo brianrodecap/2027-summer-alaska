@@ -84,7 +84,7 @@ export function useDayDrag() {
   const { data, setData } = useTripData();
   const { selection, clearRowSelection } = useRowSelection();
   // A distance threshold on the pointer sensor is what lets a plain tap still
-  // open a row's detail sheet instead of every click starting a drag.
+  // open a card instead of every click starting a drag.
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
   const [draggingMeta, setDraggingMeta] = useState<DragMeta | null>(null);
   const overlay = overlayFor(draggingMeta, selection, data);

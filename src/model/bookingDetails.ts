@@ -1,7 +1,7 @@
-// What a detail sheet spells out about one booking beyond its chip: what was
+// What an open card spells out about one booking beyond its chip: what was
 // paid and what is still due, each line's own payment state, and who sold it.
-// Pure — the sheet's BookingDetails renders these. Payment states come from
-// the budget's lineBucket, so the sheet and the budget always agree.
+// Pure — BookingDetails renders these. Payment states come from
+// the budget's lineBucket, so a card and the budget always agree.
 import {
   bookedThroughName,
   bookedThroughNumber,
@@ -9,6 +9,7 @@ import {
   bookingFixedCharges,
   travelerPrices,
 } from './bookings';
+import { dotted } from './formatting';
 import {
   type BookingPaymentSummary,
   bookingPaymentSummary,
@@ -24,7 +25,7 @@ export function paymentSummaryLine(
   { spent, estimated, due }: BookingPaymentSummary,
 ): string | null {
   if (booking.status === 'cancelled') return 'Cancelled — not counted in the budget';
-  const bits = [
+  return dotted([
     spent && `Paid ${formatMoney(spent)}`,
     ...due.map(({ when, amount }) => {
       const owed = `Due ${formatMoney(amount)}`;
@@ -32,8 +33,7 @@ export function paymentSummaryLine(
       return when ? `${owed} by ${formatLongDate(when.dueBy)}` : owed;
     }),
     estimated && `Estimated ${formatMoney(estimated)}`,
-  ].filter(Boolean);
-  return bits.length ? bits.join(' · ') : null;
+  ]);
 }
 
 // One price line's payment state, in the same bucket the budget puts it:
@@ -86,8 +86,8 @@ export function bookingChipDetails(booking: Booking): string[] {
 
 // What the booking details panel lists — the payment summary, the seller, each
 // traveler's fare lines and each fixed charge — and whether it shows at all (when
-// it has any of those), opens on its own (while money is still due), and totals
-// (once there's more than one price line).
+// it has any of those) and opens on its own (while money is still due). It has no
+// total line: the booking chip above it states the total.
 export function bookingPanel(booking: Booking, date: string | null, today: string) {
   const payments = bookingPaymentSummary(booking, date, today);
   const summary = paymentSummaryLine(booking, payments);
@@ -102,6 +102,5 @@ export function bookingPanel(booking: Booking, date: string | null, today: strin
     fixed,
     show: Boolean(summary || seller || lineCount > 0),
     startOpen: payments.due.length > 0,
-    showTotal: lineCount > 1,
   };
 }

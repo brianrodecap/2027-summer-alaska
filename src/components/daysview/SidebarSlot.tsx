@@ -10,28 +10,24 @@ import type { Day } from '../../model/types';
 import { AssistantPanel } from '../assistant/AssistantPanel';
 import { STICKY_PANE_SX } from '../day/dayLayout';
 import { DayMapSidebar } from '../day/DayMapSidebar';
-import type { DayRowOpeners } from '../day/openHandlers';
 import type { SidebarView } from './useSidebarView';
 
 // Full viewport height, outside the day list's own scrolling content — one
 // persistent pane, between the day navigator and the day list, that shows either
 // the day map (DayMapSidebar, swapping to whichever day useActiveDayDate says the
 // reader has scrolled to) or the trip assistant, switched by the tabs at its top.
-// The two share this one slot so the day list keeps its width. Narrower screens
-// keep the map-icon-opens-a-dialog flow (useDayMapDialog/DayMapPanel) and the
-// assistant's bottom sheet instead.
+// The two share this one slot, which takes whatever width the day list leaves. Narrower screens
+// keep the map-icon-opens-a-dialog flow (useDayMapDialog/DayMapPanel, the same map)
+// and the assistant's bottom sheet instead.
 export function SidebarSlot({
   activeDay,
   view,
   onViewChange,
-  onOpenActivity,
-  onOpenStay,
-  onOpenTransit,
 }: {
   activeDay: Day | null;
   view: SidebarView;
   onViewChange: (view: SidebarView) => void;
-} & DayRowOpeners) {
+}) {
   // Matches the `lg` breakpoint the wrapping Box below is CSS-hidden behind on
   // narrow viewports — gates the contents' mount itself, not just their
   // visibility, so the map's Places/Routes API lookups never fire on a screen
@@ -43,7 +39,8 @@ export function SidebarSlot({
         ...STICKY_PANE_SX,
         display: { xs: 'none', lg: 'flex' },
         flexDirection: 'column',
-        width: { lg: 380, xl: 520 },
+        flex: 1,
+        minWidth: 0,
         borderLeft: 1,
         borderRight: 1,
         borderColor: 'divider',
@@ -67,12 +64,7 @@ export function SidebarSlot({
               </Typography>
             ) : view === 'map' ? (
               <APIProvider apiKey={getGoogleApiKey()}>
-                <DayMapSidebar
-                  activeDay={activeDay}
-                  onOpenActivity={onOpenActivity}
-                  onOpenStay={onOpenStay}
-                  onOpenTransit={onOpenTransit}
-                />
+                <DayMapSidebar activeDay={activeDay} />
               </APIProvider>
             ) : (
               <AssistantPanel focusDay={activeDay} fitViewport />

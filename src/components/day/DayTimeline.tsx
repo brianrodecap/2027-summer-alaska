@@ -4,6 +4,7 @@ import DragIndicatorIcon from '@mui/icons-material/DragIndicator';
 import Timeline from '@mui/lab/Timeline';
 import TimelineConnector from '@mui/lab/TimelineConnector';
 import TimelineContent from '@mui/lab/TimelineContent';
+import TimelineDot from '@mui/lab/TimelineDot';
 import TimelineItem from '@mui/lab/TimelineItem';
 import TimelineSeparator from '@mui/lab/TimelineSeparator';
 import Box from '@mui/material/Box';
@@ -11,20 +12,28 @@ import IconButton from '@mui/material/IconButton';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { type SelectChangeEvent } from '@mui/material/Select';
 import Stack from '@mui/material/Stack';
+import { useTheme } from '@mui/material/styles';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import {
+  createContext,
   type CSSProperties,
-  Fragment,
   memo,
   type ReactElement,
   type ReactNode,
+  useContext,
   useMemo,
 } from 'react';
 
 import { useKeyedAsync } from '../../hooks/useKeyedAsync';
 import { clockSuffix, dayClocks, dayClocksOf } from '../../model/dayClocks';
-import { isScheduled, rowHop } from '../../model/dayMap';
+import {
+  isScheduled,
+  mapPinNumbers,
+  rowHop,
+  stayMorningRowId,
+  stayRowId,
+} from '../../model/dayMap';
 import { type DriveInfo, lookupTravelInfo } from '../../model/directions';
 import { applyTravelModeSelection, resolveTravelMode } from '../../model/editForms';
 import { filterRows } from '../../model/filters';
@@ -34,7 +43,6 @@ import {
   formatTravel,
   placeFromLodging,
   STAGE_KIND_LABEL,
-  stayDetailBits,
   TRAVEL_MODES,
 } from '../../model/formatting';
 import { activeMealOptions, isMealActivity, selectedMealOption } from '../../model/mealOptions';
@@ -47,13 +55,16 @@ import {
 } from '../../model/reorder';
 import {
   activeTrackOf,
+  activityNodeKey,
+  buildDirectionsUrl,
+  entryNotes,
   flattenStayBoundaries,
   formatTime,
+  routeStop,
   rowShows,
-  rowTestId,
   segmentKey,
+  stayNodeKey,
   stayRelation,
-  stayZone,
   transitRowPlace,
   type ZonedTime,
 } from '../../model/tripModel';
@@ -61,9 +72,6 @@ import type {
   Day,
   DayRow,
   EnrichedActivity,
-  EnrichedMealOption,
-  EnrichedStay,
-  EnrichedTransit,
   Place,
   RefEntityKind,
   ScenarioTrack,
@@ -72,6 +80,7 @@ import type {
   TransitStageRow,
   TravelMode,
 } from '../../model/types';
+import { cardId } from '../../state/expandedRows';
 import { isRowSelected, type RowSelectionMembers } from '../../state/TripSelectionsContextObject';
 import { useEdit } from '../../state/useEdit';
 import { useMoveToDay } from '../../state/useMoveToDay';
@@ -81,29 +90,30 @@ import {
   useMealOptionSelection,
   useRowSelection,
 } from '../../state/useTripSelections';
-import { BookingChip } from '../shared/BookingChip';
+import { StayExtras, StayGoogle, StayLines } from '../detail/StayCardDetails';
+import { TransitExtras, TransitGoogle, TransitLines } from '../detail/TransitCardDetails';
+import { InfoLink } from '../shared/InfoChip';
 import { renderMaterialIcon, transitModeIconName, TRAVEL_MODE_ICON } from '../shared/materialIcon';
-import { splitNotes } from '../shared/noteKind';
-import { NotesCluster } from '../shared/Notes';
-import { RowLeadingDot } from '../shared/RowLeadingDot';
-import { ROW_LEADING_SIZE, ROW_OVERLINE_SX } from '../shared/rowLeadingTokens';
-import { ActivityLeading, ActivityRow } from './ActivityRow';
+import { planColor } from '../shared/planColor';
+import { CARD_PADDING_PX } from '../shared/rowLeadingTokens';
+import { STOP_NODE_SIZE, StopNode } from '../shared/StopRail';
+import { ActivityRow } from './ActivityRow';
 import { AvatarOrDot } from './AvatarOrDot';
-import { BookingClockNote } from './BookingClockNote';
 import { ClockChangeMarker } from './ClockChangeMarker';
 import { ClockSuffixContext, useClockSuffix } from './dayClock';
-import { MealRow, MealRowLeading } from './MealRow';
-import type { DayRowOpeners } from './openHandlers';
+import { DRAG_HANDLE_PADDING_PX, DRAG_HANDLE_WIDTH, TIMELINE_CONTENT_PAD } from './dayLayout';
+import { DayPinsContext, useDayPin } from './dayPins';
+import { MealRow } from './MealRow';
 import { PlaceConditionsLine } from './PlaceConditionsLine';
 import { RouteVariantTabs } from './RouteVariantTabs';
+import { RowCard } from './RowCard';
 import { RowMenu } from './RowMenu';
 import { tracksByGroup } from './scenarioSelection';
 import { ScenarioTabsSection } from './ScenarioTabsSection';
 import { useInViewport } from './useInViewport';
 
-// Applied uniformly to every row (Stay/Transit/Activity alike) so the
-// dot/image column it sits beside stays aligned down the page regardless of
-// which individual rows actually carry a drag handle — an Activity row
+// Applied uniformly to every row (Stay/Transit/Activity alike) so the cards
+// beside it stay aligned down the page regardless of which individual rows actually carry a drag handle — an Activity row
 // (ActivityNode below), a Transit's own Depart row (TransitBoundaryNode),
 // and the scenario-tabs row (ScenarioTabsNode) do; a Stay row and a
 // Transit's Arrive/stage rows never do.
@@ -117,136 +127,131 @@ const ACTIVITY_HOVER_SX = {
   },
 };
 
-// A row that's part of the current drag-handle multi-select (see
-// RowSelectionValue) — a plain background tint on just its content box
-// is enough to show membership without needing a separate checkbox
-// affordance, since the handle icon itself already switches to primary
-// color/full opacity below. Deliberately scoped to TimelineContent alone,
-// not the whole TimelineItem: painting it across the dot/connector rail and
-// drag-handle gutter too left the row's own dot looking like it "bit into"
-// the tint with an ugly notch, since the dot's own circular background sits
-// on top of it.
-const SELECTED_ROW_SX = { bgcolor: 'primary.container', borderRadius: 1.5 } as const;
+// A plan section that's part of the drag-handle multi-select (a card tints itself).
+const SELECTED_SECTION_SX = { bgcolor: 'primary.container', borderRadius: 1.5 } as const;
 
-// The drag handle IconButton's fontSize="small" icon is 20px, plus this much
-// padding on each side — both the gutter width below and the IconButton's
-// own sx (see the drag handle render further down) derive from these two
-// numbers instead of restating the resulting 24px independently.
-const DRAG_HANDLE_ICON_SIZE = 20;
-const DRAG_HANDLE_PADDING_PX = 2;
-const DRAG_HANDLE_WIDTH = DRAG_HANDLE_ICON_SIZE + DRAG_HANDLE_PADDING_PX * 2;
+// A row is as tall as its content, not MUI's minimum item height.
+const ITEM_SX = { minHeight: 0 } as const;
 
-// Static — hoisted so LeadingGutter/TrailingGutter don't reallocate an sx
-// object on every row's every render (every row now routes through one of
-// these, not just the one-off drag-handle IconButton that used to be the
-// only inline sx here).
+// Static — hoisted so LeadingGutter doesn't reallocate an sx object on every
+// row's every render.
 const LEADING_GUTTER_SX = {
   // Matches DRAG_HANDLE_WIDTH, so rows without a drag handle still reserve
-  // its width and keep the dot column aligned.
+  // its width and keep the cards aligned.
   width: DRAG_HANDLE_WIDTH,
   flexShrink: 0,
   alignSelf: 'flex-start',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'flex-start',
-  // Centers the grip icon against ROW_LEADING_SIZE (every dot/Avatar in the
-  // column, now a uniform diameter — see RowLeadingDot.tsx), derived from
-  // both known sizes rather than a hand-tuned pixel value that would go
-  // stale the next time either one changes.
-  pt: `${(ROW_LEADING_SIZE - DRAG_HANDLE_WIDTH) / 2}px`,
+  // Level with the card's first line.
+  pt: `${CARD_PADDING_PX}px`,
 } as const;
 
 function LeadingGutter({ dragHandle }: { dragHandle?: ReactNode }) {
   return <Box sx={LEADING_GUTTER_SX}>{dragHandle}</Box>;
 }
 
-// The row-menu counterpart to LeadingGutter above: a fixed rail at the far
-// right of every row, sitting outside TimelineContent as its own flex
-// sibling rather than inside it, so a kebab lands flush against this
-// Timeline's own right edge (this component's own p: 0/m: 0, see below)
-// regardless of that row's TimelineContent's horizontal padding. This only
-// holds because every *Node's TimelineRow lives directly in the same flat
-// Timeline — a nested one, like ScenarioTabsSection's own DayTimeline for a
-// scenario branch, is a second Timeline instance one level down, so it needs
-// its own wrapping content to stay unpadded too (see ScenarioTabsNode's own
-// px: 0 below) or its TrailingGutters would land inset from this one's.
-const TRAILING_GUTTER_SX = { flexShrink: 0, alignSelf: 'flex-start', display: 'flex' } as const;
+// Whether a row opens or closes its own list, where the timeline's line starts and
+// stops.
+const RowEndsContext = createContext({ first: false, last: false });
+// One object per combination, so a re-rendering list doesn't re-render every row.
+const ROW_ENDS = [false, true].map((first) => [false, true].map((last) => ({ first, last })));
 
-function TrailingGutter({ children }: { children?: ReactNode }) {
-  return <Box sx={TRAILING_GUTTER_SX}>{children}</Box>;
+// The line's column, as wide as a numbered dot.
+const SEPARATOR_SX = { flex: `0 0 ${STOP_NODE_SIZE}px` } as const;
+
+// A row's dot on the line: its map pin's number (the route planner's ring), else an
+// icon where the row has one (a plan section), else a plain dot. A plain dot is
+// smaller than a ring, so the line runs through its box to meet it.
+function RowDot({
+  pinId,
+  icon,
+  travelAbove,
+}: {
+  pinId?: string;
+  icon?: string;
+  travelAbove?: boolean;
+}) {
+  const { number, color } = useDayPin(pinId ?? '');
+  const { first, last } = useContext(RowEndsContext);
+  if (pinId && number !== undefined) {
+    return (
+      <Box role="img" aria-label={`Map pin ${number}`}>
+        <StopNode glyph={String(number)} color={color} />
+      </Box>
+    );
+  }
+  return (
+    <Box
+      sx={{
+        height: STOP_NODE_SIZE,
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+      }}
+    >
+      <TimelineConnector sx={{ visibility: first && !travelAbove ? 'hidden' : 'visible' }} />
+      <TimelineDot variant="outlined" color="grey" sx={{ m: 0, p: icon ? '3px' : '4px' }}>
+        {icon && renderMaterialIcon(icon, { sx: { fontSize: 16 } })}
+      </TimelineDot>
+      <TimelineConnector sx={{ visibility: last ? 'hidden' : 'visible' }} />
+    </Box>
+  );
 }
 
-// Every *Node below assembles the same five pieces in the same order —
-// TimelineItem, LeadingGutter, a TimelineSeparator holding one dot plus an
-// optional connector, TimelineContent, and an optional TrailingGutter — with
-// only the dot, the content, and whether a drag handle/menu apply actually
-// varying per row type. Centralizing that wiring here means a future change
-// to the shared chrome (the gutters, the connector-suppression on the last
-// row, ...) touches one place instead of five. `contentSx` defaults to every
-// row's own { pb: 3, pt: 0, px: ROW_CONTENT_PX } and merges in a
-// caller's override rather than requiring each of the five callers to repeat it; the
-// drag-handle hover-reveal (ACTIVITY_HOVER_SX) is likewise wired
-// automatically off whether a dragHandle was passed, rather than exposed as
-// its own opaque itemSx prop — only a row with a drag handle needs it.
-//
-// The standard horizontal inset for a row's own text/chips content —
-// smaller than MuiTimelineContent's own built-in `16px` default so text has
-// more room now that the leading dot/Avatar column is wider (see
-// RowLeadingDot's ROW_LEADING_SIZE). Every row gets it by default (folded
-// into DEFAULT_CONTENT_SX below) so Activity, Stay, and Transit rows all
-// line up at the same left/right edge; only ScenarioTabsNode opts out
-// (px: 0), and ScenarioTabsSection's own chip/notes wrapper re-imports this
-// same constant rather than hand-matching it, so the two can't silently
-// drift apart.
-export const ROW_CONTENT_PX = 1;
-
-// TimelineContent stretches to match its row's full height (TimelineItem's
-// own flex default), so its padding-top is measured from the exact same y
-// as the dot/Avatar's own top edge — `pt: 0` puts text flush against it.
-// Each row's own leading caption additionally sets `lineHeight: 1` (see e.g.
-// StayNode below) so its own line-height leading doesn't leave that first
-// line sitting visibly lower than the dot/Avatar's top — fixed on the
-// caption itself rather than as an offset here, since the amount of leading
-// is a property of that Typography, not of this shared container.
-const DEFAULT_CONTENT_SX = { pb: 3, pt: 0, px: ROW_CONTENT_PX };
-
+// One list row on the timeline: the drag handle's gutter, the dot on the line, and
+// the row's card. The travel that ends here is its own item just above, on the line
+// between the two cards. A plan section passes `bare`: its own nested list already
+// spaces its rows.
 function TimelineRow({
-  dot,
-  isLast,
-  contentSx,
   dragHandle,
-  trailing,
-  selected,
-  testId,
+  pinId,
+  icon,
+  bare,
+  travel,
   children,
 }: {
-  dot: ReactNode;
-  isLast: boolean;
-  contentSx?: { pb?: number; px?: number };
   dragHandle?: ReactNode;
-  trailing?: ReactNode;
-  selected?: boolean;
-  testId?: string;
+  pinId?: string;
+  icon?: string;
+  bare?: boolean;
+  travel?: ReactNode;
   children: ReactNode;
 }) {
+  const { first, last } = useContext(RowEndsContext);
   return (
-    <TimelineItem data-testid={testId} sx={dragHandle ? ACTIVITY_HOVER_SX : undefined}>
-      <LeadingGutter dragHandle={dragHandle} />
-      <TimelineSeparator>
-        {dot}
-        {!isLast && <TimelineConnector />}
-      </TimelineSeparator>
-      <TimelineContent
-        sx={{
-          ...DEFAULT_CONTENT_SX,
-          ...contentSx,
-          ...(selected ? SELECTED_ROW_SX : undefined),
-        }}
-      >
-        {children}
-      </TimelineContent>
-      {trailing && <TrailingGutter>{trailing}</TrailingGutter>}
-    </TimelineItem>
+    <>
+      {travel && (
+        <TimelineItem sx={ITEM_SX}>
+          <LeadingGutter />
+          <TimelineSeparator sx={SEPARATOR_SX}>
+            <TimelineConnector />
+          </TimelineSeparator>
+          {/* lined up with the card's text, midway between the two cards */}
+          <TimelineContent sx={{ py: 0, pr: 0, pl: `${8 + CARD_PADDING_PX}px`, pb: 1 }}>
+            <Box sx={{ display: 'flex' }}>{travel}</Box>
+          </TimelineContent>
+        </TimelineItem>
+      )}
+      <TimelineItem sx={dragHandle ? { ...ITEM_SX, ...ACTIVITY_HOVER_SX } : ITEM_SX}>
+        <LeadingGutter dragHandle={dragHandle} />
+        <TimelineSeparator sx={SEPARATOR_SX}>
+          {/* brings the line down to the dot, which sits level with the card's first line */}
+          <TimelineConnector
+            sx={{
+              flex: `0 0 ${CARD_PADDING_PX}px`,
+              visibility: first && !travel ? 'hidden' : 'visible',
+            }}
+          />
+          <RowDot pinId={pinId} icon={icon} travelAbove={Boolean(travel)} />
+          {!last && <TimelineConnector />}
+        </TimelineSeparator>
+        <TimelineContent sx={{ py: 0, pr: 0, pl: TIMELINE_CONTENT_PAD, pb: bare ? 0 : 1 }}>
+          {children}
+        </TimelineContent>
+      </TimelineItem>
+    </>
   );
 }
 
@@ -255,82 +260,57 @@ const isBoundaryRow = (row: DayRow): row is TransitBoundaryRow =>
 
 const StayNode = memo(function StayNode({
   item,
+  morning,
   date,
-  isLast,
-  onOpen,
   dragHandle,
   selected,
-  travelFooter,
+  travel,
 }: {
   item: StayRow;
   date: string;
-  isLast: boolean;
-  onOpen: (stay: EnrichedStay) => void;
+  // The copy that opens a day spent in the middle of a stay.
+  morning?: boolean;
   dragHandle?: ReactNode;
   selected?: boolean;
-  travelFooter?: ReactNode;
+  travel?: ReactNode;
 }) {
   const { stay } = item;
-  const checkInClock = useClockSuffix({ at: stay.checkInAt, zone: stayZone(stay) });
-  const checkOutClock = useClockSuffix({ at: stay.checkOutAt, zone: stayZone(stay) });
   const lodgingPlace = placeFromLodging(stay.lodging);
   const name = lodgingPlace?.label ?? 'Lodging still open';
-  const detailBits = stayDetailBits(stay.lodging);
   const image = firstImage(stay, lodgingPlace);
   const { openEdit, deleteEntity } = useEdit();
   const { requestMove } = useMoveToDay();
   const { booking, notes } = rowShows(item);
-  const { above, mid, below } = splitNotes(notes);
+  const rowId = morning ? stayMorningRowId(stay._id) : stayRowId(stay._id, item.key);
   return (
-    <TimelineRow
-      dot={<AvatarOrDot image={image} icon="hotel" />}
-      isLast={isLast}
-      dragHandle={dragHandle}
-      selected={selected}
-      testId={rowTestId('stay', item.key)}
-      trailing={
-        <RowMenu
-          entity="stay"
-          id={stay._id}
-          onEdit={() => openEdit('stay', stay._id)}
-          onMove={() => requestMove([{ activityIds: [], transitIds: [], stayIds: [stay._id] }])}
-          onDelete={() => deleteEntity('stay', stay._id)}
-        />
-      }
-    >
-      <NotesCluster notes={above} />
-      <Box sx={{ cursor: 'pointer' }} onClick={() => onOpen(stay)}>
-        <Typography variant="caption" color="text.secondary" sx={ROW_OVERLINE_SX}>
-          {stayRelation(stay, date)}
-        </Typography>
-        <Typography variant="subtitle1">{name}</Typography>
-        <Typography variant="body2" color="text.secondary">
-          {formatTime(stay.checkInAt)}
-          {checkInClock} in · {formatTime(stay.checkOutAt)}
-          {checkOutClock} out
-        </Typography>
-        {item.relation === 'Check in' && (
-          <BookingClockNote
-            at={stay.checkInAt}
-            bookingZone={stayZone(stay)}
-            placeZone={stay.lodging?.place.timeZone}
+    <TimelineRow dragHandle={dragHandle} travel={travel} pinId={rowId}>
+      <RowCard
+        selected={selected}
+        notes={notes}
+        booking={booking}
+        overline={stayRelation(stay, date)}
+        name={name}
+        title={name}
+        conditions={<PlaceConditionsLine place={lodgingPlace} date={date} />}
+        photo={<AvatarOrDot image={image} icon="hotel" />}
+        cardId={cardId(date, rowId)}
+        details={{
+          booking: stay.booking,
+          notes: entryNotes(stay),
+          lines: <StayLines stay={stay} />,
+          extras: <StayExtras stay={stay} />,
+          google: <StayGoogle stay={stay} />,
+        }}
+        menu={
+          <RowMenu
+            entity="stay"
+            id={stay._id}
+            onEdit={() => openEdit('stay', stay._id)}
+            onMove={() => requestMove([{ activityIds: [], transitIds: [], stayIds: [stay._id] }])}
+            onDelete={() => deleteEntity('stay', stay._id)}
           />
-        )}
-        {detailBits.length > 0 && (
-          <Typography variant="body2" color="text.secondary">
-            {detailBits.join(' · ')}
-          </Typography>
-        )}
-        <PlaceConditionsLine place={lodgingPlace} date={date} />
-        <NotesCluster notes={mid} />
-        {booking && (
-          <Box sx={{ mt: 0.5 }}>
-            <BookingChip booking={booking} />
-          </Box>
-        )}
-      </Box>
-      <NotesCluster notes={below} />
-      {travelFooter}
+        }
+      />
     </TimelineRow>
   );
 });
@@ -338,19 +318,15 @@ const StayNode = memo(function StayNode({
 const TransitBoundaryNode = memo(function TransitBoundaryNode({
   item,
   date,
-  isLast,
-  onOpen,
   dragHandle,
   selected,
-  travelFooter,
+  travel,
 }: {
   item: TransitBoundaryRow;
   date: string;
-  isLast: boolean;
-  onOpen: (transit: EnrichedTransit) => void;
   dragHandle?: ReactNode;
   selected?: boolean;
-  travelFooter?: ReactNode;
+  travel?: ReactNode;
 }) {
   const { transit, phase, event } = item;
   const isDepart = phase === 'depart';
@@ -363,89 +339,75 @@ const TransitBoundaryNode = memo(function TransitBoundaryNode({
   const { openEdit, deleteEntity } = useEdit();
   const { requestMove } = useMoveToDay();
   const { booking, notes } = rowShows(item);
-  const { above, mid, below } = splitNotes(notes);
-
-  const boundaryContent = (
-    <Box sx={{ minWidth: 0 }}>
-      <Typography variant="caption" color="text.secondary" sx={ROW_OVERLINE_SX}>
-        {time
-          ? `${formatTime(time)}${clock} · ${isDepart ? 'Depart' : 'Arrive'}`
-          : isDepart
-            ? 'Depart'
-            : 'Arrive'}
-      </Typography>
-      <Typography variant="subtitle1">{endpointPlace.label}</Typography>
-      <PlaceConditionsLine place={endpointPlace} date={date} />
-      <NotesCluster notes={mid} />
-      {booking && (
-        <Box sx={{ mt: 0.5 }}>
-          <BookingChip booking={booking} />
-        </Box>
-      )}
-      {isDepart && <RouteVariantTabs transit={transit} />}
-    </Box>
-  );
+  const rowId = dragIdOf(item, date);
+  const phaseLabel = isDepart ? 'Depart' : 'Arrive';
 
   return (
-    <TimelineRow
-      dot={<AvatarOrDot image={image} icon={modeIconName} />}
-      isLast={isLast}
-      dragHandle={dragHandle}
-      selected={selected}
-      testId={rowTestId('transit-boundary', item.key)}
-      trailing={
-        isDepart && (
-          <RowMenu
-            entity="transit"
-            id={transit._id}
-            onEdit={() => openEdit('transit', transit._id)}
-            onMove={() =>
-              requestMove([{ activityIds: [], transitIds: [transit._id], stayIds: [] }])
-            }
-            onDelete={() => deleteEntity('transit', transit._id)}
-          />
-        )
-      }
-    >
-      <NotesCluster notes={above} />
-      {isDepart ? (
-        <Box sx={{ cursor: 'pointer' }} onClick={() => onOpen(transit)}>
-          {boundaryContent}
-        </Box>
-      ) : (
-        boundaryContent
-      )}
-      <NotesCluster notes={below} />
-      {travelFooter}
+    <TimelineRow dragHandle={dragHandle} travel={travel} pinId={rowId}>
+      <RowCard
+        selected={selected}
+        notes={notes}
+        booking={booking}
+        overline={time ? `${formatTime(time)}${clock} · ${phaseLabel}` : phaseLabel}
+        name={endpointPlace.label}
+        title={endpointPlace.label}
+        conditions={<PlaceConditionsLine place={endpointPlace} date={date} />}
+        photo={<AvatarOrDot image={image} icon={modeIconName} />}
+        cardId={cardId(date, rowId)}
+        details={
+          isDepart
+            ? {
+                booking: transit.booking,
+                notes: entryNotes(transit),
+                lines: <TransitLines transit={transit} />,
+                extras: <TransitExtras transit={transit} />,
+                google: <TransitGoogle transit={transit} />,
+              }
+            : undefined
+        }
+        menu={
+          isDepart && (
+            <RowMenu
+              entity="transit"
+              id={transit._id}
+              onEdit={() => openEdit('transit', transit._id)}
+              onMove={() =>
+                requestMove([{ activityIds: [], transitIds: [transit._id], stayIds: [] }])
+              }
+              onDelete={() => deleteEntity('transit', transit._id)}
+            />
+          )
+        }
+      >
+        {isDepart && <RouteVariantTabs transit={transit} />}
+      </RowCard>
     </TimelineRow>
   );
 });
 
 const TransitStageNode = memo(function TransitStageNode({
   item,
-  isLast,
-  travelFooter,
+  date,
+  travel,
 }: {
+  date: string;
   item: TransitStageRow;
-  isLast: boolean;
-  travelFooter?: ReactNode;
+  travel?: ReactNode;
 }) {
   const { stage } = item;
   const clock = useClockSuffix({ at: stage.key, zone: stage.zone });
+  const rowId = dragIdOf(item, date);
   return (
-    <TimelineRow
-      dot={<AvatarOrDot image={stage.place.images?.[0] ?? null} icon="signpost" />}
-      isLast={isLast}
-      testId={rowTestId('transit-stage', item.key)}
-    >
-      <Typography variant="caption" color="text.secondary" sx={ROW_OVERLINE_SX}>
-        {formatTime(stage.key)}
-        {clock} · {STAGE_KIND_LABEL[stage.kind] ?? 'Via'}
-      </Typography>
-      <Typography variant="subtitle1" title={stage.note ?? undefined}>
-        {stage.place.label}
-      </Typography>
-      {travelFooter}
+    <TimelineRow travel={travel} pinId={rowId}>
+      <RowCard
+        cardId={cardId(date, rowId)}
+        // arrival and, for a stop, when the drive goes on, so the next leg adds up
+        overline={`${formatTime(stage.key)}${
+          stage.leavesAt === stage.key ? '' : `–${formatTime(stage.leavesAt)}`
+        }${clock} ·\u00a0${STAGE_KIND_LABEL[stage.kind] ?? 'Via'}`}
+        title={<span title={stage.note ?? undefined}>{stage.place.label}</span>}
+        photo={<AvatarOrDot image={stage.place.images?.[0] ?? null} icon="signpost" />}
+      />
     </TimelineRow>
   );
 });
@@ -453,28 +415,21 @@ const TransitStageNode = memo(function TransitStageNode({
 const ActivityNode = memo(function ActivityNode({
   activity,
   day,
-  isLast,
-  onOpenActivity,
   dragHandle,
   selected,
-  travelFooter,
+  travel,
 }: {
   activity: EnrichedActivity;
   day: Day;
-  isLast: boolean;
-  onOpenActivity: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
   dragHandle?: ReactNode;
   selected?: boolean;
-  travelFooter?: ReactNode;
+  travel?: ReactNode;
 }) {
   const { openEdit, deleteEntity } = useEdit();
   const { requestMove } = useMoveToDay();
   const { mealOptionIndex } = useMealOptionSelection();
-  const { above, mid, below } = splitNotes(rowShows({ type: 'activity', activity }).notes);
-  // One observer shared by this node's leading dot and its row text — both
-  // sit in the same TimelineItem and cross the same rootMargin together, so
-  // there's no need for AvatarOrDot to stand up a second one of its own.
-  const { ref: rowRef, inView } = useInViewport<HTMLButtonElement>();
+  // One observer for the card's photo and its sun-anchored time.
+  const { ref: cardRef, inView } = useInViewport<HTMLDivElement>();
 
   // A meal row's "add note" actions target whichever candidate is currently
   // selected, not the Activity as a whole — see EnrichedMealOption.notes and
@@ -488,46 +443,30 @@ const ActivityNode = memo(function ActivityNode({
     const selected = selectedMealOption(options, mealOptionIndex, activity._id);
     if (selected) noteTarget = { entity: 'mealOption', id: selected._id };
   }
-  const leading = isMeal ? (
-    <MealRowLeading activity={activity} day={day} inView={inView} />
-  ) : (
-    <ActivityLeading activity={activity} inView={inView} />
-  );
   // MealRow/ActivityRow take identical props — pick the component itself
   // rather than duplicating the JSX per branch.
   const RowComponent = isMeal ? MealRow : ActivityRow;
-  const row = (
-    <RowComponent
-      activity={activity}
-      day={day}
-      onOpen={onOpenActivity}
-      midNotes={mid}
-      inView={inView}
-      buttonRef={rowRef}
-    />
-  );
 
   return (
-    <TimelineRow
-      dot={leading}
-      isLast={isLast}
-      dragHandle={dragHandle}
-      selected={selected}
-      testId={rowTestId('activity', activity._id)}
-      trailing={
-        <RowMenu
-          entity={noteTarget.entity}
-          id={noteTarget.id}
-          onEdit={() => openEdit('activity', activity._id)}
-          onMove={() => requestMove([{ activityIds: [activity._id], transitIds: [], stayIds: [] }])}
-          onDelete={() => deleteEntity('activity', activity._id)}
-        />
-      }
-    >
-      <NotesCluster notes={above} />
-      {row}
-      <NotesCluster notes={below} />
-      {travelFooter}
+    <TimelineRow dragHandle={dragHandle} travel={travel} pinId={activityNodeKey(activity._id)}>
+      <RowComponent
+        activity={activity}
+        day={day}
+        inView={inView}
+        cardRef={cardRef}
+        selected={selected}
+        menu={
+          <RowMenu
+            entity={noteTarget.entity}
+            id={noteTarget.id}
+            onEdit={() => openEdit('activity', activity._id)}
+            onMove={() =>
+              requestMove([{ activityIds: [activity._id], transitIds: [], stayIds: [] }])
+            }
+            onDelete={() => deleteEntity('activity', activity._id)}
+          />
+        }
+      />
     </TimelineRow>
   );
 });
@@ -535,65 +474,65 @@ const ActivityNode = memo(function ActivityNode({
 const ScenarioTabsNode = memo(function ScenarioTabsNode({
   day,
   tracks,
-  isLast,
-  onOpenActivity,
-  onOpenStay,
-  onOpenTransit,
   dragHandle,
   selected,
-  travelFooter,
-}: DayRowOpeners & {
+  travel,
+}: {
   day: Day;
   tracks: ScenarioTrack[];
-  isLast: boolean;
   dragHandle?: ReactNode;
   selected?: boolean;
-  // The footer for the segment starting where the active track's own content
-  // ends — nowhere to render directly on this row (a branch point, not a
-  // single place), so it's threaded straight through to the active track's
-  // own nested DayTimeline as ITS trailingTravelFooter, landing on that
-  // list's own last row exactly the way any other in-list footer would.
-  travelFooter?: ReactNode;
+  // The travel into this section. It's drawn inside the first group's list, above
+  // the row it ends at.
+  travel?: ReactNode;
 }) {
   // Mirrors ScenarioTabsSection's own emptiness check — no active track (a
   // track list that's simply gone, e.g. right after the scenario it held was
   // deleted) has nothing to show. Bail before rendering any of the
-  // TimelineItem chrome, same as TransitStageNode does for a non-active
-  // route variant's stage — otherwise the dot/connector renders with an
-  // empty panel underneath.
+  // row — otherwise an empty row renders.
   const groups = tracksByGroup(tracks).filter((group) => activeTrackOf(group));
   if (!groups.length) return null;
   return (
-    <TimelineRow
-      dot={<RowLeadingDot icon="alt_route" />}
-      isLast={isLast}
-      dragHandle={dragHandle}
-      selected={selected}
-      // No pb here (unlike every other node's default pb: 3) —
-      // ScenarioTabsSection's own nested DayTimeline already ends in a row
-      // with its standard pb: 3, so adding this node's own would double up
-      // the trailing gap before whatever comes after the scenario section.
-      // px: 0 too, for the same reason TrailingGutter must stay unpadded
-      // (see its comment above): this content is a nested DayTimeline, which
-      // needs to be exactly as unindented as the top-level one. Scenario
-      // TabsSection re-adds the usual ROW_CONTENT_PX inset itself, scoped to
-      // just its chips/notes.
-      contentSx={{ pb: 0, px: 0 }}
-    >
-      {groups.map((group, i) => (
-        <ScenarioTabsSection
-          key={group[0].groupKey}
-          day={day}
-          tracks={group}
-          onOpenActivity={onOpenActivity}
-          onOpenStay={onOpenStay}
-          onOpenTransit={onOpenTransit}
-          trailingTravelFooter={i === groups.length - 1 ? travelFooter : undefined}
-        />
-      ))}
+    <TimelineRow dragHandle={dragHandle} icon="alt_route" bare>
+      <Box sx={selected ? SELECTED_SECTION_SX : undefined}>
+        {groups.map((group, i) => (
+          <ScenarioTabsSection
+            key={group[0].groupKey}
+            day={day}
+            tracks={group}
+            leadingTravel={i === 0 ? travel : undefined}
+          />
+        ))}
+      </Box>
     </TimelineRow>
   );
 });
+
+// "to <destination>", opening Google Maps directions from where the leg starts, by
+// the mode picked for it.
+function DirectionsLink({
+  origin,
+  destination,
+  mode,
+}: {
+  origin: Place;
+  destination: Place;
+  mode: TravelMode;
+}) {
+  const from = routeStop(origin);
+  const to = routeStop(destination);
+  const text = `to ${destination.label}`;
+  return (
+    <Typography variant="caption" color="text.secondary">
+      <InfoLink
+        href={from && to ? buildDirectionsUrl(from, to, [], mode) : null}
+        label={`Directions from ${origin.label} to ${destination.label} in Google Maps`}
+      >
+        {text}
+      </InfoLink>
+    </Typography>
+  );
+}
 
 // The picker lists TRAVEL_MODES in its own fixed order. No text label — the icon
 // alone says which mode an option is, matching Google's own mode-picker convention.
@@ -640,11 +579,11 @@ function TravelModeSummary({
   );
 }
 
-// A footer's small icon and caption — the drive's, and the layover's in its place.
+// The travel line's icon and text, the drive's or the layover's.
 function IconCaption({ icon, children }: { icon: string; children: ReactNode }) {
   return (
     <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-      {renderMaterialIcon(icon, { fontSize: 'small' })}
+      {renderMaterialIcon(icon, { fontSize: 'small', sx: { color: 'text.secondary' } })}
       <Typography variant="caption" color="text.secondary" component="span">
         {children}
       </Typography>
@@ -652,24 +591,16 @@ function IconCaption({ icon, children }: { icon: string; children: ReactNode }) 
   );
 }
 
-// In place of the travel footer between a flight's Arrive and the next
-// flight's Depart: how long the connection is.
-function LayoverFooter({ minutes }: { minutes: number }) {
-  return (
-    <Box sx={{ mt: 0.5 }}>
-      <IconCaption icon="hourglass_empty">{formatMinutes(minutes)} layover</IconCaption>
-    </Box>
-  );
+// Above a connecting flight's Depart, in place of a drive: how long the connection is.
+function Layover({ minutes }: { minutes: number }) {
+  return <IconCaption icon="hourglass_empty">{formatMinutes(minutes)} layover</IconCaption>;
 }
 
-// The travel-info footer an event (including a Transit's own waypoints)
-// gets at the bottom of its own content when a next row names a different,
+// The travel line above the card a leg ends at, when it starts at a different,
 // actually-resolvable Place — never across a flight or ferry; see the
-// travelFooters pass below. No dot/connector of its own (the user
-// explicitly didn't want a timeline icon for this) — it's just inline
-// content inside whichever row's bottom it's attached to. Mode is picked per
-// segment, not once for the whole day — a traveler might walk from the
-// hotel to breakfast but drive everywhere else — and defaults to DRIVE.
+// travelBefore pass below. Mode is picked per segment, not once for the whole day —
+// a traveler might walk from the hotel to breakfast but drive everywhere else —
+// and defaults to DRIVE.
 // Unlike the scenario/route-tone/meal-option selections (deliberately
 // session-only, a fresh decision every visit), a non-default pick here is
 // real trip content: it's stored in TripData.travelModeOverrides (see
@@ -702,8 +633,7 @@ const TravelInfoControl = memo(function TravelInfoControl({
       direction={{ xs: 'column', sm: 'row' }}
       spacing={{ xs: 0.25, sm: 0.5 }}
       ref={ref}
-      sx={{ mt: 0.5, alignItems: { xs: 'flex-start', sm: 'center' } }}
-      onClick={(e) => e.stopPropagation()}
+      sx={{ alignItems: { xs: 'flex-start', sm: 'center' } }}
     >
       <Select<TravelMode>
         size="small"
@@ -744,9 +674,7 @@ const TravelInfoControl = memo(function TravelInfoControl({
           </MenuItem>
         ))}
       </Select>
-      <Typography variant="caption" color="text.secondary">
-        to {destination.label}
-      </Typography>
+      <DirectionsLink origin={origin} destination={destination} mode={mode} />
     </Stack>
   );
 });
@@ -851,9 +779,8 @@ const EmptyDropZone = memo(function EmptyDropZone({
 // is one nested scenario-tabs split would otherwise have zero droppable
 // rows, since the scenario-tabs row itself never is one. This is pure
 // drag-and-drop plumbing, not a real Stay/Transit/Activity entry, so it
-// deliberately doesn't render through TimelineRow (no dot, no connector) —
-// giving it the same full-size icon-dot treatment as every real row made it
-// read as a broken, content-less timeline entry rather than "nothing here."
+// deliberately doesn't render through TimelineRow — a full row made it read
+// as a broken, content-less entry rather than "nothing here."
 // It stays fully collapsed until something is actually dragged over it
 // (SortableRow's own `isOver`, threaded through here), at which point it
 // opens into a thin insertion line — still no dashed box like
@@ -867,7 +794,7 @@ const ScenarioSplitDropSpacer = memo(function ScenarioSplitDropSpacer({
   return (
     <Box
       sx={{
-        ml: `${DRAG_HANDLE_WIDTH + ROW_LEADING_SIZE}px`,
+        ml: `${DRAG_HANDLE_WIDTH + STOP_NODE_SIZE}px`,
         height: isOver ? 8 : 0,
         borderRadius: 1,
         bgcolor: isOver ? 'primary.main' : 'transparent',
@@ -881,7 +808,7 @@ const ScenarioSplitDropSpacer = memo(function ScenarioSplitDropSpacer({
 // through whichever track is active (activeTrackOf, the same one
 // ScenarioTabsSection itself renders) is currently active, recursing into a
 // nested scenario-tabs item's own active track when the branch's own
-// leading/trailing item is itself another split. Lets the travel-footer
+// leading/trailing item is itself another split. Lets the travel
 // pass (below) still show a distance/duration for the row immediately
 // before/after a scenario split, using whichever single endpoint is
 // actually on screen right now, rather than treating every scenario
@@ -921,9 +848,7 @@ function edgeStop(rows: DayRow[], fromStart: boolean): Place | null | false {
 }
 
 // A 'section' item bundles several same-moment activities into one array —
-// flatten it to one timeline row per activity so the connector runs
-// through every image/icon on the day, not just past the section as a
-// whole (each activity gets its own dot, matching every other node type).
+// flatten it to one row per activity, matching every other node type.
 // `dragId` mirrors buildDragMeta's own id scheme exactly (see reorder.ts)
 // so a row and its DragMeta always resolve to the same dnd-kit id; null
 // for scenario-tabs, which isn't a single point in time to drop against.
@@ -932,7 +857,7 @@ interface DayTimelineNode {
   dragId: string | null;
   draggable: boolean;
   droppable: boolean;
-  // The real-world Place(s) this row represents, for the travel-footer
+  // The real-world Place(s) this row represents, for the travel
   // pass below — null for anything that isn't a single point in space (a
   // drag spacer, or a non-active route variant's own stage row). Equal for
   // every ordinary row (a Stay/Transit-boundary/stage/Activity names one
@@ -942,15 +867,16 @@ interface DayTimelineNode {
   // active — see edgeRealPlace above.
   entryPlace: Place | null;
   exitPlace: Place | null;
-  // A transit's Depart or Arrive row — what the footer pass asks
+  // A transit's Depart or Arrive row — what the travel pass asks
   // scheduledHop about, since a flight's own hop is never a drive.
   boundary?: TransitBoundaryRow;
+  // The drop spacer before a plan section draws no row on the line.
+  spacer?: boolean;
   render: (props: {
-    isLast: boolean;
     dragHandle?: ReactNode;
     selected?: boolean;
     isOver?: boolean;
-    travelFooter?: ReactNode;
+    travel?: ReactNode;
   }) => ReactElement;
 }
 
@@ -959,11 +885,8 @@ export const DayTimeline = memo(function DayTimeline({
   rows,
   containerId,
   scenarioId = null,
-  onOpenActivity,
-  onOpenStay,
-  onOpenTransit,
-  trailingTravelFooter,
-}: DayRowOpeners & {
+  leadingTravel,
+}: {
   day: Day;
   rows: DayRow[];
   // Distinct per rendered timeline — the top-level day passes its own date,
@@ -974,15 +897,10 @@ export const DayTimeline = memo(function DayTimeline({
   // own scenario._id, so a dropped Activity picks it up as its new
   // scenarioId.
   scenarioId?: string | null;
-  // The footer for the segment that starts where THIS list's own last real
-  // row ends — handed down by ScenarioTabsNode/ScenarioTabsSection when this
-  // DayTimeline is rendering a scenario branch's own content, since that
-  // segment's destination lives outside this list entirely (whatever
-  // top-level row follows the whole scenario-tabs split). Attached to the
-  // last node the same way an ordinary in-list footer would be; undefined
-  // for the top-level, scenario-less DayTimeline, which has nothing past its
-  // own last row to connect to.
-  trailingTravelFooter?: ReactNode;
+  // The travel that ends inside this list but starts before it — handed down by
+  // ScenarioTabsNode/ScenarioTabsSection for a plan's own list, and drawn above
+  // its first row with a real place. Undefined for the top-level day.
+  leadingTravel?: ReactNode;
 }) {
   const { activeFilterTokens } = useFilterSelection();
   const filtered = useMemo(
@@ -1024,6 +942,14 @@ export const DayTimeline = memo(function DayTimeline({
       ).changes,
     [day, activeFilterTokens],
   );
+  // The day map's own pin numbers and line color, so a card and its pin agree. They
+  // come from every visit of the day, so filtering the list never renumbers.
+  const { palette } = useTheme();
+  const pinColor = planColor(palette.routeVariants, day.scenarioTracks);
+  const pins = useMemo(
+    () => ({ numbers: mapPinNumbers(day.visits), color: pinColor }),
+    [day.visits, pinColor],
+  );
   const clockSuffixOf = useMemo(() => (time: ZonedTime) => clockSuffix(day, time), [day]);
 
   // Rebuilt only when this list's own rows change — an unrelated tab/meal/
@@ -1049,15 +975,13 @@ export const DayTimeline = memo(function DayTimeline({
             droppable: true,
             entryPlace: placeFromLodging(item.stay.lodging),
             exitPlace: placeFromLodging(item.stay.lodging),
-            render: ({ isLast, dragHandle, selected, travelFooter }) => (
+            render: ({ dragHandle, selected, travel }) => (
               <StayNode
                 item={item}
                 date={day.date}
-                isLast={isLast}
-                onOpen={onOpenStay}
                 dragHandle={draggable ? dragHandle : undefined}
                 selected={draggable ? selected : undefined}
-                travelFooter={travelFooter}
+                travel={travel}
               />
             ),
           },
@@ -1075,15 +999,13 @@ export const DayTimeline = memo(function DayTimeline({
             entryPlace: boundaryPlace,
             exitPlace: boundaryPlace,
             boundary: item,
-            render: ({ isLast, dragHandle, selected, travelFooter }) => (
+            render: ({ dragHandle, selected, travel }) => (
               <TransitBoundaryNode
                 item={item}
                 date={day.date}
-                isLast={isLast}
-                onOpen={onOpenTransit}
                 dragHandle={item.phase === 'depart' ? dragHandle : undefined}
                 selected={item.phase === 'depart' ? selected : undefined}
-                travelFooter={travelFooter}
+                travel={travel}
               />
             ),
           },
@@ -1102,8 +1024,8 @@ export const DayTimeline = memo(function DayTimeline({
             droppable: true,
             entryPlace: stagePlace,
             exitPlace: stagePlace,
-            render: ({ isLast, travelFooter }) => (
-              <TransitStageNode item={item} isLast={isLast} travelFooter={travelFooter} />
+            render: ({ travel }) => (
+              <TransitStageNode item={item} date={day.date} travel={travel} />
             ),
           },
         ];
@@ -1119,15 +1041,13 @@ export const DayTimeline = memo(function DayTimeline({
             droppable: true,
             entryPlace: item.event.place,
             exitPlace: item.event.place,
-            render: ({ isLast, dragHandle, selected, travelFooter }) => (
+            render: ({ dragHandle, selected, travel }) => (
               <ActivityNode
                 activity={activity}
                 day={day}
-                isLast={isLast}
-                onOpenActivity={onOpenActivity}
                 dragHandle={dragHandle}
                 selected={selected}
-                travelFooter={travelFooter}
+                travel={travel}
               />
             ),
           },
@@ -1140,7 +1060,7 @@ export const DayTimeline = memo(function DayTimeline({
       // which track is active, so it's resolved from whichever one actually is
       // (activeTrackOf, same as ScenarioTabsSection's own tab) rather than
       // left null. A track with no visible branch (nothing active, e.g. every
-      // tab gated out) still gets no footer on either side, same as before.
+      // tab gated out) still gets no travel on either side.
       const activeScenarioTrack = activeTrackOf(item.tracks);
       const resolveScenarioEdgePlace = (fromStart: boolean) =>
         activeScenarioTrack ? edgeRealPlace(activeScenarioTrack.rows, fromStart) : null;
@@ -1153,17 +1073,13 @@ export const DayTimeline = memo(function DayTimeline({
         droppable: false,
         entryPlace: scenarioEntryPlace,
         exitPlace: scenarioExitPlace,
-        render: ({ isLast, dragHandle, selected, travelFooter }) => (
+        render: ({ dragHandle, selected, travel }) => (
           <ScenarioTabsNode
             day={day}
             tracks={item.tracks}
-            isLast={isLast}
-            onOpenActivity={onOpenActivity}
-            onOpenStay={onOpenStay}
-            onOpenTransit={onOpenTransit}
             dragHandle={dragHandle}
             selected={selected}
-            travelFooter={travelFooter}
+            travel={travel}
           />
         ),
       };
@@ -1180,6 +1096,7 @@ export const DayTimeline = memo(function DayTimeline({
         return [
           {
             key: spacerId,
+            spacer: true,
             dragId: spacerId,
             draggable: false,
             droppable: true,
@@ -1206,70 +1123,63 @@ export const DayTimeline = memo(function DayTimeline({
     const morningStayNodes: DayTimelineNode[] = flattened
       .filter((item): item is StayRow => item.type === 'stay' && item.relation === 'Staying')
       .map((item) => ({
-        key: `stay-${item.stay._id}-${day.date}-morning`,
+        key: `${stayNodeKey(item.stay._id, day.date)}-morning`,
         dragId: null,
         draggable: false,
         droppable: false,
         entryPlace: placeFromLodging(item.stay.lodging),
         exitPlace: placeFromLodging(item.stay.lodging),
-        render: ({ isLast }) => (
-          <StayNode item={item} date={day.date} isLast={isLast} onOpen={onOpenStay} />
-        ),
+        render: ({ travel }) => <StayNode item={item} date={day.date} morning travel={travel} />,
       }));
     return [...morningStayNodes, ...nodes];
-  }, [flattened, day, dragMetaById, onOpenActivity, onOpenStay, onOpenTransit]);
+  }, [flattened, day, dragMetaById]);
 
-  // Attached to the BOTTOM of a row's own content (see each *Node's own
-  // travelFooter prop) rather than inserted as a row of its own — the user
-  // didn't want a separate icon/dot on the timeline for this. Only computed
-  // between two rows that each name a different, actually resolvable (real
-  // Google Place id) Place — same-place neighbors (e.g. two activities at
-  // the same lodging) get no footer. A scenario-tabs split's own
-  // entryPlace/exitPlace (edgeRealPlace above) already resolves to whichever
-  // single branch is currently active, so a segment crossing into or out of
-  // one still gets a footer exactly when that active branch actually
-  // starts/ends on a real, resolvable Place. The very last node has no
-  // `next` inside this list at all — trailingTravelFooter is whatever the
-  // caller already worked out for the segment starting there (only ever
-  // non-undefined for a scenario branch's own nested DayTimeline).
+  // The travel into each row, by that row's key: drawn directly above its card, so
+  // rows with no place of their own (a meal not yet placed) come before the drive,
+  // not between it and where it ends. Only between two rows that each name a
+  // different, actually resolvable (real Google Place id) Place — same-place
+  // neighbors (e.g. two activities at the same lodging) get none. A scenario-tabs
+  // split's entryPlace/exitPlace (edgeRealPlace above) resolves to whichever branch
+  // is active. Travel ending at the split is handed into that branch's own list as
+  // leadingTravel.
   //
-  // A row whose own Place has no real id (a whole city like "Fairbanks" as
-  // a Transit's arrival endpoint, or a park like "Denali National Park" —
-  // neither is specific enough to resolve to one Google Place) can't be
-  // BOTH ends of a segment, but it also shouldn't dead-end the pairing for
-  // its real, resolvable neighbors on either side. tripModel.ts's
-  // findNextResolvableStop does that skip-forward (dayMap.ts's rowHop) —
-  // stopping at a flight's or ferry's own Depart or Arrive, resolved or not,
-  // since no drive crosses one — so the footers land on the same pairs of real places that
-  // dayMap.ts's travelSegments (the day header's drive-time/distance total)
-  // and the map panel reach by splitting the day into drivable runs, then
-  // filtering their stops down to resolved places.
+  // A row whose own Place has no real id (a whole city like "Fairbanks" as a
+  // Transit's arrival endpoint, or a park like "Denali National Park") can't be
+  // either end of a segment, but it doesn't dead-end its resolvable neighbors:
+  // dayMap.ts's rowHop skips forward past it, stopping at a flight's or ferry's own
+  // Depart or Arrive, resolved or not, since no drive crosses one. That lands on the
+  // same pairs of places as dayMap.ts's travelSegments (the day header's total) and
+  // the map.
   //
-  // A scheduled transit's own hops aren't driven (dayMap.ts's scheduledHop):
-  // its Depart gets no footer, and its Arrive straight into the next one's
-  // Depart gets the layover in place of one.
-  // Memoized (on allNodes/trailingTravelFooter) so each footer element keeps its
-  // identity across unrelated re-renders instead of being recreated every time.
-  const travelFooters = useMemo(
-    (): (ReactNode | undefined)[] =>
-      allNodes.map((node, i) => {
-        const hop = rowHop(allNodes, i);
-        if (hop?.kind === 'aboard') return undefined;
-        if (hop?.kind === 'connection') return <LayoverFooter minutes={hop.minutes} />;
-        if (i === allNodes.length - 1) return trailingTravelFooter;
-        if (!hop) return undefined;
-        const segKey = segmentKey(node.key, hop.next.key);
-        return (
-          <TravelInfoControl
-            key={segKey}
-            segmentKey={segKey}
-            origin={hop.from}
-            destination={hop.to}
-          />
-        );
-      }),
-    [allNodes, trailingTravelFooter],
-  );
+  // A scheduled transit's own hops aren't driven (dayMap.ts's scheduledHop): a
+  // connection gets the layover above the next Depart instead.
+  // Memoized so each element keeps its identity across unrelated re-renders.
+  const travelBefore = useMemo((): ReadonlyMap<string, ReactNode> => {
+    const before = new Map<string, ReactNode>();
+    const first = allNodes.find((node) => node.entryPlace?.id);
+    if (first && leadingTravel) before.set(first.key, leadingTravel);
+    allNodes.forEach((node, i) => {
+      const hop = rowHop(allNodes, i);
+      if (!hop || hop.kind === 'aboard') return;
+      if (hop.kind === 'connection') {
+        before.set(hop.next.key, <Layover minutes={hop.minutes} />);
+        return;
+      }
+      const segKey = segmentKey(node.key, hop.next.key);
+      before.set(
+        hop.next.key,
+        <TravelInfoControl
+          key={segKey}
+          segmentKey={segKey}
+          origin={hop.from}
+          destination={hop.to}
+        />,
+      );
+    });
+    return before;
+  }, [allNodes, leadingTravel]);
+
+  const firstRow = allNodes.findIndex((node) => !node.spacer);
 
   if (!flattened.length) {
     // Filtering everything out of an otherwise non-empty sequence renders
@@ -1308,105 +1218,103 @@ export const DayTimeline = memo(function DayTimeline({
 
   return (
     <ClockSuffixContext.Provider value={clockSuffixOf}>
-      <SortableContext
-        items={dragMeta.map((d) => d.id)}
-        strategy={verticalListSortingStrategy}
-        id={containerId}
-      >
-        <Timeline
-          sx={{
-            p: 0,
-            m: 0,
-            // MUI reserves a flex-basis gutter on TimelineItem's own ::before
-            // for the "opposite content" column even when nothing ever supplies
-            // one — kill it so the dot/connector column sits flush against the
-            // day block's own left edge instead of floating in the middle.
-            '& .MuiTimelineItem-root::before': { display: 'none !important' },
-            // TimelineContent is a flex item with no min-width override, so its
-            // default content-based automatic minimum size wins over its flex
-            // basis. A clamped note's `-webkit-box`/`-webkit-line-clamp` content
-            // (see Notes.tsx's CLAMPED_SX) reports its full unwrapped width as
-            // that minimum instead of a wrapped one, which forces this — and
-            // every ancestor up to the day block — wider than the viewport,
-            // producing horizontal overflow (extra whitespace to the right of
-            // everything else once scrolled). Reset it so flexbox can actually
-            // shrink the content to fit.
-            '& .MuiTimelineContent-root': { minWidth: 0 },
-          }}
+      <DayPinsContext.Provider value={pins}>
+        <SortableContext
+          items={dragMeta.map((d) => d.id)}
+          strategy={verticalListSortingStrategy}
+          id={containerId}
         >
-          {allNodes.map((node, i) => {
-            const meta = node.dragId ? dragMetaById.get(node.dragId) : undefined;
-            const isSelected = Boolean(meta && isRowSelected(selection, meta.id));
-            // What this row itself contributes to a group drag: the whole
-            // bundle for a scenario-tabs row, or its own single id for a
-            // plain Activity/Transit/Stay row — see RowSelectionMembers' own
-            // note in TripSelectionsContextObject.ts.
-            const rowMembers: RowSelectionMembers | null = meta ? rowMembersOf(meta) : null;
-            const clockChange = node.dragId ? clockChanges.get(node.dragId) : undefined;
-            return (
-              <Fragment key={node.key}>
-                {clockChange && <ClockChangeMarker change={clockChange} />}
-                {node.dragId ? (
-                  <SortableRow
-                    dragId={node.dragId}
-                    disabled={!node.draggable}
-                    droppable={node.droppable}
-                    dragMeta={meta}
-                  >
-                    {(dragHandleProps, isOver) =>
-                      node.render({
-                        isLast: i === allNodes.length - 1,
-                        travelFooter: travelFooters[i],
-                        dragHandle: dragHandleProps ? (
-                          <Tooltip
-                            title={isSelected ? 'Selected — drag to move group' : 'Drag to reorder'}
-                          >
-                            <IconButton
-                              className={DRAG_HANDLE_HOVER_CLASS}
-                              size="small"
-                              aria-label={isSelected ? 'Selected, drag to move group' : 'Reorder'}
-                              color={isSelected ? 'primary' : 'default'}
-                              onClick={
-                                meta && rowMembers
-                                  ? (event) => {
-                                      event.stopPropagation();
-                                      toggleRowSelection(
-                                        meta.id,
-                                        containerId,
-                                        rowMembers,
-                                        meta.source?.kind === 'scenario-group',
-                                      );
-                                    }
-                                  : undefined
+          <Timeline
+            sx={{
+              p: 0,
+              m: 0,
+              // MUI reserves a flex-basis gutter on TimelineItem's own ::before for
+              // the "opposite content" column even when nothing ever supplies one —
+              // kill it so the line's column sits flush against the day block's left
+              // edge instead of floating in the middle.
+              '& .MuiTimelineItem-root::before': { display: 'none !important' },
+              // TimelineContent is a flex item whose content-based minimum width
+              // would otherwise win over its flex basis (a clamped note reports its
+              // unwrapped width), pushing the day wider than the viewport.
+              '& .MuiTimelineContent-root': { minWidth: 0 },
+            }}
+          >
+            {allNodes.map((node, i) => {
+              const meta = node.dragId ? dragMetaById.get(node.dragId) : undefined;
+              const isSelected = Boolean(meta && isRowSelected(selection, meta.id));
+              // What this row itself contributes to a group drag: the whole
+              // bundle for a scenario-tabs row, or its own single id for a
+              // plain Activity/Transit/Stay row — see RowSelectionMembers' own
+              // note in TripSelectionsContextObject.ts.
+              const rowMembers: RowSelectionMembers | null = meta ? rowMembersOf(meta) : null;
+              const clockChange = node.dragId ? clockChanges.get(node.dragId) : undefined;
+              const ends = ROW_ENDS[Number(i === firstRow)][Number(i === allNodes.length - 1)];
+              return (
+                <RowEndsContext.Provider key={node.key} value={ends}>
+                  {clockChange && <ClockChangeMarker change={clockChange} />}
+                  {node.dragId ? (
+                    <SortableRow
+                      dragId={node.dragId}
+                      disabled={!node.draggable}
+                      droppable={node.droppable}
+                      dragMeta={meta}
+                    >
+                      {(dragHandleProps, isOver) =>
+                        node.render({
+                          travel: travelBefore.get(node.key),
+                          dragHandle: dragHandleProps ? (
+                            <Tooltip
+                              title={
+                                isSelected ? 'Selected — drag to move group' : 'Drag to reorder'
                               }
-                              sx={{
-                                flexShrink: 0,
-                                cursor: 'grab',
-                                touchAction: 'none',
-                                opacity: isSelected ? 1 : 0,
-                                transition: 'opacity 0.15s',
-                                p: `${DRAG_HANDLE_PADDING_PX}px`,
-                              }}
-                              {...dragHandleProps.attributes}
-                              {...dragHandleProps.listeners}
                             >
-                              <DragIndicatorIcon fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        ) : undefined,
-                        selected: isSelected,
-                        isOver,
-                      })
-                    }
-                  </SortableRow>
-                ) : (
-                  node.render({ isLast: i === allNodes.length - 1, travelFooter: travelFooters[i] })
-                )}
-              </Fragment>
-            );
-          })}
-        </Timeline>
-      </SortableContext>
+                              <IconButton
+                                className={DRAG_HANDLE_HOVER_CLASS}
+                                size="small"
+                                aria-label={isSelected ? 'Selected, drag to move group' : 'Reorder'}
+                                color={isSelected ? 'primary' : 'default'}
+                                onClick={
+                                  meta && rowMembers
+                                    ? (event) => {
+                                        event.stopPropagation();
+                                        toggleRowSelection(
+                                          meta.id,
+                                          containerId,
+                                          rowMembers,
+                                          meta.source?.kind === 'scenario-group',
+                                        );
+                                      }
+                                    : undefined
+                                }
+                                sx={{
+                                  flexShrink: 0,
+                                  cursor: 'grab',
+                                  touchAction: 'none',
+                                  opacity: isSelected ? 1 : 0,
+                                  transition: 'opacity 0.15s',
+                                  p: `${DRAG_HANDLE_PADDING_PX}px`,
+                                }}
+                                {...dragHandleProps.attributes}
+                                {...dragHandleProps.listeners}
+                              >
+                                <DragIndicatorIcon fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          ) : undefined,
+                          selected: isSelected,
+                          isOver,
+                        })
+                      }
+                    </SortableRow>
+                  ) : (
+                    node.render({ travel: travelBefore.get(node.key) })
+                  )}
+                </RowEndsContext.Provider>
+              );
+            })}
+          </Timeline>
+        </SortableContext>
+      </DayPinsContext.Provider>
     </ClockSuffixContext.Provider>
   );
 });

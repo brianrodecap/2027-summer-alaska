@@ -4,53 +4,31 @@ import Typography from '@mui/material/Typography';
 import type { ReactNode } from 'react';
 
 import { priceLineLabel } from '../../model/bookingDetails';
-import { packageCostLabel, portCallsInOrder, portCallWhenLabel } from '../../model/entityDetails';
+import { cardTravelers, travelerName } from '../../model/cardTravelers';
+import {
+  packageCostLabel,
+  portCallIcon,
+  portCallsInOrder,
+  portCallWhenLabel,
+} from '../../model/entityDetails';
+import { dotted } from '../../model/formatting';
 import { todayDateStr } from '../../model/tripModel';
 import type { Package, PortCall, ResolvedRouteInfo } from '../../model/types';
 import { useTravelerNames } from '../../state/useTravelerNames';
 import { BookingStatusChip } from '../shared/BookingChip';
 import { renderMaterialIcon } from '../shared/materialIcon';
-import { TravelerChips } from '../shared/TravelerChips';
+import { TravelerList } from './CardParts';
 
-// The overline-headed block every detail-sheet section uses ("Seats",
+// The overline-headed block an expanded card's sections use ("Flight status",
 // "Packages", "Port calls"), so they all sit the same way.
 export function DetailSection({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <Stack spacing={0.5}>
+    <Stack spacing={0.5} sx={{ mt: 1.5 }}>
       <Typography variant="overline" color="text.secondary">
         {title}
       </Typography>
       {children}
     </Stack>
-  );
-}
-
-// Names as chips, or "Whole party" when everyone is meant (no names — null or
-// an empty list, both the whole party to the budget).
-function TravelerRow({ names }: { names: string[] | null }) {
-  return names?.length ? (
-    <TravelerChips names={names} />
-  ) : (
-    <Typography variant="body2" color="text.secondary">
-      Whole party
-    </Typography>
-  );
-}
-
-// Who's on it. Pass wholePartyWhenNull only where travelers: null means the
-// whole party (a Transit); elsewhere null means nobody was named.
-export function TravelersSection({
-  names,
-  wholePartyWhenNull = false,
-}: {
-  names: string[] | null | undefined;
-  wholePartyWhenNull?: boolean;
-}) {
-  if (names == null ? !wholePartyWhenNull : !names.length) return null;
-  return (
-    <DetailSection title="Travelers">
-      <TravelerRow names={names ?? null} />
-    </DetailSection>
   );
 }
 
@@ -74,11 +52,11 @@ export function PackagesSection({
     <DetailSection title="Packages">
       <Stack spacing={1}>
         {packages.map((pkg) => {
-          const facts = [
+          const facts = dotted([
             packageCostLabel(pkg, nights),
             pkg.confirmationNumber && `Conf# ${pkg.confirmationNumber}`,
             pkg.cost && priceLineLabel(pkg.payable, pkg, date, today),
-          ].filter(Boolean);
+          ]);
           return (
             <Stack
               key={pkg._id}
@@ -91,12 +69,17 @@ export function PackagesSection({
                 </Typography>
                 <BookingStatusChip status={pkg.status} />
               </Box>
-              {facts.length > 0 && (
+              {facts && (
                 <Typography variant="body2" color="text.secondary">
-                  {facts.join(' · ')}
+                  {facts}
                 </Typography>
               )}
-              <TravelerRow names={pkg.travelers?.map((id) => names.get(id) ?? id) ?? null} />
+              <TravelerList
+                travelers={cardTravelers({
+                  going: pkg.travelers?.map((id) => travelerName(names, id)),
+                  names,
+                })}
+              />
               {pkg.benefits?.length ? (
                 <Box component="ul" sx={{ pl: 2, m: 0 }}>
                   {pkg.benefits.map((b) => (
@@ -127,7 +110,7 @@ export function PortCallsSection({ calls }: { calls: PortCall[] | null | undefin
             key={`${i}-${call.place.label}-${call.arrivesAt}-${call.departsAt}`}
             sx={{ display: 'flex', gap: 1.5, alignItems: 'flex-start' }}
           >
-            {renderMaterialIcon(call.kind === 'scenic' ? 'landscape' : 'anchor', {
+            {renderMaterialIcon(portCallIcon(call.kind), {
               color: 'primary',
               fontSize: 'small',
             })}
@@ -145,19 +128,21 @@ export function PortCallsSection({ calls }: { calls: PortCall[] | null | undefin
   );
 }
 
-// A routed drive's stops on its selected variant, in driving order.
-export function RouteStopsSection({ routeInfo }: { routeInfo: ResolvedRouteInfo | null }) {
+// The notes written on a routed drive's stops, on its selected variant. The stops
+// themselves are rows of the day.
+export function RouteNotesSection({ routeInfo }: { routeInfo: ResolvedRouteInfo | null }) {
   const variant = routeInfo?.variants.find((v) => v.id === routeInfo.selectedId);
-  if (!variant?.stages.length) return null;
+  const noted = variant?.stages.filter((stage) => stage.note) ?? [];
+  if (!variant || !noted.length) return null;
   return (
-    <DetailSection title={`Route stops · ${variant.label}`}>
-      <Box component="ol" sx={{ pl: 2.5, m: 0 }}>
-        {variant.stages.map((stage, i) => (
+    <DetailSection title={`Route notes · ${variant.label}`}>
+      <Box component="ul" sx={{ pl: 2.5, m: 0 }}>
+        {noted.map((stage, i) => (
           <Typography component="li" variant="body2" key={`${i}:${stage.key}`}>
             {stage.place.label}
             <Typography component="span" variant="caption" color="text.secondary">
-              {stage.kind === 'via' ? ' · via' : ''}
-              {stage.note ? ` · ${stage.note}` : ''}
+              {' · '}
+              {stage.note}
             </Typography>
           </Typography>
         ))}

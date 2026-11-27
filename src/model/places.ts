@@ -97,8 +97,8 @@ export function getPlace(id: string): Promise<PlaceDetails> {
 // The full lookup for `id` if this page load has already started one — so a
 // photo lookup (placePhotos.ts) reads its photos from there instead of asking
 // Google a second time. placePhotos.ts checks a microtask after it's asked,
-// so a full lookup started later in the same React commit (a side sheet's
-// PlacePanel, mounted after its hero image) counts too.
+// so a full lookup started later in the same React commit (a
+// PlacePanel mounted after an image of the same place) counts too.
 export function placeAlreadyRequested(id: string): Promise<PlaceDetails> | undefined {
   return cache.get(id);
 }
@@ -110,8 +110,7 @@ export function placeAlreadyRequested(id: string): Promise<PlaceDetails> | undef
 // (Enterprise: $35/1k vs. Place Details Enterprise's $20/1k, per the file-top
 // note) and returns a list of candidates rather than one exact place, which
 // is fine for an occasional editing action but wrong for the per-visitor
-// Place Details hydration every activity's side sheet already runs on every
-// page load — this never runs outside the edit dialog, so it never touches
+// Place Details hydration every open card already runs — this never runs outside the edit dialog, so it never touches
 // that per-visitor cost.
 const SEARCH_FIELD_MASK = [
   'places.id',

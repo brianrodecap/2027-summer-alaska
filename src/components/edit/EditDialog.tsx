@@ -39,8 +39,7 @@ interface EditDialogProps {
 }
 
 // One shared chrome hosts the form for all three editable line-item kinds —
-// opened from a Stay/Transit row's pencil button or the activity side
-// sheet's own edit button. Save only ever mutates a clone of the in-memory
+// opened from a card menu's Edit. Save only ever mutates a clone of the in-memory
 // entity; TripDataContext's setData is what actually commits and persists it.
 export function EditDialog(props: EditDialogProps) {
   const { entity } = props;

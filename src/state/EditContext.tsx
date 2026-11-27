@@ -29,8 +29,7 @@ const EditEventWizard = lazy(() =>
 
 // `via` (on the 'edit' variant only — 'create' only ever happens via a
 // draft, so it's implicitly 'flat') picks which of the two components above
-// renders this state: 'wizard' for a plain openEdit (the day-list pencils/
-// side-sheet edit button) walks the guided step-by-step EditEventWizard;
+// renders this state: 'wizard' for a plain openEdit (a card menu's Edit) walks the guided step-by-step EditEventWizard;
 // 'flat' for openFromDraft's/openDraftSequence's AI-suggestion/import
 // review renders the original one-page EditDialog instead, since a draft
 // already has every field filled in for the user to check rather than a
@@ -94,8 +93,7 @@ function stateFromDraft(
     : { ...session, mode: 'create', entity: draft.entity };
 }
 
-// Wraps the trip page in one place both the day-list's edit pencils and the
-// activity side sheet's own edit button can reach. There's no backend yet —
+// Wraps the trip page in one place the day list's card menus can reach. There's no backend yet —
 // Save mutates a clone of the in-memory entity via
 // TripDataContext's setData, which is what triggers useMemo(buildTripView)
 // to re-run and saves the edit to the change log (see model/changeLog.ts).

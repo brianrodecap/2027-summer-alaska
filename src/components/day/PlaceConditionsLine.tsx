@@ -7,6 +7,7 @@ import Typography from '@mui/material/Typography';
 import { hasGoogleApiKey } from '../../config/apiKeys';
 import { useKeyedAsync } from '../../hooks/useKeyedAsync';
 import { getElevationFt } from '../../model/elevation';
+import { temperatureLabel } from '../../model/formatting';
 import { todayDateStr } from '../../model/tripModel';
 import type { Place } from '../../model/types';
 import { getPlaceTemperature, type PlaceTemperature } from '../../model/weather';
@@ -28,12 +29,10 @@ function usePlaceElevation(placeId: string | null) {
   );
 }
 
-// The per-entity "show weather"/"show elevation at this place" row (see
+// The per-entity "show weather"/"show elevation at this place" column (see
 // Place.showWeather/showElevation and ActivityEditForm's own toggles) —
-// renders right after a row's description, ahead of its
-// notes/travelers/booking chip, since this is primary information about the
-// entry rather than a footnote. Off (renders nothing) unless at least one
-// toggle is on and the entity actually resolves a Place.
+// sits in a card's header, right of the name and left of the photo. Off (renders
+// nothing) unless at least one toggle is on and the entity actually resolves a Place.
 //
 // Gated behind the same viewport check DayWeatherChips uses: DaysView mounts
 // every day's rows at once regardless of scroll position, so without this
@@ -58,47 +57,35 @@ export function PlaceConditionsLine({ place, date }: { place: Place | null; date
 
   if (!wantsAny) return null;
   if (!inView || weatherLoading || elevationLoading) {
-    return <Skeleton ref={ref} variant="text" width={130} sx={{ mt: 0.5 }} />;
+    return <Skeleton ref={ref} variant="text" width={56} />;
   }
   if (weather === null && elevationFt === null) return null;
 
-  const weatherRow = weather && (
-    <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
-      <ThermostatIcon
-        fontSize="inherit"
-        sx={{ color: temperatureColor(weather.highF), fontSize: '1rem' }}
-      />
-      <Typography variant="body2" color="text.secondary">
-        <Typography
-          component="span"
-          variant="body2"
-          sx={{ color: temperatureColor(weather.highF) }}
-        >
-          {weather.highF}°/{weather.lowF}°
-        </Typography>{' '}
-        ({weather.isForecast ? 'forecast' : 'avg'})
-      </Typography>
-    </Stack>
-  );
-
   return (
-    <Stack spacing={0.3} sx={{ mt: 0.5 }}>
-      {weatherRow && (
-        <InfoLink href={weatherHref} sx={{ alignSelf: 'flex-start' }}>
-          {weatherRow}
+    <Stack spacing={0.25} sx={{ alignItems: 'flex-end' }}>
+      {/* one line, colored like the day header's: the icon by the heat, plain text */}
+      {weather && (
+        <InfoLink href={weatherHref}>
+          <Stack direction="row" spacing={0.25} sx={{ alignItems: 'center' }}>
+            <ThermostatIcon
+              titleAccess="Temperature"
+              sx={{ color: temperatureColor(weather.highF), fontSize: '1rem' }}
+            />
+            <Typography variant="caption" color="text.secondary" noWrap>
+              {temperatureLabel(weather.highF, weather.lowF, weather.isForecast)}
+            </Typography>
+          </Stack>
         </InfoLink>
       )}
       {elevationFt !== null && (
-        <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center' }}>
+        <Stack direction="row" spacing={0.25} sx={{ alignItems: 'center' }}>
           <TerrainIcon
+            titleAccess="Approximate elevation"
             fontSize="inherit"
             sx={{ color: 'conditions.elevation', fontSize: '1rem' }}
           />
-          <Typography variant="body2" color="text.secondary">
-            <Typography component="span" variant="body2" sx={{ color: 'conditions.elevation' }}>
-              ≈{elevationFt.toLocaleString()} ft
-            </Typography>{' '}
-            elevation
+          <Typography variant="caption" sx={{ color: 'conditions.elevation' }}>
+            ≈{elevationFt.toLocaleString()} ft
           </Typography>
         </Stack>
       )}

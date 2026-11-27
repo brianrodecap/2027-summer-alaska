@@ -22,7 +22,6 @@ export interface ConditionsPalette {
   moon: string; // night-sky violet — distinct from sunset's indigo
   wind: string; // breeze teal
   wave: string; // ocean blue — distinct from wind's teal and sunset's indigo
-  travel: string; // road brown — distinct from the weather colors above
   elevation: string; // terrain brown — distinct from every weather color
   alertExtreme: string; // NWS "Extreme": reds nothing else on the site uses,
   alertSevere: string; // since no other reading says "this can hurt someone"
@@ -108,7 +107,6 @@ const DARK_PALETTE: PaletteOptions = {
     moon: '#9575cd',
     wind: '#00897b',
     wave: '#0277bd',
-    travel: '#6d4c41',
     elevation: '#8d6e63',
     alertExtreme: '#c62828',
     alertSevere: '#e64a19',
@@ -169,7 +167,6 @@ const LIGHT_PALETTE: PaletteOptions = {
     moon: '#6a4fb0',
     wind: '#00695c',
     wave: '#01579b',
-    travel: '#6d4c41',
     elevation: '#7a5a4e',
     alertExtreme: '#b71c1c',
     alertSevere: '#c43e12',
@@ -226,11 +223,8 @@ function buildTheme(mode: PaletteMode) {
       // clickable ButtonBase) silently falls back to the browser's default
       // Arial instead of this theme's Lato. Invisible where a button
       // only ever holds Typography children (which set their own explicit
-      // font), but it skews the button's own layout metrics — e.g. it was
-      // the real reason a day-list row's leading caption sat noticeably
-      // closer to the timeline dot when the row happened to be a clickable
-      // ButtonBase (Activity) than when it was a plain non-interactive Box
-      // (Stay/Transit), even though both used identical Typography styling.
+      // font), but it skews the button's own layout metrics, so text sits
+      // differently in a ButtonBase than in a plain Box with the same Typography.
       MuiButtonBase: {
         styleOverrides: {
           root: {

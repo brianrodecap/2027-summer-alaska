@@ -3,7 +3,7 @@ import Link from '@mui/material/Link';
 import Skeleton from '@mui/material/Skeleton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 import {
   flightCode,
@@ -40,29 +40,34 @@ const browserWatch = {
   },
 };
 
-// The watched flight's state while the sheet is open, tagged with the flight it's
-// for so a renumbered flight never shows the old one's status. It stays when the
-// sheet closes, so reopening shows it at once.
-function useFlightWatch(transit: EnrichedTransit, flight: string | null, open: boolean) {
+// The watched flight's state while its card is open, tagged with the flight it's
+// for so a renumbered flight never shows the old one's status. An edit elsewhere
+// rebuilds every transit, so the watch restarts only when something the lookup
+// reads changes: a restart after a failed lookup spends another request.
+function useFlightWatch(transit: EnrichedTransit, flight: string | null) {
   const [watched, setWatched] = useState<{ flight: string; state: FlightWatchState } | null>(null);
+  const latest = useRef(transit);
   useEffect(() => {
-    if (!open || !flight) return;
-    return watchFlightStatus(transit, (state) => setWatched({ flight, state }), browserWatch);
-  }, [transit, flight, open]);
+    latest.current = transit;
+  });
+  const { departsAt, arrivesAt, from, to } = transit;
+  const watching = flight && [flight, departsAt, arrivesAt, from.timeZone, to.timeZone].join('|');
+  useEffect(() => {
+    if (!flight || !watching) return;
+    return watchFlightStatus(
+      latest.current,
+      (state) => setWatched({ flight, state }),
+      browserWatch,
+    );
+  }, [flight, watching]);
   return watched?.flight === flight ? watched.state : null;
 }
 
 // "Flight status": live status around the day it flies, and the public trackers
 // any day. Nothing for a Transit without a flight number.
-export function FlightStatusSection({
-  transit,
-  open,
-}: {
-  transit: EnrichedTransit;
-  open: boolean;
-}) {
+export function FlightStatusSection({ transit }: { transit: EnrichedTransit }) {
   const code = flightCode(transit);
-  const state = useFlightWatch(transit, code && `${code}|${transit.departsAt}`, open);
+  const state = useFlightWatch(transit, code && `${code}|${transit.departsAt}`);
   if (!code) return null;
   const lookup = state?.lookup ?? null;
   const summary = lookup?.kind === 'status' ? summarizeFlightStatus(lookup.status) : null;
@@ -88,7 +93,7 @@ export function FlightStatusSection({
           {note}
         </Typography>
       ) : (
-        open && !state && <Skeleton width="60%" />
+        !state && <Skeleton width="60%" />
       )}
       <Stack direction="row" spacing={2}>
         {flightTrackerLinks(code, lookup?.kind === 'status' ? lookup.status.callsign : null).map(

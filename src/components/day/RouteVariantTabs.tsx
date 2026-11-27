@@ -20,12 +20,7 @@ export function RouteVariantTabs({ transit }: { transit: EnrichedTransit }) {
   const { palette } = useTheme();
   if (!info || info.variants.length < 2) return null;
   return (
-    <Stack
-      direction="row"
-      spacing={1}
-      sx={{ mt: 1, flexWrap: 'wrap' }}
-      onClick={(e) => e.stopPropagation()}
-    >
+    <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
       {info.variants.map((v, i) => {
         const active = v.id === info.selectedId;
         return (

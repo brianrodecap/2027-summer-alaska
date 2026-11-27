@@ -14,10 +14,13 @@ import type { ComponentType, ReactNode } from 'react';
 export function InfoLink({
   href,
   sx,
+  label,
   children,
 }: {
   href?: string | null;
   sx?: SxProps<Theme>;
+  // An accessible name, when the visible text doesn't say where the link goes.
+  label?: string;
   children: ReactNode;
 }) {
   if (!href) return <>{children}</>;
@@ -26,6 +29,7 @@ export function InfoLink({
       href={href}
       target="_blank"
       rel="noopener"
+      aria-label={label}
       // Stops the click from bubbling up to a clickable ancestor — the
       // day header's AccordionSummary, whenever this renders inside
       // DayWeatherChips there, would otherwise toggle expand/collapse in

@@ -7,14 +7,12 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Menu from '@mui/material/Menu';
 import { memo, useState } from 'react';
 
 import type { Day } from '../../model/types';
 import { useNoteEdit } from '../../state/useNoteEdit';
-import { AddNoteMenuItems } from '../shared/AddNoteMenuItems';
+import { DEFAULT_NOTE_KIND } from '../shared/noteKind';
 import { NotesCluster } from '../shared/Notes';
-import { useAnchorMenu } from '../shared/useAnchorMenu';
 import { DayAlertsBanner } from './DayAlertsBanner';
 import { DayHeader } from './DayHeader';
 import { DayInfoStrip } from './DayInfoStrip';
@@ -24,7 +22,6 @@ import { DayPoster } from './DayPoster';
 import { DayTimeline } from './DayTimeline';
 import { DayTravelChip } from './DayTravelChip';
 import { DayWeatherChips } from './DayWeatherChips';
-import type { DayRowOpeners } from './openHandlers';
 import { useInViewport } from './useInViewport';
 
 // One of the accordion's own two AccordionActions — lets a day that's
@@ -49,28 +46,18 @@ function AddToDayButton({ day, onAdd }: { day: Day; onAdd: (day: Day) => void })
 // The accordion's other AccordionAction — a day-level note concerns the
 // whole date (concerns: [{ date }]) rather than any one Stay/Transit/
 // Activity row — see tripModel's notesForDay and NotesCluster's rendering
-// of day.notes above the timeline. Mirrors RowMenu's own "add note" menu,
-// just seeded with a date ref instead of an entity ref. Labeled ("Add
-// note") rather than icon-only now that it sits beside AddToDayButton as a
-// peer action instead of alone in the header.
+// of day.notes above the timeline.
 function AddNoteButton({ date, dateLabel }: { date: string; dateLabel: string }) {
-  const { anchorEl, openAt, close, pick } = useAnchorMenu();
   const { openNoteCreate } = useNoteEdit();
-
   return (
-    <>
-      <Button
-        startIcon={<NoteAddIcon />}
-        onClick={openAt}
-        aria-label={`Add a note for ${dateLabel}`}
-        data-testid={`add-note-${date}`}
-      >
-        Add note
-      </Button>
-      <Menu anchorEl={anchorEl} open={!!anchorEl} onClose={close}>
-        <AddNoteMenuItems onPick={(kind) => pick(() => openNoteCreate({ date }, kind))} />
-      </Menu>
-    </>
+    <Button
+      startIcon={<NoteAddIcon />}
+      onClick={() => openNoteCreate({ date }, DEFAULT_NOTE_KIND)}
+      aria-label={`Add a note for ${dateLabel}`}
+      data-testid={`add-note-${date}`}
+    >
+      Add note
+    </Button>
   );
 }
 
@@ -87,17 +74,13 @@ function AddNoteButton({ date, dateLabel }: { date: string; dateLabel: string })
 // else in AccordionDetails' spirit, even though the strip technically
 // lives in AccordionSummary for sticky-positioning reasons.
 //
-// Memoized: DaysView holds several bits of dialog-open state (which
-// activity/stay/transit side sheet is open, the map dialog, scroll
-// elevation) that change on nearly every tap. Without memo, each of those
+// Memoized: DaysView holds several bits of dialog-open state (the map
+// dialog, scroll elevation) that change on nearly every tap. Without memo, each of those
 // unrelated state changes would re-render every one of the ~28 unvirtualized
 // day blocks and everything under them, not just the one row that was
 // actually clicked.
 export const DayAccordion = memo(function DayAccordion({
   day,
-  onOpenActivity,
-  onOpenStay,
-  onOpenTransit,
   onOpenMap,
   onAddEvent,
   poster,
@@ -107,7 +90,7 @@ export const DayAccordion = memo(function DayAccordion({
   onAddEvent: (day: Day) => void;
   // Shows the day's poster above it: the trip's first date, for the poster's day number.
   poster?: { tripStart: string | null };
-} & DayRowOpeners) {
+}) {
   const [expanded, setExpanded] = useState(true);
   const { ref: infoRef, inView } = useInViewport<HTMLDivElement>();
 
@@ -184,14 +167,7 @@ export const DayAccordion = memo(function DayAccordion({
         </AccordionSummary>
         <AccordionDetails sx={{ px: 2 }}>
           <NotesCluster notes={day.notes} />
-          <DayTimeline
-            day={day}
-            rows={day.rows}
-            containerId={day.date}
-            onOpenActivity={onOpenActivity}
-            onOpenStay={onOpenStay}
-            onOpenTransit={onOpenTransit}
-          />
+          <DayTimeline day={day} rows={day.rows} containerId={day.date} />
         </AccordionDetails>
         <AccordionActions>
           <AddNoteButton date={day.date} dateLabel={day.dateLabel} />

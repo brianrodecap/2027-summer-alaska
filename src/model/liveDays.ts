@@ -70,7 +70,7 @@ function groupsSignature(groups: ScenarioGroup[], date: string): string {
 // default meal formats. This swaps in the timeline's live walk — routeInfo
 // (selectedId = the picked tab, stages timed with the meals actually
 // picked) and arrivesAt — so every reader of a Transit (its rows, the header,
-// day.transits' overlap checks, the detail sheet) sees one live answer
+// day.transits' overlap checks, the open card) sees one live answer
 // instead of choosing between a default copy and a live lookup. A Transit
 // the timeline didn't touch (out of scope, nothing to patch) keeps its object.
 function liveTransits(

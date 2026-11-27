@@ -180,7 +180,7 @@ describe('getFlightStatus', () => {
     expect(c.urls).toEqual([]);
   });
 
-  it('spends one request on every row and sheet showing the flight in one window', async () => {
+  it('spends one request on every card showing the flight in one window', async () => {
     const c = client('2027-07-08T16:00Z', listed);
     await Promise.all([c.getFlightStatus(asFlight), c.getFlightStatus(asFlight)]);
     expect(c.urls).toHaveLength(1);
@@ -653,7 +653,7 @@ describe('watchFlightStatus', () => {
     expect(w.timers).toEqual([]);
   });
 
-  it('stops when the sheet closes', async () => {
+  it('stops when the card closes', async () => {
     const w = watch([live]);
     await flush();
     w.stop();

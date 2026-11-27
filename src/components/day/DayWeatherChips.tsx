@@ -9,6 +9,7 @@ import WavesIcon from '@mui/icons-material/Waves';
 import Box from '@mui/material/Box';
 import Skeleton from '@mui/material/Skeleton';
 
+import { temperatureLabel } from '../../model/formatting';
 import { getMoonPhase } from '../../model/moonPhase';
 import type { Day } from '../../model/types';
 import { aqiBand, CLOUD_COLOR, RAIN_COLOR, temperatureColor } from '../../model/weatherColors';
@@ -92,7 +93,7 @@ export function DayWeatherChips({ day, inView }: { day: Day; inView: boolean }) 
       key: 'temp',
       Icon: ThermostatIcon,
       color: temperatureColor(weather.highF),
-      text: `${weather.highF}°/${weather.lowF}° ${weather.isForecast ? '(forecast)' : '(avg)'}`,
+      text: temperatureLabel(weather.highF, weather.lowF, weather.isForecast),
       href: weatherHref,
     });
   }

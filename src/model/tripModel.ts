@@ -76,6 +76,7 @@ import type {
   Transit,
   TransitRow,
   Traveler,
+  TravelMode,
   Trip,
   TripData,
   TripsIndexEntry,
@@ -871,8 +872,7 @@ export function earliestTime(times: ZonedTime[], clock: TripClock): ZonedTime | 
 // carry: entity:leg -> the Leg dialog, entity:stay/entity:transit -> that
 // Stay/Transit's own day-list row (a Transit's notes attach at its Depart
 // row, never Arrive), entity:scenario -> the top of that scenario's own tab
-// panel, entity:activity -> that Activity's own day-list row (and its side
-// sheet), entity:mealOption -> one specific MealOption candidate, shown only
+// panel, entity:activity -> that Activity's own day-list card, entity:mealOption -> one specific MealOption candidate, shown only
 // while the row's chip group has that candidate selected (unlike every other
 // kind here, which always renders — a mealOption note is conditional on live
 // UI selection state, not just a resolved Day). A bare date/dateRange ref
@@ -917,7 +917,7 @@ function buildNoteIndex(notes: Note[]): NoteIndex {
 
 // One bucket per RefEntityKind a note can name directly (leg/stay/transit/
 // scenario/activity) — each rendered right at that entity's own spot in the
-// UI (its day-list row, its side sheet, its tab section, its dialog) rather
+// UI (its day-list card, its tab section, its dialog) rather
 // than pooled at the day level. Only a bare date/dateRange ref (no entity)
 // has nowhere more specific to attach than the day itself — that's all
 // notesForDay matches now.
@@ -1492,7 +1492,9 @@ function stageTimesForVariant(
     // The arrival at this place, on its own clock, else the departure's (or
     // plain wall-clock arithmetic when the departure has no zone either).
     const reached = clock.wallAt(clockMs, seg.place?.timeZone);
+    spend(routePlaceStopMinutes(seg));
     stages.push({
+      leavesAt: clock.wallAt(clockMs, seg.place?.timeZone).at,
       note: seg.note ?? null,
       kind: seg.kind,
       key: reached.at,
@@ -1503,7 +1505,6 @@ function stageTimesForVariant(
         images: image ? [image] : undefined,
       },
     });
-    spend(routePlaceStopMinutes(seg));
   }
   spend(variant.finalTravel?.minutes ?? 0);
   const arrival = clock.wallAt(clockMs, transit.to.timeZone);
@@ -1709,13 +1710,9 @@ export interface RouteStop {
   // Google's text search, which can resolve it anywhere — see dayMap.ts's
   // `resolved`).
   placeId: string;
-  // This stop's own DayTimeline row identity (stayNodeKey/transitBoundaryKey/
-  // stageNodeKey/activityNodeKey below), when it has one — the same key
-  // TravelInfoControl/DayMapSidebar's segmentTravelMode use to read back a
-  // TravelModeOverride. Null for a stop with no single-row equivalent: a
-  // 'Staying' night (DayTimeline gives that its own separately-keyed
-  // "-morning" node instead) — a segment touching it just falls back to
-  // DRIVE, the same gap DayMapSidebar's own segmentTravelMode already accepts.
+  // The key a TravelModeOverride for this stop is looked up by (dayMap.ts's
+  // visitNodeKey). Null for a 'Staying' night: a segment touching it falls back
+  // to DRIVE.
   nodeKey: string | null;
 }
 
@@ -1734,7 +1731,7 @@ export function routeStop(place: Place, nodeKey: string | null = null): RouteSto
 // or park — "Anchorage", "Denali National Park"), not a point worth routing
 // or pinning, so every map-shaped reader — the day's visits (dayMap.ts: the
 // map embed, directions links, sidebar markers/route line, drive-time total)
-// and DayTimeline's per-row travel footers — leaves its Depart/Arrive out
+// and DayTimeline's per-row travel lines — leaves its Depart/Arrive out
 // unless the Transit opts in via showEndpointsOnMap (e.g. a loop that starts
 // and ends at one specific depot). The selected variant's waypoints/vias and
 // the real places around the drive carry the map instead. An unrouted
@@ -1756,7 +1753,7 @@ export function transitPhaseOnMap(
 // selected route variant's stages — see layoutDay.)
 // transitRowStop is that place unconditionally; transitRowPlace is null for
 // a routed drive's Depart/Arrive unless the Transit opts in
-// (transitPhaseOnMap), so the travel footers skip past it the same way the
+// (transitPhaseOnMap), so the travel lines skip past it the same way the
 // day's map and drive total do.
 function transitRowStop(row: TransitRow): Place {
   if (row.phase === 'stage') return row.stage.place;
@@ -1782,7 +1779,7 @@ export interface DayTravelSegment {
 // A day's stops/rows are frequently interspersed with ones that resolve to
 // no real Google place id — e.g. a routed drive's own Depart/Arrive, which
 // transitRowPlace leaves out unless the Transit opts in. DayTimeline's
-// per-row travel-info footers walk past rows like that to find the next one
+// per-row travel lines walk past rows like that to find the next one
 // that DOES name a real place, so a placeless row never dead-ends the
 // pairing of its real neighbors. `isStop` says which rows it stops at: the
 // resolvable ones, and any the walk mustn't pass. (dayMap.ts's
@@ -1799,16 +1796,24 @@ export function findNextResolvableStop<T>(
   return undefined;
 }
 
+const MAPS_TRAVEL_MODE: Record<TravelMode, string> = {
+  DRIVE: 'driving',
+  WALK: 'walking',
+  BICYCLE: 'bicycling',
+  TRANSIT: 'transit',
+};
+
 export function buildDirectionsUrl(
   origin: RouteStop,
   destination: RouteStop,
   waypoints: RouteStop[],
+  mode: TravelMode = 'DRIVE',
 ): string {
   const params = new URLSearchParams({
     api: '1',
     origin: origin.label,
     destination: destination.label,
-    travelmode: 'driving',
+    travelmode: MAPS_TRAVEL_MODE[mode],
   });
   params.set('origin_place_id', origin.placeId);
   params.set('destination_place_id', destination.placeId);
@@ -1825,16 +1830,12 @@ export function buildDirectionsUrl(
 // ---------- day map markers — every real-world place resolvable for a day,
 // one entry per unique Google Place id, each carrying every Stay/Transit/
 // Activity entity that names it (so a marker click can open the right
-// detail sheet(s)), plus a routed Transit's own via/waypoint stages — unlike
+// card(s)), plus a routed Transit's own via/waypoint stages — unlike
 // mapEmbedUrls/routeUrls (dayMap.ts), which skip stages (that keyless
 // embed can't route through waypoints reliably), DayMapSidebar draws a real
 // Polyline through each place's own resolved coordinates, so the actual
 // route stages belong on it. `rowKey` on the stay/transit/transit-stage
-// variants is the same key DayTimeline's own TimelineRow stamps as that
-// row's `data-testid` (`stay-row-<rowKey>`, `transit-boundary-<rowKey>`,
-// `transit-stage-<rowKey>`) — DayMapSidebar's own visible-rows tracking
-// (useVisibleRowKeys) correlates back to this without DayTimeline needing to
-// know the map exists. A place with no real Google Place id (a Transit's
+// variants is the day-list row's own `key`. A place with no real Google Place id (a Transit's
 // bare city-level from/to, a cruise ship mid-voyage, an unresolved via) is
 // dropped: a marker needs real coordinates (placeCoordinates.ts resolves
 // those from the id), unlike a Directions URL, which can still route
@@ -1866,6 +1867,8 @@ export interface DayMapRouteNode {
   ref: DayMapPlaceRef;
   order: number; // when the visit happens (orderInstant, ms)
   at: string; // the visit's wall-clock time, on the place's own clock
+  nodeKey: string | null; // dayMap.ts's visitNodeKey
+  offDay?: boolean; // no row on this day (see dayMap.ts's OffDay)
 }
 
 // Collapses mapRouteNodes' own chronological node list down to one stop per
@@ -1884,16 +1887,10 @@ export function dedupeDayMapPlaceStops(nodes: DayMapRouteNode[]): DayMapPlaceSto
   return [...byPlaceId.values()];
 }
 
-// The row-identity scheme DayTimeline's own dragId/segmentKey construction
-// uses for a Stay/Transit-boundary/Activity row (see DayTimeline.tsx's
-// `nodes` build and reorder.ts's buildDragMeta, which must match it exactly)
-// — exposed here so any other reader of a DayMapPlaceRef (currently
-// DayMapSidebar, resolving which travelModeOverrides entry a map segment
-// corresponds to) can compute the same key without re-deriving the string
-// scheme by hand. Deliberately doesn't cover a Stay's 'Staying' relation
-// (DayTimeline gives that a second, separately-keyed morning node with no
-// DayMapPlaceRef equivalent) — callers needing that still fall back to
-// their own default.
+// The row-identity scheme for a day-list row: its drag id, the ends of its
+// travel-mode override's segmentKey (see reorder.ts's buildDragMeta, which
+// DayTimeline.tsx must match exactly), and what its card and map pin are called
+// (dayMap.ts's mapRefRowId).
 export function stayNodeKey(stayId: string, date: string): string {
   return `stay-${stayId}-${date}`;
 }
@@ -1918,23 +1915,6 @@ export function stageNodeKey(transitId: string, stageIndex: number): string {
 // segmentTravelMode (reading one back) always agree on the same string.
 export function segmentKey(fromKey: string, toKey: string): string {
   return `segment:${fromKey}->${toKey}`;
-}
-
-// The data-testid DayTimeline's own TimelineRow stamps on a Stay/Transit-
-// boundary/Transit-stage/Activity row — a separate identity scheme from
-// stayNodeKey/transitBoundaryKey/activityNodeKey above (this one's key is the
-// sequence item's own `key`/entity id, not a stay id + date), but the same
-// reasoning: exposed here so DayMapSidebar's domTestIdForRef can read the
-// same attribute off the DOM without re-deriving the string scheme by hand.
-const ROW_TEST_ID_PREFIX = {
-  stay: 'stay-row',
-  'transit-boundary': 'transit-boundary',
-  'transit-stage': 'transit-stage',
-  activity: 'activity-row',
-} as const;
-
-export function rowTestId(kind: keyof typeof ROW_TEST_ID_PREFIX, key: string): string {
-  return `${ROW_TEST_ID_PREFIX[kind]}-${key}`;
 }
 
 // A day's data-only frame — see DayFrame. Everything about what the day
@@ -2638,7 +2618,7 @@ export interface BookingPaymentSummary {
 }
 
 // A booking's priced lines summed by budget bucket, through the budget's own
-// lineBucket, so a detail sheet's "paid / due" can't disagree with the budget
+// lineBucket, so a card's "paid / due" can't disagree with the budget
 // view. `date` is the day the booked entity starts (an at-the-property charge
 // is settled then). A cancelled booking sums to nothing, as in the budget.
 export function bookingPaymentSummary(
@@ -3098,8 +3078,8 @@ function withSharedBookings(entries: ShareCandidate[]): void {
 
 const SHOWS_NOTHING: { booking: Booking | null; notes: Note[] } = { booking: null, notes: [] };
 
-// What a day-list row shows of its entry's booking and notes — the rows and
-// the filters both read it, so a filter matches exactly what a row shows.
+// A day-list row's own booking and notes — the rows (which show the alerts among
+// the notes) and the filters both read it, so they agree on what belongs to a row.
 // Each entry shows them once, on its own row for them: a transit's Depart, a
 // stay's Check in or its one Overnight (not every night after), an
 // activity's row. An entry sharing its booking (bookingShare) shows them only
@@ -3119,7 +3099,7 @@ export function rowShows(
         ? row.phase === 'depart'
         : true;
   if (!own || !showsOwnShare(entry)) return SHOWS_NOTHING;
-  return { booking: entry.booking, notes: sheetNotes(entry) };
+  return { booking: entry.booking, notes: entryNotes(entry) };
 }
 
 // Whether an entry (or meal candidate) shows its booking: unless another
@@ -3128,13 +3108,13 @@ function showsOwnShare(entry: SharesBooking): boolean {
   return !entry.bookingShare || entry.bookingShare.firstId === entry._id;
 }
 
-// The notes an entry's detail sheet shows: its row's (rowShows), or its own
+// The notes an entry's open card shows: its row's (rowShows), or its own
 // when another sharer's row shows them.
-export function sheetNotes(entry: EnrichedTransit | EnrichedActivity | EnrichedStay): Note[] {
+export function entryNotes(entry: EnrichedTransit | EnrichedActivity | EnrichedStay): Note[] {
   return entry.bookingShare && showsOwnShare(entry) ? entry.bookingShare.notes : entry.notes;
 }
 
-// What a meal row (and its sheet) shows for its selected candidate: its own
+// What belongs to a meal row for its selected candidate: its own
 // notes, and its booking's chip with the other sharers' notes unless another
 // sharer shows them (showsOwnShare). A candidate shares a booking without its
 // own notes, so the two never overlap.

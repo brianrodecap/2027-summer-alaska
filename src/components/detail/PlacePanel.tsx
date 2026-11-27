@@ -77,8 +77,7 @@ function EmailLine({ email }: { email: string }) {
 // own view is never fetched until a viewer actually scrolls to it. Google's
 // terms require the author attribution shown alongside each photo, hence the
 // caption line below the strip rather than dropping it. Clicking a thumbnail
-// makes it the entity's hero image, the same one EntityHeroImage shows at the
-// top of the sheet.
+// makes it the entity's hero image, the one its card shows.
 function PlacePhotoStrip({
   photos,
   onSelect,
@@ -144,7 +143,7 @@ export function PlacePanel({
   place: Place;
   // Fires when a viewer clicks one thumbnail in the photo strip below,
   // naming it the entity's new hero image (see formatting.ts's
-  // withHeroImage — every DetailPanel writes this into its own top-level
+  // withHeroImage — every card writes this into its own top-level
   // `images`, not this place's, since that's the array firstImage always
   // checks first). An explicit click always overrides whatever onAutoImage
   // below has backfilled.
@@ -215,7 +214,7 @@ export function PlacePanel({
         <Typography variant="body2" color="text.secondary">
           {configured
             ? 'Live details unavailable right now.'
-            : 'Add a Places API key to enable live details.'}
+            : 'Add your Google API key in Settings.'}
         </Typography>
         <Link href={placeSearchUrl(place)} target="_blank" rel="noopener">
           Search Google Maps

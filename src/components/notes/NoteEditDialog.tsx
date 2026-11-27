@@ -80,9 +80,7 @@ export function NoteEditDialog({
 
   return (
     <Dialog open onClose={onClose} fullWidth maxWidth="xs">
-      <DialogTitle>
-        {target.mode === 'create' ? `Add ${KIND_LABEL[kind].toLowerCase()}` : 'Edit note'}
-      </DialogTitle>
+      <DialogTitle>{target.mode === 'create' ? 'Add note' : 'Edit note'}</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           About {about}

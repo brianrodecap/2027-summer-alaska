@@ -9,9 +9,13 @@ import type { Coordinates } from '../../model/placeCoordinates';
 export function FitBoundsToPoints({
   points,
   pointsKey,
+  padding = 32,
 }: {
   points: Coordinates[];
   pointsKey: string;
+  // Room to leave around the points, in pixels: more where controls cover the map.
+  // Read when the points change.
+  padding?: number | google.maps.Padding;
 }) {
   const map = useMap();
   useEffect(() => {
@@ -23,7 +27,7 @@ export function FitBoundsToPoints({
     }
     const bounds = new google.maps.LatLngBounds();
     points.forEach((point) => bounds.extend(point));
-    map.fitBounds(bounds, 32);
+    map.fitBounds(bounds, padding);
     // points itself is a fresh array every render; pointsKey is the stable
     // "which places, resolved" identity this should actually react to.
     // eslint-disable-next-line react-hooks/exhaustive-deps

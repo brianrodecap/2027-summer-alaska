@@ -1,15 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
 import {
-  includedInLabel,
   packageCostLabel,
+  portCallDayLabel,
+  portCallIcon,
   portCallsInOrder,
   portCallWhenLabel,
   stayWhenLabel,
   transitDurationMinutes,
   transitWhenLabel,
 } from './entityDetails';
-import { lodgingExtraBits } from './formatting';
+import { hasPlaceInfo, lodgingBits } from './formatting';
+import { includedInLabel } from './mealOptions';
 import type { Activity, Package, PortCall, Stay, Transit, TripData } from './types';
 
 const usd = (amount: number) => ({ amount, currency: 'USD' });
@@ -123,10 +125,10 @@ describe('transitDurationMinutes', () => {
   });
 });
 
-describe('lodgingExtraBits', () => {
-  it('lists the lodging fields the day row leaves out', () => {
+describe('lodgingBits', () => {
+  it('lists every filled lodging field, in order', () => {
     expect(
-      lodgingExtraBits({
+      lodgingBits({
         place: { id: null, label: 'Ship' },
         deckGroup: 'Upper',
         shipZone: 'Mid-Forward',
@@ -135,7 +137,7 @@ describe('lodgingExtraBits', () => {
         vehicleCount: 1,
       }),
     ).toEqual(['Upper deck', 'Mid-Forward', 'Party of 4', 'Tent', '1 vehicle']);
-    expect(lodgingExtraBits(null)).toEqual([]);
+    expect(lodgingBits(null)).toEqual([]);
   });
 });
 
@@ -224,5 +226,36 @@ describe('includedInLabel', () => {
   it('is null when not included, or the target is gone', () => {
     expect(includedInLabel(data, null)).toBeNull();
     expect(includedInLabel(data, { entity: 'package', id: 'missing' })).toBeNull();
+  });
+});
+
+describe("a port call's wording on one of its days", () => {
+  const overnight = {
+    kind: 'port' as const,
+    place: { id: null, label: 'Juneau' },
+    arrivesAt: '2027-07-21T20:00',
+    departsAt: '2027-07-22T06:00',
+  };
+
+  it('names only the end that falls on the day', () => {
+    expect(portCallDayLabel(overnight, '2027-07-21')).toBe('Juneau · Arrives 8:00pm · overnight');
+    expect(portCallDayLabel(overnight, '2027-07-22')).toBe('Juneau · All aboard 6:00am');
+  });
+
+  it('says a scenic call is cruised past, with its own icon', () => {
+    const scenic = { ...overnight, kind: 'scenic' as const };
+    expect(portCallDayLabel(scenic, '2027-07-22')).toBe('Cruising past Juneau · Leaves 6:00am');
+    expect([portCallIcon('scenic'), portCallIcon('port')]).toEqual(['landscape', 'anchor']);
+  });
+});
+
+describe('whether an open card has anything to say about a place', () => {
+  const place = { id: null, label: 'Dining room' };
+
+  it('does for a Google id or any recorded contact, and not for a bare label', () => {
+    expect(hasPlaceInfo(place)).toBe(false);
+    for (const known of [{ id: 'p' }, { phone: '1' }, { website: 'w' }, { email: 'e' }]) {
+      expect(hasPlaceInfo({ ...place, ...known })).toBe(true);
+    }
   });
 });

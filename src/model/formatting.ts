@@ -1,5 +1,5 @@
 // Small pure formatting/vocabulary helpers reused across leg cards, the day
-// list, activity rows, and the activity detail side sheet — nothing here is
+// list, activity rows, and the open cards — nothing here is
 // scoped to just one of those surfaces (see docs/data-model.html for the
 // entity shapes these draw on).
 import { activityTimeLabel } from './tripModel';
@@ -90,7 +90,7 @@ export function imageKey(image: Image): string {
 // it there if it's already stored, prepending it otherwise. This is the
 // *entity's* own top-level `images` (Activity/Stay/Transit), not a Place's —
 // firstImage always checks that array before ever falling back to a place's
-// own images (see ActivityDetailPanel et al.), so a manual "make this the
+// own images (see the day's cards), so a manual "make this the
 // hero" click has to land there to actually change what's shown, regardless
 // of which specific place (or, for a meal, which candidate) the photo came
 // from.
@@ -99,37 +99,45 @@ export function withHeroImage(images: Image[] | null | undefined, image: Image):
   return [image, ...(images ?? []).filter((img) => imageKey(img) !== key)];
 }
 
+// The parts there are, joined with " · "; null when there are none.
+export function dotted(parts: readonly (string | false | null | undefined)[]): string | null {
+  return parts.filter(Boolean).join(' · ') || null;
+}
+
+// Whether an open card has anything to say about a place: Google knows it, or
+// contacts were recorded for it.
+export const hasPlaceInfo = (place: Place) =>
+  Boolean(place.id || place.phone || place.website || place.email);
+
 // A Stay's own Place, null-safe over a possibly-absent lodging — shared by
-// editForms.ts's stayFormFrom and the day-list's own StayNode/StayDetailPanel
+// editForms.ts's stayFormFrom and the day-list's own StayNode and StayCardDetails
 // rather than each repeating the same optional chain.
 export function placeFromLodging(lodging: Lodging | null | undefined): Place | null {
   return lodging?.place ?? null;
 }
 
-// The room/campsite/bed-configuration bits a Stay's lodging can carry —
-// shared by the day-list's own inline StayNode and the StayDetailPanel side
-// sheet, which both show the same "whatever's filled in" summary.
-export function stayDetailBits(lodging: Lodging | null | undefined): string[] {
-  return [
-    lodging?.roomType,
-    lodging?.roomNumber && `Room/cabin ${lodging.roomNumber}`,
-    lodging?.campsite,
-    lodging?.bedConfiguration,
-  ].filter((bit): bit is string => Boolean(bit));
-}
-
-// The lodging fields the day row leaves out, for the detail sheet beside
-// stayDetailBits: "Upper deck · Mid-Forward · Party of 4 · Tent · 1 vehicle".
-export function lodgingExtraBits(lodging: Lodging | null | undefined): string[] {
+// Whatever is filled in about a stay's lodging, for its open card: "King · Upper
+// deck · Mid-Forward · Party of 4 · Tent · 1 vehicle".
+export function lodgingBits(lodging: Lodging | null | undefined): string[] {
   if (!lodging) return [];
+  const { roomType, roomNumber, campsite, bedConfiguration } = lodging;
   const { deckGroup, shipZone, partySize, equipment, vehicleCount } = lodging;
   return [
+    roomType,
+    roomNumber && `Room/cabin ${roomNumber}`,
+    campsite,
+    bedConfiguration,
     deckGroup && `${deckGroup} deck`,
     shipZone,
     partySize != null && `Party of ${partySize}`,
     equipment,
     vehicleCount != null && countLabel(vehicleCount, 'vehicle'),
   ].filter((bit): bit is string => Boolean(bit));
+}
+
+// "84°/65° (avg)", for the day header and a card alike.
+export function temperatureLabel(highF: number, lowF: number, isForecast: boolean): string {
+  return `${highF}°/${lowF}° (${isForecast ? 'forecast' : 'avg'})`;
 }
 
 // "1 night", "7 nights".
@@ -232,7 +240,7 @@ export function formatMinutes(minutes: number): string {
 
 // "~1 hr 5 min · 42 mi" (or just the time when miles isn't known) — the one
 // spelling of a drive stretch shared by RouteEditForm's read-only leg
-// summary, DayTimeline's travel footers and DayMapSidebar's InfoWindows.
+// summary, DayTimeline's travel lines and DayMapSidebar's InfoWindows.
 export function formatTravel(travel: { minutes: number; miles?: number }): string {
   const time = `~${formatMinutes(travel.minutes)}`;
   return travel.miles != null ? `${time} · ${travel.miles} mi` : time;

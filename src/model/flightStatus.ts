@@ -6,6 +6,7 @@ import { airlabs } from './airlabsFlights';
 import { aviationstack } from './aviationstackFlights';
 import type { ClientOptions } from './clientOptions';
 import { type FlightEnd, type FlightProvider, type FlightStatus } from './flightStatusTypes';
+import { dotted } from './formatting';
 import { type CacheEntry, persistedEntry } from './idbCache';
 import {
   addMinutesIso,
@@ -81,7 +82,7 @@ export function isWorthLookingUp(times: FlightTimes, now: number): boolean {
   return zonedSide(times, now) === 'within';
 }
 
-// What the detail sheet says about a flight's status: a headline, its tone, and a
+// What a flight's card says about a flight's status: a headline, its tone, and a
 // line per end with whatever the source has posted.
 export interface FlightStatusSummary {
   headline: string;
@@ -93,7 +94,6 @@ export interface FlightStatusSummary {
 // Late enough to call out; shorter delays read as on time.
 const NOTABLE_DELAY_MINUTES = 15;
 
-const joined = (parts: (string | false | null)[]) => parts.filter(Boolean).join(' · ') || null;
 const movedTime = (end: FlightEnd, verb: string) => {
   const time = end.actual ?? end.estimated;
   return time && time !== end.scheduled && `${verb} ${formatTime(time)}`;
@@ -135,12 +135,12 @@ export function summarizeFlightStatus(status: FlightStatus): FlightStatusSummary
   return {
     headline,
     tone,
-    departure: joined([
+    departure: dotted([
       departure.terminal && `Terminal ${departure.terminal}`,
       departure.gate && `Gate ${departure.gate}`,
       !departed && movedTime(departure, 'leaves'),
     ]),
-    arrival: joined([
+    arrival: dotted([
       arrival.terminal && `Terminal ${arrival.terminal}`,
       arrival.gate && `Gate ${arrival.gate}`,
       arrival.baggage && `Baggage claim ${arrival.baggage}`,
@@ -201,7 +201,7 @@ export type FlightLookup =
   | { kind: 'over' }
   | { kind: 'noFlightNumber' };
 
-// What the sheet says when there's no status to show.
+// What the card says when there's no status to show.
 export function flightLookupNote(lookup: FlightLookup): string | null {
   switch (lookup.kind) {
     case 'notYet':
@@ -222,7 +222,7 @@ export const canChange = (lookup: FlightLookup): boolean =>
 const STATUS_TTL_MS = 15 * 60 * 1000;
 // How long an answer that can't change is kept across visits: past the day it flies.
 const FINAL_TTL_MS = 24 * 60 * 60 * 1000;
-// How often an open sheet asks again: just past STATUS_TTL_MS, so each ask gets a
+// How often an open card asks again: just past STATUS_TTL_MS, so each ask gets a
 // fresh answer rather than the one it already has.
 export const FLIGHT_STATUS_REFRESH_MS = STATUS_TTL_MS + 60 * 1000;
 
@@ -250,7 +250,7 @@ export interface FlightStatusEnv extends Required<Pick<ClientOptions, 'fetch'>> 
 }
 
 export function createFlightStatusClient(env: FlightStatusEnv) {
-  // The latest answer per flight, shared by every row and sheet showing it: reused
+  // The latest answer per flight, shared by every card showing it: reused
   // for STATUS_TTL_MS after it was asked, for the rest of the visit once final, and
   // after the window closes. A failed lookup isn't kept, so it's asked again.
   type Answer = CacheEntry<FlightStatus | null>;

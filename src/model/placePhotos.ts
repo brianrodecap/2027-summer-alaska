@@ -16,13 +16,12 @@ import type { Image, Place, PlacePhotoRef } from './types';
 // strip renders exactly this many, never more.
 export const MAX_PHOTOS = 4;
 
-// Each media fetch is billed per request, whatever its size. A row's avatar
-// (48px shown) asks for its own small size: most rows are never opened, so
-// downloading a sheet-sized photo for each would cost bandwidth on every row to
-// save one request per opened sheet. PlacePanel's strip of other photos (120x90
-// shown) asks for `thumbnail`, side sheets and cards for `photo`, and the
+// Each media fetch is billed per request, whatever its size. A card's photo
+// (120x84 shown) asks for its own small size: most rows are never opened, so
+// downloading a full-sized photo for each would cost bandwidth on every row. PlacePanel's strip of other photos (120x90
+// shown) asks for `thumbnail`, dialogs and map popups for `photo`, and the
 // full-width trip hero for `hero`.
-const PHOTO_SIZE_PX = { avatar: 96, thumbnail: 240, photo: 400, hero: 1600 } as const;
+const PHOTO_SIZE_PX = { card: 240, thumbnail: 240, photo: 400, hero: 1600 } as const;
 export type PhotoSize = keyof typeof PHOTO_SIZE_PX;
 
 // Photo Media is fetched directly by the browser as a plain <img src> —
@@ -165,12 +164,12 @@ export function createPhotoResolver(source: PhotoSource) {
 
   // Looks up a place's current photos once (again only after a
   // failure, see RETRY_AFTER_MS) — from a full lookup when one was started,
-  // else on their own. A first lookup decides a microtask later: a side sheet's
-  // hero image mounts before its PlacePanel, so the hero's effect asks first
-  // and the panel's full lookup starts later in the same commit. Waiting until
+  // else on their own. A first lookup decides a microtask later: an image can
+  // mount in the same commit, before the PlacePanel beside it, so its effect asks first and the
+  // panel's full lookup starts later in the same commit. Waiting until
   // that commit's effects have all run lets the hero read the panel's lookup
   // instead of paying for a second, photos-only one. It saves nothing when the
-  // photos-only lookup came first (a day row's avatar, before its sheet opened):
+  // photos-only lookup came first (a card's photo, before the card opened):
   // the panel's full lookup asks for more than photos and still goes out.
   function lookUpPhotos(placeId: string): Promise<void> {
     const known = lookups.get(placeId);

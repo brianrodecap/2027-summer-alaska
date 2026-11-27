@@ -3,7 +3,7 @@ import Alert from '@mui/material/Alert';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import { type MouseEvent, useState } from 'react';
+import { useState } from 'react';
 
 import type { Note } from '../../model/types';
 import { useNoteEdit } from '../../state/useNoteEdit';
@@ -39,9 +39,8 @@ const TRUNCATE_CHAR_THRESHOLD = 110;
 // Every note shows its icon and up to its first two lines at rest, to keep
 // the day list compact — long text fades out via a mask (not an ellipsis)
 // so it reads as "there's more" rather than a hard cut. Clicking anywhere on
-// a note that actually overflows those two lines expands it to the full
-// text in place; a note that already fits in two lines has nothing more to
-// reveal, so it isn't clickable at all. All three kinds render as an MUI
+// a clamped note expands it to the full
+// text in place and shows its Edit action. All three kinds render as an MUI
 // Alert (footnote in neutral, untinted colors and smaller type) and carry an
 // Edit action wired to NoteEditContext.
 function NoteChip({ note, expanded }: { note: Note; expanded: boolean }) {
@@ -52,12 +51,7 @@ function NoteChip({ note, expanded }: { note: Note; expanded: boolean }) {
   const truncatable = note.text.length > TRUNCATE_CHAR_THRESHOLD;
 
   const clamp = !expanded && !open;
-  // A `mid` note now sometimes renders inside a row's own clickable area
-  // (see ActivityRow/MealRow/DayTimeline's StayNode/TransitBoundaryNode) —
-  // stopPropagation keeps a tap on the note from also firing that row's
-  // "open the detail sheet" handler.
-  const toggle = (e: MouseEvent) => {
-    e.stopPropagation();
+  const toggle = () => {
     if (!expanded) setOpen((v) => !v);
     setTapped((v) => !v);
   };
@@ -67,7 +61,7 @@ function NoteChip({ note, expanded }: { note: Note; expanded: boolean }) {
       size="small"
       aria-label="Edit note"
       onClick={(e) => {
-        e.stopPropagation();
+        e.stopPropagation(); // not also the note's own expand/collapse
         openNoteEdit(note);
       }}
     >
@@ -103,10 +97,9 @@ function NoteChip({ note, expanded }: { note: Note; expanded: boolean }) {
 }
 
 // `expanded` opts a caller out of the two-line clamp entirely (full text,
-// always) — for a side sheet or drill-down dialog where the note already has
+// always) — for an open card or a dialog where the note already has
 // the reader's full attention and a screen's worth of room, vs. the compact
-// day-list rendering where the clamp keeps a long footnote from dominating
-// the row it's attached to.
+// rendering where the clamp keeps a long note from dominating what it's on.
 export function NotesCluster({
   notes,
   expanded = false,

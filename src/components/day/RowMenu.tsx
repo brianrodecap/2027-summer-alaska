@@ -10,21 +10,20 @@ import { useState } from 'react';
 
 import type { RefEntityKind } from '../../model/types';
 import { useNoteEdit } from '../../state/useNoteEdit';
-import { AddNoteMenuItems } from '../shared/AddNoteMenuItems';
+import { AddNoteMenuItem } from '../shared/AddNoteMenuItems';
 import { ConfirmDialog } from '../shared/ConfirmDialog';
 import { materialIcon } from '../shared/materialIcon';
+import { DEFAULT_NOTE_KIND } from '../shared/noteKind';
 import { useAnchorMenu } from '../shared/useAnchorMenu';
 
 const EventIcon = materialIcon('event');
 
-// A row's action menu — a plain kebab IconButton that opens a standard MUI
-// dropdown Menu, rather than a SpeedDial's fanned-out Fab. It sits inline as
-// a normal flex sibling of the row's own content (see DayTimeline.tsx's
-// callers), never absolutely overlapping it, so long row text can never be
-// covered by the button the way a floating Fab could. Delete goes through
-// its own ConfirmDialog rather than firing straight from the menu item —
-// same rule as every other delete path in the app (EditDialog,
-// RouteEditDialog, NoteEditDialog).
+// A card's action menu — a plain kebab IconButton in the card's top corner that
+// opens a standard MUI dropdown Menu. It takes its own place in the card's header,
+// so long row text can never be covered by it. Delete goes through its own
+// ConfirmDialog rather than firing straight from the menu item — same rule as
+// every other delete path in the app (EditDialog, RouteEditDialog,
+// NoteEditDialog).
 export function RowMenu({
   entity,
   id,
@@ -49,8 +48,7 @@ export function RowMenu({
         aria-label="Row actions"
         data-testid={`row-menu-${entity}-${id}`}
         size="small"
-        edge="end"
-        sx={{ flexShrink: 0, ml: 0.5, mt: -0.5 }}
+        sx={{ m: -0.5 }}
         onClick={openAt}
       >
         <MoreVertIcon fontSize="small" />
@@ -62,6 +60,7 @@ export function RowMenu({
           </ListItemIcon>
           <ListItemText>Edit</ListItemText>
         </MenuItem>
+        <AddNoteMenuItem onClick={pick(() => openNoteCreate({ entity, id }, DEFAULT_NOTE_KIND))} />
         {onMove && (
           <MenuItem onClick={pick(onMove)}>
             <ListItemIcon>
@@ -78,7 +77,6 @@ export function RowMenu({
             <ListItemText>Delete</ListItemText>
           </MenuItem>
         )}
-        <AddNoteMenuItems onPick={(kind) => pick(() => openNoteCreate({ entity, id }, kind))} />
       </Menu>
       {onDelete && (
         <ConfirmDialog

@@ -7,10 +7,10 @@ import { bookingChipDetails } from '../../model/bookingDetails';
 import type { Booking, BookingStatus } from '../../model/types';
 import { BookingDetails } from './BookingDetails';
 
-const STATUS_COLOR: Record<BookingStatus, 'success' | 'default' | 'error' | 'warning'> = {
+const STATUS_COLOR: Record<BookingStatus, 'success' | 'error' | 'warning'> = {
   booked: 'success',
   requested: 'warning',
-  planning: 'default',
+  planning: 'warning',
   cancelled: 'error',
 };
 
@@ -28,7 +28,7 @@ export function BookingStatusChip({ status }: { status: BookingStatus }) {
 // Booking is optional on Leg/Stay/Transit/Activity — present only when an
 // actual reservation applies (see docs/data-model.html, principle 4). On a
 // phone the chip is just the status ("Booked") unless `detailsOnMobile`; the
-// full facts are a tap away in the detail sheet.
+// full facts are a tap away on the open card.
 export function BookingChip({
   booking,
   detailsOnMobile = false,
@@ -57,16 +57,22 @@ export function BookingChip({
       icon={<ConfirmationNumberIcon />}
       label={label}
       color={STATUS_COLOR[booking.status]}
-      sx={{ alignSelf: 'flex-start', maxWidth: '100%' }}
+      // a long confirmation number wraps rather than being cut off
+      sx={{
+        alignSelf: 'flex-start',
+        maxWidth: '100%',
+        height: 'auto',
+        minHeight: 24,
+        '& .MuiChip-label': { whiteSpace: 'normal', overflowWrap: 'anywhere', py: 0.25 },
+      }}
     />
   );
 }
 
-// The slot every booking's own view (the Activity/Stay/Transit detail
-// sheets, LegDialog) gives it: its chip, then its full BookingDetails, so
-// they can't silently diverge. Renders nothing when there's no booking, same
+// A booking's own view in a dialog (LegDialog): its chip, then its full
+// BookingDetails. Renders nothing when there's no booking, same
 // as BookingChip itself. `date` and `entityId` are BookingDetails' own; `sx`
-// replaces the detail sheets' top margin.
+// replaces the default top margin.
 export function BookingSection({
   booking,
   date,
@@ -82,7 +88,7 @@ export function BookingSection({
   return (
     <Box sx={sx}>
       <BookingChip booking={booking} detailsOnMobile />
-      {/* Keyed so a sheet reopened on another booking re-reads its default open state. */}
+      {/* Keyed so another booking re-reads its default open state. */}
       <BookingDetails key={booking._id} booking={booking} date={date} entityId={entityId} />
     </Box>
   );

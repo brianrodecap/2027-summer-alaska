@@ -1,94 +1,87 @@
-import Box from '@mui/material/Box';
-import ButtonBase from '@mui/material/ButtonBase';
-import Typography from '@mui/material/Typography';
+import type { ReactNode, Ref } from 'react';
 
+import { activityCardAdds } from '../../model/activityCard';
 import { firstImage, timeAndMealTypeLabel } from '../../model/formatting';
 import { liveWarnings } from '../../model/mealOptions';
-import { activityHeadline, activityStart, activityZone, rowShows } from '../../model/tripModel';
-import type { Day, EnrichedActivity, EnrichedMealOption, Note } from '../../model/types';
-import { BookingChip } from '../shared/BookingChip';
+import {
+  activityHeadline,
+  activityNodeKey,
+  activityStart,
+  entryNotes,
+  rowShows,
+} from '../../model/tripModel';
+import type { Day, EnrichedActivity } from '../../model/types';
+import { cardId } from '../../state/expandedRows';
+import { useTravelerNames } from '../../state/useTravelerNames';
+import { useTripData } from '../../state/useTripData';
+import { ActivityExtras, ActivityGoogle, ActivityLines } from '../detail/ActivityCardDetails';
 import { LinkifiedText } from '../shared/LinkifiedText';
 import { activityRowIconName } from '../shared/materialIcon';
-import { NotesCluster } from '../shared/Notes';
 import { OverlapWarnings } from '../shared/OverlapWarnings';
-import { ROW_OVERLINE_SX } from '../shared/rowLeadingTokens';
-import { TravelerChips } from '../shared/TravelerChips';
 import { AvatarOrDotView } from './AvatarOrDot';
-import { BookingClockNote } from './BookingClockNote';
 import { useClockSuffix } from './dayClock';
 import { PlaceConditionsLine } from './PlaceConditionsLine';
+import { RowCard } from './RowCard';
 import { useSunAnchoredTime } from './useSunAnchoredTime';
 
-// The image/icon a plain (non-meal) Activity contributes to the day
-// timeline's own dot column — DayTimeline's own ActivityNode picks this or
-// MealRowLeading before either ever mounts, based on isMealActivity(),
-// so a meal Activity's dot never mounts this component's own hooks only to
-// discard them.
-export function ActivityLeading({
-  activity,
-  inView,
-}: {
-  activity: EnrichedActivity;
-  inView: boolean;
-}) {
-  const image = firstImage(activity, activity.place);
-  return <AvatarOrDotView image={image} icon={activityRowIconName(activity)} inView={inView} />;
-}
-
+// A plain (non-meal) Activity's card. DayTimeline picks this or MealRow by
+// isMealActivity().
 export function ActivityRow({
   activity,
   day,
-  onOpen,
-  midNotes,
   inView,
-  buttonRef,
+  cardRef,
+  selected,
+  menu,
 }: {
   activity: EnrichedActivity;
   day: Day;
-  onOpen: (activity: EnrichedActivity, selectedOption?: EnrichedMealOption) => void;
-  midNotes?: Note[];
   inView: boolean;
-  buttonRef: (node: HTMLButtonElement | null) => void;
+  cardRef: Ref<HTMLDivElement>;
+  selected?: boolean;
+  menu: ReactNode;
 }) {
   const timeText = useSunAnchoredTime(activity, day, inView);
   const clock = useClockSuffix(activity.startAt ? activityStart(activity) : null);
-  const { booking } = rowShows({ type: 'activity', activity });
+  const { booking, notes } = rowShows({ type: 'activity', activity });
+  const headline = activityHeadline(activity);
+  const { data } = useTripData();
+  const names = useTravelerNames();
+  const allNotes = entryNotes(activity);
+  const opens = activityCardAdds({ data, activity, title: headline, notes: allNotes, names });
 
   return (
-    <ButtonBase
-      ref={buttonRef}
-      onClick={() => onOpen(activity)}
-      sx={{
-        flexGrow: 1,
-        minWidth: 0,
-        textAlign: 'left',
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: 1,
-      }}
-    >
-      <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-        <Typography variant="caption" color="text.secondary" sx={ROW_OVERLINE_SX}>
-          {timeAndMealTypeLabel(activity, timeText, clock)}
-        </Typography>
-        <BookingClockNote
-          at={activity.startAt}
-          bookingZone={activityZone(activity)}
-          placeZone={activity.place?.timeZone}
+    <RowCard
+      cardRef={cardRef}
+      selected={selected}
+      notes={notes}
+      booking={booking}
+      name={headline}
+      overline={timeAndMealTypeLabel(activity, timeText, clock)}
+      title={<LinkifiedText text={headline} />}
+      conditions={<PlaceConditionsLine place={activity.place} date={day.date} />}
+      photo={
+        <AvatarOrDotView
+          image={firstImage(activity, activity.place)}
+          icon={activityRowIconName(activity)}
+          inView={inView}
         />
-        <Typography variant="body1">
-          <LinkifiedText text={activityHeadline(activity)} />
-        </Typography>
-        <PlaceConditionsLine place={activity.place} date={day.date} />
-        <NotesCluster notes={midNotes} />
-        <TravelerChips names={activity.travelers} />
-        {booking && (
-          <Box sx={{ mt: 0.5 }}>
-            <BookingChip booking={booking} />
-          </Box>
-        )}
-        <OverlapWarnings warnings={liveWarnings(activity, day)} />
-      </Box>
-    </ButtonBase>
+      }
+      cardId={cardId(day.date, activityNodeKey(activity._id))}
+      details={
+        opens
+          ? {
+              booking: activity.booking,
+              notes: allNotes,
+              lines: <ActivityLines activity={activity} title={headline} />,
+              extras: <ActivityExtras activity={activity} />,
+              google: <ActivityGoogle activity={activity} />,
+            }
+          : undefined
+      }
+      menu={menu}
+    >
+      <OverlapWarnings warnings={liveWarnings(activity, day)} />
+    </RowCard>
   );
 }

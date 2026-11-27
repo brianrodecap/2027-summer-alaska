@@ -10,13 +10,8 @@ export const NOTE_ICON: Record<NoteKind, typeof WarningIcon> = {
   footnote: NotesIcon,
 };
 
-// Shared by every "add a note" menu (RowMenu's per-row menu, DayAccordion's
-// day-level one) so the three kinds always offer the same label/order.
-export const ADD_NOTE_ITEMS: { kind: NoteKind; label: string }[] = [
-  { kind: 'warning', label: 'Add alert' },
-  { kind: 'info', label: 'Add info' },
-  { kind: 'footnote', label: 'Add footnote' },
-];
+// The kind a new note starts as; the note dialog changes it.
+export const DEFAULT_NOTE_KIND: NoteKind = 'info';
 
 const KIND_ORDER: Record<NoteKind, number> = { warning: 0, info: 1, footnote: 2 };
 
@@ -24,15 +19,7 @@ export function sortNotes(notes: Note[]): Note[] {
   return [...notes].sort((a, b) => KIND_ORDER[a.kind] - KIND_ORDER[b.kind]);
 }
 
-// A day-list row splits the notes it shows (tripModel.ts's rowShows — its
-// entry's own, or a shared booking's on its first entry) into three slots — see DayTimeline's node components (and
-// ActivityRow/MealRow, which place `mid` for their own entity): `above`
-// (alert) renders above the whole row, `mid` (info) renders inside the row,
-// after its own text/detail content but before any trailing chips
-// (traveler/booking chips, meal-option chips), and `below` (footnote) renders
-// below the whole row, after those chips. Anything with no single row to
-// attach to (a whole Day, Leg, or Scenario track) renders its notes as one
-// NotesCluster instead, kind-ordered the same way.
+// Notes split by kind, for a card, which places each kind apart.
 export function splitNotes(notes: Note[]): { above: Note[]; mid: Note[]; below: Note[] } {
   const sorted = sortNotes(notes);
   return {

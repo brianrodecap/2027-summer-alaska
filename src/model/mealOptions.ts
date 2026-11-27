@@ -1,11 +1,13 @@
 // A meal Activity with several still-open MealOption candidates (see
 // docs-model.html's Activity entity) needs to know which candidates are
 // still actually choosable today, and what to call whichever one's selected
-// — logic shared by the meal row and the activity detail panel, so it lives
+// — logic shared by the meal row and its open card, so it lives
 // here rather than inside either's own component file.
 import { DINING_FORMAT_LABEL } from './formatting';
+import { allPackages } from './packages';
 import {
   activitiesDeep,
+  activityHeadline,
   activityTimeLabel,
   activityTimelineStart,
   activityWarnings,
@@ -17,6 +19,7 @@ import {
   stayRelation,
   staysInScope,
   stayZone,
+  transitRouteLabel,
   type ZonedTime,
 } from './tripModel';
 import type {
@@ -29,6 +32,7 @@ import type {
   Ref,
   Stay,
   Transit,
+  TripData,
 } from './types';
 
 type StayForOption = Pick<Stay, '_id' | 'packages' | 'checkInAt' | 'checkOutAt'> &
@@ -141,6 +145,18 @@ export function activeMealOptionsOn<O extends Pick<MealOption, 'diningFormat' | 
 
 export function mealOptionLabel(option: EnrichedMealOption): string {
   return option.place ? option.place.label : DINING_FORMAT_LABEL[option.diningFormat];
+}
+
+// What each candidate's chip says: its kind of meal. Where another candidate is the
+// same kind, which that couldn't tell apart, a chip says the candidate's name
+// instead, except the picked one's: the card's title already names it.
+export function mealChipLabels(options: EnrichedMealOption[], picked: number): string[] {
+  return options.map((option, i) => {
+    const alike = options.some((o) => o !== option && o.diningFormat === option.diningFormat);
+    return alike && i !== picked
+      ? mealOptionLabel(option)
+      : DINING_FORMAT_LABEL[option.diningFormat];
+  });
 }
 
 // Which of a still-open meal's active candidates is currently selected —
@@ -281,4 +297,49 @@ export function liveWarnings(activity: EnrichedActivity, day: Day): string[] {
     byActivity.set(activity, warnings);
   }
   return warnings;
+}
+
+// What an open activity card reads its "included in" from: the selected candidate's,
+// else the Activity's own.
+export function includedInOf(
+  activity: { includedIn: Ref | null },
+  option: { includedIn: Ref | null } | null | undefined,
+): Ref | null {
+  return option ? option.includedIn : activity.includedIn;
+}
+
+// What a meal (or a meal candidate) is included in: "Included in Princess
+// Premier" for a Package, "Included with <stay/activity/transit>" otherwise.
+// null when it isn't included in anything, or the target no longer exists.
+export function includedInLabel(
+  data: Pick<TripData, 'stays' | 'transits' | 'activities'>,
+  includedIn: Ref | null | undefined,
+): string | null {
+  if (!includedIn || !('entity' in includedIn)) return null;
+  const { entity, id } = includedIn;
+  if (entity === 'package') {
+    const pkg = allPackages(data).find((p) => p._id === id);
+    return pkg ? `Included in ${pkg.name}` : null;
+  }
+  const target = (() => {
+    switch (entity) {
+      case 'stay':
+        return data.stays.find((s) => s._id === id)?.lodging?.place.label;
+      case 'activity': {
+        const activity = data.activities.find((a) => a._id === id);
+        return activity && activityHeadline(activity);
+      }
+      case 'transit': {
+        const transit = data.transits.find((t) => t._id === id);
+        return transit && transitRouteLabel(transit);
+      }
+    }
+  })();
+  return target ? `Included with ${target}` : null;
+}
+
+// Which entry's booking a meal's card shows, and so which one "also covers" leaves
+// out: the selected candidate's own reservation, else the Activity's.
+export function bookingHolder<T extends { booking: unknown }>(activity: T, option?: T | null): T {
+  return option?.booking ? option : activity;
 }

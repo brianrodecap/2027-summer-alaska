@@ -1,13 +1,9 @@
-// The detail sheets' own lines for what an entity records beyond its booking:
-// when it runs, the lodging extras, its packages' costs, a
-// cruise's port calls, and what a meal is included in. Pure — the sheets in
-// components/detail render these. Day/location/scenario context stays in the
-// day row the sheet opened from and is never restated here.
+// An expanded card's lines for what an entity records beyond its booking: when it
+// runs, its packages' costs and a cruise's port calls (whose one-day wording the
+// day header shares). Pure; the day and detail components render these.
 import { clockChangeText } from './dayClocks';
 import { countLabel, formatMinutes } from './formatting';
-import { allPackages } from './packages';
 import {
-  activityHeadline,
   dateOnly,
   endpointZonesOf,
   formatDateLabel,
@@ -17,11 +13,10 @@ import {
   packageTotal,
   packageUnits,
   stayNights,
-  transitRouteLabel,
   wallClockMs,
   zoneShortName,
 } from './tripModel';
-import type { Package, PortCall, Ref, Stay, Transit, TripData } from './types';
+import type { Package, PortCall, Stay, Transit } from './types';
 
 // "3:00pm in · 11:00am out" on one day; once the two ends fall on different
 // days each gets its date: "Sat Jul 17, 3:00pm in → Sat Jul 24, 7:30am out".
@@ -115,6 +110,27 @@ export function portCallWhenLabel(call: PortCall): string {
   return 'Times not printed';
 }
 
+// The icon a port call shows: a ship cruising past scenery, or lying in port.
+export const portCallIcon = (kind: PortCall['kind']) =>
+  kind === 'scenic' ? 'landscape' : 'anchor';
+
+// Only the end(s) of the stop that fall on `date`: an overnight stay reads
+// "Arrives 8:00 PM" on its first day and "All aboard 6:00 AM" on its last.
+export function portCallDayLabel(call: PortCall, date: string): string {
+  const arrivesToday = !!call.arrivesAt && dateOnly(call.arrivesAt) === date;
+  const departsToday = !!call.departsAt && dateOnly(call.departsAt) === date;
+  const where = call.kind === 'scenic' ? `Cruising past ${call.place.label}` : call.place.label;
+  const aboard = call.kind === 'port' ? 'All aboard' : 'Leaves';
+  const at = (t: string | null | undefined) => (t ? formatTime(t) : '');
+  if (arrivesToday && departsToday) {
+    return `${where} · ${at(call.arrivesAt)}–${at(call.departsAt)}${call.kind === 'port' ? ' (all aboard)' : ''}`;
+  }
+  if (arrivesToday)
+    return `${where} · Arrives ${at(call.arrivesAt)}${call.departsAt ? ' · overnight' : ''}`;
+  if (departsToday) return `${where} · ${aboard} ${at(call.departsAt)}`;
+  return where;
+}
+
 // Port calls in the order the ship makes them; a call with neither time
 // printed keeps its place at the end.
 export function portCallsInOrder(calls: PortCall[] | null | undefined): PortCall[] {
@@ -126,34 +142,4 @@ export function portCallsInOrder(calls: PortCall[] | null | undefined): PortCall
     if (kb === null) return -1;
     return ka < kb ? -1 : 1;
   });
-}
-
-// What a meal (or a meal candidate) is included in: "Included in Princess
-// Premier" for a Package, "Included with <stay/activity/transit>" otherwise.
-// null when it isn't included in anything, or the target no longer exists.
-export function includedInLabel(
-  data: Pick<TripData, 'stays' | 'transits' | 'activities'>,
-  includedIn: Ref | null | undefined,
-): string | null {
-  if (!includedIn || !('entity' in includedIn)) return null;
-  const { entity, id } = includedIn;
-  if (entity === 'package') {
-    const pkg = allPackages(data).find((p) => p._id === id);
-    return pkg ? `Included in ${pkg.name}` : null;
-  }
-  const target = (() => {
-    switch (entity) {
-      case 'stay':
-        return data.stays.find((s) => s._id === id)?.lodging?.place.label;
-      case 'activity': {
-        const activity = data.activities.find((a) => a._id === id);
-        return activity && activityHeadline(activity);
-      }
-      case 'transit': {
-        const transit = data.transits.find((t) => t._id === id);
-        return transit && transitRouteLabel(transit);
-      }
-    }
-  })();
-  return target ? `Included with ${target}` : null;
 }

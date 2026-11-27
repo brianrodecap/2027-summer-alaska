@@ -25,8 +25,10 @@ import type { Timeline, TimelineEvent } from './timeline';
 import {
   activityNodeKey,
   buildDirectionsUrl,
+  type DayMapPlaceRef,
   type DayMapRouteNode,
   type DayTravelSegment,
+  dedupeDayMapPlaceStops,
   diffMinutesIso,
   findNextResolvableStop,
   MAX_ROUTE_WAYPOINTS,
@@ -79,11 +81,15 @@ export type DayVisit =
     }
   | { kind: 'activity'; activity: EnrichedActivity; place: Place; key: string; order: number };
 
+// A visit that has no row on this day: the other day's part of a Transit that
+// crosses midnight.
+type OffDay = { offDay?: boolean };
+
 export interface DayVisits {
   date: string;
   checkOuts: DayVisit[]; // unscoped Stay check-outs — always the day's first stops
   checkIns: DayVisit[]; // unscoped check-ins and stays in progress — always its last
-  rest: DayVisit[]; // everything else, in the order it happens
+  rest: (DayVisit & OffDay)[]; // everything else, in the order it happens
 }
 
 export interface DayVisitsInput {
@@ -173,13 +179,19 @@ function rowVisits(row: DayRow): DayVisit[] {
             },
           ];
     }
-    // A scenario box contributes only the branches on screen, in the order they
-    // happen (nested boxes flatten into the outermost one, as the list shows them).
-    case 'box':
-      return row.tracks
+    // A scenario box contributes only the branches on screen, in the list's order:
+    // each branch's check-outs first and check-ins last, the rest as they happen
+    // (nested boxes flatten into the outermost one).
+    case 'box': {
+      const branches = row.tracks
         .filter((track) => track.active)
-        .flatMap((track) => track.rows.flatMap(rowVisits))
-        .sort((a, b) => a.order - b.order);
+        .map((track) => splitOutStayBoundaries(track.rows));
+      return [
+        ...branches.flatMap((b) => b.checkOuts),
+        ...branches.flatMap((b) => b.rest).sort((a, b) => rowOrder(a) - rowOrder(b)),
+        ...branches.flatMap((b) => b.checkIns),
+      ].flatMap(rowVisits);
+    }
   }
 }
 
@@ -233,13 +245,13 @@ function eventVisit(event: TimelineEvent, transit: EnrichedTransit): DayVisit | 
 export function buildDayVisits({ date, rows, index }: DayVisitsInput): DayVisits {
   const { checkOuts, rest, checkIns } = splitOutStayBoundaries(rows);
   const dayStart = `${date}T00:00`;
-  const before: DayVisit[] = [];
-  const after: DayVisit[] = [];
+  const before: (DayVisit & OffDay)[] = [];
+  const after: (DayVisit & OffDay)[] = [];
   for (const [id, transit] of transitsIn(rest)) {
     for (const event of index.byTransit.get(id) ?? []) {
       if (event.date === date) continue; // already a row of this day
       const visit = eventVisit(event, transit);
-      if (visit) (event.at < dayStart ? before : after).push(visit);
+      if (visit) (event.at < dayStart ? before : after).push({ ...visit, offDay: true });
     }
   }
   return {
@@ -352,7 +364,7 @@ type BoundaryAt = Pick<TransitBoundaryRow, 'phase'> & {
 //     same mode, flying on from where it landed (not back to where it left:
 //     that's an excursion's return), is a layover — the time between them,
 //     not a drive.
-// null when it's an ordinary hop (the travel footer).
+// null for an ordinary drive.
 export type ScheduledHop = { kind: 'aboard' } | { kind: 'connection'; minutes: number };
 
 export function scheduledHop(
@@ -382,17 +394,21 @@ interface HopRow {
   boundary?: BoundaryAt;
 }
 
-// What follows `rows[i]` in the day list: its scheduledHop, else a travel
-// footer from its place to `next`'s — the next row with a resolved place, walking past rows that
-// have none so they don't dead-end their real neighbors, but never past a
+// What leads from `rows[i]` to the next stop in the day list: its scheduledHop, else
+// travel from its place to `next`'s, the next row with a resolved place. Rows with
+// none are walked past so they don't dead-end their real neighbors, but never past a
 // flight's or ferry's own Depart or Arrive (resolved or not), which no drive
-// crosses; drivableRuns splits the day there the same way. null for no
-// footer: nothing reachable, the same place, or the next stop is a scheduled
+// crosses; drivableRuns splits the day there the same way. null when there is
+// nothing to show: nothing reachable, the same place, or the next stop is a scheduled
 // transit's Arrive (the row is mid-flight: a route stage, an activity aboard).
 export function rowHop<R extends HopRow>(
   rows: R[],
   i: number,
-): ScheduledHop | { kind: 'travel'; from: Place; to: Place; next: R } | null {
+):
+  | { kind: 'aboard' }
+  | { kind: 'connection'; minutes: number; next: R }
+  | { kind: 'travel'; from: Place; to: Place; next: R }
+  | null {
   const row = rows[i];
   const next = findNextResolvableStop(
     rows,
@@ -400,7 +416,8 @@ export function rowHop<R extends HopRow>(
     (r) => !!r.entryPlace?.id || (!!r.boundary && isScheduled(r.boundary.transit)),
   );
   const hop = scheduledHop(row.boundary, next?.boundary);
-  if (hop) return hop;
+  // a connection is always to the row it was read against
+  if (hop) return hop.kind === 'connection' ? { ...hop, next: next as R } : hop;
   if (next?.boundary?.phase === 'arrive' && isScheduled(next.boundary.transit)) return null;
   const from = row.exitPlace;
   const to = next?.entryPlace;
@@ -411,7 +428,7 @@ export function rowHop<R extends HopRow>(
 // Whether the party is carried between two adjacent map nodes by a scheduled
 // transit (isScheduled), not driven: it leaves from that transit's Depart or
 // one of its route stages, or arrives at its Arrive. The map draws no route
-// line there, the same way rowHop shows no travel footer.
+// line there, the same way rowHop shows no travel line.
 export function isAboardHop(from: DayMapRouteNode, to: DayMapRouteNode): boolean {
   const { ref: out } = from;
   const { ref: into } = to;
@@ -457,26 +474,25 @@ export function mapEmbedUrls(visits: DayVisits): string[] {
   });
 }
 
-function visitStop(visit: DayVisit, date: string): RouteStop | null {
+// The key the map and the day's totals look up a visit's travel-mode override by.
+// None for a stay in progress, so they route its hops as drives.
+function visitNodeKey(visit: DayVisit, date: string): string | null {
   switch (visit.kind) {
     case 'stay':
-      return routeStop(
-        visit.place,
-        visit.relation === 'Staying' ? null : stayNodeKey(visit.stay._id, date),
-      );
+      return visit.relation === 'Staying' ? null : stayNodeKey(visit.stay._id, date);
     case 'activity':
-      return routeStop(visit.place, activityNodeKey(visit.activity._id));
+      return activityNodeKey(visit.activity._id);
     case 'stage':
-      return routeStop(visit.place, stageNodeKey(visit.transit._id, visit.stageIndex));
+      return stageNodeKey(visit.transit._id, visit.stageIndex);
     case 'transit':
-      return routeStop(visit.place, transitBoundaryKey(visit.transit._id, visit.phase));
+      return transitBoundaryKey(visit.transit._id, visit.phase);
   }
 }
 
 function routeStops(visits: DayVisits): RouteStop[][] {
   return bookendedRuns(
     visits,
-    (list) => resolved(list).flatMap((v) => visitStop(v, visits.date) ?? []),
+    (list) => resolved(list).flatMap((v) => routeStop(v.place, visitNodeKey(v, visits.date)) ?? []),
     (a, b) => a.label === b.label,
   );
 }
@@ -503,7 +519,7 @@ export function routeUrls(visits: DayVisits): string[] {
 
 // Every drivable hop between two consecutive stops with different place ids
 // (every RouteStop already has a resolved id — see `resolved`). The day-list rows' own
-// travel footers pair stops a different way, via tripModel's `findNextResolvableStop`.
+// travel lines pair stops a different way, via tripModel's `findNextResolvableStop`.
 export function travelSegments(visits: DayVisits): DayTravelSegment[] {
   return routeStops(visits).flatMap((stops) =>
     stops.slice(0, -1).flatMap((stop, i): DayTravelSegment[] => {
@@ -520,12 +536,18 @@ export function travelSegments(visits: DayVisits): DayTravelSegment[] {
 // with the reference the map sidebar uses to open the matching row's detail.
 export function mapRouteNodes(visits: DayVisits): DayMapRouteNode[] {
   const nodes: DayMapRouteNode[] = [];
-  for (const v of [...visits.checkOuts, ...visits.rest, ...visits.checkIns]) {
+  const all: (DayVisit & OffDay)[] = [...visits.checkOuts, ...visits.rest, ...visits.checkIns];
+  for (const v of all) {
     if (!v.place.id) continue;
+    const shared = {
+      place: v.place,
+      nodeKey: visitNodeKey(v, visits.date),
+      ...(v.offDay ? { offDay: true } : {}),
+    };
     switch (v.kind) {
       case 'stay':
         nodes.push({
-          place: v.place,
+          ...shared,
           order: v.order,
           at: v.key,
           ref: { kind: 'stay', entity: v.stay, relation: v.relation, rowKey: v.key },
@@ -533,7 +555,7 @@ export function mapRouteNodes(visits: DayVisits): DayMapRouteNode[] {
         break;
       case 'transit':
         nodes.push({
-          place: v.place,
+          ...shared,
           order: v.order,
           at: v.key,
           ref: { kind: 'transit', entity: v.transit, phase: v.phase, rowKey: v.key },
@@ -541,7 +563,7 @@ export function mapRouteNodes(visits: DayVisits): DayMapRouteNode[] {
         break;
       case 'stage':
         nodes.push({
-          place: v.place,
+          ...shared,
           order: v.order,
           at: v.key,
           ref: {
@@ -555,7 +577,7 @@ export function mapRouteNodes(visits: DayVisits): DayMapRouteNode[] {
         break;
       case 'activity':
         nodes.push({
-          place: v.place,
+          ...shared,
           order: v.order,
           at: v.key,
           ref: { kind: 'activity', entity: v.activity },
@@ -564,4 +586,80 @@ export function mapRouteNodes(visits: DayVisits): DayMapRouteNode[] {
     }
   }
   return nodes;
+}
+
+// What a row's card and its map pin are called. The row's drag key, except for a
+// stay: that key names only the day, so a card also needs the row's own time (a
+// day room has both its check-in and check-out), and the morning card of a stay in
+// progress its own name.
+export const stayRowId = (stayId: string, at: string) => stayNodeKey(stayId, at);
+export const stayMorningRowId = (stayId: string) => stayNodeKey(stayId, 'morning');
+
+export function mapRefRowId(ref: DayMapPlaceRef): string {
+  if (ref.kind === 'stay') return stayRowId(ref.entity._id, ref.rowKey);
+  if (ref.kind === 'transit') return transitBoundaryKey(ref.entity._id, ref.phase);
+  if (ref.kind === 'transit-stage') return stageNodeKey(ref.entity._id, ref.stageIndex);
+  return activityNodeKey(ref.entity._id);
+}
+
+// The day's numbered rows, in the day list's order: every map node with a row on
+// this day, plus the morning card of each stay in progress, which opens its own
+// list — the day's, or its plan's (the map's route only ends there).
+function pinSequence(visits: DayVisits): { id: string; ref: DayMapPlaceRef }[] {
+  const nodes = mapRouteNodes(visits).filter((node) => !node.offDay);
+  // Morning cards not yet placed, by the plan (or null, the day) whose list they open.
+  const mornings = new Map<string | null, { id: string; ref: DayMapPlaceRef }[]>();
+  for (const { ref } of nodes) {
+    if (ref.kind !== 'stay' || ref.relation !== 'Staying') continue;
+    const plan = ref.entity.scenarioId;
+    mornings.set(plan, [
+      ...(mornings.get(plan) ?? []),
+      { id: stayMorningRowId(ref.entity._id), ref },
+    ]);
+  }
+  const opening = (plan: string | null) => {
+    const cards = mornings.get(plan) ?? [];
+    mornings.delete(plan);
+    return cards;
+  };
+  return [
+    ...opening(null),
+    ...nodes.flatMap(({ ref }) => [
+      ...opening(ref.entity.scenarioId),
+      { id: mapRefRowId(ref), ref },
+    ]),
+  ];
+}
+
+// The day map's number for each row it shows, by row id: counting up in the list's
+// order, never reused. A row the map leaves out (no real place, a routed drive's
+// own ends) has none.
+export function mapPinNumbers(visits: DayVisits): Map<string, number> {
+  return new Map(pinSequence(visits).map(({ id }, i): [string, number] => [id, i + 1]));
+}
+
+// The day map's pins, one per place, each with the numbers of every row there.
+export function numberedMapStops(visits: DayVisits) {
+  const numbers = new Map<string, number[]>();
+  pinSequence(visits).forEach(({ ref }, i) => {
+    const refId = mapRefRowId(ref);
+    numbers.set(refId, [...(numbers.get(refId) ?? []), i + 1]);
+  });
+  return dedupeDayMapPlaceStops(mapRouteNodes(visits)).map((stop) => ({
+    stop,
+    numbers: [...new Set(stop.refs.map(mapRefRowId))]
+      .flatMap((id) => numbers.get(id) ?? [])
+      .sort((a, b) => a - b),
+  }));
+}
+
+// A pin's numbers as it prints them, a run written as a range: "1–2, 7".
+export function pinLabel(numbers: number[]): string {
+  const runs: [number, number][] = [];
+  for (const n of numbers) {
+    const run = runs.at(-1);
+    if (run && n === run[1] + 1) run[1] = n;
+    else runs.push([n, n]);
+  }
+  return runs.map(([from, to]) => (from === to ? `${from}` : `${from}–${to}`)).join(', ');
 }

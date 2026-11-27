@@ -46,6 +46,7 @@ import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import MuseumIcon from '@mui/icons-material/Museum';
 import NearMeIcon from '@mui/icons-material/NearMe';
+import NoteAddIcon from '@mui/icons-material/NoteAdd';
 import PaidIcon from '@mui/icons-material/Paid';
 import PaletteIcon from '@mui/icons-material/Palette';
 import ParkIcon from '@mui/icons-material/Park';
@@ -86,6 +87,7 @@ import type { Activity, DiningFormat, Transit, TravelMode } from '../../model/ty
 type IconComponent = ComponentType<SvgIconProps>;
 
 const ICONS: Record<string, IconComponent> = {
+  note_add: NoteAddIcon,
   hotel: HotelIcon,
   expand_more: ExpandMoreIcon,
   delete: DeleteIcon,
@@ -186,7 +188,7 @@ export function renderMaterialIcon(
   return createElement(materialIcon(name), props);
 }
 
-export const DEFAULT_PLACE_ICON = 'place';
+const DEFAULT_PLACE_ICON = 'place';
 
 export const DINING_FORMAT_ICON: Record<DiningFormat, string> = {
   included: 'redeem',
@@ -201,16 +203,15 @@ export const DINING_FORMAT_ICON: Record<DiningFormat, string> = {
 
 // Activities don't carry an explicit category field — a committed meal's
 // diningFormat is the only synchronous signal richer than "does this
-// activity name a place at all". Shared by the day timeline's own row dot
-// (ActivityRow's ActivityLeading) and DayMapSidebar's markers, so both agree
-// on which icon represents a given activity.
+// activity name a place at all". Shared by the day list's card
+// (ActivityRow) and DayMapSidebar's markers, so both agree on which icon represents a given activity.
 export function activityRowIconName(activity: Pick<Activity, 'diningFormat' | 'place'>): string {
   if (activity.diningFormat) return DINING_FORMAT_ICON[activity.diningFormat];
   if (activity.place) return DEFAULT_PLACE_ICON;
   return 'event';
 }
 
-// Shared by the day timeline's own transit boundary dot (DayTimeline's
+// Shared by the day list's transit card (DayTimeline's
 // TransitBoundaryNode) and DayMapSidebar's markers, so both agree on which
 // icon represents a given Transit.
 export function transitModeIconName(transit: Pick<Transit, 'mode'>): string {

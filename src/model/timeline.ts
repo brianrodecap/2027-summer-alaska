@@ -266,7 +266,7 @@ export function buildTimeline(
             : null,
         source: { kind: 'activity', id: a._id },
         // A still-open meal is wherever its selected candidate is, so the map,
-        // route URLs, travel totals and the row footers all read that answer.
+        // route URLs, travel totals and the travel lines all read that answer.
         place: isMealActivity(a) ? (selectedMeals.get(a._id)?.place ?? null) : a.place,
         // Its own clock (activityZone: its clockZone, else its place's), whichever
         // candidate is picked, as scenario anchors read it (activityTimelineStart).

@@ -4,8 +4,11 @@ import { TEST_TODAY } from '../test/today';
 import {
   isAboardHop,
   mapEmbedUrls,
+  mapPinNumbers,
   mapRouteNodes,
   mapStopLabels,
+  numberedMapStops,
+  pinLabel,
   routeUrls,
   rowHop,
   scheduledHop,
@@ -127,6 +130,124 @@ function live(
 }
 
 const param = (url: string, name: string) => new URL(url).searchParams.get(name);
+
+describe("the map's numbers by day list row", () => {
+  const dayOfVisits = () => {
+    const data = tripData();
+    data.activities.push(
+      activity('a1', '2027-06-02T09:00', 'Cafe'),
+      activity('a2', '2027-06-02T10:00', 'Trailhead'),
+      activity('a3', '2027-06-02T11:00', 'Cafe'),
+      activity('nowhere', '2027-06-02T12:00', null),
+      activity('a4', '2027-06-02T13:00', 'Museum'),
+    );
+    return data;
+  };
+
+  it('counts up in list order, never reusing a number at a repeat visit, and skips a row with no place', () => {
+    expect(mapPinNumbers(live(dayOfVisits(), '2027-06-02').visits)).toEqual(
+      new Map([
+        ['activity-a1', 1],
+        ['activity-a2', 2],
+        ['activity-a3', 3],
+        ['activity-a4', 4],
+      ]),
+    );
+  });
+
+  it('gives one pin per place every number of its rows', () => {
+    const stops = numberedMapStops(live(dayOfVisits(), '2027-06-02').visits);
+    expect(stops.map(({ stop, numbers }) => [stop.place.label, numbers])).toEqual([
+      ['Cafe', [1, 3]],
+      ['Trailhead', [2]],
+      ['Museum', [4]],
+    ]);
+  });
+
+  it('numbers a stay in progress first for the morning card that opens the day, and last where it ends', () => {
+    const data = dayOfVisits();
+    data.stays.push(stay('s1', 'Lodge', '2027-06-01T15:00', '2027-06-04T11:00'));
+    const { visits } = live(data, '2027-06-02');
+    const numbers = mapPinNumbers(visits);
+    expect(numbers.get('stay-s1-morning')).toBe(1);
+    expect(numbers.get('activity-a1')).toBe(2);
+    expect(Math.max(...numbers.values())).toBe(6);
+    expect(numberedMapStops(visits).find((s) => s.stop.place.label === 'Lodge')!.numbers).toEqual([
+      1, 6,
+    ]);
+  });
+
+  it("numbers only the day's own rows: the other day's end of an overnight drive takes none", () => {
+    const data = tripData();
+    data.transits.push(
+      transit('night', 'Town', 'Park', {
+        departsAt: '2027-06-01T22:00',
+        arrivesAt: '2027-06-02T07:00',
+        showEndpointsOnMap: true,
+      }),
+    );
+    data.activities.push(activity('a1', '2027-06-02T09:00', 'Cafe'));
+    const { visits } = live(data, '2027-06-02');
+    expect(mapPinNumbers(visits)).toEqual(
+      new Map([
+        ['transit-night-arrive', 1],
+        ['activity-a1', 2],
+      ]),
+    );
+    expect(numberedMapStops(visits).find((s) => s.stop.place.label === 'Town')!.numbers).toEqual(
+      [],
+    );
+  });
+
+  // The list opens the plan with its morning card, ends the plan on the stay, and
+  // lists the earlier shared breakfast after the plan's section.
+  it("numbers a plan's own morning stay and its rows in the list's order", () => {
+    const data = tripData();
+    data.scenarios.push(scenario('plan', 'ideal', { date: '2027-06-02' }));
+    data.stays.push(
+      stay('camp', 'Camp', '2027-06-01T15:00', '2027-06-04T11:00', { scenarioId: 'plan' }),
+    );
+    data.activities.push(
+      activity('shared', '2027-06-02T07:00', 'Cafe'),
+      activity('inPlan', '2027-06-02T12:00', 'Trailhead', { scenarioId: 'plan' }),
+    );
+    expect(mapPinNumbers(live(data, '2027-06-02').visits)).toEqual(
+      new Map([
+        ['stay-camp-morning', 1],
+        ['activity-inPlan', 2],
+        ['stay-camp-2027-06-02T00:00', 3],
+        ['activity-shared', 4],
+      ]),
+    );
+  });
+
+  it("writes a pin's numbers with runs as ranges", () => {
+    expect(pinLabel([3])).toBe('3');
+    expect(pinLabel([1, 2, 7])).toBe('1–2, 7');
+    expect(pinLabel([3, 5, 7])).toBe('3, 5, 7');
+  });
+});
+
+describe('pin numbers of rows at the same time', () => {
+  it('never gives a hidden drive end the pin of the ferry that arrives as it leaves', () => {
+    const data = tripData();
+    data.transits.push(
+      transit('ferry', 'Port', 'Dock', {
+        mode: 'ferry',
+        departsAt: '2027-06-02T08:00',
+        arrivesAt: '2027-06-02T10:00',
+      }),
+      transit('routed', 'Town', 'Park', {
+        routeId: 'r1',
+        departsAt: '2027-06-02T10:00',
+        arrivesAt: '2027-06-02T11:00',
+      }),
+    );
+    const numbers = mapPinNumbers(live(data, '2027-06-02').visits);
+    expect(numbers.get('transit-ferry-arrive')).toBe(2);
+    expect(numbers.has('transit-routed-depart')).toBe(false);
+  });
+});
 
 describe('map stops for a day', () => {
   it('bookends a day with the stay it is in, and lists drives and activities in order', () => {
@@ -631,7 +752,7 @@ describe('the day list’s hop from each row', () => {
   const spacer = { entryPlace: null, exitPlace: null };
   const toAnc = leg('OTZ', 'ANC');
 
-  it('drives no footer across a flight whose Depart has no place id', () => {
+  it('drives nothing across a flight whose Depart has no place id', () => {
     const rows = [
       at('p_cafe'),
       boundary(toAnc, 'depart', '2027-06-26T09:00', null),
@@ -649,7 +770,7 @@ describe('the day list’s hop from each row', () => {
       spacer,
       boundary(leg('ORD', 'ANC'), 'depart', '2027-06-26T09:45'),
     ];
-    expect(rowHop(rows, 0)).toEqual({ kind: 'connection', minutes: 68 });
+    expect(rowHop(rows, 0)).toEqual({ kind: 'connection', minutes: 68, next: rows[2] });
   });
 
   it('has no drive from a row aboard to the flight’s Arrive', () => {

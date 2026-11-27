@@ -163,7 +163,7 @@ export function clockChangeLabel({ minutes }: ClockChange): string {
 }
 
 // "Clocks go back 1 hour · MDT → MST": the move and, when they differ, the two
-// clocks' names, as the day list's marker and a transit's sheet both say it.
+// clocks' names, as the day list's marker and a transit's card both say it.
 export const clockChangeText = (change: ClockChange): string =>
   `${clockChangeLabel(change)}${change.from !== change.to ? ` · ${change.from} → ${change.to}` : ''}`;
 

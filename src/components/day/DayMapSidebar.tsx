@@ -14,7 +14,13 @@ import { useMemo, useState } from 'react';
 import { GOOGLE_MAPS_MAP_ID } from '../../config/places';
 import { usePlaceCoordinates } from '../../hooks/usePlaceCoordinates';
 import { useSegmentLookup } from '../../hooks/useSegmentLookup';
-import { isAboardHop, mapRouteNodes } from '../../model/dayMap';
+import {
+  isAboardHop,
+  mapRefRowId,
+  mapRouteNodes,
+  numberedMapStops,
+  pinLabel,
+} from '../../model/dayMap';
 import {
   type DriveInfo,
   type LatLngPoint,
@@ -25,28 +31,26 @@ import { resolveTravelMode } from '../../model/editForms';
 import { firstImage, formatTravel, STAGE_KIND_LABEL } from '../../model/formatting';
 import type { Coordinates } from '../../model/placeCoordinates';
 import {
+  activeTrackOf,
   activityHeadline,
-  activityNodeKey,
   type DayMapPlaceRef,
   type DayMapPlaceStop,
   type DayMapRouteNode,
-  dedupeDayMapPlaceStops,
-  rowTestId,
   segmentKey,
-  stageNodeKey,
-  stayNodeKey,
-  transitBoundaryKey,
   transitRouteLabel,
 } from '../../model/tripModel';
 import type { Day, TravelMode, TravelModeOverride } from '../../model/types';
+import { cardId } from '../../state/expandedRows';
+import { useExpandedRows } from '../../state/useExpandedRow';
 import { useTripData } from '../../state/useTripData';
 import { FitBoundsToPoints } from '../shared/FitBoundsToPoints';
+import { planColor } from '../shared/planColor';
 import { MapButtons, PreviewMarker, RingMarker } from '../shared/PlannerMapParts';
 import { PreviewBar } from '../shared/PreviewBar';
 import { PreviewStartButton } from '../shared/PreviewStartButton';
 import { PREVIEW_NEEDS_PLACES } from '../shared/previewText';
 import { TripImage } from '../shared/TripImage';
-import type { DayRowOpeners } from './openHandlers';
+import { dayElementId } from './dayLayout';
 import { useDayPreview } from './useDayPreview';
 
 // `placeLabel` is the InfoWindow's own already-shown heading (stop.place.label)
@@ -69,31 +73,40 @@ function refLabel(ref: DayMapPlaceRef, placeLabel: string): string {
   return activityHeadline(ref.entity) || 'Activity';
 }
 
-function openRef(ref: DayMapPlaceRef, handlers: DayRowOpeners): void {
-  if (ref.kind === 'stay') handlers.onOpenStay(ref.entity);
-  else if (ref.kind === 'transit' || ref.kind === 'transit-stage')
-    handlers.onOpenTransit(ref.entity);
-  else handlers.onOpenActivity(ref.entity);
+const FIT_PADDING = { top: 40, right: 32, bottom: 100, left: 32 };
+
+const POLL_MS = 100;
+const UNFOLD_TRIES = 20;
+
+// Runs `done` once `ready` is true, or after about two seconds regardless.
+function whenReady(ready: () => boolean, done: () => void, tries = UNFOLD_TRIES) {
+  window.setTimeout(() => {
+    if (ready() || tries <= 1) done();
+    else whenReady(ready, done, tries - 1);
+  }, POLL_MS);
 }
 
-// Matches DayTimeline's own dragId scheme for a Stay/Transit-boundary/
-// Activity row (see its `nodes`/`morningStayNodes` construction) so a
-// segment here looks up the exact same travelModeOverrides entry
-// TravelInfoControl's own mode picker writes to. Returns null — meaning "no
-// override lookup possible here, always default to DRIVE" (the same
-// default an absent override already means, never a wrong one) — for the
-// one case this file's own walk (mapRouteNodes) can't match back to
-// DayTimeline's: a 'Staying' relation (DayTimeline gives that a second,
-// separately-keyed "-morning" node representing "woke up here" that this
-// walk has no equivalent for).
-function dayTimelineNodeKey(ref: DayMapPlaceRef, date: string): string | null {
-  if (ref.kind === 'stay') {
-    if (ref.relation === 'Staying') return null;
-    return stayNodeKey(ref.entity._id, date);
-  }
-  if (ref.kind === 'transit') return transitBoundaryKey(ref.entity._id, ref.phase);
-  if (ref.kind === 'transit-stage') return stageNodeKey(ref.entity._id, ref.stageIndex);
-  return activityNodeKey(ref.entity._id);
+// Brings the day-list card a pin's entry stands for into view, opening it if it is
+// one that opens, and unfolding its day if that is collapsed. False when the list
+// doesn't show the row: the filters hide it.
+function useRevealCard(date: string) {
+  const rows = useExpandedRows();
+  return (ref: DayMapPlaceRef): boolean => {
+    const id = cardId(date, mapRefRowId(ref));
+    const find = () => document.querySelector(`[data-card="${id}"]`);
+    const folded = document.querySelector<HTMLElement>(
+      `#${dayElementId(date)} .MuiAccordionSummary-root[aria-expanded="false"]`,
+    );
+    if (!folded && !find()) return false;
+    rows.open(id);
+    folded?.click();
+    // once the card is there and its day has finished unfolding
+    whenReady(
+      () => Boolean(find()?.closest('.MuiAccordion-root')?.querySelector('.MuiCollapse-entered')),
+      () => find()?.scrollIntoView({ behavior: 'smooth', block: 'center' }),
+    );
+    return true;
+  };
 }
 
 // The travel mode this adjacent pair should route with — the reader's own
@@ -101,19 +114,16 @@ function dayTimelineNodeKey(ref: DayMapPlaceRef, date: string): string | null {
 // or DRIVE by default. Every adjacent pair not carried by a flight or ferry
 // (isAboardHop) gets a real route attempt at whatever mode this resolves to,
 // matching TravelInfoControl's own universal treatment: it shows a
-// travel-time footer (and a mode picker) between *any* two consecutive
+// travel line (and a mode picker) between *any* two consecutive
 // place-bearing rows, including two plain Activities with no Transit between
 // them at all ("pick up rental car" → "Walmart Supercenter").
 function segmentTravelMode(
   a: DayMapRouteNode,
   b: DayMapRouteNode,
-  date: string,
   overrides: TravelModeOverride[],
 ): TravelMode {
-  const fromKey = dayTimelineNodeKey(a.ref, date);
-  const toKey = dayTimelineNodeKey(b.ref, date);
-  if (!fromKey || !toKey) return 'DRIVE';
-  return resolveTravelMode(overrides, segmentKey(fromKey, toKey));
+  if (!a.nodeKey || !b.nodeKey) return 'DRIVE';
+  return resolveTravelMode(overrides, segmentKey(a.nodeKey, b.nodeKey));
 }
 
 interface RouteSegment {
@@ -134,13 +144,12 @@ interface RouteSegment {
 // own comment. Deliberately not one flat path through all of them either,
 // since each segment gets its own real, mode-specific route (useRoutePaths)
 // rather than one path drawn straight through every stop. Same-place
-// neighbors (matching TravelInfoControl's own "no footer between two rows at
+// neighbors (matching TravelInfoControl's own "no travel line between two rows at
 // the same place" rule) and hops a flight or ferry carries (isAboardHop) are
 // skipped entirely: no edge at all.
 function buildRouteSegments(
   nodes: DayMapRouteNode[],
   coords: Map<string, Coordinates>,
-  date: string,
   overrides: TravelModeOverride[],
 ): RouteSegment[] {
   const segments: RouteSegment[] = [];
@@ -152,26 +161,17 @@ function buildRouteSegments(
     const toPoint = coords.get(toPlaceId);
     if (!fromPoint || !toPoint) continue;
     segments.push({
-      // Keyed by each node's own DOM row identity (domTestIdForRef), not
-      // array index — the node list is filtered by viewport visibility
-      // (useVisibleRouteNodes), so indices shift on every scroll-driven
-      // re-render even when the segment itself hasn't changed. An
-      // index-based key would make React remount the <Polyline> component
-      // on every such shift, discarding its already-fetched path back to
-      // the initial straight-line fallback each time — since the polyline
-      // library (see its own usePolyline) only applies the `path` prop as
-      // an ongoing update while the SAME instance stays mounted; a fresh
-      // mount just re-seeds from whatever `path` happens to be at that
-      // moment. A there-and-back day visiting the same two places twice
-      // still gets distinct keys here, since each occurrence is a distinct
-      // row.
-      key: `${domTestIdForRef(nodes[i].ref)}>${domTestIdForRef(nodes[i + 1].ref)}`,
+      // Keyed by the two rows it joins, not by position, so a Polyline stays mounted
+      // as other legs come and go: the polyline library applies a new `path` only to
+      // a mounted instance, and a remount would show the straight-line fallback
+      // again. A day visiting the same places twice still gets distinct keys.
+      key: `${mapRefRowId(nodes[i].ref)}>${mapRefRowId(nodes[i + 1].ref)}`,
       fromIndex: i,
       fromPlaceId,
       toPlaceId,
       fromPoint,
       toPoint,
-      mode: segmentTravelMode(nodes[i], nodes[i + 1], date, overrides),
+      mode: segmentTravelMode(nodes[i], nodes[i + 1], overrides),
     });
   }
   return segments;
@@ -212,18 +212,6 @@ function useSegmentTravelInfo(segments: RouteSegment[]): Map<string, DriveInfo> 
   ).value;
 }
 
-// The same data-testid DayTimeline's own TimelineRow stamps on every row
-// (`stay-row-<key>`, `transit-boundary-<key>`, `transit-stage-<key>`,
-// `activity-row-<id>`) — see DayMapPlaceRef (tripModel.ts) for why `rowKey`
-// exists on those ref variants. Letting this map read that attribute
-// straight off the DOM means DayTimeline never has to know a map exists.
-function domTestIdForRef(ref: DayMapPlaceRef): string {
-  if (ref.kind === 'stay') return rowTestId('stay', ref.rowKey);
-  if (ref.kind === 'transit') return rowTestId('transit-boundary', ref.rowKey);
-  if (ref.kind === 'transit-stage') return rowTestId('transit-stage', ref.rowKey);
-  return rowTestId('activity', ref.entity._id);
-}
-
 // What a pin's InfoWindow reports about the leg leaving from its stop — absent
 // when this is the plan's last mapped place, or nothing plausible mapped after
 // it (e.g. the next node's coordinates never resolved).
@@ -232,10 +220,10 @@ interface NextPlaceInfo {
   travel: DriveInfo | null;
 }
 
-// One numbered ring per resolved place, the route planner's pin, in its plan's
+// One pin per resolved place, carrying its rows' numbers: the route planner's ring, in its plan's
 // color. Clicking opens an InfoWindow listing every Stay/Transit/Activity that
 // named this place — almost always one, but never assumed to be — each of which
-// opens that entity's own detail side sheet, the same one its day-list row opens.
+// opens that entry's card in the day list.
 //
 // The InfoWindow's own content sits inside Google's fixed white popup chrome, not
 // this app's own MUI surfaces — unlike every other panel in the app, it never
@@ -243,32 +231,37 @@ interface NextPlaceInfo {
 // colors rather than theme text tokens.
 function PlaceMarker({
   stop,
-  number,
+  label,
   color,
   active,
   coordinates,
   nextPlace,
-  ...handlers
+  onReveal,
 }: {
   stop: DayMapPlaceStop;
-  number: number;
+  label: string;
   color: string;
   active: boolean;
   coordinates: Coordinates;
   nextPlace: NextPlaceInfo | null;
-} & DayRowOpeners) {
+  onReveal: (ref: DayMapPlaceRef) => boolean;
+}) {
   const [markerRef, marker] = useAdvancedMarkerRef();
   const [infoOpen, setInfoOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
   return (
     <>
       <RingMarker
         markerRef={markerRef}
         position={coordinates}
         color={color}
-        glyph={String(number)}
+        glyph={label}
         name={stop.place.label}
         active={active}
-        onClick={() => setInfoOpen((open) => !open)}
+        onClick={() => {
+          setHidden(false);
+          setInfoOpen((open) => !open);
+        }}
       />
       {infoOpen && (
         <InfoWindow anchor={marker} onClose={() => setInfoOpen(false)} maxWidth={280}>
@@ -286,8 +279,9 @@ function PlaceMarker({
               <ButtonBase
                 key={i}
                 onClick={() => {
-                  setInfoOpen(false);
-                  openRef(ref, handlers);
+                  const shown = onReveal(ref);
+                  setHidden(!shown);
+                  if (shown) setInfoOpen(false);
                 }}
                 sx={{
                   display: 'block',
@@ -303,6 +297,11 @@ function PlaceMarker({
                 </Typography>
               </ButtonBase>
             ))}
+            {hidden && (
+              <Typography variant="caption" sx={{ color: 'rgba(0, 0, 0, 0.6)' }}>
+                Your filters hide this entry in the day list.
+              </Typography>
+            )}
             {nextPlace && (
               <Typography variant="caption" sx={{ color: 'rgba(0, 0, 0, 0.6)' }}>
                 {nextPlace.travel
@@ -317,13 +316,12 @@ function PlaceMarker({
   );
 }
 
-// The single persistent map panel beside the day list (DaysView, when the
-// viewport has room — see the lg-breakpoint gate there) — a richer sibling to
-// DayMapPanel's own keyless iframe embed, drawn like the route planner's map
-// (RoutePlannerMap): the plan the reader has picked as a road path in its color,
+// The day's map: the persistent panel beside the day list (SidebarSlot, when the
+// viewport has room), and what a narrower screen's map dialog (DayMapPanel) shows.
+// Drawn like the route planner's map (RoutePlannerMap): the plan the reader has picked as a road path in its color,
 // every place a numbered ring. Needs the Maps JavaScript API (loaded lazily by
-// DaysView's APIProvider around this component — mounted only while the sidebar
-// is, so narrow screens never load the script) and a real Map ID
+// the APIProvider SidebarSlot or DayMapPanel puts around this component, mounted
+// only while the map shows) and a real Map ID
 // (GOOGLE_MAPS_MAP_ID) for AdvancedMarker to render at all.
 //
 // One map, not one per day: DaysView tracks the day the reader is on and swaps
@@ -331,8 +329,12 @@ function PlaceMarker({
 // google.maps.Map instance per day.
 export function DayMapSidebar({
   activeDay,
-  ...handlers
-}: { activeDay: Day | null } & DayRowOpeners) {
+  onRevealed,
+}: {
+  activeDay: Day | null;
+  // A pin's entry just sent the reader to its card in the day list.
+  onRevealed?: () => void;
+}) {
   if (!activeDay) {
     return (
       <Box
@@ -351,40 +353,39 @@ export function DayMapSidebar({
       </Box>
     );
   }
-  return <DayMapSidebarContent day={activeDay} {...handlers} />;
+  return <DayMapSidebarContent day={activeDay} onRevealed={onRevealed} />;
 }
 
-function DayMapSidebarContent({
-  day,
-  onOpenActivity,
-  onOpenStay,
-  onOpenTransit,
-}: { day: Day } & DayRowOpeners) {
+function DayMapSidebarContent({ day, onRevealed }: { day: Day; onRevealed?: () => void }) {
   const { palette } = useTheme();
+  const revealCard = useRevealCard(day.date);
+  const reveal = (ref: DayMapPlaceRef) => {
+    const shown = revealCard(ref);
+    if (shown) onRevealed?.();
+    return shown;
+  };
   // The nodes of the plan the reader has picked, one per chronological occurrence
   // of a place (a round-trip Transit's shared from/to needs two nodes, one marker).
   const routeNodes = useMemo(() => mapRouteNodes(day.visits), [day.visits]);
-  const stops = useMemo(() => dedupeDayMapPlaceStops(routeNodes), [routeNodes]);
+  const numberedStops = useMemo(() => numberedMapStops(day.visits), [day.visits]);
+  const stops = useMemo(() => numberedStops.map(({ stop }) => stop), [numberedStops]);
   // The route planner's line color for the picked plan: the ideal plan's first.
-  const picked = day.scenarioTracks.find((t) => t.active)?.scenario;
-  const pickedTone = picked?.tone;
-  const color = palette.routeVariants[pickedTone === 'alternate' ? 1 : 0];
+  const picked = activeTrackOf(day.scenarioTracks)?.scenario;
+  const color = planColor(palette.routeVariants, day.scenarioTracks);
   // dedupeDayMapPlaceStops only adds a stop once its place has a real Google Place
   // id (see mapRouteNodes), so this cast is safe.
   const coords = usePlaceCoordinates(stops.map((stop) => stop.place.id as string));
   const { data } = useTripData();
   const overrides = data?.travelModeOverrides;
   const segments = useMemo(
-    () => buildRouteSegments(routeNodes, coords, day.date, overrides ?? []),
-    [routeNodes, coords, day.date, overrides],
+    () => buildRouteSegments(routeNodes, coords, overrides ?? []),
+    [routeNodes, coords, overrides],
   );
   const routePaths = useRoutePaths(segments);
   const segmentTravelInfo = useSegmentTravelInfo(segments);
-  // Numbered along every stop of the plan, so a number does not change as the
+  // Numbered along every row of the plan, so a number does not change as the
   // coordinates of the others arrive.
-  const shownStops = stops.flatMap((stop, i) =>
-    coords.has(stop.place.id as string) ? [{ stop, number: i + 1 }] : [],
-  );
+  const shownStops = numberedStops.filter(({ stop }) => coords.has(stop.place.id as string));
   const points = shownStops.map(({ stop }) => coords.get(stop.place.id as string) as Coordinates);
   const pointsKey = shownStops
     .map(({ stop }) => stop.place.id)
@@ -443,6 +444,8 @@ function DayMapSidebarContent({
   return (
     <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
       <GoogleMap
+        // the narrow screens' dialog unmounts on close, and each new map is billed
+        reuseMaps
         mapId={GOOGLE_MAPS_MAP_ID}
         colorScheme={palette.mode === 'dark' ? 'DARK' : 'LIGHT'}
         style={{ width: '100%', height: '100%' }}
@@ -452,6 +455,8 @@ function DayMapSidebarContent({
         gestureHandling="greedy"
       >
         <FitBoundsToPoints
+          // clear of the Preview day button along the bottom
+          padding={FIT_PADDING}
           points={points}
           pointsKey={`${pointsKey}${preview.following ? ':preview' : ''}`}
         />
@@ -463,18 +468,16 @@ function DayMapSidebarContent({
             strokeWeight={6}
           />
         ))}
-        {shownStops.map(({ stop, number }) => (
+        {shownStops.map(({ stop, numbers }) => (
           <PlaceMarker
             key={stop.place.id}
             stop={stop}
-            number={number}
+            label={pinLabel(numbers)}
             color={color}
             active={stop.place.id === preview.activePlaceId}
             coordinates={coords.get(stop.place.id as string) as Coordinates}
             nextPlace={nextPlaceByStopId.get(stop.place.id as string) ?? null}
-            onOpenActivity={onOpenActivity}
-            onOpenStay={onOpenStay}
-            onOpenTransit={onOpenTransit}
+            onReveal={reveal}
           />
         ))}
         {preview.point && <PreviewMarker point={preview.point} />}

@@ -23,8 +23,8 @@ export function usePatchEntity<K extends EditKind>(kind: K, entityId: string | u
 }
 
 // Makes a clicked photo an entity's own hero image — the one
-// firstImage/EntityHeroImage always shows first. Shared by every DetailPanel
-// (Activity/Stay/Transit) so the three onSelectImage callbacks can't
+// firstImage/EntityHeroImage always shows first. Shared by every card's
+// photo strip (Activity/Stay/Transit) so the three onSelectImage callbacks can't
 // silently diverge on how a hero pick gets written back.
 export function useHeroImageSelect(kind: EditKind, entityId: string | undefined) {
   const patchEntity = usePatchEntity(kind, entityId);
